@@ -105,9 +105,11 @@ export interface Config {
   fallbackLocale: null;
   globals: {
     'site-settings': SiteSetting;
+    about: About;
   };
   globalsSelect: {
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
+    about: AboutSelect<false> | AboutSelect<true>;
   };
   locale: null;
   widgets: {
@@ -373,6 +375,10 @@ export interface Team {
   competition?: string | null;
   trainingTimes?: string | null;
   coaches?: (number | User)[] | null;
+  /**
+   * Link to this team’s fixtures page on Dribl (shown on the Fixtures page).
+   */
+  driblUrl?: string | null;
   /**
    * Dribl team identifier — used to pull fixtures & results automatically.
    */
@@ -728,6 +734,7 @@ export interface TeamsSelect<T extends boolean = true> {
   competition?: T;
   trainingTimes?: T;
   coaches?: T;
+  driblUrl?: T;
   driblTeamId?: T;
   photo?: T;
   order?: T;
@@ -895,6 +902,37 @@ export interface SiteSetting {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "about".
+ */
+export interface About {
+  id: number;
+  /**
+   * Opening paragraph under the page title
+   */
+  intro?: string | null;
+  mission?: string | null;
+  values?:
+    | {
+        title: string;
+        text: string;
+        id?: string | null;
+      }[]
+    | null;
+  historyIntro?: string | null;
+  milestones?:
+    | {
+        year: string;
+        title: string;
+        text?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  childSafe?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "site-settings_select".
  */
 export interface SiteSettingsSelect<T extends boolean = true> {
@@ -923,6 +961,34 @@ export interface SiteSettingsSelect<T extends boolean = true> {
         facebook?: T;
         instagram?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "about_select".
+ */
+export interface AboutSelect<T extends boolean = true> {
+  intro?: T;
+  mission?: T;
+  values?:
+    | T
+    | {
+        title?: T;
+        text?: T;
+        id?: T;
+      };
+  historyIntro?: T;
+  milestones?:
+    | T
+    | {
+        year?: T;
+        title?: T;
+        text?: T;
+        id?: T;
+      };
+  childSafe?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

@@ -7,6 +7,9 @@ const __filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(__filename)
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [{ source: '/teams', destination: '/fixtures', permanent: true }]
+  },
   images: {
     localPatterns: [
       { pathname: '/api/media/file/**' },

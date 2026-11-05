@@ -23,7 +23,7 @@ export function Input({ label, hint, ...props }: InputHTMLAttributes<HTMLInputEl
 
 export function Fieldset({ legend, children }: { legend: string; children: ReactNode }) {
   return (
-    <fieldset className="rounded-2xl border border-line bg-surface-2 p-6">
+    <fieldset className="panel rounded-2xl border border-line bg-surface-2 p-6 [[data-brand=academy]_&]:rounded-sm">
       <legend className="px-2 font-display text-lg font-semibold uppercase tracking-wide">{legend}</legend>
       <div className="grid gap-4 sm:grid-cols-2">{children}</div>
     </fieldset>

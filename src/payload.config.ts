@@ -18,6 +18,7 @@ import { Sponsors } from './collections/Sponsors'
 import { Products } from './collections/Products'
 import { Orders } from './collections/Orders'
 import { SiteSettings } from './globals/SiteSettings'
+import { About } from './globals/About'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -32,7 +33,7 @@ export default buildConfig({
     importMap: { baseDir: path.resolve(dirname) },
   },
   collections: [Posts, Programs, Bookings, Products, Orders, Teams, Sponsors, Participants, Users, Media],
-  globals: [SiteSettings],
+  globals: [SiteSettings, About],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: { outputFile: path.resolve(dirname, 'payload-types.ts') },

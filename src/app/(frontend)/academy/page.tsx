@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { payload, formatAUD, formatDate } from '@/lib/payload'
 import { programTypes } from '@/collections/Programs'
 import { FoundationMark, RfaLogo } from '@/components/Logos'
+import { AcademyBackdrop } from '@/components/AcademyBackdrop'
 
 export const revalidate = 60
 export const metadata: Metadata = {
@@ -36,20 +37,8 @@ export default async function AcademyPage() {
   return (
     <div data-brand="academy" data-page-brand="academy" className="font-[family-name:var(--font-inter)]">
       {/* HERO */}
-      <section className="slant-lines relative overflow-hidden border-b border-line">
-        <FoundationMark
-          className="pointer-events-none absolute -right-24 top-1/2 h-[46rem] w-auto -translate-y-1/2 opacity-[0.07] md:right-[-6rem] lg:opacity-[0.12]"
-          ink="url(#gloss)"
-        />
-        <svg width="0" height="0" className="absolute" aria-hidden>
-          <defs>
-            <linearGradient id="gloss" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stopColor="#ffffff" />
-              <stop offset="0.45" stopColor="#6b6b70" />
-              <stop offset="1" stopColor="#1a1a1c" />
-            </linearGradient>
-          </defs>
-        </svg>
+      <section className="relative overflow-hidden border-b border-line">
+        <AcademyBackdrop />
         <div className="container-x relative py-24 md:py-36">
           <p className="text-xs font-medium uppercase tracking-[0.35em] text-muted">Rowville Eagles · Elite Development</p>
           <RfaLogo className="mt-8 h-20 w-auto sm:h-28" ink="#fff" paper="#000" />

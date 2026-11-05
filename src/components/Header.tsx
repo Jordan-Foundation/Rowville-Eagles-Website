@@ -6,7 +6,7 @@ import { Crest, RfaLogo } from './Logos'
 import { useCart } from '@/lib/cart'
 
 const nav = [
-  { href: '/teams', label: 'Teams' },
+  { href: '/about', label: 'About' },
   { href: '/fixtures', label: 'Fixtures' },
   { href: '/programs', label: 'Camps & Programs' },
   { href: '/academy', label: 'Academy' },

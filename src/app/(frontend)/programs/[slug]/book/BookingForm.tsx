@@ -22,7 +22,7 @@ export function BookingForm(props: {
       <input type="hidden" name="program" value={props.slug} />
 
       {props.slots.length > 0 && (
-        <fieldset className="rounded-2xl border border-line bg-surface-2 p-6">
+        <fieldset className="panel rounded-2xl border border-line bg-surface-2 p-6 [[data-brand=academy]_&]:rounded-sm">
           <legend className="px-2 font-display text-lg font-semibold uppercase tracking-wide">Choose a time</legend>
           <div className="grid gap-2 sm:grid-cols-2">
             {props.slots.map((s) => (

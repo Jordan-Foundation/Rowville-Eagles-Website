@@ -1,7 +1,8 @@
 import Link from 'next/link'
 import { payload, formatDate } from '@/lib/payload'
 import { ProgramCard } from '@/components/ProgramCard'
-import { Crest, FoundationMark, RfaLogo } from '@/components/Logos'
+import { Crest, RfaLogo } from '@/components/Logos'
+import { AcademyBackdrop } from '@/components/AcademyBackdrop'
 
 export const revalidate = 60
 
@@ -42,7 +43,7 @@ export default async function Home() {
               <Link href="/programs?type=registration" className="rounded-full bg-accent px-6 py-3 font-semibold text-accent-ink transition hover:brightness-110">
                 Register for 2027
               </Link>
-              <Link href="/teams" className="rounded-full border border-white/30 px-6 py-3 font-semibold transition hover:border-white hover:bg-white/10">
+              <Link href="/fixtures" className="rounded-full border border-white/30 px-6 py-3 font-semibold transition hover:border-white hover:bg-white/10">
                 Find your team
               </Link>
             </div>
@@ -115,8 +116,8 @@ export default async function Home() {
       )}
 
       {/* ACADEMY TEASER */}
-      <section data-brand="academy" className="slant-lines relative overflow-hidden">
-        <FoundationMark className="pointer-events-none absolute -right-16 top-1/2 h-[30rem] w-auto -translate-y-1/2 opacity-[0.08]" ink="#fff" />
+      <section data-brand="academy" className="relative overflow-hidden">
+        <AcademyBackdrop size="md" />
         <div className="container-x relative grid gap-10 py-24 lg:grid-cols-2 lg:items-center">
           <div>
             <RfaLogo className="h-16 w-auto sm:h-20" ink="#fff" paper="#000" />

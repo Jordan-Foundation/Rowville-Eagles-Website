@@ -16,9 +16,7 @@ export function ProgramCard({ p }: { p: Program }) {
         <span className="flex items-center gap-2">
           {p.status === 'full' && <span className="rounded-full bg-surface-2 px-2.5 py-1 text-xs text-muted">Waitlist</span>}
           {p.brand === 'academy' && (
-            <span className="bg-black px-2 py-1" title="Rowville Foundation Academy">
-              <RfaLogo className="h-3 w-auto" ink="#fff" paper="#000" />
-            </span>
+            <RfaLogo className="h-4 w-auto text-ink" ink="currentColor" paper="none" />
           )}
         </span>
       </div>

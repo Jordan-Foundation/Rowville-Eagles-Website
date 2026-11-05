@@ -23,6 +23,12 @@ export const Teams: CollectionConfig = {
     { name: 'trainingTimes', type: 'text' },
     { name: 'coaches', type: 'relationship', relationTo: 'users', hasMany: true },
     {
+      name: 'driblUrl',
+      label: 'Dribl fixtures link',
+      type: 'text',
+      admin: { description: 'Link to this team’s fixtures page on Dribl (shown on the Fixtures page).' },
+    },
+    {
       name: 'driblTeamId',
       type: 'text',
       admin: { description: 'Dribl team identifier — used to pull fixtures & results automatically.' },

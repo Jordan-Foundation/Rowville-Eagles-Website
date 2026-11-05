@@ -5,7 +5,7 @@ import { Crest, RfaLogo } from './Logos'
 export function Footer({ settings }: { settings: SiteSetting }) {
   const { ground, links } = settings
   return (
-    <footer className="bg-[#0f2a55] text-white/80">
+    <footer className="site-footer bg-[#0f2a55] text-white/80">
       <div className="container-x grid gap-10 py-14 md:grid-cols-12">
         <div className="md:col-span-4">
           <div className="flex items-center gap-4 text-white">
@@ -26,7 +26,7 @@ export function Footer({ settings }: { settings: SiteSetting }) {
           {ground?.name && <p>{ground.name}</p>}
           {ground?.address && <p>{ground.address}</p>}
           {ground?.mapUrl && (
-            <a href={ground.mapUrl} className="mt-2 inline-block text-accent hover:underline">
+            <a href={ground.mapUrl} className="footer-accent mt-2 inline-block text-accent hover:underline">
               Get directions →
             </a>
           )}
@@ -47,7 +47,7 @@ export function Footer({ settings }: { settings: SiteSetting }) {
           </ul>
         </div>
       </div>
-      <div className="border-t border-white/10">
+      <div className="footer-rule border-t border-white/10">
         <div className="container-x flex flex-col justify-between gap-2 py-5 text-xs text-white/50 sm:flex-row">
           <p>© {new Date().getFullYear()} {settings.clubName}</p>
           <p>

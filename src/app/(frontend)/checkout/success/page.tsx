@@ -5,6 +5,7 @@ import { confirmPayment } from '@/lib/payments'
 import { isPayee, paymentsMode, stripeAccounts, stripeFor } from '@/lib/stripe-accounts'
 import type { Program } from '@/payload-types'
 import { ClearCart } from './ClearCart'
+import { AcademyBackdrop } from '@/components/AcademyBackdrop'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Thank you', robots: { index: false } }
@@ -45,9 +46,10 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
     const academy = program.brand === 'academy'
     const settings = await p.findGlobal({ slug: 'site-settings' })
     return (
-      <div data-brand={academy ? 'academy' : undefined} data-page-brand={academy ? 'academy' : undefined}>
+      <div data-brand={academy ? 'academy' : undefined} data-page-brand={academy ? 'academy' : undefined} className="relative overflow-hidden">
+        {academy && <AcademyBackdrop />}
         <Shell title={paid ? 'You’re booked in!' : 'Payment processing'} reference={doc.reference}>
-          <dl className="mt-8 space-y-3 rounded-2xl border border-line bg-surface-2 p-6 text-left text-sm">
+          <dl className={`panel mt-8 space-y-3 border border-line bg-surface-2 p-6 text-left text-sm ${academy ? 'gloss-sheen rounded-sm' : 'rounded-2xl'}`}>
             <Row k="Program" v={program.title} />
             <Row k={doc.player?.teamName ? 'Team' : 'Player'} v={doc.player?.teamName || doc.player?.firstName || ''} />
             {doc.sessionStart && <Row k="Time" v={formatDate(doc.sessionStart, { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' })} />}
@@ -97,7 +99,7 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
 
 function Shell({ title, reference, children }: { title: string; reference?: string; children: React.ReactNode }) {
   return (
-    <div className="container-x max-w-2xl py-20 text-center">
+    <div className="container-x relative max-w-2xl py-20 text-center">
       <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-accent text-2xl text-accent-ink">✓</div>
       <h1 className="mt-6 font-display text-4xl font-bold uppercase">{title}</h1>
       {reference && <p className="mt-2 text-sm text-muted">Reference <span className="font-mono font-semibold text-ink">{reference}</span></p>}

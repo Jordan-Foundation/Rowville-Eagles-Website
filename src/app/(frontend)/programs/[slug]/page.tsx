@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation'
 import { RichText } from '@payloadcms/richtext-lexical/react'
 import { payload, formatAUD, formatDate } from '@/lib/payload'
 import { programTypes } from '@/collections/Programs'
+import { AcademyBackdrop } from '@/components/AcademyBackdrop'
+import { RfaLogo } from '@/components/Logos'
 
 export default async function ProgramPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
@@ -21,10 +23,12 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
 
   return (
     <div data-brand={academy ? 'academy' : undefined} data-page-brand={academy ? 'academy' : undefined}>
-      <section className={academy ? 'border-b border-line' : 'pitch-lines bg-[#0f2a55] text-white'}>
-        <div className="container-x py-16 md:py-24">
-          <p className="eyebrow">{programTypes.find((t) => t.value === p.type)?.label}</p>
-          <h1 className={`mt-4 max-w-3xl text-5xl leading-none sm:text-6xl ${academy ? 'font-display font-semibold' : 'font-[family-name:var(--font-barlow)] font-extrabold uppercase'}`}>
+      <section className={academy ? 'relative overflow-hidden border-b border-line' : 'pitch-lines bg-[#0f2a55] text-white'}>
+        {academy && <AcademyBackdrop size="md" />}
+        <div className="container-x relative py-16 md:py-24">
+          {academy && <RfaLogo className="mb-8 h-10 w-auto" ink="#fff" paper="#000" />}
+          <p className={academy ? 'text-xs font-medium uppercase tracking-[0.35em] text-muted' : 'eyebrow'}>{programTypes.find((t) => t.value === p.type)?.label}</p>
+          <h1 className={`mt-4 max-w-3xl text-5xl leading-none sm:text-6xl ${academy ? 'font-display font-semibold uppercase tracking-tight' : 'font-[family-name:var(--font-barlow)] font-extrabold uppercase'}`}>
             {p.title}
           </h1>
           <p className={`mt-5 max-w-2xl text-lg ${academy ? 'text-muted' : 'text-white/75'}`}>{p.summary}</p>
@@ -34,8 +38,8 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
         <article className="prose max-w-none text-ink [&_p]:mb-4 [&_p]:leading-relaxed">
           {p.description ? <RichText data={p.description} /> : <p className="text-muted">Full details coming soon.</p>}
         </article>
-        <aside className="h-fit rounded-2xl border border-line bg-surface-2 p-7 lg:sticky lg:top-24">
-          <p className="text-3xl font-bold">{formatAUD(p.price)}</p>
+        <aside className={`panel h-fit border border-line bg-surface-2 p-7 lg:sticky lg:top-24 ${academy ? 'gloss-sheen rounded-sm' : 'rounded-2xl'}`}>
+          <p className={`text-3xl font-bold ${academy ? 'font-display' : ''}`}>{formatAUD(p.price)}</p>
           {p.priceNote && <p className="mt-1 text-sm text-muted">{p.priceNote}</p>}
           <dl className="mt-6 space-y-3 border-t border-line pt-6 text-sm">
             {facts.map(([k, v]) => (

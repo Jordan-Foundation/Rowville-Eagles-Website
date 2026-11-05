@@ -6,6 +6,7 @@ import { placesTaken } from '@/lib/payments'
 import { defaultPayee, programTypes } from '@/collections/Programs'
 import { isPayee, paymentsMode, stripeAccounts } from '@/lib/stripe-accounts'
 import { BookingForm } from './BookingForm'
+import { AcademyBackdrop } from '@/components/AcademyBackdrop'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Book', robots: { index: false } }
@@ -50,22 +51,23 @@ export default async function BookPage({
     ((program.slots?.length ?? 0) > 0 && slots.every((s) => s.remaining === 0))
 
   return (
-    <div data-brand={academy ? 'academy' : undefined} data-page-brand={academy ? 'academy' : undefined} className="min-h-[70vh]">
-      <div className="container-x grid gap-12 py-14 lg:grid-cols-[1fr_24rem]">
+    <div data-brand={academy ? 'academy' : undefined} data-page-brand={academy ? 'academy' : undefined} className="relative min-h-[70vh] overflow-hidden">
+      {academy && <AcademyBackdrop />}
+      <div className="container-x relative grid gap-12 py-14 lg:grid-cols-[1fr_24rem]">
         <div>
           <Link href={`/programs/${program.slug}`} className="text-sm text-muted hover:text-ink">← Back to program</Link>
           <p className="eyebrow mt-6">{programTypes.find((t) => t.value === program.type)?.label}</p>
-          <h1 className="mt-2 font-display text-4xl font-bold uppercase leading-none sm:text-5xl">{program.type === 'registration' ? 'Register' : 'Book'}: {program.title}</h1>
+          <h1 className="mt-2 font-display text-4xl font-bold uppercase leading-none tracking-tight sm:text-5xl">{program.type === 'registration' ? 'Register' : 'Book'}: {program.title}</h1>
           {cancelled && (
             <p className="mt-6 rounded-lg border border-line bg-surface-2 px-4 py-3 text-sm">Payment was cancelled — nothing was charged. You can try again below.</p>
           )}
           <div className="mt-10">
             {!paymentsReady ? (
-              <p className="rounded-2xl border border-line bg-surface-2 p-6">
+              <p className="panel rounded-2xl border border-line bg-surface-2 p-6">
                 Online bookings for this program open soon. In the meantime, please contact the club to book.
               </p>
             ) : full ? (
-              <p className="rounded-2xl border border-line bg-surface-2 p-6">
+              <p className="panel rounded-2xl border border-line bg-surface-2 p-6">
                 This program is fully booked. Please check back later or contact the club about the waitlist.
               </p>
             ) : (
@@ -79,7 +81,7 @@ export default async function BookPage({
             )}
           </div>
         </div>
-        <aside className="h-fit rounded-2xl border border-line bg-surface-2 p-7 lg:sticky lg:top-24">
+        <aside className={`panel h-fit border border-line bg-surface-2 p-7 lg:sticky lg:top-24 ${academy ? 'gloss-sheen rounded-sm' : 'rounded-2xl'}`}>
           <p className="text-sm text-muted">Order summary</p>
           <p className="mt-2 text-xl font-semibold">{program.title}</p>
           <p className="mt-1 text-sm text-muted">{[program.ageRange, program.scheduleNote].filter(Boolean).join(' · ')}</p>
