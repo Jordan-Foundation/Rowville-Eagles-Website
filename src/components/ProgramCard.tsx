@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import type { Program } from '@/payload-types'
 import { programTypes } from '@/collections/Programs'
-import { formatAUD, formatDate } from '@/lib/payload'
+import { formatAUD, formatDate } from '@/lib/format'
 import { RfaLogo } from './Logos'
 
 export function ProgramCard({ p }: { p: Program }) {

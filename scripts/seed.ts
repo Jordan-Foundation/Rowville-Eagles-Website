@@ -17,7 +17,7 @@ const para = (text: string) => ({
 
 const payload = await getPayload({ config })
 
-for (const c of ['bookings', 'participants', 'programs', 'teams', 'posts', 'sponsors'] as const) {
+for (const c of ['bookings', 'orders', 'products', 'participants', 'programs', 'teams', 'posts', 'sponsors'] as const) {
   await payload.delete({ collection: c, where: { id: { exists: true } } })
 }
 
@@ -78,8 +78,25 @@ const programs = [
   { title: '1-on-1 Coaching', slug: 'private-coaching', type: 'private-session', brand: 'academy', status: 'open', price: 75, ageRange: 'All ages', scheduleNote: '60 minutes · choose your time', summary: 'Personalised technical sessions with an Academy coach, focused on your player’s individual goals.' },
 ] as const
 
+// Bookable slots for 1-on-1s and trials: next three weeks (Melbourne evenings ≈ 07:00–09:00 UTC)
+const slotsFrom = (days: number[], hoursUtc: number[], capacity: number) => {
+  const out: { start: string; capacity: number; coach?: string }[] = []
+  const base = new Date()
+  base.setUTCHours(0, 0, 0, 0)
+  for (let d = 1; d <= 21; d++) {
+    const day = new Date(base.getTime() + d * 86400000)
+    if (!days.includes(day.getUTCDay())) continue
+    for (const h of hoursUtc) out.push({ start: new Date(day.getTime() + h * 3600000).toISOString(), capacity })
+  }
+  return out
+}
+const slotsFor: Record<string, ReturnType<typeof slotsFrom>> = {
+  'private-coaching': slotsFrom([1, 3], [6, 7, 8], 1),
+  'academy-trial': slotsFrom([2], [7], 12),
+}
+
 for (const p of programs) {
-  await payload.create({ collection: 'programs', data: { ...p, description: para(`${p.summary}\n\nThis is sample copy — replace it in the admin with the full program details, what to bring, and cancellation policy.`) } })
+  await payload.create({ collection: 'programs', data: { ...p, slots: slotsFor[p.slug], description: para(`${p.summary}\n\nThis is sample copy — replace it in the admin with the full program details, what to bring, and cancellation policy.`) } })
 }
 
 const posts = [
@@ -89,6 +106,21 @@ const posts = [
 ] as const
 for (const p of posts) {
   await payload.create({ collection: 'posts', data: { ...p, status: 'published', content: para(`${p.excerpt}\n\nSample article — replace in the admin.`) } })
+}
+
+const kitSizes = ['YS', 'YM', 'YL', 'S', 'M', 'L', 'XL', '2XL'].map((size) => ({ size, stock: 15 }))
+const products = [
+  { name: 'Home Playing Shirt', slug: 'home-playing-shirt', category: 'kit', brand: 'club', price: 55, description: 'Official Rowville Eagles home shirt in royal blue.', variants: kitSizes },
+  { name: 'Playing Shorts', slug: 'playing-shorts', category: 'kit', brand: 'club', price: 30, variants: kitSizes },
+  { name: 'Playing Socks', slug: 'playing-socks', category: 'kit', brand: 'club', price: 15, variants: ['Junior', 'Senior'].map((size) => ({ size, stock: 30 })) },
+  { name: 'Training Top', slug: 'training-top', category: 'training', brand: 'club', price: 45, variants: kitSizes },
+  { name: 'RFA Training Shirt', slug: 'rfa-training-shirt', category: 'training', brand: 'academy', price: 50, description: 'Rowville Foundation Academy training shirt — black.', variants: kitSizes },
+  { name: 'RFA Hoodie', slug: 'rfa-hoodie', category: 'apparel', brand: 'academy', price: 75, variants: kitSizes.map((v) => ({ ...v, stock: v.size === 'XL' ? 0 : 8 })) },
+  { name: 'Eagles Supporter Scarf', slug: 'supporter-scarf', category: 'accessories', brand: 'club', price: 25, variants: [] },
+  { name: 'Drink Bottle', slug: 'drink-bottle', category: 'accessories', brand: 'club', price: 12, variants: [] },
+] as const
+for (const [i, pr] of products.entries()) {
+  await payload.create({ collection: 'products', data: { ...pr, variants: [...pr.variants], status: 'active', order: i } })
 }
 
 for (const [i, name] of ['Your Sponsor', 'Local Partner', 'Community Supporter', 'Major Partner'].entries()) {

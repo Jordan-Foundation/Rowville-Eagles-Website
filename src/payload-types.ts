@@ -70,6 +70,8 @@ export interface Config {
     posts: Post;
     programs: Program;
     bookings: Booking;
+    products: Product;
+    orders: Order;
     teams: Team;
     sponsors: Sponsor;
     participants: Participant;
@@ -85,6 +87,8 @@ export interface Config {
     posts: PostsSelect<false> | PostsSelect<true>;
     programs: ProgramsSelect<false> | ProgramsSelect<true>;
     bookings: BookingsSelect<false> | BookingsSelect<true>;
+    products: ProductsSelect<false> | ProductsSelect<true>;
+    orders: OrdersSelect<false> | OrdersSelect<true>;
     teams: TeamsSelect<false> | TeamsSelect<true>;
     sponsors: SponsorsSelect<false> | SponsorsSelect<true>;
     participants: ParticipantsSelect<false> | ParticipantsSelect<true>;
@@ -190,7 +194,7 @@ export interface Media {
 export interface Program {
   id: number;
   /**
-   * Auto-set from program type: team registrations → Club, everything else → Academy.
+   * Auto-set from program type: team registrations → Club; camps, tournaments, Academy, 1-on-1s → Academy.
    */
   payee?: ('club' | 'academy') | null;
   title: string;
@@ -234,6 +238,17 @@ export interface Program {
    * e.g. "Club fee only — FV fees paid in PlayFootball"
    */
   priceNote?: string | null;
+  /**
+   * For 1-on-1s and trials: families pick one slot. Leave empty for programs with fixed dates.
+   */
+  slots?:
+    | {
+        start: string;
+        capacity?: number | null;
+        coach?: string | null;
+        id?: string | null;
+      }[]
+    | null;
   heroImage?: (number | null) | Media;
   updatedAt: string;
   createdAt: string;
@@ -246,49 +261,39 @@ export interface Booking {
   id: number;
   reference: string;
   program: number | Program;
-  participant: number | Participant;
-  account: number | User;
-  /**
-   * For 1-on-1s / trials: the booked slot
-   */
-  sessionStart?: string | null;
   status: 'pending' | 'paid' | 'waitlisted' | 'cancelled' | 'refunded';
+  payee: 'club' | 'academy';
   /**
-   * AUD charged
+   * AUD
    */
   amount: number;
-  /**
-   * Stripe account that received this payment
-   */
-  payee: 'club' | 'academy';
+  sessionStart?: string | null;
+  account?: (number | null) | User;
+  participant?: (number | null) | Participant;
+  contact: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+  };
+  player?: {
+    firstName?: string | null;
+    lastName?: string | null;
+    dateOfBirth?: string | null;
+    /**
+     * Tournament entries
+     */
+    teamName?: string | null;
+    medical?: string | null;
+    emergencyName?: string | null;
+    emergencyPhone?: string | null;
+    photoConsent?: boolean | null;
+  };
   stripeCheckoutId?: string | null;
   /**
    * Season registrations: FV section completed in PlayFootball
    */
   playFootballComplete?: boolean | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "participants".
- */
-export interface Participant {
-  id: number;
-  fullName?: string | null;
-  firstName: string;
-  lastName: string;
-  dateOfBirth: string;
-  gender?: ('female' | 'male' | 'non-binary' | 'prefer-not-to-say') | null;
-  account: number | User;
-  team?: (number | null) | Team;
-  ffaNumber?: string | null;
-  medical?: {
-    conditions?: string | null;
-    emergencyContact?: string | null;
-    emergencyPhone?: string | null;
-  };
-  photoConsent?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -328,6 +333,29 @@ export interface User {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "participants".
+ */
+export interface Participant {
+  id: number;
+  fullName?: string | null;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
+  gender?: ('female' | 'male' | 'non-binary' | 'prefer-not-to-say') | null;
+  account: number | User;
+  team?: (number | null) | Team;
+  ffaNumber?: string | null;
+  medical?: {
+    conditions?: string | null;
+    emergencyContact?: string | null;
+    emergencyPhone?: string | null;
+  };
+  photoConsent?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "teams".
  */
 export interface Team {
@@ -351,6 +379,73 @@ export interface Team {
   driblTeamId?: string | null;
   photo?: (number | null) | Media;
   order?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "products".
+ */
+export interface Product {
+  id: number;
+  name: string;
+  slug: string;
+  category: 'kit' | 'training' | 'apparel' | 'accessories';
+  brand?: ('club' | 'academy') | null;
+  status?: ('active' | 'hidden') | null;
+  /**
+   * AUD incl. GST
+   */
+  price: number;
+  description?: string | null;
+  images?: (number | Media)[] | null;
+  /**
+   * Leave stock empty for unlimited / made-to-order.
+   */
+  variants?:
+    | {
+        size: string;
+        stock?: number | null;
+        id?: string | null;
+      }[]
+    | null;
+  order?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "orders".
+ */
+export interface Order {
+  id: number;
+  reference: string;
+  status: 'pending' | 'paid' | 'ready' | 'completed' | 'cancelled' | 'refunded';
+  payee: 'club' | 'academy';
+  account?: (number | null) | User;
+  contact: {
+    name: string;
+    email: string;
+    phone?: string | null;
+  };
+  items: {
+    product?: (number | null) | Product;
+    name?: string | null;
+    size?: string | null;
+    quantity?: number | null;
+    unitPrice?: number | null;
+    id?: string | null;
+  }[];
+  subtotal?: number | null;
+  postage?: number | null;
+  total: number;
+  fulfilment: 'pickup' | 'post';
+  shippingAddress?: string | null;
+  stripeCheckoutId?: string | null;
+  /**
+   * Internal notes
+   */
+  notes?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -403,6 +498,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'bookings';
         value: number | Booking;
+      } | null)
+    | ({
+        relationTo: 'products';
+        value: number | Product;
+      } | null)
+    | ({
+        relationTo: 'orders';
+        value: number | Order;
       } | null)
     | ({
         relationTo: 'teams';
@@ -503,6 +606,14 @@ export interface ProgramsSelect<T extends boolean = true> {
   price?: T;
   capacity?: T;
   priceNote?: T;
+  slots?:
+    | T
+    | {
+        start?: T;
+        capacity?: T;
+        coach?: T;
+        id?: T;
+      };
   heroImage?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -514,14 +625,94 @@ export interface ProgramsSelect<T extends boolean = true> {
 export interface BookingsSelect<T extends boolean = true> {
   reference?: T;
   program?: T;
-  participant?: T;
-  account?: T;
-  sessionStart?: T;
   status?: T;
-  amount?: T;
   payee?: T;
+  amount?: T;
+  sessionStart?: T;
+  account?: T;
+  participant?: T;
+  contact?:
+    | T
+    | {
+        firstName?: T;
+        lastName?: T;
+        email?: T;
+        phone?: T;
+      };
+  player?:
+    | T
+    | {
+        firstName?: T;
+        lastName?: T;
+        dateOfBirth?: T;
+        teamName?: T;
+        medical?: T;
+        emergencyName?: T;
+        emergencyPhone?: T;
+        photoConsent?: T;
+      };
   stripeCheckoutId?: T;
   playFootballComplete?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "products_select".
+ */
+export interface ProductsSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  category?: T;
+  brand?: T;
+  status?: T;
+  price?: T;
+  description?: T;
+  images?: T;
+  variants?:
+    | T
+    | {
+        size?: T;
+        stock?: T;
+        id?: T;
+      };
+  order?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "orders_select".
+ */
+export interface OrdersSelect<T extends boolean = true> {
+  reference?: T;
+  status?: T;
+  payee?: T;
+  account?: T;
+  contact?:
+    | T
+    | {
+        name?: T;
+        email?: T;
+        phone?: T;
+      };
+  items?:
+    | T
+    | {
+        product?: T;
+        name?: T;
+        size?: T;
+        quantity?: T;
+        unitPrice?: T;
+        id?: T;
+      };
+  subtotal?: T;
+  postage?: T;
+  total?: T;
+  fulfilment?: T;
+  shippingAddress?: T;
+  stripeCheckoutId?: T;
+  notes?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -686,6 +877,13 @@ export interface SiteSetting {
     address?: string | null;
     mapUrl?: string | null;
   };
+  shop?: {
+    /**
+     * Flat postage (AUD)
+     */
+    postageFee?: number | null;
+    pickupNote?: string | null;
+  };
   links?: {
     playFootball?: string | null;
     driblFixtures?: string | null;
@@ -710,6 +908,12 @@ export interface SiteSettingsSelect<T extends boolean = true> {
         name?: T;
         address?: T;
         mapUrl?: T;
+      };
+  shop?:
+    | T
+    | {
+        postageFee?: T;
+        pickupNote?: T;
       };
   links?:
     | T

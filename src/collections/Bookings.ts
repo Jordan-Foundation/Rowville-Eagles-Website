@@ -1,41 +1,55 @@
 import type { CollectionConfig } from 'payload'
 import { isStaff, staffOrOwner } from '../access'
 
-/** A paid (or pending) place in a Program for a Participant. Powers the portal calendar. */
+/**
+ * A place in a Program. Created by the checkout flow (pending) and confirmed by the Stripe webhook (paid).
+ * Guests can book without an account: contact + player details are stored on the booking, and the
+ * portal (Phase 6) links bookings to an account once the email address is verified.
+ */
 export const Bookings: CollectionConfig = {
   slug: 'bookings',
   admin: {
     useAsTitle: 'reference',
-    defaultColumns: ['reference', 'program', 'participant', 'status', 'amount'],
+    defaultColumns: ['reference', 'program', 'player.firstName', 'player.lastName', 'status', 'amount', 'createdAt'],
     group: 'Programs & Bookings',
   },
-  access: {
-    read: staffOrOwner('account'),
-    // Created server-side by the checkout flow (Stripe webhook) — not directly by the public.
-    create: isStaff,
-    update: isStaff,
-    delete: isStaff,
-  },
+  access: { read: staffOrOwner('account'), create: isStaff, update: isStaff, delete: isStaff },
+  defaultSort: '-createdAt',
   fields: [
-    { name: 'reference', type: 'text', required: true, unique: true },
+    { name: 'reference', type: 'text', required: true, unique: true, admin: { readOnly: true } },
     { name: 'program', type: 'relationship', relationTo: 'programs', required: true },
-    { name: 'participant', type: 'relationship', relationTo: 'participants', required: true },
-    { name: 'account', type: 'relationship', relationTo: 'users', required: true },
-    { name: 'sessionStart', type: 'date', admin: { description: 'For 1-on-1s / trials: the booked slot' } },
     {
       name: 'status',
       type: 'select',
       required: true,
       defaultValue: 'pending',
       options: ['pending', 'paid', 'waitlisted', 'cancelled', 'refunded'],
+      admin: { position: 'sidebar' },
     },
-    { name: 'amount', type: 'number', required: true, admin: { description: 'AUD charged' } },
+    { name: 'payee', type: 'select', required: true, options: ['club', 'academy'], admin: { readOnly: true, position: 'sidebar' } },
+    { name: 'amount', type: 'number', required: true, admin: { readOnly: true, position: 'sidebar', description: 'AUD' } },
+    { name: 'sessionStart', label: 'Booked time slot', type: 'date', admin: { date: { pickerAppearance: 'dayAndTime' } } },
+    { name: 'account', type: 'relationship', relationTo: 'users' },
+    { name: 'participant', type: 'relationship', relationTo: 'participants' },
     {
-      name: 'payee',
-      type: 'select',
-      required: true,
-      options: ['club', 'academy'],
-      admin: { readOnly: true, description: 'Stripe account that received this payment' },
+      name: 'contact',
+      label: 'Parent / contact',
+      type: 'group',
+      fields: [
+        { type: 'row', fields: [{ name: 'firstName', type: 'text', required: true }, { name: 'lastName', type: 'text', required: true }] },
+        { type: 'row', fields: [{ name: 'email', type: 'email', required: true }, { name: 'phone', type: 'text', required: true }] },
+      ],
+    },
+    {
+      name: 'player',
+      type: 'group',
+      fields: [
+        { type: 'row', fields: [{ name: 'firstName', type: 'text' }, { name: 'lastName', type: 'text' }, { name: 'dateOfBirth', type: 'date' }] },
+        { name: 'teamName', type: 'text', admin: { description: 'Tournament entries' } },
+        { name: 'medical', type: 'textarea' },
+        { type: 'row', fields: [{ name: 'emergencyName', type: 'text' }, { name: 'emergencyPhone', type: 'text' }] },
+        { name: 'photoConsent', type: 'checkbox' },
+      ],
     },
     { name: 'stripeCheckoutId', type: 'text', admin: { readOnly: true } },
     {

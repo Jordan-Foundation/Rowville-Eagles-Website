@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { RichText } from '@payloadcms/richtext-lexical/react'
 import { payload, formatAUD, formatDate } from '@/lib/payload'
@@ -19,7 +20,7 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
   ].filter(([, v]) => v) as [string, string][]
 
   return (
-    <div data-brand={academy ? 'academy' : undefined}>
+    <div data-brand={academy ? 'academy' : undefined} data-page-brand={academy ? 'academy' : undefined}>
       <section className={academy ? 'border-b border-line' : 'pitch-lines bg-[#0f2a55] text-white'}>
         <div className="container-x py-16 md:py-24">
           <p className="eyebrow">{programTypes.find((t) => t.value === p.type)?.label}</p>
@@ -44,10 +45,21 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
               </div>
             ))}
           </dl>
-          {/* Phase 3: replaces with Stripe Checkout */}
-          <button disabled className="mt-7 w-full cursor-not-allowed rounded-full bg-accent px-6 py-3 font-semibold text-accent-ink opacity-60">
-            {p.status === 'full' ? 'Join waitlist' : 'Book now'} — online payments coming soon
-          </button>
+          {p.status === 'open' ? (
+            <Link
+              href={`/programs/${p.slug}/book`}
+              className={`mt-7 block w-full bg-accent px-6 py-3 text-center font-semibold text-accent-ink transition hover:brightness-110 ${academy ? 'uppercase tracking-[0.18em]' : 'rounded-full'}`}
+            >
+              {p.type === 'registration' ? 'Register & pay' : 'Book now'}
+            </Link>
+          ) : (
+            <p className="mt-7 rounded-lg border border-line px-4 py-3 text-center text-sm text-muted">
+              {p.status === 'full' ? 'Fully booked' : 'Bookings closed'}
+            </p>
+          )}
+          {p.type === 'registration' && (
+            <p className="mt-4 text-xs text-muted">After paying, you’ll complete the Football Victoria section in PlayFootball.</p>
+          )}
         </aside>
       </div>
     </div>

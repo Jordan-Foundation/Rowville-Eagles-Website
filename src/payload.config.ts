@@ -13,6 +13,8 @@ import { Programs } from './collections/Programs'
 import { Bookings } from './collections/Bookings'
 import { Posts } from './collections/Posts'
 import { Sponsors } from './collections/Sponsors'
+import { Products } from './collections/Products'
+import { Orders } from './collections/Orders'
 import { SiteSettings } from './globals/SiteSettings'
 
 const filename = fileURLToPath(import.meta.url)
@@ -24,7 +26,7 @@ export default buildConfig({
     meta: { titleSuffix: ' · Rowville Eagles Admin' },
     importMap: { baseDir: path.resolve(dirname) },
   },
-  collections: [Posts, Programs, Bookings, Teams, Sponsors, Participants, Users, Media],
+  collections: [Posts, Programs, Bookings, Products, Orders, Teams, Sponsors, Participants, Users, Media],
   globals: [SiteSettings],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

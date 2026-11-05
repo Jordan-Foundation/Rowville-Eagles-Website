@@ -95,3 +95,10 @@ body {
 }
 
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+/* Page-level brand switch: any page rendering data-page-brand="academy" restyles the shared header. */
+.academy-only { display: none !important; }
+body:has([data-page-brand='academy']) .academy-only { display: inline-flex !important; }
+body:has([data-page-brand='academy']) .club-only { display: none !important; }
+body:has([data-page-brand='academy']) { background: #000; }
+body:has([data-page-brand='academy']) .site-header { background: rgb(0 0 0 / 0.92); }

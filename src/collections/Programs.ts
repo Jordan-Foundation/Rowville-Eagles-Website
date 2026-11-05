@@ -45,7 +45,7 @@ export const Programs: CollectionConfig = {
       ],
       admin: {
         position: 'sidebar',
-        description: 'Auto-set from program type: team registrations → Club, everything else → Academy.',
+        description: 'Auto-set from program type: team registrations → Club; camps, tournaments, Academy, 1-on-1s → Academy.',
       },
     },
     { name: 'title', type: 'text', required: true },
@@ -101,6 +101,25 @@ export const Programs: CollectionConfig = {
       name: 'priceNote',
       type: 'text',
       admin: { description: 'e.g. "Club fee only — FV fees paid in PlayFootball"' },
+    },
+    {
+      name: 'slots',
+      label: 'Bookable time slots',
+      type: 'array',
+      admin: {
+        description: 'For 1-on-1s and trials: families pick one slot. Leave empty for programs with fixed dates.',
+        condition: (d) => ['private-session', 'academy-trial'].includes(d?.type),
+      },
+      fields: [
+        {
+          type: 'row',
+          fields: [
+            { name: 'start', type: 'date', required: true, admin: { date: { pickerAppearance: 'dayAndTime' } } },
+            { name: 'capacity', type: 'number', defaultValue: 1, min: 1 },
+            { name: 'coach', type: 'text' },
+          ],
+        },
+      ],
     },
     { name: 'heroImage', type: 'upload', relationTo: 'media' },
   ],

@@ -20,6 +20,14 @@ export const SiteSettings: GlobalConfig = {
       ],
     },
     {
+      name: 'shop',
+      type: 'group',
+      fields: [
+        { name: 'postageFee', type: 'number', defaultValue: 12, admin: { description: 'Flat postage (AUD)' } },
+        { name: 'pickupNote', type: 'text', defaultValue: 'Collect from the canteen on training nights' },
+      ],
+    },
+    {
       name: 'links',
       type: 'group',
       fields: [

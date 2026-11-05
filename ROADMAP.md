@@ -18,16 +18,20 @@
 - [ ] Real photos, sponsor logos, real program prices/dates, team training times
 - [ ] Migrate content from the current GoDaddy site; set up 301 redirects from old URLs
 
-## Phase 3 — Payments & bookings (Stripe)
-- [ ] Stripe Checkout for every Program; webhook creates paid `Bookings`
-- [ ] Season registration: pay club fee here → redirect + reminder to complete FV section in PlayFootball
-- [ ] Capacity limits, waitlists, sibling discounts, early-bird pricing, promo codes, refunds
-- [ ] 1-on-1 / trial slot booking (coach availability → bookable time slots)
-- [ ] Email receipts & reminders (Resend)
+## ✅ Phase 3 — Payments, bookings & shop (built — awaiting Stripe keys)
+- Booking flow for every program: `/programs/[slug]/book` → Stripe Checkout → `/checkout/success`
+  - Player, emergency contact, medical, photo consent, terms; tournaments take a team entry instead
+  - Time-slot picking for 1-on-1s and trials (`Program.slots`), per-slot and per-program capacity
+  - Season registrations show the "complete FV in PlayFootball" step after payment
+- Shop: `/shop`, product pages with sizes & stock, cart, pickup or flat-rate postage
+- **Two Stripe accounts:** registrations → Club; camps, tournaments, Academy, 1-on-1s and **all shop sales** → Academy
+- Webhooks per account (`/stripe/webhook/club`, `/stripe/webhook/academy`); payment also verified on the success page
+- Unpaid places are held 35 min, then released (Stripe session expiry)
 
-## Phase 4 — Online store
-- [ ] Products with size variants (uniforms, training wear, merch), Stripe checkout, pick-up / postage
-- [ ] Order management in admin
+### Still to do in payments
+- [ ] Branded confirmation & reminder emails (Resend) — Stripe sends receipts meanwhile
+- [ ] Waitlists, sibling discounts, early-bird pricing, promo codes, instalments
+- [ ] Refunds from admin; order "ready for pickup" emails
 
 ## Phase 5 — Fixtures integration
 - [ ] Confirm Dribl data access with Football Victoria / Dribl; per-team fixtures & results via `Teams.driblTeamId`

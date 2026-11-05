@@ -1,0 +1,114 @@
+import Link from 'next/link'
+import type { Metadata } from 'next'
+import { payload, formatAUD, formatDate } from '@/lib/payload'
+import { confirmPayment } from '@/lib/payments'
+import { isPayee, paymentsMode, stripeAccounts, stripeFor } from '@/lib/stripe-accounts'
+import type { Program } from '@/payload-types'
+import { ClearCart } from './ClearCart'
+
+export const dynamic = 'force-dynamic'
+export const metadata: Metadata = { title: 'Thank you', robots: { index: false } }
+
+type Search = { kind?: string; ref?: string; session_id?: string; simulated?: string }
+
+export default async function SuccessPage({ searchParams }: { searchParams: Promise<Search> }) {
+  const { kind: rawKind, ref, session_id, simulated } = await searchParams
+  const kind = rawKind === 'order' ? 'order' : 'booking'
+  const p = await payload()
+  const collection = kind === 'order' ? 'orders' : 'bookings'
+  const doc = ref ? (await p.find({ collection, where: { reference: { equals: ref } }, limit: 1, depth: 1 })).docs[0] : undefined
+  if (!doc) return <Shell title="Booking not found">We couldn’t find that reference. If you were charged, please contact the club.</Shell>
+
+  // Confirm payment here as well as in the webhook, so the page is correct even if the webhook is delayed.
+  let status = doc.status
+  if (status === 'pending' && isPayee(doc.payee)) {
+    try {
+      const mode = paymentsMode(doc.payee)
+      if (mode === 'simulate' && simulated) {
+        status = (await confirmPayment(p, kind, doc.reference))?.status ?? status
+      } else if (mode === 'stripe' && session_id) {
+        const session = await stripeFor(doc.payee).checkout.sessions.retrieve(session_id)
+        if (session.metadata?.reference === doc.reference && session.payment_status === 'paid') {
+          status = (await confirmPayment(p, kind, doc.reference))?.status ?? status
+        }
+      }
+    } catch (e) {
+      p.logger.error(e)
+    }
+  }
+
+  const paid = status === 'paid'
+  const payeeLabel = isPayee(doc.payee) ? stripeAccounts[doc.payee].label : ''
+
+  if ('program' in doc) {
+    const program = doc.program as Program
+    const academy = program.brand === 'academy'
+    const settings = await p.findGlobal({ slug: 'site-settings' })
+    return (
+      <div data-brand={academy ? 'academy' : undefined} data-page-brand={academy ? 'academy' : undefined}>
+        <Shell title={paid ? 'You’re booked in!' : 'Payment processing'} reference={doc.reference}>
+          <dl className="mt-8 space-y-3 rounded-2xl border border-line bg-surface-2 p-6 text-left text-sm">
+            <Row k="Program" v={program.title} />
+            <Row k={doc.player?.teamName ? 'Team' : 'Player'} v={doc.player?.teamName || doc.player?.firstName || ''} />
+            {doc.sessionStart && <Row k="Time" v={formatDate(doc.sessionStart, { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' })} />}
+            {!doc.sessionStart && program.startDate && <Row k="Starts" v={formatDate(program.startDate)} />}
+            <Row k="Paid" v={`${formatAUD(doc.amount)} to ${payeeLabel}`} />
+          </dl>
+          {!paid && <p className="mt-6 text-sm text-muted">Your payment is still being confirmed. This page will update shortly — refresh in a minute.</p>}
+          {paid && program.type === 'registration' && (
+            <div className="mt-8 rounded-2xl border-2 border-accent p-6 text-left">
+              <p className="font-semibold">One more step: Football Victoria registration</p>
+              <p className="mt-2 text-sm text-muted">
+                Your club fee is paid. To be eligible to play, complete the Football Victoria section in PlayFootball and select Rowville Eagles FC.
+              </p>
+              {settings.links?.playFootball && (
+                <a href={settings.links.playFootball} target="_blank" rel="noopener" className="mt-4 inline-block rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-accent-ink">
+                  Complete in PlayFootball →
+                </a>
+              )}
+            </div>
+          )}
+          <p className="mt-8 text-sm text-muted">A receipt has been sent to your email by Stripe.</p>
+          <Link href={academy ? '/academy' : '/programs'} className="mt-6 inline-block font-semibold underline">Back to {academy ? 'the Academy' : 'programs'}</Link>
+        </Shell>
+      </div>
+    )
+  }
+
+  return (
+    <Shell title={paid ? 'Order confirmed' : 'Payment processing'} reference={doc.reference}>
+      {paid && <ClearCart />}
+      <ul className="mt-8 divide-y divide-line rounded-2xl border border-line bg-surface-2 px-6 text-left text-sm">
+        {doc.items.map((i) => (
+          <li key={i.id} className="flex justify-between gap-4 py-3">
+            <span>{i.quantity} × {i.name} ({i.size})</span>
+            <span>{formatAUD((i.unitPrice ?? 0) * (i.quantity ?? 0))}</span>
+          </li>
+        ))}
+        <li className="flex justify-between py-3 font-semibold"><span>Total</span><span>{formatAUD(doc.total)}</span></li>
+      </ul>
+      <p className="mt-6 text-sm text-muted">
+        {doc.fulfilment === 'pickup' ? 'We’ll email you when your order is ready to collect from the club.' : 'We’ll email you when your order has been posted.'}
+      </p>
+      <Link href="/shop" className="mt-6 inline-block font-semibold underline">Continue shopping</Link>
+    </Shell>
+  )
+}
+
+function Shell({ title, reference, children }: { title: string; reference?: string; children: React.ReactNode }) {
+  return (
+    <div className="container-x max-w-2xl py-20 text-center">
+      <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-accent text-2xl text-accent-ink">✓</div>
+      <h1 className="mt-6 font-display text-4xl font-bold uppercase">{title}</h1>
+      {reference && <p className="mt-2 text-sm text-muted">Reference <span className="font-mono font-semibold text-ink">{reference}</span></p>}
+      <div>{children}</div>
+    </div>
+  )
+}
+
+const Row = ({ k, v }: { k: string; v: string }) => (
+  <div className="flex justify-between gap-4">
+    <dt className="text-muted">{k}</dt>
+    <dd className="text-right font-medium">{v}</dd>
+  </div>
+)

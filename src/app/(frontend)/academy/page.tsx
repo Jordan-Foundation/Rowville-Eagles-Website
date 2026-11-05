@@ -34,7 +34,7 @@ export default async function AcademyPage() {
   })
 
   return (
-    <div data-brand="academy" className="font-[family-name:var(--font-inter)]">
+    <div data-brand="academy" data-page-brand="academy" className="font-[family-name:var(--font-inter)]">
       {/* HERO */}
       <section className="slant-lines relative overflow-hidden border-b border-line">
         <FoundationMark
