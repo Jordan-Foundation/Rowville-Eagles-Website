@@ -17,7 +17,7 @@ export const Users: CollectionConfig = {
   hooks: {
     afterLogin: [
       async ({ user, req }) => {
-        if (!user.activated) await req.payload.update({ collection: 'users', id: user.id, data: { activated: true }, overrideAccess: true })
+        if (!user.activated) await req.payload.update({ collection: 'users', id: user.id, data: { activated: true }, overrideAccess: true, req })
       },
     ],
   },

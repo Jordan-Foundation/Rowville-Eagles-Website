@@ -68,7 +68,7 @@ export async function emailInterestConfirmation(payload: Payload, reg: TrialRegi
 }
 
 /** Called when a club trial session is published: email everyone waiting in a matching age group. */
-export async function notifyInterestsOfTrial(payload: Payload, session: TrialSession) {
+export async function notifyInterestsOfTrial(payload: Payload, session: TrialSession, req?: PayloadRequest) {
   if (new Date(session.start) < new Date()) return
   const { docs } = await payload.find({
     collection: 'trial-registrations',
@@ -76,11 +76,12 @@ export async function notifyInterestsOfTrial(payload: Payload, session: TrialSes
     limit: 1000,
     depth: 0,
     overrideAccess: true,
+    req,
   })
   for (const reg of docs) {
     const notified = (reg.notifiedSessions ?? []).map((s) => (typeof s === 'object' ? s.id : s))
     if (notified.includes(session.id)) continue
-    const { token } = await payload.findByID({ collection: 'trial-registrations', id: reg.id, depth: 0, overrideAccess: true, showHiddenFields: true })
+    const { token } = await payload.findByID({ collection: 'trial-registrations', id: reg.id, depth: 0, overrideAccess: true, showHiddenFields: true, req })
     const html = emailLayout('club', [
       {
         heading: `Trial dates are here for ${reg.ageGroup}`,
@@ -93,12 +94,13 @@ export async function notifyInterestsOfTrial(payload: Payload, session: TrialSes
       },
       rfaPromoBlock(),
     ])
-    await sendEmail(payload, { to: reg.contact.email, subject: `${reg.ageGroup} trial dates announced — Rowville Eagles`, html, sender: 'club', replyTo: await replyTo(payload) })
+    await sendEmail(payload, { to: reg.contact.email, subject: `${reg.ageGroup} trial dates announced — Rowville Eagles`, html, sender: 'club', replyTo: await replyTo(payload, req) })
     await payload.update({
       collection: 'trial-registrations',
       id: reg.id,
       data: { notifiedSessions: [...notified, session.id] },
       overrideAccess: true,
+      req,
       context: { skipOffer: true },
     })
   }
@@ -147,10 +149,10 @@ export async function sendOffer(payload: Payload, reg: TrialRegistration, req?: 
         'After paying the club fee you’ll complete the Football Victoria section in PlayFootball. This link is personal — please don’t forward it.',
     },
   ])
-  await sendEmail(payload, { to: reg.contact.email, subject: `Your place in ${team.name} — Rowville Eagles ${reg.season}`, html, sender: 'club', replyTo: await replyTo(payload) })
+  await sendEmail(payload, { to: reg.contact.email, subject: `Your place in ${team.name} — Rowville Eagles ${reg.season}`, html, sender: 'club', replyTo: await replyTo(payload, req) })
 }
 
-async function replyTo(payload: Payload) {
-  const s = await payload.findGlobal({ slug: 'site-settings', depth: 0 })
+async function replyTo(payload: Payload, req?: PayloadRequest) {
+  const s = await payload.findGlobal({ slug: 'site-settings', depth: 0, req })
   return s.email || undefined
 }

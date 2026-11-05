@@ -52,7 +52,7 @@ export const TrialRegistrations: CollectionConfig = {
     afterChange: [
       async ({ doc, previousDoc, req, context }) => {
         if (context.skipOffer) return
-        if (doc.status === 'offered' && previousDoc?.status !== 'offered') await sendOffer(req.payload, doc)
+        if (doc.status === 'offered' && previousDoc?.status !== 'offered') await sendOffer(req.payload, doc, req)
       },
     ],
   },

@@ -14,7 +14,7 @@ export const TrialSessions: CollectionConfig = {
     afterChange: [
       async ({ doc, previousDoc, req }) => {
         if (doc.status === 'published' && previousDoc?.status !== 'published') {
-          await notifyInterestsOfTrial(req.payload, doc)
+          await notifyInterestsOfTrial(req.payload, doc, req)
         }
       },
     ],
