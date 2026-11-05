@@ -48,3 +48,8 @@ node_modules/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# local database
+*.db
+*.db-journal
+/media

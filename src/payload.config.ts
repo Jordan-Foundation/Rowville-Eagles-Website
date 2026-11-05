@@ -7,6 +7,13 @@ import sharp from 'sharp'
 
 import { Users } from './collections/Users'
 import { Media } from './collections/Media'
+import { Participants } from './collections/Participants'
+import { Teams } from './collections/Teams'
+import { Programs } from './collections/Programs'
+import { Bookings } from './collections/Bookings'
+import { Posts } from './collections/Posts'
+import { Sponsors } from './collections/Sponsors'
+import { SiteSettings } from './globals/SiteSettings'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -14,21 +21,16 @@ const dirname = path.dirname(filename)
 export default buildConfig({
   admin: {
     user: Users.slug,
-    importMap: {
-      baseDir: path.resolve(dirname),
-    },
+    meta: { titleSuffix: ' · Rowville Eagles Admin' },
+    importMap: { baseDir: path.resolve(dirname) },
   },
-  collections: [Users, Media],
+  collections: [Posts, Programs, Bookings, Teams, Sponsors, Participants, Users, Media],
+  globals: [SiteSettings],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
-  typescript: {
-    outputFile: path.resolve(dirname, 'payload-types.ts'),
-  },
-  db: sqliteAdapter({
-    client: {
-      url: process.env.DATABASE_URL || '',
-    },
-  }),
+  typescript: { outputFile: path.resolve(dirname, 'payload-types.ts') },
+  // Local dev uses SQLite. Production swaps to @payloadcms/db-postgres (Neon/Supabase) — same schema.
+  db: sqliteAdapter({ client: { url: process.env.DATABASE_URL || '' } }),
   sharp,
   plugins: [],
 })

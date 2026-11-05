@@ -67,6 +67,12 @@ export interface Config {
   };
   blocks: {};
   collections: {
+    posts: Post;
+    programs: Program;
+    bookings: Booking;
+    teams: Team;
+    sponsors: Sponsor;
+    participants: Participant;
     users: User;
     media: Media;
     'payload-kv': PayloadKv;
@@ -76,6 +82,12 @@ export interface Config {
   };
   collectionsJoins: {};
   collectionsSelect: {
+    posts: PostsSelect<false> | PostsSelect<true>;
+    programs: ProgramsSelect<false> | ProgramsSelect<true>;
+    bookings: BookingsSelect<false> | BookingsSelect<true>;
+    teams: TeamsSelect<false> | TeamsSelect<true>;
+    sponsors: SponsorsSelect<false> | SponsorsSelect<true>;
+    participants: ParticipantsSelect<false> | ParticipantsSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
@@ -84,11 +96,15 @@ export interface Config {
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
   };
   db: {
-    defaultIDType: string;
+    defaultIDType: number;
   };
   fallbackLocale: null;
-  globals: {};
-  globalsSelect: {};
+  globals: {
+    'site-settings': SiteSetting;
+  };
+  globalsSelect: {
+    'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
+  };
   locale: null;
   widgets: {
     collections: CollectionsWidget;
@@ -119,10 +135,169 @@ export interface UserAuthOperations {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "posts".
+ */
+export interface Post {
+  id: number;
+  title: string;
+  slug: string;
+  category?: ('Club news' | 'Match report' | 'Academy' | 'Community' | 'Sponsors') | null;
+  publishedAt: string;
+  status?: ('draft' | 'published') | null;
+  excerpt: string;
+  heroImage?: (number | null) | Media;
+  content?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media".
+ */
+export interface Media {
+  id: number;
+  alt: string;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "programs".
+ */
+export interface Program {
+  id: number;
+  title: string;
+  slug: string;
+  type: 'registration' | 'holiday-camp' | 'tournament' | 'academy-term' | 'academy-trial' | 'private-session';
+  brand: 'club' | 'academy';
+  status: 'draft' | 'open' | 'full' | 'closed';
+  summary: string;
+  description?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  /**
+   * e.g. "Tuesdays 5–6pm, 8 weeks"
+   */
+  scheduleNote?: string | null;
+  location?: string | null;
+  /**
+   * e.g. "Ages 6–12" or "U8–U13"
+   */
+  ageRange?: string | null;
+  /**
+   * AUD incl. GST
+   */
+  price: number;
+  capacity?: number | null;
+  /**
+   * e.g. "Club fee only — FV fees paid in PlayFootball"
+   */
+  priceNote?: string | null;
+  heroImage?: (number | null) | Media;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "bookings".
+ */
+export interface Booking {
+  id: number;
+  reference: string;
+  program: number | Program;
+  participant: number | Participant;
+  account: number | User;
+  /**
+   * For 1-on-1s / trials: the booked slot
+   */
+  sessionStart?: string | null;
+  status: 'pending' | 'paid' | 'waitlisted' | 'cancelled' | 'refunded';
+  /**
+   * AUD charged
+   */
+  amount: number;
+  stripeCheckoutId?: string | null;
+  /**
+   * Season registrations: FV section completed in PlayFootball
+   */
+  playFootballComplete?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "participants".
+ */
+export interface Participant {
+  id: number;
+  fullName?: string | null;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
+  gender?: ('female' | 'male' | 'non-binary' | 'prefer-not-to-say') | null;
+  account: number | User;
+  team?: (number | null) | Team;
+  ffaNumber?: string | null;
+  medical?: {
+    conditions?: string | null;
+    emergencyContact?: string | null;
+    emergencyPhone?: string | null;
+  };
+  photoConsent?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users".
  */
 export interface User {
-  id: string;
+  id: number;
+  firstName?: string | null;
+  lastName?: string | null;
+  phone?: string | null;
+  roles?: ('admin' | 'committee' | 'coach' | 'parent' | 'player')[] | null;
+  wwcc?: {
+    number?: string | null;
+    expiry?: string | null;
+  };
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -145,29 +320,52 @@ export interface User {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "media".
+ * via the `definition` "teams".
  */
-export interface Media {
-  id: string;
-  alt: string;
+export interface Team {
+  id: number;
+  name: string;
+  slug: string;
+  category: 'miniroos' | 'junior-boys' | 'junior-girls' | 'senior-women' | 'senior-men';
+  /**
+   * e.g. U7, U12, Seniors, Reserves
+   */
+  ageGroup?: string | null;
+  /**
+   * League / division
+   */
+  competition?: string | null;
+  trainingTimes?: string | null;
+  coaches?: (number | User)[] | null;
+  /**
+   * Dribl team identifier — used to pull fixtures & results automatically.
+   */
+  driblTeamId?: string | null;
+  photo?: (number | null) | Media;
+  order?: number | null;
   updatedAt: string;
   createdAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sponsors".
+ */
+export interface Sponsor {
+  id: number;
+  name: string;
+  tier: 'major' | 'gold' | 'silver' | 'community';
+  logo?: (number | null) | Media;
+  website?: string | null;
+  order?: number | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
-  id: string;
+  id: number;
   key: string;
   data:
     | {
@@ -184,20 +382,44 @@ export interface PayloadKv {
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
-  id: string;
+  id: number;
   document?:
     | ({
+        relationTo: 'posts';
+        value: number | Post;
+      } | null)
+    | ({
+        relationTo: 'programs';
+        value: number | Program;
+      } | null)
+    | ({
+        relationTo: 'bookings';
+        value: number | Booking;
+      } | null)
+    | ({
+        relationTo: 'teams';
+        value: number | Team;
+      } | null)
+    | ({
+        relationTo: 'sponsors';
+        value: number | Sponsor;
+      } | null)
+    | ({
+        relationTo: 'participants';
+        value: number | Participant;
+      } | null)
+    | ({
         relationTo: 'users';
-        value: string | User;
+        value: number | User;
       } | null)
     | ({
         relationTo: 'media';
-        value: string | Media;
+        value: number | Media;
       } | null);
   globalSlug?: string | null;
   user: {
     relationTo: 'users';
-    value: string | User;
+    value: number | User;
   };
   updatedAt: string;
   createdAt: string;
@@ -207,10 +429,10 @@ export interface PayloadLockedDocument {
  * via the `definition` "payload-preferences".
  */
 export interface PayloadPreference {
-  id: string;
+  id: number;
   user: {
     relationTo: 'users';
-    value: string | User;
+    value: number | User;
   };
   key?: string | null;
   value?:
@@ -230,7 +452,7 @@ export interface PayloadPreference {
  * via the `definition` "payload-migrations".
  */
 export interface PayloadMigration {
-  id: string;
+  id: number;
   name?: string | null;
   batch?: number | null;
   updatedAt: string;
@@ -238,9 +460,131 @@ export interface PayloadMigration {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "posts_select".
+ */
+export interface PostsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  category?: T;
+  publishedAt?: T;
+  status?: T;
+  excerpt?: T;
+  heroImage?: T;
+  content?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "programs_select".
+ */
+export interface ProgramsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  type?: T;
+  brand?: T;
+  status?: T;
+  summary?: T;
+  description?: T;
+  startDate?: T;
+  endDate?: T;
+  scheduleNote?: T;
+  location?: T;
+  ageRange?: T;
+  price?: T;
+  capacity?: T;
+  priceNote?: T;
+  heroImage?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "bookings_select".
+ */
+export interface BookingsSelect<T extends boolean = true> {
+  reference?: T;
+  program?: T;
+  participant?: T;
+  account?: T;
+  sessionStart?: T;
+  status?: T;
+  amount?: T;
+  stripeCheckoutId?: T;
+  playFootballComplete?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "teams_select".
+ */
+export interface TeamsSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  category?: T;
+  ageGroup?: T;
+  competition?: T;
+  trainingTimes?: T;
+  coaches?: T;
+  driblTeamId?: T;
+  photo?: T;
+  order?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sponsors_select".
+ */
+export interface SponsorsSelect<T extends boolean = true> {
+  name?: T;
+  tier?: T;
+  logo?: T;
+  website?: T;
+  order?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "participants_select".
+ */
+export interface ParticipantsSelect<T extends boolean = true> {
+  fullName?: T;
+  firstName?: T;
+  lastName?: T;
+  dateOfBirth?: T;
+  gender?: T;
+  account?: T;
+  team?: T;
+  ffaNumber?: T;
+  medical?:
+    | T
+    | {
+        conditions?: T;
+        emergencyContact?: T;
+        emergencyPhone?: T;
+      };
+  photoConsent?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
+  firstName?: T;
+  lastName?: T;
+  phone?: T;
+  roles?: T;
+  wwcc?:
+    | T
+    | {
+        number?: T;
+        expiry?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -316,6 +660,58 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   batch?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-settings".
+ */
+export interface SiteSetting {
+  id: number;
+  clubName?: string | null;
+  tagline?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  ground?: {
+    name?: string | null;
+    address?: string | null;
+    mapUrl?: string | null;
+  };
+  links?: {
+    playFootball?: string | null;
+    driblFixtures?: string | null;
+    facebook?: string | null;
+    instagram?: string | null;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-settings_select".
+ */
+export interface SiteSettingsSelect<T extends boolean = true> {
+  clubName?: T;
+  tagline?: T;
+  email?: T;
+  phone?: T;
+  ground?:
+    | T
+    | {
+        name?: T;
+        address?: T;
+        mapUrl?: T;
+      };
+  links?:
+    | T
+    | {
+        playFootball?: T;
+        driblFixtures?: T;
+        facebook?: T;
+        instagram?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
