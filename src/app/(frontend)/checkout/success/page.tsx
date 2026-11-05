@@ -48,13 +48,14 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
     return (
       <div data-brand={academy ? 'academy' : undefined} data-page-brand={academy ? 'academy' : undefined} className="relative overflow-hidden">
         {academy && <AcademyBackdrop />}
-        <Shell title={paid ? 'You’re booked in!' : 'Payment processing'} reference={doc.reference}>
+        <Shell title={paid ? (doc.bookingType === 'trial' ? 'Trial booked!' : 'You’re booked in!') : 'Payment processing'} reference={doc.reference}>
           <dl className={`panel mt-8 space-y-3 border border-line bg-surface-2 p-6 text-left text-sm ${academy ? 'gloss-sheen rounded-sm' : 'rounded-2xl'}`}>
             <Row k="Program" v={program.title} />
             <Row k={doc.player?.teamName ? 'Team' : 'Player'} v={doc.player?.teamName || doc.player?.firstName || ''} />
+            {doc.ageGroup && <Row k="Age group" v={doc.ageGroup} />}
             {doc.sessionStart && <Row k="Time" v={formatDate(doc.sessionStart, { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' })} />}
             {!doc.sessionStart && program.startDate && <Row k="Starts" v={formatDate(program.startDate)} />}
-            <Row k="Paid" v={`${formatAUD(doc.amount)} to ${payeeLabel}`} />
+            {doc.amount > 0 && <Row k="Paid" v={`${formatAUD(doc.amount)} to ${payeeLabel}`} />}
           </dl>
           {!paid && <p className="mt-6 text-sm text-muted">Your payment is still being confirmed. This page will update shortly — refresh in a minute.</p>}
           {paid && program.type === 'registration' && (
@@ -70,7 +71,7 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
               )}
             </div>
           )}
-          <p className="mt-8 text-sm text-muted">A receipt has been sent to your email by Stripe.</p>
+          <p className="mt-8 text-sm text-muted">We’ve emailed you a confirmation{doc.amount > 0 ? ' — Stripe will send your receipt separately' : ''}.</p>
           <Link href={academy ? '/academy' : '/programs'} className="mt-6 inline-block font-semibold underline">Back to {academy ? 'the Academy' : 'programs'}</Link>
         </Shell>
       </div>

@@ -27,6 +27,23 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded focus:bg-white focus:px-3 focus:py-2 focus:text-black">
           Skip to content
         </a>
+        <script
+          type="application/ld+json"
+          // Structured data so search engines recognise the club (name, location, socials)
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'SportsOrganization',
+              name: settings.clubName,
+              sport: 'Soccer',
+              foundingDate: '1985',
+              email: settings.email || undefined,
+              address: settings.ground?.address ? { '@type': 'PostalAddress', streetAddress: settings.ground.address, addressCountry: 'AU' } : undefined,
+              sameAs: [settings.links?.facebook, settings.links?.instagram].filter(Boolean),
+              logo: '/brand/rowville-eagles-crest.png',
+            }).replace(/</g, '\\u003c'),
+          }}
+        />
         <Header />
         <main id="main">{children}</main>
         <Footer settings={settings} />

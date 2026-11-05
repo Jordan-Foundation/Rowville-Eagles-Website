@@ -3,6 +3,7 @@ import { payload, formatDate } from '@/lib/payload'
 import { ProgramCard } from '@/components/ProgramCard'
 import { Crest, RfaLogo } from '@/components/Logos'
 import { AcademyBackdrop } from '@/components/AcademyBackdrop'
+import { currentSeason } from '@/lib/age'
 
 export const revalidate = 60
 
@@ -14,14 +15,14 @@ const pathway = [
 
 export default async function Home() {
   const p = await payload()
-  const [registrations, others, posts, sponsors] = await Promise.all([
-    p.find({ collection: 'programs', where: { status: { equals: 'open' }, type: { equals: 'registration' } }, limit: 3, depth: 0 }),
-    p.find({ collection: 'programs', where: { status: { equals: 'open' }, type: { not_equals: 'registration' } }, limit: 3, depth: 0, sort: 'startDate' }),
+  const [settings, others, posts, sponsors] = await Promise.all([
+    p.findGlobal({ slug: 'site-settings', depth: 0 }),
+    p.find({ collection: 'programs', where: { status: { equals: 'open' }, type: { not_in: ['registration', 'academy-trial'] } }, limit: 3, depth: 0, sort: 'startDate' }),
     p.find({ collection: 'posts', where: { status: { equals: 'published' } }, limit: 3, depth: 0 }),
     p.find({ collection: 'sponsors', limit: 12, depth: 0 }),
   ])
-  // Registrations lead, then the next camps/academy programs
-  const programs = { docs: [...registrations.docs, ...others.docs].slice(0, 3) }
+  const programs = others
+  const season = currentSeason(settings.season)
 
   return (
     <>
@@ -40,8 +41,8 @@ export default async function Home() {
               From first kicks in MiniRoos to Saturday afternoons with the seniors — a home for every player in Rowville.
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
-              <Link href="/programs?type=registration" className="rounded-full bg-accent px-6 py-3 font-semibold text-accent-ink transition hover:brightness-110">
-                Register for 2027
+              <Link href="/join" className="rounded-full bg-accent px-6 py-3 font-semibold text-accent-ink transition hover:brightness-110">
+                Join us for {season}
               </Link>
               <Link href="/fixtures" className="rounded-full border border-white/30 px-6 py-3 font-semibold transition hover:border-white hover:bg-white/10">
                 Find your team
@@ -68,7 +69,7 @@ export default async function Home() {
       <section className="border-b border-line bg-surface">
         <div className="container-x grid divide-y divide-line sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-4">
           {[
-            { href: '/programs?type=registration', t: 'Season registration', d: 'Pay club fees online' },
+            { href: '/join', t: `Join us for ${season}`, d: 'Book a trial or register interest' },
             { href: '/programs?type=holiday-camp', t: 'Holiday camps', d: 'School holiday clinics' },
             { href: '/fixtures', t: 'Fixtures & results', d: 'Every team, every round' },
             { href: '/academy', t: 'Academy trials', d: 'Rowville Foundation Academy' },
@@ -104,7 +105,7 @@ export default async function Home() {
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div>
                 <p className="eyebrow !text-brand">Book now</p>
-                <h2 className="mt-3 font-[family-name:var(--font-barlow)] text-4xl font-bold uppercase sm:text-5xl">Camps, clinics & registrations</h2>
+                <h2 className="mt-3 font-[family-name:var(--font-barlow)] text-4xl font-bold uppercase sm:text-5xl">Camps, clinics & programs</h2>
               </div>
               <Link href="/programs" className="font-semibold text-brand hover:underline">All programs →</Link>
             </div>
@@ -132,8 +133,11 @@ export default async function Home() {
               Elite development for committed players — term programs, 1-on-1 coaching, holiday camps and tournaments, with an individual
               plan for every athlete.
             </p>
-            <Link href="/academy" className="mt-8 inline-block bg-white px-7 py-4 text-sm font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-white/85">
+            <Link href="/academy" className="mt-8 mr-3 inline-block bg-white px-7 py-4 text-sm font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-white/85">
               Explore the Academy
+            </Link>
+            <Link href="/academy/trial" className="mt-8 inline-block border border-white/30 px-7 py-4 text-sm font-semibold uppercase tracking-[0.18em] transition hover:border-white">
+              Book a trial
             </Link>
           </div>
         </div>

@@ -33,6 +33,17 @@
 - [ ] Waitlists, sibling discounts, early-bird pricing, promo codes, instalments
 - [ ] Refunds from admin; order "ready for pickup" emails
 
+## ✅ Phase 3b — Trials, offers, accounts & member shop
+- "Join us for <season>" funnel (`/join`): DOB → FV age group → pick a club trial night, or register interest
+- Publishing a club trial date emails everyone waiting in those age groups with a pick-a-night link
+- Committee sets a trial registration to "Offer a place" (team + registration) → account created + offer email
+- Team registration payable only from the family's account for an offered player
+- RFA trials (`/academy/trial`) from the current term's weekly nights, limited spots per age group per night
+- Player tags: paid registration → Rowville; paid Academy term → RFA (editable for players registered elsewhere)
+- Shop shows supporter gear to all, team kit to Rowville families, RFA gear to RFA families (enforced at checkout)
+- Login / account / set-password; every confirmed booking emails a create-account link
+- Fixtures page = team news feed (posts tagged with teams); sitemap, robots, club structured data
+
 ## Phase 5 — Fixtures integration
 - [ ] Confirm Dribl data access with Football Victoria / Dribl; per-team fixtures & results via `Teams.driblTeamId`
 

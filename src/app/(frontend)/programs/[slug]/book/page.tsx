@@ -6,6 +6,8 @@ import { placesTaken } from '@/lib/payments'
 import { defaultPayee, programTypes } from '@/collections/Programs'
 import { isPayee, paymentsMode, stripeAccounts } from '@/lib/stripe-accounts'
 import { BookingForm } from './BookingForm'
+import { redirect } from 'next/navigation'
+import { currentUser } from '@/lib/auth'
 import { AcademyBackdrop } from '@/components/AcademyBackdrop'
 
 export const dynamic = 'force-dynamic'
@@ -19,15 +21,38 @@ export default async function BookPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>
-  searchParams: Promise<{ cancelled?: string }>
+  searchParams: Promise<{ cancelled?: string; participant?: string }>
 }) {
-  const [{ slug }, { cancelled }] = await Promise.all([params, searchParams])
+  const [{ slug }, { cancelled, participant: participantParam }] = await Promise.all([params, searchParams])
   const p = await payload()
   const { docs } = await p.find({ collection: 'programs', where: { slug: { equals: slug } }, limit: 1, depth: 0 })
   const program = docs[0]
   if (!program) notFound()
 
   const academy = program.brand === 'academy'
+
+  // Team registrations: only logged-in families with an offer for this program
+  let offered: { id: number; label: string }[] = []
+  if (program.type === 'registration') {
+    const user = await currentUser()
+    if (!user) redirect(`/login?next=${encodeURIComponent(`/programs/${slug}/book${participantParam ? `?participant=${participantParam}` : ''}`)}`)
+    const { docs: kids } = await p.find({ collection: 'participants', where: { account: { equals: user.id } }, depth: 1, overrideAccess: true })
+    offered = kids
+      .filter((k) => k.registrationOffer?.status === 'offered' && (typeof k.registrationOffer.program === 'object' ? k.registrationOffer.program?.id : k.registrationOffer.program) === program.id)
+      .map((k) => ({ id: k.id, label: `${k.firstName} ${k.lastName}${k.team && typeof k.team === 'object' ? ` — ${k.team.name}` : ''}` }))
+    if (offered.length === 0) {
+      return (
+        <div className="container-x max-w-2xl py-20 text-center">
+          <h1 className="font-display text-4xl font-bold uppercase">Registration is by invitation</h1>
+          <p className="mt-4 text-muted">Team registrations open for players who receive an offer after trials. If you’ve received an offer, it will appear in your account.</p>
+          <div className="mt-8 flex justify-center gap-3">
+            <Link href="/account" className="rounded-full bg-brand px-6 py-3 font-semibold text-white">My account</Link>
+            <Link href="/join" className="rounded-full border border-line px-6 py-3 font-semibold">Join us for trials</Link>
+          </div>
+        </div>
+      )
+    }
+  }
   const payee = isPayee(program.payee) ? program.payee : defaultPayee(program.type)
   const now = new Date()
   const slots = await Promise.all(
@@ -74,6 +99,8 @@ export default async function BookPage({
               <BookingForm
                 slug={program.slug}
                 isTeamEntry={program.type === 'tournament'}
+                offeredPlayers={offered}
+                defaultPlayer={participantParam}
                 slots={slots}
                 priceLabel={formatAUD(program.price)}
                 payeeLabel={stripeAccounts[payee].label}

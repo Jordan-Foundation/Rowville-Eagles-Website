@@ -16,7 +16,7 @@ export const Posts: CollectionConfig = {
         {
           name: 'category',
           type: 'select',
-          options: ['Club news', 'Match report', 'Academy', 'Community', 'Sponsors'],
+          options: ['Club news', 'Match report', 'Tournament', 'Seniors', 'Academy', 'Community', 'Sponsors'],
           defaultValue: 'Club news',
         },
         { name: 'publishedAt', type: 'date', required: true },
@@ -27,6 +27,13 @@ export const Posts: CollectionConfig = {
           options: ['draft', 'published'],
         },
       ],
+    },
+    {
+      name: 'teams',
+      type: 'relationship',
+      relationTo: 'teams',
+      hasMany: true,
+      admin: { description: 'Tag teams to show this on the Fixtures page team news (match reports, tournaments, senior games…)' },
     },
     { name: 'excerpt', type: 'textarea', required: true, maxLength: 240 },
     { name: 'heroImage', type: 'upload', relationTo: 'media' },

@@ -2,14 +2,24 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { payload, formatAUD } from '@/lib/payload'
 import { ProductImage } from '@/components/ProductImage'
+import { currentUser } from '@/lib/auth'
+import { allowedAudiences } from '@/lib/shop-access'
 
-export const revalidate = 60
+export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Club Shop', description: 'Official Rowville Eagles and RFA playing kit, training wear and apparel.' }
 
 const categories = { kit: 'Playing kit', training: 'Training wear', apparel: 'Supporter apparel', accessories: 'Accessories' } as const
 
 export default async function ShopPage() {
-  const { docs } = await (await payload()).find({ collection: 'products', where: { status: { equals: 'active' } }, depth: 1, limit: 100 })
+  const p = await payload()
+  const user = await currentUser()
+  const audiences = await allowedAudiences(p, user?.id)
+  const { docs } = await p.find({ collection: 'products', where: { status: { equals: 'active' }, audience: { in: audiences } }, depth: 1, limit: 100 })
+  const notice = !user
+    ? { text: 'Registered Rowville and RFA players: log in to see team kit and training wear.', href: '/login?next=/shop', cta: 'Log in' }
+    : audiences.length === 1
+      ? { text: 'Team kit appears here once your player’s registration is confirmed.', href: '/account', cta: 'My account' }
+      : null
   const groups = (Object.keys(categories) as (keyof typeof categories)[])
     .map((c) => ({ c, items: docs.filter((d) => d.category === c) }))
     .filter((g) => g.items.length)
@@ -27,6 +37,12 @@ export default async function ShopPage() {
         </div>
       </section>
       <div className="container-x space-y-16 py-14">
+        {notice && (
+          <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-line bg-surface-2 px-6 py-4">
+            <p className="text-sm">{notice.text}</p>
+            <Link href={notice.href} className="rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white">{notice.cta}</Link>
+          </div>
+        )}
         {groups.map((g) => (
           <section key={g.c}>
             <h2 className="font-[family-name:var(--font-barlow)] text-3xl font-bold uppercase">{categories[g.c]}</h2>

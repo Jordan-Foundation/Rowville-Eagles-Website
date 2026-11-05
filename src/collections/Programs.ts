@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { isStaff, publishedOrStaff } from '../access'
+import { ageGroupOptions } from '../lib/age'
 
 /**
  * Anything a family can book and pay for. One model, one checkout, one calendar:
@@ -32,7 +33,16 @@ export const Programs: CollectionConfig = {
   },
   defaultSort: 'startDate',
   hooks: {
-    beforeValidate: [({ data }) => (data && !data.payee ? { ...data, payee: defaultPayee(data.type) } : data)],
+    beforeValidate: [
+      ({ data }) => {
+        if (!data) return data
+        return {
+          ...data,
+          payee: data.payee || defaultPayee(data.type),
+          visibility: data.visibility || (data.type === 'registration' ? 'offer-only' : 'public'),
+        }
+      },
+    ],
   },
   fields: [
     {
@@ -78,6 +88,15 @@ export const Programs: CollectionConfig = {
         },
       ],
     },
+    {
+      name: 'visibility',
+      type: 'select',
+      options: [
+        { label: 'Public — anyone can book', value: 'public' },
+        { label: 'By offer only — after trials (team registrations)', value: 'offer-only' },
+      ],
+      admin: { position: 'sidebar', description: 'Team registrations default to "by offer only".' },
+    },
     { name: 'summary', type: 'textarea', required: true, maxLength: 220 },
     { name: 'description', type: 'richText' },
     {
@@ -120,6 +139,34 @@ export const Programs: CollectionConfig = {
           ],
         },
       ],
+    },
+    {
+      name: 'weeklySessions',
+      label: 'Weekly training nights',
+      type: 'array',
+      admin: {
+        description: 'Academy terms: the nights the program runs. Trial bookings are offered on these nights between the start and end dates.',
+        condition: (d) => d?.type === 'academy-term',
+      },
+      fields: [
+        { type: 'row', fields: [
+          { name: 'day', type: 'select', required: true, options: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] },
+          { name: 'startTime', type: 'text', required: true, admin: { description: '24h, e.g. 17:30' } },
+          { name: 'durationMinutes', type: 'number', defaultValue: 75 },
+        ] },
+        { type: 'row', fields: [
+          { name: 'ageGroups', type: 'select', hasMany: true, required: true, options: ageGroupOptions },
+          { name: 'trialSpots', label: 'Trial spots per age group', type: 'number', defaultValue: 3, min: 0, max: 10 },
+        ] },
+      ],
+    },
+    {
+      name: 'trialPrice',
+      label: 'Trial session price (AUD)',
+      type: 'number',
+      defaultValue: 0,
+      min: 0,
+      admin: { condition: (d) => d?.type === 'academy-term', description: '0 = free trial' },
     },
     { name: 'heroImage', type: 'upload', relationTo: 'media' },
   ],

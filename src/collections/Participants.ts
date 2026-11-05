@@ -48,5 +48,30 @@ export const Participants: CollectionConfig = {
       ],
     },
     { name: 'photoConsent', type: 'checkbox', defaultValue: false },
+    {
+      name: 'memberships',
+      type: 'select',
+      hasMany: true,
+      options: [
+        { label: 'Rowville player (team registration paid)', value: 'rowville' },
+        { label: 'RFA (Academy term enrolled)', value: 'rfa' },
+      ],
+      admin: {
+        position: 'sidebar',
+        description: 'Added automatically when registration / Academy term is paid. Edit by hand for players registered outside the website.',
+      },
+    },
+    {
+      name: 'registrationOffer',
+      label: 'Team registration offer',
+      type: 'group',
+      admin: { description: 'Set automatically when the committee offers a place after trials.' },
+      fields: [
+        { type: 'row', fields: [
+          { name: 'program', type: 'relationship', relationTo: 'programs' },
+          { name: 'status', type: 'select', options: ['offered', 'paid'] },
+        ] },
+      ],
+    },
   ],
 }

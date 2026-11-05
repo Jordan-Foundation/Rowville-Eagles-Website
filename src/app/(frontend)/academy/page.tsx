@@ -29,7 +29,7 @@ const labelOf = (v: string) => programTypes.find((t) => t.value === v)?.label
 export default async function AcademyPage() {
   const { docs } = await (await payload()).find({
     collection: 'programs',
-    where: { brand: { equals: 'academy' }, status: { in: ['open', 'full'] } },
+    where: { brand: { equals: 'academy' }, status: { in: ['open', 'full'] }, type: { not_equals: 'academy-trial' } },
     depth: 0,
     limit: 50,
   })
@@ -52,7 +52,7 @@ export default async function AcademyPage() {
             coaches and an individual plan for every athlete.
           </p>
           <div className="mt-10 flex flex-wrap gap-3">
-            <a href="#programs" className="bg-white px-7 py-4 text-sm font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-white/85">
+            <a href="/academy/trial" className="bg-white px-7 py-4 text-sm font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-white/85">
               Book a trial
             </a>
             <a href="#programs" className="border border-white/25 px-7 py-4 text-sm font-semibold uppercase tracking-[0.18em] transition hover:border-white">
@@ -140,7 +140,7 @@ export default async function AcademyPage() {
         <div className="container-x flex flex-col items-center py-24 text-center">
           <FoundationMark className="h-14 w-auto" ink="#fff" />
           <h2 className="mt-8 max-w-2xl font-display text-4xl font-semibold uppercase tracking-tight sm:text-5xl">Your foundation starts here</h2>
-          <a href="#programs" className="mt-10 bg-white px-8 py-4 text-sm font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-white/85">
+          <a href="/academy/trial" className="mt-10 bg-white px-8 py-4 text-sm font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-white/85">
             Book a trial session
           </a>
         </div>

@@ -13,7 +13,14 @@ export const Users: CollectionConfig = {
     defaultColumns: ['email', 'firstName', 'lastName', 'roles'],
     group: 'People',
   },
-  auth: true,
+  auth: { tokenExpiration: 60 * 60 * 24 * 14, cookies: { sameSite: 'Lax' } },
+  hooks: {
+    afterLogin: [
+      async ({ user, req }) => {
+        if (!user.activated) await req.payload.update({ collection: 'users', id: user.id, data: { activated: true }, overrideAccess: true })
+      },
+    ],
+  },
   access: {
     admin: ({ req: { user } }) => hasRole(user as never, 'admin', 'committee', 'coach'),
     read: ({ req: { user } }) => {
@@ -38,6 +45,12 @@ export const Users: CollectionConfig = {
       ],
     },
     { name: 'phone', type: 'text' },
+    {
+      name: 'activated',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: { readOnly: true, position: 'sidebar', description: 'Has set their own password / logged in' },
+    },
     {
       name: 'roles',
       type: 'select',

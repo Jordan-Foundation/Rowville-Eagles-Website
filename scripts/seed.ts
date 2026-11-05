@@ -31,7 +31,7 @@ if (hosted) {
   }
 }
 
-for (const c of ['bookings', 'orders', 'products', 'participants', 'programs', 'teams', 'posts', 'sponsors'] as const) {
+for (const c of ['trial-registrations', 'trial-sessions', 'bookings', 'orders', 'products', 'participants', 'programs', 'teams', 'posts', 'sponsors'] as const) {
   await payload.delete({ collection: c, where: { id: { exists: true } } })
 }
 
@@ -54,6 +54,7 @@ await payload.updateGlobal({
     clubName: 'Rowville Eagles Football Club',
     tagline: 'Community football in Rowville since 1985 — from MiniRoos to seniors and the Rowville Foundation Academy.',
     email: 'refc.secretary@outlook.com',
+    season: 2027,
     ground: {
       name: 'Rowville Eagles FC',
       address: '208 Dandelion Drive, Rowville VIC 3178',
@@ -91,8 +92,11 @@ const programs = [
   { title: '2027 Senior Registration', slug: '2027-senior-registration', type: 'registration', brand: 'club', status: 'open', price: 380, ageRange: '18+', startDate: '2027-02-01T00:00:00.000Z', priceNote: 'Club fee only — FV fees paid in PlayFootball', summary: 'Senior Men, Men’s Reserves and Senior Women. Pre-season starts February.' },
   { title: 'January Holiday Camp', slug: 'january-holiday-camp-2027', type: 'holiday-camp', brand: 'academy', status: 'open', price: 165, capacity: 60, ageRange: 'Ages 5–13', scheduleNote: '3 days · 9am–3pm', location: 'Home ground', startDate: '2027-01-12T22:00:00.000Z', endDate: '2027-01-15T04:00:00.000Z', summary: 'Three days of games, skills stations and mini-tournaments with our senior players and coaches.' },
   { title: 'Eagles Autumn Cup', slug: 'eagles-autumn-cup-2027', type: 'tournament', brand: 'academy', status: 'open', price: 250, ageRange: 'U8 – U12', scheduleNote: 'Per team entry', startDate: '2027-03-20T22:00:00.000Z', summary: 'Our annual junior tournament — enter your team for a full day of football at Rowville.' },
-  { title: 'Academy Term 1', slug: 'academy-term-1-2027', type: 'academy-term', brand: 'academy', status: 'open', price: 440, capacity: 24, ageRange: 'Ages 8–14', scheduleNote: 'Weekly · 9 sessions', startDate: '2027-02-02T07:00:00.000Z', summary: 'Weekly high-performance sessions in groups of no more than 12, with an individual development plan and end-of-term review.' },
-  { title: 'Academy Trial Session', slug: 'academy-trial', type: 'academy-trial', brand: 'academy', status: 'open', price: 25, ageRange: 'Ages 8–14', scheduleNote: '75 minutes', summary: 'Experience an Academy session and meet the coaching team. Fee credited to your first term.' },
+  { title: 'Academy Term 1', slug: 'academy-term-1-2027', type: 'academy-term', brand: 'academy', status: 'open', price: 440, capacity: 24, ageRange: 'U8 – U14', scheduleNote: 'Tuesdays & Thursdays · 9 weeks', location: '208 Dandelion Drive, Rowville', startDate: '2027-02-01T13:00:00.000Z', endDate: '2027-04-01T12:00:00.000Z', trialPrice: 0, summary: 'Weekly high-performance sessions in groups of no more than 12, with an individual development plan and end-of-term review.',
+    weeklySessions: [
+      { day: 'Tuesday', startTime: '17:30', durationMinutes: 75, ageGroups: ['U8', 'U9', 'U10', 'U11'], trialSpots: 3 },
+      { day: 'Thursday', startTime: '17:30', durationMinutes: 75, ageGroups: ['U12', 'U13', 'U14'], trialSpots: 3 },
+    ] },
   { title: '1-on-1 Coaching', slug: 'private-coaching', type: 'private-session', brand: 'academy', status: 'open', price: 75, ageRange: 'All ages', scheduleNote: '60 minutes · choose your time', summary: 'Personalised technical sessions with an Academy coach, focused on your player’s individual goals.' },
 ] as const
 
@@ -110,32 +114,47 @@ const slotsFrom = (days: number[], hoursUtc: number[], capacity: number) => {
 }
 const slotsFor: Record<string, ReturnType<typeof slotsFrom>> = {
   'private-coaching': slotsFrom([1, 3], [6, 7, 8], 1),
-  'academy-trial': slotsFrom([2], [7], 12),
 }
 
 for (const p of programs) {
-  await payload.create({ collection: 'programs', data: { ...p, slots: slotsFor[p.slug], description: para(`${p.summary}\n\nThis is sample copy — replace it in the admin with the full program details, what to bring, and cancellation policy.`) } })
+  const weeklySessions = 'weeklySessions' in p ? p.weeklySessions.map((w) => ({ ...w, ageGroups: [...w.ageGroups] })) : undefined
+  await payload.create({ collection: 'programs', data: { ...p, weeklySessions, slots: slotsFor[p.slug], description: para(`${p.summary}\n\nThis is sample copy — replace it in the admin with the full program details, what to bring, and cancellation policy.`) } })
 }
+
+// Club trial dates: MiniRoos published (open for booking); juniors/seniors not yet set → expressions of interest
+for (const t of [
+  { title: 'MiniRoos trials — night 1', start: '2027-01-19T06:30:00.000Z', ageGroups: ['U6', 'U7', 'U8', 'U9', 'U10', 'U11'], capacityPerAgeGroup: 20, status: 'published' },
+  { title: 'MiniRoos trials — night 2', start: '2027-01-21T06:30:00.000Z', ageGroups: ['U6', 'U7', 'U8', 'U9', 'U10', 'U11'], capacityPerAgeGroup: 20, status: 'published' },
+] as const) {
+  await payload.create({ collection: 'trial-sessions', data: { ...t, ageGroups: [...t.ageGroups] } })
+}
+
+const teamIds = Object.fromEntries((await payload.find({ collection: 'teams', limit: 100, depth: 0 })).docs.map((t) => [t.slug, t.id]))
 
 const posts = [
   { title: '2027 registrations now open', slug: '2027-registrations-open', category: 'Club news', excerpt: 'Pay your club fees online, then complete your Football Victoria registration in PlayFootball.', publishedAt: '2026-11-01T00:00:00.000Z' },
   { title: 'Introducing the Rowville Foundation Academy', slug: 'introducing-foundation-academy', category: 'Academy', excerpt: 'A new elite development environment for committed players, launching Term 1 2027.', publishedAt: '2026-10-20T00:00:00.000Z' },
+  { title: 'Seniors open pre-season with a win', slug: 'seniors-preseason-win', category: 'Seniors', excerpt: 'Sample match report — the Senior Men opened pre-season with a strong performance. Replace with a real report.', publishedAt: '2026-11-03T00:00:00.000Z', teams: ['senior-men', 'mens-reserves'] },
+  { title: 'U9s shine at the Spring Cup', slug: 'u9-spring-cup', category: 'Tournament', excerpt: 'Sample tournament wrap — our U9 teams played six games across the day. Replace with real results.', publishedAt: '2026-10-28T00:00:00.000Z', teams: ['u9-eagles-1', 'u9-eagles-2'] },
+  { title: 'Senior Women finish the season strong', slug: 'senior-women-season-wrap', category: 'Match report', excerpt: 'Sample season wrap for the Senior Women. Replace with the real story.', publishedAt: '2026-10-15T00:00:00.000Z', teams: ['senior-women'] },
   { title: 'January holiday camp announced', slug: 'january-holiday-camp', category: 'Community', excerpt: 'Three days of football fun for ages 5–13. Places are limited.', publishedAt: '2026-10-10T00:00:00.000Z' },
 ] as const
 for (const p of posts) {
-  await payload.create({ collection: 'posts', data: { ...p, status: 'published', content: para(`${p.excerpt}\n\nSample article — replace in the admin.`) } })
+  const teams = 'teams' in p ? p.teams.map((slug) => teamIds[slug]).filter(Boolean) : []
+  await payload.create({ collection: 'posts', data: { ...p, teams, status: 'published', content: para(`${p.excerpt}\n\nSample article — replace in the admin.`) } })
 }
 
 const kitSizes = ['YS', 'YM', 'YL', 'S', 'M', 'L', 'XL', '2XL'].map((size) => ({ size, stock: 15 }))
 const products = [
-  { name: 'Home Playing Shirt', slug: 'home-playing-shirt', category: 'kit', brand: 'club', price: 55, description: 'Official Rowville Eagles home shirt in royal blue.', variants: kitSizes },
-  { name: 'Playing Shorts', slug: 'playing-shorts', category: 'kit', brand: 'club', price: 30, variants: kitSizes },
-  { name: 'Playing Socks', slug: 'playing-socks', category: 'kit', brand: 'club', price: 15, variants: ['Junior', 'Senior'].map((size) => ({ size, stock: 30 })) },
-  { name: 'Training Top', slug: 'training-top', category: 'training', brand: 'club', price: 45, variants: kitSizes },
-  { name: 'RFA Training Shirt', slug: 'rfa-training-shirt', category: 'training', brand: 'academy', price: 50, description: 'Rowville Foundation Academy training shirt — black.', variants: kitSizes },
-  { name: 'RFA Hoodie', slug: 'rfa-hoodie', category: 'apparel', brand: 'academy', price: 75, variants: kitSizes.map((v) => ({ ...v, stock: v.size === 'XL' ? 0 : 8 })) },
-  { name: 'Eagles Supporter Scarf', slug: 'supporter-scarf', category: 'accessories', brand: 'club', price: 25, variants: [] },
-  { name: 'Drink Bottle', slug: 'drink-bottle', category: 'accessories', brand: 'club', price: 12, variants: [] },
+  { name: 'Home Playing Shirt', slug: 'home-playing-shirt', category: 'kit', brand: 'club', audience: 'rowville', price: 55, description: 'Official Rowville Eagles home shirt in royal blue.', variants: kitSizes },
+  { name: 'Playing Shorts', slug: 'playing-shorts', category: 'kit', brand: 'club', audience: 'rowville', price: 30, variants: kitSizes },
+  { name: 'Playing Socks', slug: 'playing-socks', category: 'kit', brand: 'club', audience: 'rowville', price: 15, variants: ['Junior', 'Senior'].map((size) => ({ size, stock: 30 })) },
+  { name: 'Training Top', slug: 'training-top', category: 'training', brand: 'club', audience: 'rowville', price: 45, variants: kitSizes },
+  { name: 'RFA Training Shirt', slug: 'rfa-training-shirt', category: 'training', brand: 'academy', audience: 'rfa', price: 50, description: 'Rowville Foundation Academy training shirt — black.', variants: kitSizes },
+  { name: 'RFA Hoodie', slug: 'rfa-hoodie', category: 'apparel', brand: 'academy', audience: 'rfa', price: 75, variants: kitSizes.map((v) => ({ ...v, stock: v.size === 'XL' ? 0 : 8 })) },
+  { name: 'Eagles Supporter Tee', slug: 'supporter-tee', category: 'apparel', brand: 'club', audience: 'everyone', price: 35, variants: kitSizes },
+  { name: 'Eagles Supporter Scarf', slug: 'supporter-scarf', category: 'accessories', brand: 'club', audience: 'everyone', price: 25, variants: [] },
+  { name: 'Drink Bottle', slug: 'drink-bottle', category: 'accessories', brand: 'club', audience: 'everyone', price: 12, variants: [] },
 ] as const
 for (const [i, pr] of products.entries()) {
   await payload.create({ collection: 'products', data: { ...pr, variants: [...pr.variants], status: 'active', order: i } })

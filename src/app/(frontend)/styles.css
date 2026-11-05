@@ -101,6 +101,7 @@ body {
 
 /* Page-level brand switch: any page rendering data-page-brand="academy" restyles the shared header. */
 .academy-only { display: none !important; }
+a.club-only { display: inline-flex; }
 body:has([data-page-brand='academy']) .academy-only { display: inline-flex !important; }
 body:has([data-page-brand='academy']) .club-only { display: none !important; }
 body:has([data-page-brand='academy']) { background: #000; }

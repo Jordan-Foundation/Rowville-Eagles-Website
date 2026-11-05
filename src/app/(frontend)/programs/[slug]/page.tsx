@@ -49,21 +49,25 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
               </div>
             ))}
           </dl>
-          {p.status === 'open' ? (
+          {p.type === 'registration' ? (
+            <div className="mt-7 space-y-3">
+              <p className="text-sm text-muted">Team registration is by invitation after trials. Families who receive an offer pay from their account.</p>
+              <Link href="/join" className="block w-full rounded-full bg-accent px-6 py-3 text-center font-semibold text-accent-ink hover:brightness-110">Join us for trials</Link>
+              <Link href="/login?next=/account" className="block text-center text-sm font-semibold underline">Have an offer? Log in</Link>
+            </div>
+          ) : p.status === 'open' ? (
             <Link
               href={`/programs/${p.slug}/book`}
               className={`mt-7 block w-full bg-accent px-6 py-3 text-center font-semibold text-accent-ink transition hover:brightness-110 ${academy ? 'uppercase tracking-[0.18em]' : 'rounded-full'}`}
             >
-              {p.type === 'registration' ? 'Register & pay' : 'Book now'}
+              Book now
             </Link>
           ) : (
             <p className="mt-7 rounded-lg border border-line px-4 py-3 text-center text-sm text-muted">
               {p.status === 'full' ? 'Fully booked' : 'Bookings closed'}
             </p>
           )}
-          {p.type === 'registration' && (
-            <p className="mt-4 text-xs text-muted">After paying, you’ll complete the Football Victoria section in PlayFootball.</p>
-          )}
+
         </aside>
       </div>
     </div>

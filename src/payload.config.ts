@@ -17,6 +17,9 @@ import { Posts } from './collections/Posts'
 import { Sponsors } from './collections/Sponsors'
 import { Products } from './collections/Products'
 import { Orders } from './collections/Orders'
+import { TrialSessions } from './collections/TrialSessions'
+import { TrialRegistrations } from './collections/TrialRegistrations'
+import { resendAdapter } from '@payloadcms/email-resend'
 import { SiteSettings } from './globals/SiteSettings'
 import { About } from './globals/About'
 
@@ -32,9 +35,18 @@ export default buildConfig({
     meta: { titleSuffix: ' · Rowville Eagles Admin' },
     importMap: { baseDir: path.resolve(dirname) },
   },
-  collections: [Posts, Programs, Bookings, Products, Orders, Teams, Sponsors, Participants, Users, Media],
+  collections: [Posts, TrialRegistrations, TrialSessions, Programs, Bookings, Products, Orders, Teams, Sponsors, Participants, Users, Media],
   globals: [SiteSettings, About],
   editor: lexicalEditor(),
+  ...(process.env.RESEND_API_KEY
+    ? {
+        email: resendAdapter({
+          apiKey: process.env.RESEND_API_KEY,
+          defaultFromAddress: process.env.EMAIL_DEFAULT_FROM_ADDRESS || 'hello@rowvilleeagles.com.au',
+          defaultFromName: 'Rowville Eagles FC',
+        }),
+      }
+    : {}),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: { outputFile: path.resolve(dirname, 'payload-types.ts') },
   // Postgres (Neon) when DATABASE_URL is a postgres URL — production & previews. SQLite file for quick local dev.

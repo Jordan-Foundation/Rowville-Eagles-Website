@@ -56,3 +56,6 @@ node_modules/
 
 # logs
 *.log
+
+# dev email previews
+/.outbox

@@ -116,7 +116,7 @@ export default async function AboutPage() {
             <p className="mt-3 text-white/75">{c.childSafe}</p>
           </div>
           <div className="flex flex-wrap gap-3 md:justify-end">
-            <Link href="/programs?type=registration" className="rounded-full bg-accent px-6 py-3 font-semibold text-accent-ink hover:brightness-110">Join the Eagles</Link>
+            <Link href="/join" className="rounded-full bg-accent px-6 py-3 font-semibold text-accent-ink hover:brightness-110">Join us</Link>
             <Link href="/fixtures" className="rounded-full border border-white/30 px-6 py-3 font-semibold hover:bg-white/10">Our teams & fixtures</Link>
           </div>
         </div>

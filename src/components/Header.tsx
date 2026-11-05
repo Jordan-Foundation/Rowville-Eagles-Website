@@ -4,8 +4,10 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Crest, RfaLogo } from './Logos'
 import { useCart } from '@/lib/cart'
+import { useMe } from '@/lib/use-me'
 
 const nav = [
+  { href: '/join', label: 'Join us' },
   { href: '/about', label: 'About' },
   { href: '/fixtures', label: 'Fixtures' },
   { href: '/programs', label: 'Camps & Programs' },
@@ -17,6 +19,9 @@ const nav = [
 export function Header() {
   const path = usePathname() ?? ''
   const { count } = useCart()
+  const me = useMe()
+  const accountHref = me ? '/account' : '/login'
+  const accountLabel = me ? 'My account' : 'Login'
   return (
     /* Club vs RFA styling is switched in CSS by any page that renders data-page-brand="academy" (see styles.css) */
     <header className="site-header sticky top-0 z-50 border-b border-white/10 bg-[#0f2a55]/95 text-white backdrop-blur">
@@ -38,7 +43,7 @@ export function Header() {
               key={n.href}
               href={n.href}
               aria-current={path.startsWith(n.href) ? 'page' : undefined}
-              className={`transition hover:opacity-100 ${path.startsWith(n.href) ? 'opacity-100' : 'opacity-75'}`}
+              className={`transition hover:opacity-100 ${path.startsWith(n.href) ? 'opacity-100' : 'opacity-75'} ${n.href === '/join' ? 'club-only font-semibold text-accent !opacity-100' : ''}`}
             >
               {n.label}
             </Link>
@@ -50,11 +55,15 @@ export function Header() {
             Cart <span className="ml-1 rounded-full bg-white/15 px-2 py-0.5 text-xs">{count}</span>
           </Link>
         )}
-        <Link href="/academy#programs" className="academy-only bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-white/85">
+        <Link href={accountHref} className="academy-only text-sm font-medium opacity-80 hover:opacity-100">
+          {accountLabel}
+        </Link>
+        <Link href="/academy/trial" className="academy-only bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-white/85">
           Book a trial
         </Link>
-        <Link href="/programs?type=registration" className="club-only rounded-full bg-accent px-4 py-2 text-sm font-semibold text-accent-ink transition hover:brightness-110">
-          Register
+        <Link href={accountHref} className="club-only items-center gap-2 rounded-full bg-accent px-4 py-2 text-sm font-semibold text-accent-ink transition hover:brightness-110">
+          <svg viewBox="0 0 20 20" className="h-4 w-4" aria-hidden fill="currentColor"><path d="M10 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 8a7 7 0 0 1 14 0H3Z" /></svg>
+          {accountLabel}
         </Link>
         </div>
       </div>

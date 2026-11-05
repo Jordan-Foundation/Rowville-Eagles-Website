@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { isStaff, staffOrOwner } from '../access'
+import { ageGroupOptions } from '../lib/age'
 
 /**
  * A place in a Program. Created by the checkout flow (pending) and confirmed by the Stripe webhook (paid).
@@ -28,6 +29,17 @@ export const Bookings: CollectionConfig = {
     },
     { name: 'payee', type: 'select', required: true, options: ['club', 'academy'], admin: { readOnly: true, position: 'sidebar' } },
     { name: 'amount', type: 'number', required: true, admin: { readOnly: true, position: 'sidebar', description: 'AUD' } },
+    {
+      name: 'bookingType',
+      type: 'select',
+      defaultValue: 'enrolment',
+      options: [
+        { label: 'Enrolment / booking', value: 'enrolment' },
+        { label: 'Trial session', value: 'trial' },
+      ],
+      admin: { position: 'sidebar' },
+    },
+    { name: 'ageGroup', type: 'select', options: ageGroupOptions, admin: { position: 'sidebar' } },
     { name: 'sessionStart', label: 'Booked time slot', type: 'date', admin: { date: { pickerAppearance: 'dayAndTime' } } },
     { name: 'account', type: 'relationship', relationTo: 'users' },
     { name: 'participant', type: 'relationship', relationTo: 'participants' },

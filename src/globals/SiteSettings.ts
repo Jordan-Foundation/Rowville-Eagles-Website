@@ -8,6 +8,7 @@ export const SiteSettings: GlobalConfig = {
   fields: [
     { name: 'clubName', type: 'text', defaultValue: 'Rowville Eagles Football Club' },
     { name: 'tagline', type: 'text' },
+    { name: 'season', label: 'Registration season (year)', type: 'number', defaultValue: 2027, admin: { description: 'Used for "Join us for …" and age-group calculation' } },
     { name: 'email', type: 'email' },
     { name: 'phone', type: 'text' },
     {

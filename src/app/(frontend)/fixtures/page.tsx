@@ -2,7 +2,9 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { payload } from '@/lib/payload'
 import { teamCategories } from '@/collections/Teams'
-import type { Team } from '@/payload-types'
+import type { Post, Team } from '@/payload-types'
+import { formatDate } from '@/lib/format'
+import type { Where } from 'payload'
 import { TeamSelect } from './TeamSelect'
 
 export const metadata: Metadata = { title: 'Fixtures & Results' }
@@ -22,6 +24,12 @@ export default async function FixturesPage({ searchParams }: { searchParams: Pro
     .map((c) => ({ value: c.value, label: c.label, teams: teams.filter((t) => t.category === c.value) }))
     .filter((g) => g.teams.length)
   const selected = teams.find((t) => t.slug === selectedSlug)
+  const newsWhere: Where = selected
+    ? { status: { equals: 'published' }, teams: { contains: selected.id } }
+    : { status: { equals: 'published' }, or: [{ teams: { exists: true } }, { category: { in: ['Match report', 'Tournament', 'Seniors'] } }] }
+  const { docs: newsDocs } = await p.find({ collection: 'posts', where: newsWhere, limit: 12, depth: 0, sort: '-publishedAt' })
+  const allPosts = selected ? [] : newsDocs
+  const teamPosts = selected ? newsDocs : []
 
   return (
     <>
@@ -37,30 +45,12 @@ export default async function FixturesPage({ searchParams }: { searchParams: Pro
 
       <div className="container-x py-14">
         {selected ? (
-          <TeamPanel team={selected} clubDribl={settings.links?.driblFixtures} ground={settings.ground?.address} />
-        ) : (
-          <div className="space-y-14">
-            {groups.map((g) => (
-              <section key={g.value}>
-                <h2 className="font-[family-name:var(--font-barlow)] text-3xl font-bold uppercase">{g.label}</h2>
-                <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                  {g.teams.map((t) => (
-                    <Link
-                      key={t.id}
-                      href={`/fixtures?team=${t.slug}`}
-                      scroll={false}
-                      className="group rounded-2xl border border-line p-5 transition hover:-translate-y-0.5 hover:border-brand hover:shadow-lg hover:shadow-black/5"
-                    >
-                      <p className="text-xs font-semibold uppercase tracking-wider text-brand">{t.ageGroup}</p>
-                      <h3 className="mt-1 text-lg font-semibold">{t.name}</h3>
-                      <p className="mt-3 text-sm font-semibold text-muted group-hover:text-brand">Fixtures →</p>
-                    </Link>
-                  ))}
-                </div>
-              </section>
-            ))}
-            {groups.length === 0 && <p className="text-muted">Teams for the new season will be listed soon.</p>}
+          <div className="space-y-12">
+            <TeamPanel team={selected} clubDribl={settings.links?.driblFixtures} ground={settings.ground?.address} />
+            <TeamNews title={`${selected.name} news`} posts={teamPosts} teams={teams} empty={`No news for ${selected.name} yet.`} />
           </div>
+        ) : (
+          <TeamNews title="Team news" posts={allPosts} teams={teams} empty="Match reports, tournament results and senior game updates will appear here." />
         )}
       </div>
     </>
@@ -98,5 +88,43 @@ function TeamPanel({ team, clubDribl, ground }: { team: Team; clubDribl?: string
         <Link href="/fixtures" scroll={false} className="mt-6 inline-block text-sm font-semibold text-brand hover:underline">← All teams</Link>
       </aside>
     </div>
+  )
+}
+
+function TeamNews({ title, posts, teams, empty }: { title: string; posts: Post[]; teams: Team[]; empty: string }) {
+  const nameOf = (id: number | Team) => (typeof id === 'object' ? id.name : teams.find((t) => t.id === id)?.name)
+  return (
+    <section>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <h2 className="font-[family-name:var(--font-barlow)] text-3xl font-bold uppercase">{title}</h2>
+        <Link href="/news" className="text-sm font-semibold text-brand hover:underline">All club news →</Link>
+      </div>
+      {posts.length === 0 ? (
+        <p className="mt-6 rounded-2xl border border-dashed border-line p-8 text-center text-muted">{empty}</p>
+      ) : (
+        <div className="mt-6 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          {posts.map((post, i) => (
+            <Link
+              key={post.id}
+              href={`/news/${post.slug}`}
+              className={`group flex flex-col rounded-2xl border border-line p-6 transition hover:-translate-y-0.5 hover:border-brand hover:shadow-lg hover:shadow-black/5 ${i === 0 ? 'md:col-span-2 lg:col-span-2 bg-[#0f2a55] pitch-lines border-transparent text-white' : ''}`}
+            >
+              <p className={`text-xs font-semibold uppercase tracking-wider ${i === 0 ? 'text-accent' : 'text-brand'}`}>
+                {post.category} · {formatDate(post.publishedAt)}
+              </p>
+              <h3 className={`mt-2 font-semibold ${i === 0 ? 'font-[family-name:var(--font-barlow)] text-3xl uppercase' : 'text-xl group-hover:text-brand'}`}>{post.title}</h3>
+              <p className={`mt-2 flex-1 text-sm ${i === 0 ? 'text-white/75' : 'text-muted'}`}>{post.excerpt}</p>
+              {(post.teams?.length ?? 0) > 0 && (
+                <div className="mt-4 flex flex-wrap gap-1.5">
+                  {post.teams!.map((t) => (
+                    <span key={typeof t === 'object' ? t.id : t} className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${i === 0 ? 'bg-white/15' : 'bg-surface-2'}`}>{nameOf(t)}</span>
+                  ))}
+                </div>
+              )}
+            </Link>
+          ))}
+        </div>
+      )}
+    </section>
   )
 }

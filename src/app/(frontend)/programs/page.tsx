@@ -9,8 +9,12 @@ export const metadata: Metadata = { title: 'Camps & Programs' }
 
 export default async function ProgramsPage({ searchParams }: { searchParams: Promise<{ type?: string }> }) {
   const { type } = await searchParams
-  const active = programTypes.find((t) => t.value === type)?.value
-  const where: Where = { status: { in: ['open', 'full'] }, ...(active ? { type: { equals: active } } : {}) }
+  const listed = programTypes.filter((t) => t.value !== 'registration' && t.value !== 'academy-trial')
+  const active = listed.find((t) => t.value === type)?.value
+  const where: Where = {
+    status: { in: ['open', 'full'] },
+    type: active ? { equals: active } : { not_in: ['registration', 'academy-trial'] },
+  }
   const { docs } = await (await payload()).find({ collection: 'programs', where, depth: 0, limit: 100 })
 
   return (
@@ -19,13 +23,13 @@ export default async function ProgramsPage({ searchParams }: { searchParams: Pro
         <div className="container-x py-16">
           <p className="eyebrow">Book & pay online</p>
           <h1 className="mt-3 font-[family-name:var(--font-barlow)] text-5xl font-extrabold uppercase sm:text-6xl">Camps & Programs</h1>
-          <p className="mt-4 max-w-xl text-white/70">Season registrations, holiday camps, tournaments and Foundation Academy sessions — all in one place.</p>
+          <p className="mt-4 max-w-xl text-white/70">Holiday camps, tournaments, 1-on-1 coaching and Rowville Foundation Academy programs. Looking to play for the club? <a href="/join" className="font-semibold text-accent underline">Join us for trials</a>.</p>
         </div>
       </section>
       <div className="container-x py-12">
         <div className="flex flex-wrap gap-2" role="tablist" aria-label="Filter programs">
           <Filter href="/programs" label="All" active={!active} />
-          {programTypes.map((t) => (
+          {listed.map((t) => (
             <Filter key={t.value} href={`/programs?type=${t.value}`} label={t.label} active={active === t.value} />
           ))}
         </div>

@@ -19,7 +19,7 @@ export async function bookProgram(_prev: BookingState, fd: FormData): Promise<Bo
   const p = await payload()
   const { docs } = await p.find({
     collection: 'programs',
-    where: { slug: { equals: str(fd, 'program') }, status: { equals: 'open' } },
+    where: { slug: { equals: str(fd, 'program') }, status: { equals: 'open' }, type: { not_equals: 'academy-trial' } },
     limit: 1,
     depth: 0,
   })
@@ -27,6 +27,27 @@ export async function bookProgram(_prev: BookingState, fd: FormData): Promise<Bo
   if (!program) return fail('This program is no longer taking bookings.')
 
   const isTeamEntry = program.type === 'tournament'
+  const isRegistration = program.type === 'registration'
+
+  // Link to a logged-in account if there is one; guests are linked after payment by email.
+  const { user } = await p.auth({ headers: await headers() })
+  const accountId = user?.collection === 'users' ? user.id : undefined
+
+  // Team registrations: must be logged in and paying for a player with an offer for THIS program.
+  let offeredParticipant: { id: number; firstName: string; lastName: string; dateOfBirth: string } | undefined
+  if (isRegistration) {
+    if (!accountId) return fail('Please log in to pay registration.')
+    const pid = Number(str(fd, 'participant'))
+    const kid = pid ? await p.findByID({ collection: 'participants', id: pid, depth: 0, overrideAccess: true, disableErrors: true }) : null
+    const offerProgram = kid?.registrationOffer?.program
+    const ok =
+      kid &&
+      (typeof kid.account === 'object' ? kid.account.id : kid.account) === accountId &&
+      kid.registrationOffer?.status === 'offered' &&
+      (typeof offerProgram === 'object' ? offerProgram?.id : offerProgram) === program.id
+    if (!ok) return fail('This registration isn’t available for that player. Check your account for offers.')
+    offeredParticipant = { id: kid.id, firstName: kid.firstName, lastName: kid.lastName, dateOfBirth: kid.dateOfBirth }
+  }
   const usesSlots = (program.slots?.length ?? 0) > 0
 
   const contact = {
@@ -39,9 +60,9 @@ export async function bookProgram(_prev: BookingState, fd: FormData): Promise<Bo
   if (!emailOk(contact.email)) return fail('Please enter a valid email address.')
 
   const player = {
-    firstName: str(fd, 'playerFirstName'),
-    lastName: str(fd, 'playerLastName'),
-    dateOfBirth: str(fd, 'playerDob') || undefined,
+    firstName: offeredParticipant?.firstName ?? str(fd, 'playerFirstName'),
+    lastName: offeredParticipant?.lastName ?? str(fd, 'playerLastName'),
+    dateOfBirth: offeredParticipant?.dateOfBirth ?? (str(fd, 'playerDob') || undefined),
     teamName: str(fd, 'teamName') || undefined,
     medical: str(fd, 'medical') || undefined,
     emergencyName: str(fd, 'emergencyName'),
@@ -68,9 +89,6 @@ export async function bookProgram(_prev: BookingState, fd: FormData): Promise<Bo
   }
   if (program.capacity && (await placesTaken(p, program.id)) >= program.capacity) return fail('Sorry, this program has just filled up.')
 
-  // Link to a logged-in account if there is one; guests are linked later via verified email.
-  const { user } = await p.auth({ headers: await headers() })
-
   const payee = isPayee(program.payee) ? program.payee : defaultPayee(program.type)
   const reference = newReference(payee)
   const booking = await p.create({
@@ -82,7 +100,8 @@ export async function bookProgram(_prev: BookingState, fd: FormData): Promise<Bo
       payee,
       amount: program.price,
       sessionStart,
-      account: user?.collection === 'users' ? user.id : undefined,
+      account: accountId,
+      participant: offeredParticipant?.id,
       contact,
       player,
     },

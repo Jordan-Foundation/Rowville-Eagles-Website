@@ -44,6 +44,18 @@ export const Products: CollectionConfig = {
         },
       ],
     },
+    {
+      name: 'audience',
+      label: 'Who can buy this',
+      type: 'select',
+      required: true,
+      defaultValue: 'everyone',
+      options: [
+        { label: 'Everyone — supporter gear', value: 'everyone' },
+        { label: 'Registered Rowville players', value: 'rowville' },
+        { label: 'RFA players', value: 'rfa' },
+      ],
+    },
     { name: 'price', type: 'number', required: true, min: 0, admin: { description: 'AUD incl. GST' } },
     { name: 'description', type: 'textarea' },
     { name: 'images', type: 'upload', relationTo: 'media', hasMany: true },

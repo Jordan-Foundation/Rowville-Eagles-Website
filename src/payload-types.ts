@@ -68,6 +68,8 @@ export interface Config {
   blocks: {};
   collections: {
     posts: Post;
+    'trial-registrations': TrialRegistration;
+    'trial-sessions': TrialSession;
     programs: Program;
     bookings: Booking;
     products: Product;
@@ -85,6 +87,8 @@ export interface Config {
   collectionsJoins: {};
   collectionsSelect: {
     posts: PostsSelect<false> | PostsSelect<true>;
+    'trial-registrations': TrialRegistrationsSelect<false> | TrialRegistrationsSelect<true>;
+    'trial-sessions': TrialSessionsSelect<false> | TrialSessionsSelect<true>;
     programs: ProgramsSelect<false> | ProgramsSelect<true>;
     bookings: BookingsSelect<false> | BookingsSelect<true>;
     products: ProductsSelect<false> | ProductsSelect<true>;
@@ -147,9 +151,13 @@ export interface Post {
   id: number;
   title: string;
   slug: string;
-  category?: ('Club news' | 'Match report' | 'Academy' | 'Community' | 'Sponsors') | null;
+  category?: ('Club news' | 'Match report' | 'Tournament' | 'Seniors' | 'Academy' | 'Community' | 'Sponsors') | null;
   publishedAt: string;
   status?: ('draft' | 'published') | null;
+  /**
+   * Tag teams to show this on the Fixtures page team news (match reports, tournaments, senior games…)
+   */
+  teams?: (number | Team)[] | null;
   excerpt: string;
   heroImage?: (number | null) | Media;
   content?: {
@@ -172,6 +180,76 @@ export interface Post {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "teams".
+ */
+export interface Team {
+  id: number;
+  name: string;
+  slug: string;
+  category: 'miniroos' | 'junior-boys' | 'junior-girls' | 'senior-women' | 'senior-men';
+  /**
+   * e.g. U7, U12, Seniors, Reserves
+   */
+  ageGroup?: string | null;
+  /**
+   * League / division
+   */
+  competition?: string | null;
+  trainingTimes?: string | null;
+  coaches?: (number | User)[] | null;
+  /**
+   * Link to this team’s fixtures page on Dribl (shown on the Fixtures page).
+   */
+  driblUrl?: string | null;
+  /**
+   * Dribl team identifier — used to pull fixtures & results automatically.
+   */
+  driblTeamId?: string | null;
+  photo?: (number | null) | Media;
+  order?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "users".
+ */
+export interface User {
+  id: number;
+  firstName?: string | null;
+  lastName?: string | null;
+  phone?: string | null;
+  /**
+   * Has set their own password / logged in
+   */
+  activated?: boolean | null;
+  roles?: ('admin' | 'committee' | 'coach' | 'parent' | 'player')[] | null;
+  wwcc?: {
+    number?: string | null;
+    expiry?: string | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+  email: string;
+  resetPasswordToken?: string | null;
+  resetPasswordExpiration?: string | null;
+  salt?: string | null;
+  hash?: string | null;
+  resetPasswordRequestedAt?: string | null;
+  loginAttempts?: number | null;
+  lockUntil?: string | null;
+  sessions?:
+    | {
+        id: string;
+        createdAt?: string | null;
+        expiresAt: string;
+      }[]
+    | null;
+  password?: string | null;
+  collection: 'users';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media".
  */
 export interface Media {
@@ -191,6 +269,87 @@ export interface Media {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "trial-registrations".
+ */
+export interface TrialRegistration {
+  id: number;
+  reference: string;
+  status: 'interested' | 'trial-booked' | 'attended' | 'offered' | 'registered' | 'closed';
+  ageGroup?:
+    | (
+        | 'U5'
+        | 'U6'
+        | 'U7'
+        | 'U8'
+        | 'U9'
+        | 'U10'
+        | 'U11'
+        | 'U12'
+        | 'U13'
+        | 'U14'
+        | 'U15'
+        | 'U16'
+        | 'U17'
+        | 'U18'
+        | 'Seniors'
+      )
+    | null;
+  season?: number | null;
+  trialSession?: (number | null) | TrialSession;
+  offeredTeam?: (number | null) | Team;
+  registrationProgram?: (number | null) | Program;
+  offerSentAt?: string | null;
+  contact: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+  };
+  player: {
+    firstName: string;
+    lastName: string;
+    dateOfBirth: string;
+    gender?: ('female' | 'male' | 'non-binary' | 'prefer-not-to-say') | null;
+    previousClub?: string | null;
+    notes?: string | null;
+  };
+  account?: (number | null) | User;
+  participant?: (number | null) | Participant;
+  token?: string | null;
+  /**
+   * Trial announcements already emailed
+   */
+  notifiedSessions?: (number | TrialSession)[] | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "trial-sessions".
+ */
+export interface TrialSession {
+  id: number;
+  /**
+   * e.g. "MiniRoos trials — night 1"
+   */
+  title: string;
+  start: string;
+  durationMinutes?: number | null;
+  capacityPerAgeGroup?: number | null;
+  ageGroups: (
+    'U5' | 'U6' | 'U7' | 'U8' | 'U9' | 'U10' | 'U11' | 'U12' | 'U13' | 'U14' | 'U15' | 'U16' | 'U17' | 'U18' | 'Seniors'
+  )[];
+  location?: string | null;
+  whatToBring?: string | null;
+  /**
+   * Publishing emails everyone on the interest list for these age groups.
+   */
+  status?: ('draft' | 'published' | 'closed') | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "programs".
  */
 export interface Program {
@@ -204,6 +363,10 @@ export interface Program {
   type: 'registration' | 'holiday-camp' | 'tournament' | 'academy-term' | 'academy-trial' | 'private-session';
   brand: 'club' | 'academy';
   status: 'draft' | 'open' | 'full' | 'closed';
+  /**
+   * Team registrations default to "by offer only".
+   */
+  visibility?: ('public' | 'offer-only') | null;
   summary: string;
   description?: {
     root: {
@@ -251,7 +414,77 @@ export interface Program {
         id?: string | null;
       }[]
     | null;
+  /**
+   * Academy terms: the nights the program runs. Trial bookings are offered on these nights between the start and end dates.
+   */
+  weeklySessions?:
+    | {
+        day: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
+        /**
+         * 24h, e.g. 17:30
+         */
+        startTime: string;
+        durationMinutes?: number | null;
+        ageGroups: (
+          | 'U5'
+          | 'U6'
+          | 'U7'
+          | 'U8'
+          | 'U9'
+          | 'U10'
+          | 'U11'
+          | 'U12'
+          | 'U13'
+          | 'U14'
+          | 'U15'
+          | 'U16'
+          | 'U17'
+          | 'U18'
+          | 'Seniors'
+        )[];
+        trialSpots?: number | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * 0 = free trial
+   */
+  trialPrice?: number | null;
   heroImage?: (number | null) | Media;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "participants".
+ */
+export interface Participant {
+  id: number;
+  fullName?: string | null;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
+  gender?: ('female' | 'male' | 'non-binary' | 'prefer-not-to-say') | null;
+  account: number | User;
+  team?: (number | null) | Team;
+  ffaNumber?: string | null;
+  medical?: {
+    conditions?: string | null;
+    emergencyContact?: string | null;
+    emergencyPhone?: string | null;
+  };
+  photoConsent?: boolean | null;
+  /**
+   * Added automatically when registration / Academy term is paid. Edit by hand for players registered outside the website.
+   */
+  memberships?: ('rowville' | 'rfa')[] | null;
+  /**
+   * Set automatically when the committee offers a place after trials.
+   */
+  registrationOffer?: {
+    program?: (number | null) | Program;
+    status?: ('offered' | 'paid') | null;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -269,6 +502,26 @@ export interface Booking {
    * AUD
    */
   amount: number;
+  bookingType?: ('enrolment' | 'trial') | null;
+  ageGroup?:
+    | (
+        | 'U5'
+        | 'U6'
+        | 'U7'
+        | 'U8'
+        | 'U9'
+        | 'U10'
+        | 'U11'
+        | 'U12'
+        | 'U13'
+        | 'U14'
+        | 'U15'
+        | 'U16'
+        | 'U17'
+        | 'U18'
+        | 'Seniors'
+      )
+    | null;
   sessionStart?: string | null;
   account?: (number | null) | User;
   participant?: (number | null) | Participant;
@@ -301,95 +554,6 @@ export interface Booking {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users".
- */
-export interface User {
-  id: number;
-  firstName?: string | null;
-  lastName?: string | null;
-  phone?: string | null;
-  roles?: ('admin' | 'committee' | 'coach' | 'parent' | 'player')[] | null;
-  wwcc?: {
-    number?: string | null;
-    expiry?: string | null;
-  };
-  updatedAt: string;
-  createdAt: string;
-  email: string;
-  resetPasswordToken?: string | null;
-  resetPasswordExpiration?: string | null;
-  salt?: string | null;
-  hash?: string | null;
-  resetPasswordRequestedAt?: string | null;
-  loginAttempts?: number | null;
-  lockUntil?: string | null;
-  sessions?:
-    | {
-        id: string;
-        createdAt?: string | null;
-        expiresAt: string;
-      }[]
-    | null;
-  password?: string | null;
-  collection: 'users';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "participants".
- */
-export interface Participant {
-  id: number;
-  fullName?: string | null;
-  firstName: string;
-  lastName: string;
-  dateOfBirth: string;
-  gender?: ('female' | 'male' | 'non-binary' | 'prefer-not-to-say') | null;
-  account: number | User;
-  team?: (number | null) | Team;
-  ffaNumber?: string | null;
-  medical?: {
-    conditions?: string | null;
-    emergencyContact?: string | null;
-    emergencyPhone?: string | null;
-  };
-  photoConsent?: boolean | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "teams".
- */
-export interface Team {
-  id: number;
-  name: string;
-  slug: string;
-  category: 'miniroos' | 'junior-boys' | 'junior-girls' | 'senior-women' | 'senior-men';
-  /**
-   * e.g. U7, U12, Seniors, Reserves
-   */
-  ageGroup?: string | null;
-  /**
-   * League / division
-   */
-  competition?: string | null;
-  trainingTimes?: string | null;
-  coaches?: (number | User)[] | null;
-  /**
-   * Link to this team’s fixtures page on Dribl (shown on the Fixtures page).
-   */
-  driblUrl?: string | null;
-  /**
-   * Dribl team identifier — used to pull fixtures & results automatically.
-   */
-  driblTeamId?: string | null;
-  photo?: (number | null) | Media;
-  order?: number | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "products".
  */
 export interface Product {
@@ -399,6 +563,7 @@ export interface Product {
   category: 'kit' | 'training' | 'apparel' | 'accessories';
   brand?: ('club' | 'academy') | null;
   status?: ('active' | 'hidden') | null;
+  audience: 'everyone' | 'rowville' | 'rfa';
   /**
    * AUD incl. GST
    */
@@ -498,6 +663,14 @@ export interface PayloadLockedDocument {
         value: number | Post;
       } | null)
     | ({
+        relationTo: 'trial-registrations';
+        value: number | TrialRegistration;
+      } | null)
+    | ({
+        relationTo: 'trial-sessions';
+        value: number | TrialSession;
+      } | null)
+    | ({
         relationTo: 'programs';
         value: number | Program;
       } | null)
@@ -585,9 +758,64 @@ export interface PostsSelect<T extends boolean = true> {
   category?: T;
   publishedAt?: T;
   status?: T;
+  teams?: T;
   excerpt?: T;
   heroImage?: T;
   content?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "trial-registrations_select".
+ */
+export interface TrialRegistrationsSelect<T extends boolean = true> {
+  reference?: T;
+  status?: T;
+  ageGroup?: T;
+  season?: T;
+  trialSession?: T;
+  offeredTeam?: T;
+  registrationProgram?: T;
+  offerSentAt?: T;
+  contact?:
+    | T
+    | {
+        firstName?: T;
+        lastName?: T;
+        email?: T;
+        phone?: T;
+      };
+  player?:
+    | T
+    | {
+        firstName?: T;
+        lastName?: T;
+        dateOfBirth?: T;
+        gender?: T;
+        previousClub?: T;
+        notes?: T;
+      };
+  account?: T;
+  participant?: T;
+  token?: T;
+  notifiedSessions?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "trial-sessions_select".
+ */
+export interface TrialSessionsSelect<T extends boolean = true> {
+  title?: T;
+  start?: T;
+  durationMinutes?: T;
+  capacityPerAgeGroup?: T;
+  ageGroups?: T;
+  location?: T;
+  whatToBring?: T;
+  status?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -602,6 +830,7 @@ export interface ProgramsSelect<T extends boolean = true> {
   type?: T;
   brand?: T;
   status?: T;
+  visibility?: T;
   summary?: T;
   description?: T;
   startDate?: T;
@@ -620,6 +849,17 @@ export interface ProgramsSelect<T extends boolean = true> {
         coach?: T;
         id?: T;
       };
+  weeklySessions?:
+    | T
+    | {
+        day?: T;
+        startTime?: T;
+        durationMinutes?: T;
+        ageGroups?: T;
+        trialSpots?: T;
+        id?: T;
+      };
+  trialPrice?: T;
   heroImage?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -634,6 +874,8 @@ export interface BookingsSelect<T extends boolean = true> {
   status?: T;
   payee?: T;
   amount?: T;
+  bookingType?: T;
+  ageGroup?: T;
   sessionStart?: T;
   account?: T;
   participant?: T;
@@ -672,6 +914,7 @@ export interface ProductsSelect<T extends boolean = true> {
   category?: T;
   brand?: T;
   status?: T;
+  audience?: T;
   price?: T;
   description?: T;
   images?: T;
@@ -775,6 +1018,13 @@ export interface ParticipantsSelect<T extends boolean = true> {
         emergencyPhone?: T;
       };
   photoConsent?: T;
+  memberships?: T;
+  registrationOffer?:
+    | T
+    | {
+        program?: T;
+        status?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }
@@ -786,6 +1036,7 @@ export interface UsersSelect<T extends boolean = true> {
   firstName?: T;
   lastName?: T;
   phone?: T;
+  activated?: T;
   roles?: T;
   wwcc?:
     | T
@@ -877,6 +1128,10 @@ export interface SiteSetting {
   id: number;
   clubName?: string | null;
   tagline?: string | null;
+  /**
+   * Used for "Join us for …" and age-group calculation
+   */
+  season?: number | null;
   email?: string | null;
   phone?: string | null;
   ground?: {
@@ -938,6 +1193,7 @@ export interface About {
 export interface SiteSettingsSelect<T extends boolean = true> {
   clubName?: T;
   tagline?: T;
+  season?: T;
   email?: T;
   phone?: T;
   ground?:

@@ -13,7 +13,11 @@ export function BookingForm(props: {
   slots: Slot[]
   priceLabel: string
   payeeLabel: string
+  /** Team registrations: players on this account with an offer (name/DOB already known). */
+  offeredPlayers?: { id: number; label: string }[]
+  defaultPlayer?: string
 }) {
+  const offer = (props.offeredPlayers?.length ?? 0) > 0
   const [state, action] = useActionState<BookingState, FormData>(bookProgram, {})
   const v = state.values ?? {}
 
@@ -48,7 +52,29 @@ export function BookingForm(props: {
         <Input label="Mobile" name="contactPhone" type="tel" autoComplete="tel" required defaultValue={v.contactPhone} />
       </Fieldset>
 
-      {props.isTeamEntry ? (
+      {offer ? (
+        <Fieldset legend="Player">
+          <div className="space-y-2 sm:col-span-2">
+            {props.offeredPlayers!.map((o, i) => (
+              <label key={o.id} className="flex cursor-pointer items-center gap-3 rounded-lg border border-line bg-surface px-4 py-3 text-sm has-[:checked]:border-brand">
+                <input type="radio" name="participant" value={o.id} required defaultChecked={(v.participant ?? props.defaultPlayer) ? (v.participant ?? props.defaultPlayer) === String(o.id) : i === 0} />
+                {o.label}
+              </label>
+            ))}
+          </div>
+          <div className="sm:col-span-2">
+            <Field label="Medical conditions, allergies or injuries" hint="Shared only with the player’s coaches.">
+              <textarea name="medical" rows={2} className={inputCls} defaultValue={v.medical} />
+            </Field>
+          </div>
+          <Input label="Emergency contact name" name="emergencyName" required defaultValue={v.emergencyName} />
+          <Input label="Emergency contact phone" name="emergencyPhone" type="tel" required defaultValue={v.emergencyPhone} />
+          <label className="flex items-start gap-3 text-sm sm:col-span-2">
+            <input type="checkbox" name="photoConsent" defaultChecked={v.photoConsent === 'on'} className="mt-1" />
+            <span>I consent to photos/video of this player being used in club communications.</span>
+          </label>
+        </Fieldset>
+      ) : props.isTeamEntry ? (
         <Fieldset legend="Team">
           <Input label="Team name" name="teamName" required defaultValue={v.teamName} />
           <Input label="Club" name="playerLastName" placeholder="e.g. Rowville Eagles" defaultValue={v.playerLastName} />

@@ -4,6 +4,7 @@ import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { payload } from '@/lib/payload'
 import { newReference, startCheckout } from '@/lib/payments'
+import { allowedAudiences } from '@/lib/shop-access'
 
 export type CartState = { error?: string }
 
@@ -30,6 +31,9 @@ export async function checkoutCart(_prev: CartState, fd: FormData): Promise<Cart
 
   const p = await payload()
   const settings = await p.findGlobal({ slug: 'site-settings' })
+  const { user } = await p.auth({ headers: await headers() })
+  const userId = user?.collection === 'users' ? user.id : undefined
+  const audiences = await allowedAudiences(p, userId)
 
   // Re-price every line from the database — never trust client prices.
   const items = []
@@ -38,6 +42,7 @@ export async function checkoutCart(_prev: CartState, fd: FormData): Promise<Cart
     if (!Number.isFinite(qty) || qty < 1 || qty > 20) return { error: 'Please check the quantities in your cart.' }
     const product = await p.findByID({ collection: 'products', id: ci.productId, depth: 0, disableErrors: true })
     if (!product || product.status !== 'active') return { error: 'An item in your cart is no longer available.' }
+    if (!audiences.includes(product.audience)) return { error: `${product.name} is for registered players only — please log in, or remove it from your cart.` }
     const variants = product.variants ?? []
     const variant = variants.find((v) => v.size === ci.size)
     if (variants.length && !variant) return { error: `Please re-select a size for ${product.name}.` }
@@ -50,7 +55,6 @@ export async function checkoutCart(_prev: CartState, fd: FormData): Promise<Cart
   const subtotal = items.reduce((n, i) => n + i.unitPrice * i.quantity, 0)
   const postage = fulfilment === 'post' ? (settings.shop?.postageFee ?? 0) : 0
   const reference = newReference(SHOP_PAYEE)
-  const { user } = await p.auth({ headers: await headers() })
 
   const order = await p.create({
     collection: 'orders',
@@ -58,7 +62,7 @@ export async function checkoutCart(_prev: CartState, fd: FormData): Promise<Cart
       reference,
       status: 'pending',
       payee: SHOP_PAYEE,
-      account: user?.collection === 'users' ? user.id : undefined,
+      account: userId,
       contact,
       items,
       subtotal,

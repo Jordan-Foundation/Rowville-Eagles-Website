@@ -1,7 +1,7 @@
-import 'server-only'
 import { randomBytes } from 'crypto'
 import type { Payload } from 'payload'
 import { paymentsMode, stripeAccounts, stripeFor, type Payee } from './stripe-accounts'
+import { onBookingPaid, onOrderPaid } from './notifications'
 
 export const siteUrl = () =>
   process.env.NEXT_PUBLIC_SITE_URL ||
@@ -61,7 +61,13 @@ export async function confirmPayment(payload: Payload, kind: 'booking' | 'order'
     const { docs } = await payload.find({ collection: 'bookings', where: { reference: { equals: reference } }, limit: 1, depth: 0 })
     const b = docs[0]
     if (!b || b.status !== 'pending') return b
-    return payload.update({ collection: 'bookings', id: b.id, data: { status: 'paid' } })
+    const paid = await payload.update({ collection: 'bookings', id: b.id, data: { status: 'paid' } })
+    try {
+      await onBookingPaid(payload, paid)
+    } catch (e) {
+      payload.logger.error({ err: e, msg: `Post-payment steps failed for ${reference}` })
+    }
+    return paid
   }
 
   const { docs } = await payload.find({ collection: 'orders', where: { reference: { equals: reference } }, limit: 1, depth: 0 })
@@ -77,7 +83,13 @@ export async function confirmPayment(payload: Payload, kind: 'booking' | 'order'
     )
     await payload.update({ collection: 'products', id: productId, data: { variants } })
   }
-  return payload.update({ collection: 'orders', id: o.id, data: { status: 'paid' } })
+  const paidOrder = await payload.update({ collection: 'orders', id: o.id, data: { status: 'paid' } })
+  try {
+    await onOrderPaid(payload, paidOrder)
+  } catch (e) {
+    payload.logger.error({ err: e, msg: `Order email failed for ${reference}` })
+  }
+  return paidOrder
 }
 
 /** Release an unpaid booking/order when its Stripe session expires. */
@@ -89,7 +101,12 @@ export async function cancelPending(payload: Payload, kind: 'booking' | 'order',
 }
 
 /** Places taken: paid + pending bookings still inside their 35-minute checkout window. */
-export async function placesTaken(payload: Payload, programId: number | string, sessionStart?: string) {
+export async function placesTaken(
+  payload: Payload,
+  programId: number | string,
+  sessionStart?: string,
+  filter: { bookingType?: 'enrolment' | 'trial'; ageGroup?: string } = {},
+) {
   const holdCutoff = new Date(Date.now() - 35 * 60 * 1000).toISOString()
   const { totalDocs } = await payload.count({
     collection: 'bookings',
@@ -97,6 +114,9 @@ export async function placesTaken(payload: Payload, programId: number | string, 
       and: [
         { program: { equals: programId } },
         ...(sessionStart ? [{ sessionStart: { equals: sessionStart } }] : []),
+        ...(filter.bookingType === 'trial' ? [{ bookingType: { equals: 'trial' } }] : []),
+        ...(filter.bookingType === 'enrolment' ? [{ bookingType: { not_equals: 'trial' } }] : []),
+        ...(filter.ageGroup ? [{ ageGroup: { equals: filter.ageGroup } }] : []),
         { or: [{ status: { equals: 'paid' } }, { and: [{ status: { equals: 'pending' } }, { createdAt: { greater_than: holdCutoff } }] }] },
       ],
     },
