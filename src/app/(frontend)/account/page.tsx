@@ -69,7 +69,8 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
           <h2 className="font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase">Upcoming</h2>
           {upcoming.length === 0 ? (
             <p className="mt-4 rounded-2xl border border-line p-6 text-muted">
-              Nothing booked yet. <Link href="/programs" className="font-semibold text-brand underline">Browse camps & programs</Link>
+              Nothing booked yet. <Link href="/programs" className="font-semibold text-brand underline">Browse camps & programs</Link> or{' '}
+              <Link href="/academy/trial" className="font-semibold text-brand underline">book an RFA trial</Link>
             </p>
           ) : (
             <ol className="mt-4 divide-y divide-line rounded-2xl border border-line">
