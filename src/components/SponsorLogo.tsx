@@ -17,6 +17,8 @@ export function SponsorCard({ sponsor, size = 'md' }: { sponsor: Sponsor; size?:
       alt={sponsor.name}
       fill
       sizes="(min-width: 1024px) 20vw, 45vw"
+      // Bundled logo files are already small and web-ready — serve them directly
+      unoptimized={src.startsWith('/')}
       className={`transition duration-300 group-hover:scale-[1.04] ${tile ? 'object-contain p-1' : 'object-contain p-5'}`}
     />
   ) : (
