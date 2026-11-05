@@ -14,6 +14,7 @@ const nextConfig: NextConfig = {
     localPatterns: [
       { pathname: '/api/media/file/**' },
       { pathname: '/brand/**' },
+      { pathname: '/sponsors/**' },
     ],
   },
   webpack: (webpackConfig) => {

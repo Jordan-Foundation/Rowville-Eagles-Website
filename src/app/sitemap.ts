@@ -12,7 +12,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     p.find({ collection: 'programs', where: { status: { in: ['open', 'full'] }, type: { not_in: ['registration', 'academy-trial'] } }, limit: 200, depth: 0, select: { slug: true, updatedAt: true } }),
     p.find({ collection: 'products', where: { status: { equals: 'active' }, audience: { equals: 'everyone' } }, limit: 200, depth: 0, select: { slug: true, updatedAt: true } }),
   ])
-  const pages = ['', '/join', '/about', '/fixtures', '/programs', '/academy', '/academy/trial', '/shop', '/news']
+  const pages = ['', '/join', '/about', '/fixtures', '/programs', '/academy', '/academy/trial', '/shop', '/news', '/sponsors']
   return [
     ...pages.map((path) => ({ url: `${base}${path}`, changeFrequency: 'weekly' as const, priority: path === '' ? 1 : 0.8 })),
     ...posts.docs.map((d) => ({ url: `${base}/news/${d.slug}`, lastModified: d.updatedAt, priority: 0.6 })),

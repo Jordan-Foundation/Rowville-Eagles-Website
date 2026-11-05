@@ -20,8 +20,21 @@ export const Sponsors: CollectionConfig = {
         { label: 'Community', value: 'community' },
       ],
     },
-    { name: 'logo', type: 'upload', relationTo: 'media' },
-    { name: 'website', type: 'text' },
+    { name: 'logo', type: 'upload', relationTo: 'media', admin: { description: 'Upload a logo (PNG/SVG with a transparent background works best).' } },
+    {
+      name: 'logoUrl',
+      label: 'Logo file path',
+      type: 'text',
+      admin: { description: 'Used when no logo is uploaded, e.g. /sponsors/coles.png' },
+    },
+    {
+      name: 'tileColor',
+      label: 'Tile background colour',
+      type: 'text',
+      admin: { description: 'Only for logos that come with their own background (e.g. #0b1045). Leave empty for a white card.' },
+    },
+    { name: 'website', type: 'text', admin: { description: 'Full link, e.g. https://www.coles.com.au' } },
+    { name: 'blurb', type: 'textarea', maxLength: 200, admin: { description: 'One or two lines shown on the Sponsors page' } },
     { name: 'order', type: 'number', defaultValue: 0 },
   ],
 }

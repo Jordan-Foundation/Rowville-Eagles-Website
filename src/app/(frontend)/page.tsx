@@ -3,6 +3,7 @@ import { payload, formatDate } from '@/lib/payload'
 import { ProgramCard } from '@/components/ProgramCard'
 import { Crest, RfaLogo } from '@/components/Logos'
 import { AcademyBackdrop } from '@/components/AcademyBackdrop'
+import { SponsorCard } from '@/components/SponsorLogo'
 import { currentSeason } from '@/lib/age'
 
 export const revalidate = 60
@@ -19,7 +20,7 @@ export default async function Home() {
     p.findGlobal({ slug: 'site-settings', depth: 0 }),
     p.find({ collection: 'programs', where: { status: { equals: 'open' }, type: { not_in: ['registration', 'academy-trial'] } }, limit: 3, depth: 0, sort: 'startDate' }),
     p.find({ collection: 'posts', where: { status: { equals: 'published' } }, limit: 3, depth: 0 }),
-    p.find({ collection: 'sponsors', limit: 12, depth: 0 }),
+    p.find({ collection: 'sponsors', limit: 20, depth: 1, sort: 'order' }),
   ])
   const programs = others
   const season = currentSeason(settings.season)
@@ -169,15 +170,17 @@ export default async function Home() {
 
       {/* SPONSORS */}
       {sponsors.docs.length > 0 && (
-        <section className="border-t border-line py-16">
-          <div className="container-x text-center">
-            <p className="eyebrow !text-muted">Proudly supported by</p>
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-x-12 gap-y-6">
-              {sponsors.docs.map((s) => (
-                <a key={s.id} href={s.website || '#'} className="font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase text-muted/70 transition hover:text-ink">
-                  {s.name}
-                </a>
-              ))}
+        <section className="border-t border-line bg-surface-2 py-16">
+          <div className="container-x">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <p className="eyebrow !text-brand">Proudly supported by</p>
+                <h2 className="mt-3 font-[family-name:var(--font-barlow)] text-4xl font-bold uppercase">Our sponsors</h2>
+              </div>
+              <Link href="/sponsors" className="font-semibold text-brand hover:underline">All sponsors & partnering →</Link>
+            </div>
+            <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+              {sponsors.docs.map((s) => <SponsorCard key={s.id} sponsor={s} />)}
             </div>
           </div>
         </section>

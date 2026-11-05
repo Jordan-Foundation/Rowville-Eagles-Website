@@ -628,8 +628,26 @@ export interface Sponsor {
   id: number;
   name: string;
   tier: 'major' | 'gold' | 'silver' | 'community';
+  /**
+   * Upload a logo (PNG/SVG with a transparent background works best).
+   */
   logo?: (number | null) | Media;
+  /**
+   * Used when no logo is uploaded, e.g. /sponsors/coles.png
+   */
+  logoUrl?: string | null;
+  /**
+   * Only for logos that come with their own background (e.g. #0b1045). Leave empty for a white card.
+   */
+  tileColor?: string | null;
+  /**
+   * Full link, e.g. https://www.coles.com.au
+   */
   website?: string | null;
+  /**
+   * One or two lines shown on the Sponsors page
+   */
+  blurb?: string | null;
   order?: number | null;
   updatedAt: string;
   createdAt: string;
@@ -992,7 +1010,10 @@ export interface SponsorsSelect<T extends boolean = true> {
   name?: T;
   tier?: T;
   logo?: T;
+  logoUrl?: T;
+  tileColor?: T;
   website?: T;
+  blurb?: T;
   order?: T;
   updatedAt?: T;
   createdAt?: T;

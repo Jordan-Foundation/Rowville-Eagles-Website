@@ -17,6 +17,18 @@ const para = (text: string) => ({
 
 const payload = await getPayload({ config })
 
+const SPONSORS = [
+  { name: 'iBuild Renovations', logoUrl: '/sponsors/ibuild-renovations.png' },
+  { name: 'D&R Cleaning Services', logoUrl: '/sponsors/dr-cleaning-services.png', tileColor: '#0b1045' },
+  { name: 'Coles', logoUrl: '/sponsors/coles.png' },
+  { name: 'COJO Group', logoUrl: '/sponsors/cojo-group.png' },
+  { name: 'CGD Partners', logoUrl: '/sponsors/cgd-partners.png' },
+  { name: 'Old Cars Removed', logoUrl: '/sponsors/old-cars-removed.png', tileColor: '#2595d2' },
+  { name: 'KTD', logoUrl: '/sponsors/ktd.png' },
+  { name: 'Continental Steel', logoUrl: '/sponsors/continental-steel.png' },
+  { name: 'IC Build', logoUrl: '/sponsors/ic-build.png' },
+]
+
 // On hosted deployments (vercel-build) the seed only fills an EMPTY database and never deletes anything.
 const hosted = process.env.SEED_ONLY_IF_EMPTY === 'true'
 if (hosted) {
@@ -160,8 +172,8 @@ for (const [i, pr] of products.entries()) {
   await payload.create({ collection: 'products', data: { ...pr, variants: [...pr.variants], status: 'active', order: i } })
 }
 
-for (const [i, name] of ['Your Sponsor', 'Local Partner', 'Community Supporter', 'Major Partner'].entries()) {
-  await payload.create({ collection: 'sponsors', data: { name, tier: i === 3 ? 'major' : 'community', order: i } })
+for (const [i, sp] of SPONSORS.entries()) {
+  await payload.create({ collection: 'sponsors', data: { ...sp, tier: 'community', order: i } })
 }
 
 payload.logger.info(`Seed complete.${adminEmail ? ` Admin login: ${adminEmail}` : ''}`)
