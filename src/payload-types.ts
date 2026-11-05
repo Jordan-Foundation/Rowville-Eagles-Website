@@ -278,8 +278,15 @@ export interface Media {
  */
 export interface TrialRegistration {
   id: number;
-  reference: string;
+  displayName?: string | null;
+  /**
+   * Created automatically when saved
+   */
+  reference?: string | null;
   status: 'interested' | 'trial-booked' | 'attended' | 'offered' | 'registered' | 'closed';
+  /**
+   * Worked out from the date of birth
+   */
   ageGroup?:
     | (
         | 'U5'
@@ -299,6 +306,9 @@ export interface TrialRegistration {
         | 'Seniors'
       )
     | null;
+  /**
+   * Set automatically
+   */
   season?: number | null;
   trialSession?: (number | null) | TrialSession;
   offeredTeam?: (number | null) | Team;
@@ -499,12 +509,18 @@ export interface Participant {
  */
 export interface Booking {
   id: number;
-  reference: string;
+  /**
+   * Created automatically when saved
+   */
+  reference?: string | null;
   program: number | Program;
   status: 'pending' | 'paid' | 'waitlisted' | 'cancelled' | 'refunded';
+  /**
+   * Set from the program automatically
+   */
   payee: 'club' | 'academy';
   /**
-   * AUD
+   * AUD. Defaults to the program price (e.g. for cash bookings).
    */
   amount: number;
   bookingType?: ('enrolment' | 'trial') | null;
@@ -595,7 +611,10 @@ export interface Product {
  */
 export interface Order {
   id: number;
-  reference: string;
+  /**
+   * Created automatically when saved
+   */
+  reference?: string | null;
   status: 'pending' | 'paid' | 'ready' | 'completed' | 'cancelled' | 'refunded';
   payee: 'club' | 'academy';
   account?: (number | null) | User;
@@ -793,6 +812,7 @@ export interface PostsSelect<T extends boolean = true> {
  * via the `definition` "trial-registrations_select".
  */
 export interface TrialRegistrationsSelect<T extends boolean = true> {
+  displayName?: T;
   reference?: T;
   status?: T;
   ageGroup?: T;

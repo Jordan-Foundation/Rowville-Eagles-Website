@@ -1,18 +1,14 @@
-import { randomBytes } from 'crypto'
 import type { Payload } from 'payload'
 import { paymentsMode, stripeAccounts, stripeFor, type Payee } from './stripe-accounts'
 import { onBookingPaid, onOrderPaid } from './notifications'
+import { makeReference } from './reference'
 
 export const siteUrl = () =>
   process.env.NEXT_PUBLIC_SITE_URL ||
   (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : 'http://localhost:3000')
 
 /** Human-friendly unique reference, e.g. RFA-7K3QX9 */
-export const newReference = (payee: Payee) => {
-  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-  const bytes = randomBytes(6)
-  return `${stripeAccounts[payee].refPrefix}-${Array.from(bytes, (b) => alphabet[b % alphabet.length]).join('')}`
-}
+export const newReference = (payee: Payee) => makeReference(stripeAccounts[payee].refPrefix)
 
 const toCents = (aud: number) => Math.round(aud * 100)
 

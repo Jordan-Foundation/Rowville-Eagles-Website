@@ -1,8 +1,9 @@
 import type { CollectionConfig } from 'payload'
 import { APIError } from 'payload'
 import { isStaff } from '../access'
-import { ageGroupOptions } from '../lib/age'
-import { sendOffer } from '../lib/trials'
+import { ageGroupFor, ageGroupOptions, currentSeason } from '../lib/age'
+import { makeReference } from '../lib/reference'
+import { newToken, sendOffer } from '../lib/trials'
 
 /**
  * "Join us" sign-ups: an expression of interest, or a booked club trial.
@@ -12,7 +13,7 @@ export const TrialRegistrations: CollectionConfig = {
   slug: 'trial-registrations',
   labels: { singular: 'Trial / interest', plural: 'Trials & interest' },
   admin: {
-    useAsTitle: 'reference',
+    useAsTitle: 'displayName',
     defaultColumns: ['reference', 'player.firstName', 'player.lastName', 'ageGroup', 'status', 'trialSession', 'createdAt'],
     group: 'Trials & Registration',
     listSearchableFields: ['reference', 'player.firstName', 'player.lastName', 'contact.email'],
@@ -20,6 +21,26 @@ export const TrialRegistrations: CollectionConfig = {
   access: { read: isStaff, create: isStaff, update: isStaff, delete: isStaff },
   defaultSort: '-createdAt',
   hooks: {
+    beforeValidate: [
+      async ({ data, originalDoc, req, operation }) => {
+        if (!data) return data
+        const next = { ...data }
+        if (operation === 'create' && !next.reference) next.reference = makeReference('TRY')
+        if (operation === 'create' && !next.token) next.token = newToken()
+        if (!next.season && !originalDoc?.season) {
+          const settings = await req.payload.findGlobal({ slug: 'site-settings', depth: 0, req })
+          next.season = currentSeason(settings.season)
+        }
+        const dob = next.player?.dateOfBirth ?? originalDoc?.player?.dateOfBirth
+        const season = next.season ?? originalDoc?.season
+        if (dob && season) next.ageGroup = ageGroupFor(dob, season) ?? next.ageGroup
+        const first = next.player?.firstName ?? originalDoc?.player?.firstName ?? ''
+        const last = next.player?.lastName ?? originalDoc?.player?.lastName ?? ''
+        const group = next.ageGroup ?? originalDoc?.ageGroup
+        next.displayName = `${first} ${last}`.trim() + (group ? ` (${group})` : '')
+        return next
+      },
+    ],
     beforeChange: [
       ({ data, originalDoc }) => {
         if (data.status === 'offered' && originalDoc?.status !== 'offered' && (!data.offeredTeam || !data.registrationProgram)) {
@@ -36,7 +57,13 @@ export const TrialRegistrations: CollectionConfig = {
     ],
   },
   fields: [
-    { name: 'reference', type: 'text', required: true, unique: true, admin: { readOnly: true } },
+    { name: 'displayName', type: 'text', admin: { hidden: true } },
+    {
+      name: 'reference',
+      type: 'text',
+      unique: true,
+      admin: { readOnly: true, description: 'Created automatically when saved' },
+    },
     {
       name: 'status',
       type: 'select',
@@ -52,8 +79,13 @@ export const TrialRegistrations: CollectionConfig = {
       ],
       admin: { position: 'sidebar' },
     },
-    { name: 'ageGroup', type: 'select', options: ageGroupOptions, admin: { position: 'sidebar', readOnly: true } },
-    { name: 'season', type: 'number', admin: { position: 'sidebar', readOnly: true } },
+    {
+      name: 'ageGroup',
+      type: 'select',
+      options: ageGroupOptions,
+      admin: { position: 'sidebar', readOnly: true, description: 'Worked out from the date of birth' },
+    },
+    { name: 'season', type: 'number', admin: { position: 'sidebar', readOnly: true, description: 'Set automatically' } },
     { name: 'trialSession', type: 'relationship', relationTo: 'trial-sessions', admin: { position: 'sidebar' } },
     {
       type: 'collapsible',

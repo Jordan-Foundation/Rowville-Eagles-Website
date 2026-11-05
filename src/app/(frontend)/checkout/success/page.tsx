@@ -26,11 +26,11 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
     try {
       const mode = paymentsMode(doc.payee)
       if (mode === 'simulate' && simulated) {
-        status = (await confirmPayment(p, kind, doc.reference))?.status ?? status
+        status = (await confirmPayment(p, kind, doc.reference ?? ''))?.status ?? status
       } else if (mode === 'stripe' && session_id) {
         const session = await stripeFor(doc.payee).checkout.sessions.retrieve(session_id)
         if (session.metadata?.reference === doc.reference && session.payment_status === 'paid') {
-          status = (await confirmPayment(p, kind, doc.reference))?.status ?? status
+          status = (await confirmPayment(p, kind, doc.reference ?? ''))?.status ?? status
         }
       }
     } catch (e) {
@@ -48,7 +48,7 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
     return (
       <div data-brand={academy ? 'academy' : undefined} data-page-brand={academy ? 'academy' : undefined} className="relative overflow-hidden">
         {academy && <AcademyBackdrop />}
-        <Shell title={paid ? (doc.bookingType === 'trial' ? 'Trial booked!' : 'You’re booked in!') : 'Payment processing'} reference={doc.reference}>
+        <Shell title={paid ? (doc.bookingType === 'trial' ? 'Trial booked!' : 'You’re booked in!') : 'Payment processing'} reference={doc.reference ?? undefined}>
           <dl className={`panel mt-8 space-y-3 border border-line bg-surface-2 p-6 text-left text-sm ${academy ? 'gloss-sheen rounded-sm' : 'rounded-2xl'}`}>
             <Row k="Program" v={program.title} />
             <Row k={doc.player?.teamName ? 'Team' : 'Player'} v={doc.player?.teamName || doc.player?.firstName || ''} />
@@ -79,7 +79,7 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
   }
 
   return (
-    <Shell title={paid ? 'Order confirmed' : 'Payment processing'} reference={doc.reference}>
+    <Shell title={paid ? 'Order confirmed' : 'Payment processing'} reference={doc.reference ?? undefined}>
       {paid && <ClearCart />}
       <ul className="mt-8 divide-y divide-line rounded-2xl border border-line bg-surface-2 px-6 text-left text-sm">
         {doc.items.map((i) => (

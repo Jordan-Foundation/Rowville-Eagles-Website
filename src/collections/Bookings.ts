@@ -1,6 +1,9 @@
 import type { CollectionConfig } from 'payload'
 import { isStaff, staffOrOwner } from '../access'
 import { ageGroupOptions } from '../lib/age'
+import { defaultPayee } from './Programs'
+import { isPayee, stripeAccounts } from '../lib/stripe-accounts'
+import { makeReference } from '../lib/reference'
 
 /**
  * A place in a Program. Created by the checkout flow (pending) and confirmed by the Stripe webhook (paid).
@@ -16,8 +19,23 @@ export const Bookings: CollectionConfig = {
   },
   access: { read: staffOrOwner('account'), create: isStaff, update: isStaff, delete: isStaff },
   defaultSort: '-createdAt',
+  hooks: {
+    beforeValidate: [
+      async ({ data, req, operation }) => {
+        if (!data || operation !== 'create') return data
+        const next = { ...data }
+        const programId = typeof next.program === 'object' ? next.program?.id : next.program
+        const program = programId ? await req.payload.findByID({ collection: 'programs', id: programId, depth: 0, req, disableErrors: true }) : null
+        const payee = next.payee || (program ? (isPayee(program.payee) ? program.payee : defaultPayee(program.type)) : undefined)
+        if (payee) next.payee = payee
+        if (next.amount === undefined || next.amount === null) next.amount = program?.price ?? 0
+        if (!next.reference && isPayee(payee)) next.reference = makeReference(stripeAccounts[payee].refPrefix)
+        return next
+      },
+    ],
+  },
   fields: [
-    { name: 'reference', type: 'text', required: true, unique: true, admin: { readOnly: true } },
+    { name: 'reference', type: 'text', unique: true, admin: { readOnly: true, description: 'Created automatically when saved' } },
     { name: 'program', type: 'relationship', relationTo: 'programs', required: true },
     {
       name: 'status',
@@ -27,8 +45,19 @@ export const Bookings: CollectionConfig = {
       options: ['pending', 'paid', 'waitlisted', 'cancelled', 'refunded'],
       admin: { position: 'sidebar' },
     },
-    { name: 'payee', type: 'select', required: true, options: ['club', 'academy'], admin: { readOnly: true, position: 'sidebar' } },
-    { name: 'amount', type: 'number', required: true, admin: { readOnly: true, position: 'sidebar', description: 'AUD' } },
+    {
+      name: 'payee',
+      type: 'select',
+      required: true,
+      options: ['club', 'academy'],
+      admin: { position: 'sidebar', description: 'Set from the program automatically' },
+    },
+    {
+      name: 'amount',
+      type: 'number',
+      required: true,
+      admin: { position: 'sidebar', description: 'AUD. Defaults to the program price (e.g. for cash bookings).' },
+    },
     {
       name: 'bookingType',
       type: 'select',

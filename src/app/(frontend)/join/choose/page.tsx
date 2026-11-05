@@ -28,7 +28,7 @@ export default async function ChoosePage({ searchParams }: { searchParams: Promi
       ) : (
         <>
           <p className="mt-4 text-muted">For {reg.player.firstName} {reg.player.lastName} · {reg.ageGroup}</p>
-          <div className="mt-8"><ChooseForm refCode={reg.reference} token={token!} ageGroup={reg.ageGroup!} options={options} /></div>
+          <div className="mt-8"><ChooseForm refCode={reg.reference ?? ''} token={token!} ageGroup={reg.ageGroup!} options={options} /></div>
         </>
       )}
     </div>

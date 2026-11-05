@@ -3,7 +3,7 @@
 import { redirect } from 'next/navigation'
 import { payload } from '@/lib/payload'
 import { ageGroupFor, currentSeason } from '@/lib/age'
-import { newReference } from '@/lib/payments'
+import { makeReference } from '@/lib/reference'
 import { emailInterestConfirmation, emailTrialConfirmation, newToken, openTrialSessions } from '@/lib/trials'
 import type { TrialRegistration } from '@/payload-types'
 
@@ -66,7 +66,7 @@ export async function joinUs(_prev: JoinState, fd: FormData): Promise<JoinState>
       collection: 'trial-registrations',
       overrideAccess: true,
       data: {
-        reference: newReference('club').replace('REFC-', 'TRY-'),
+        reference: makeReference('TRY'),
         status: trialSessionId ? 'trial-booked' : 'interested',
         season,
         ageGroup,

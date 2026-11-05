@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { isStaff, staffOrOwner } from '../access'
+import { makeReference } from '../lib/reference'
 
 export const Orders: CollectionConfig = {
   slug: 'orders',
@@ -10,8 +11,13 @@ export const Orders: CollectionConfig = {
   },
   access: { read: staffOrOwner('account'), create: isStaff, update: isStaff, delete: isStaff },
   defaultSort: '-createdAt',
+  hooks: {
+    beforeValidate: [
+      ({ data, operation }) => (data && operation === 'create' && !data.reference ? { ...data, reference: makeReference('RFA') } : data),
+    ],
+  },
   fields: [
-    { name: 'reference', type: 'text', required: true, unique: true, admin: { readOnly: true } },
+    { name: 'reference', type: 'text', unique: true, admin: { readOnly: true, description: 'Created automatically when saved' } },
     {
       name: 'status',
       type: 'select',

@@ -3,6 +3,7 @@ import * as migration_20261105_091033_about_page_and_team_dribl_links from './20
 import * as migration_20261105_095659_trials_memberships_accounts from './20261105_095659_trials_memberships_accounts';
 import * as migration_20261105_104026_sponsor_logos from './20261105_104026_sponsor_logos';
 import * as migration_20261105_110000_sponsor_logo_backfill from './20261105_110000_sponsor_logo_backfill';
+import * as migration_20261105_122821_admin_created_records from './20261105_122821_admin_created_records';
 
 export const migrations = [
   {
@@ -23,11 +24,16 @@ export const migrations = [
   {
     up: migration_20261105_104026_sponsor_logos.up,
     down: migration_20261105_104026_sponsor_logos.down,
-    name: '20261105_104026_sponsor_logos'
+    name: '20261105_104026_sponsor_logos',
   },
   {
     up: migration_20261105_110000_sponsor_logo_backfill.up,
     down: migration_20261105_110000_sponsor_logo_backfill.down,
     name: '20261105_110000_sponsor_logo_backfill',
+  },
+  {
+    up: migration_20261105_122821_admin_created_records.up,
+    down: migration_20261105_122821_admin_created_records.down,
+    name: '20261105_122821_admin_created_records'
   },
 ];

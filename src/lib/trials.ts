@@ -42,7 +42,7 @@ export async function emailTrialConfirmation(payload: Payload, reg: TrialRegistr
         ['When', when(session.start)],
         ['Where', session.location || '208 Dandelion Drive, Rowville'],
         ['Age group', reg.ageGroup || ''],
-        ['Reference', reg.reference],
+        ['Reference', reg.reference ?? ''],
       ],
       after: session.whatToBring ? `<strong>What to bring:</strong> ${esc(session.whatToBring)}` : undefined,
     },
@@ -59,7 +59,7 @@ export async function emailInterestConfirmation(payload: Payload, reg: TrialRegi
       rows: [
         ['Player', `${reg.player.firstName} ${reg.player.lastName}`],
         ['Age group', reg.ageGroup || ''],
-        ['Reference', reg.reference],
+        ['Reference', reg.reference ?? ''],
       ],
     },
     rfaPromoBlock(),
