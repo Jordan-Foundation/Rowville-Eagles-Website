@@ -9,6 +9,13 @@ npm run seed              # sample content + admin user (admin@rowvilleeagles.lo
 npm run dev               # site: http://localhost:3000  ·  admin: http://localhost:3000/admin
 ```
 
+## Deploying (Vercel)
+
+`npm run vercel-build` runs on every deploy: database migrations → sample content (only into an empty DB, if
+`SEED_SAMPLE_CONTENT=true`) → `next build`. Hosting region is Sydney (`vercel.json`).
+
+Schema changes: edit collections, then `DATABASE_URL=postgres://… npm run migrate:create -- <name>` and commit the file in `src/migrations/`.
+
 ## Payments: two Stripe accounts
 
 | Account | Receives |

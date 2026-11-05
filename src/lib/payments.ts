@@ -3,7 +3,9 @@ import { randomBytes } from 'crypto'
 import type { Payload } from 'payload'
 import { paymentsMode, stripeAccounts, stripeFor, type Payee } from './stripe-accounts'
 
-export const siteUrl = () => process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+export const siteUrl = () =>
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : 'http://localhost:3000')
 
 /** Human-friendly unique reference, e.g. RFA-7K3QX9 */
 export const newReference = (payee: Payee) => {

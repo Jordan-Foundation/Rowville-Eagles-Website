@@ -11,7 +11,10 @@ const barlow = Barlow_Condensed({ subsets: ['latin'], weight: ['500', '600', '70
 const grotesk = Space_Grotesk({ subsets: ['latin'], weight: ['400', '500', '600', '700'], variable: '--font-grotesk' })
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://www.rowvilleeagles.com.au'),
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ||
+      (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : 'https://www.rowvilleeagles.com.au'),
+  ),
   title: { default: 'Rowville Eagles Football Club', template: '%s · Rowville Eagles FC' },
   description: 'Community football in Rowville, Victoria — MiniRoos, juniors, seniors and the Rowville Foundation Academy. Est. 1985.',
 }

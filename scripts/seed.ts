@@ -17,17 +17,35 @@ const para = (text: string) => ({
 
 const payload = await getPayload({ config })
 
+// On hosted deployments (vercel-build) the seed only fills an EMPTY database and never deletes anything.
+const hosted = process.env.SEED_ONLY_IF_EMPTY === 'true'
+if (hosted) {
+  if (process.env.SEED_SAMPLE_CONTENT !== 'true') {
+    payload.logger.info('Seed skipped (SEED_SAMPLE_CONTENT is not "true").')
+    process.exit(0)
+  }
+  const { totalDocs } = await payload.count({ collection: 'programs' })
+  if (totalDocs > 0) {
+    payload.logger.info('Seed skipped — database already has content.')
+    process.exit(0)
+  }
+}
+
 for (const c of ['bookings', 'orders', 'products', 'participants', 'programs', 'teams', 'posts', 'sponsors'] as const) {
   await payload.delete({ collection: c, where: { id: { exists: true } } })
 }
 
-const adminEmail = process.env.SEED_ADMIN_EMAIL || 'admin@rowvilleeagles.local'
-const existing = await payload.find({ collection: 'users', where: { email: { equals: adminEmail } } })
-if (!existing.docs.length) {
-  await payload.create({
-    collection: 'users',
-    data: { email: adminEmail, password: process.env.SEED_ADMIN_PASSWORD || 'change-me-now', firstName: 'Club', lastName: 'Admin', roles: ['admin'] },
-  })
+// Admin account: hosted deployments require SEED_ADMIN_EMAIL + SEED_ADMIN_PASSWORD (no default password online).
+const adminEmail = process.env.SEED_ADMIN_EMAIL || (hosted ? '' : 'admin@rowvilleeagles.local')
+const adminPassword = process.env.SEED_ADMIN_PASSWORD || (hosted ? '' : 'change-me-now')
+if (adminEmail && adminPassword) {
+  const existing = await payload.find({ collection: 'users', where: { email: { equals: adminEmail } } })
+  if (!existing.docs.length) {
+    await payload.create({
+      collection: 'users',
+      data: { email: adminEmail, password: adminPassword, firstName: 'Club', lastName: 'Admin', roles: ['admin'] },
+    })
+  }
 }
 
 await payload.updateGlobal({
@@ -127,5 +145,5 @@ for (const [i, name] of ['Your Sponsor', 'Local Partner', 'Community Supporter',
   await payload.create({ collection: 'sponsors', data: { name, tier: i === 3 ? 'major' : 'community', order: i } })
 }
 
-payload.logger.info(`Seed complete. Admin login: ${adminEmail}`)
+payload.logger.info(`Seed complete.${adminEmail ? ` Admin login: ${adminEmail}` : ''}`)
 process.exit(0)

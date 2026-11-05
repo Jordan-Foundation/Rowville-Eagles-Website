@@ -4,7 +4,7 @@ import type { Metadata } from 'next'
 import { payload, formatAUD, formatDate } from '@/lib/payload'
 import { placesTaken } from '@/lib/payments'
 import { defaultPayee, programTypes } from '@/collections/Programs'
-import { isPayee, stripeAccounts } from '@/lib/stripe-accounts'
+import { isPayee, paymentsMode, stripeAccounts } from '@/lib/stripe-accounts'
 import { BookingForm } from './BookingForm'
 
 export const dynamic = 'force-dynamic'
@@ -38,6 +38,12 @@ export default async function BookPage({
         remaining: Math.max(0, (s.capacity ?? 1) - (await placesTaken(p, program.id, s.start))),
       })),
   )
+  let paymentsReady = program.price === 0
+  try {
+    paymentsReady ||= Boolean(paymentsMode(payee))
+  } catch {
+    /* account not connected yet */
+  }
   const full =
     program.status !== 'open' ||
     (program.capacity ? (await placesTaken(p, program.id)) >= program.capacity : false) ||
@@ -54,7 +60,11 @@ export default async function BookPage({
             <p className="mt-6 rounded-lg border border-line bg-surface-2 px-4 py-3 text-sm">Payment was cancelled — nothing was charged. You can try again below.</p>
           )}
           <div className="mt-10">
-            {full ? (
+            {!paymentsReady ? (
+              <p className="rounded-2xl border border-line bg-surface-2 p-6">
+                Online bookings for this program open soon. In the meantime, please contact the club to book.
+              </p>
+            ) : full ? (
               <p className="rounded-2xl border border-line bg-surface-2 p-6">
                 This program is fully booked. Please check back later or contact the club about the waitlist.
               </p>
