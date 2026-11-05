@@ -249,11 +249,16 @@ export interface User {
   collection: 'users';
 }
 /**
+ * Photos and logos. JPG or WebP is best for photos; PNG for logos. Large photos are fine — they upload directly to storage.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media".
  */
 export interface Media {
   id: number;
+  /**
+   * Short description of the image for screen readers and Google, e.g. "U9 players at the January holiday camp".
+   */
   alt: string;
   updatedAt: string;
   createdAt: string;

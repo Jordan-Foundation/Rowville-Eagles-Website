@@ -64,6 +64,8 @@ export default buildConfig({
       enabled: Boolean(process.env.BLOB_READ_WRITE_TOKEN),
       collections: { media: true },
       token: process.env.BLOB_READ_WRITE_TOKEN || '',
+      // Upload straight from the browser to Blob — avoids Vercel's 4.5 MB request limit for large photos
+      clientUploads: true,
     }),
   ],
 })
