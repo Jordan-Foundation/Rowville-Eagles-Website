@@ -30,6 +30,13 @@ export const Bookings: CollectionConfig = {
       options: ['pending', 'paid', 'waitlisted', 'cancelled', 'refunded'],
     },
     { name: 'amount', type: 'number', required: true, admin: { description: 'AUD charged' } },
+    {
+      name: 'payee',
+      type: 'select',
+      required: true,
+      options: ['club', 'academy'],
+      admin: { readOnly: true, description: 'Stripe account that received this payment' },
+    },
     { name: 'stripeCheckoutId', type: 'text', admin: { readOnly: true } },
     {
       name: 'playFootballComplete',

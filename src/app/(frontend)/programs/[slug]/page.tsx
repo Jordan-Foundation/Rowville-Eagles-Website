@@ -20,7 +20,7 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
 
   return (
     <div data-brand={academy ? 'academy' : undefined}>
-      <section className={academy ? 'border-b border-line' : 'pitch-lines bg-[#0a1a3d] text-white'}>
+      <section className={academy ? 'border-b border-line' : 'pitch-lines bg-[#0f2a55] text-white'}>
         <div className="container-x py-16 md:py-24">
           <p className="eyebrow">{programTypes.find((t) => t.value === p.type)?.label}</p>
           <h1 className={`mt-4 max-w-3xl text-5xl leading-none sm:text-6xl ${academy ? 'font-display font-semibold' : 'font-[family-name:var(--font-barlow)] font-extrabold uppercase'}`}>

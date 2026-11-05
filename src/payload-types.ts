@@ -189,6 +189,10 @@ export interface Media {
  */
 export interface Program {
   id: number;
+  /**
+   * Auto-set from program type: team registrations → Club, everything else → Academy.
+   */
+  payee?: ('club' | 'academy') | null;
   title: string;
   slug: string;
   type: 'registration' | 'holiday-camp' | 'tournament' | 'academy-term' | 'academy-trial' | 'private-session';
@@ -253,6 +257,10 @@ export interface Booking {
    * AUD charged
    */
   amount: number;
+  /**
+   * Stripe account that received this payment
+   */
+  payee: 'club' | 'academy';
   stripeCheckoutId?: string | null;
   /**
    * Season registrations: FV section completed in PlayFootball
@@ -479,6 +487,7 @@ export interface PostsSelect<T extends boolean = true> {
  * via the `definition` "programs_select".
  */
 export interface ProgramsSelect<T extends boolean = true> {
+  payee?: T;
   title?: T;
   slug?: T;
   type?: T;
@@ -510,6 +519,7 @@ export interface BookingsSelect<T extends boolean = true> {
   sessionStart?: T;
   status?: T;
   amount?: T;
+  payee?: T;
   stripeCheckoutId?: T;
   playFootballComplete?: T;
   updatedAt?: T;

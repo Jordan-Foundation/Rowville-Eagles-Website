@@ -2,6 +2,7 @@ import Link from 'next/link'
 import type { Program } from '@/payload-types'
 import { programTypes } from '@/collections/Programs'
 import { formatAUD, formatDate } from '@/lib/payload'
+import { RfaLogo } from './Logos'
 
 export function ProgramCard({ p }: { p: Program }) {
   const typeLabel = programTypes.find((t) => t.value === p.type)?.label
@@ -12,7 +13,14 @@ export function ProgramCard({ p }: { p: Program }) {
     >
       <div className="flex items-center justify-between gap-3">
         <span className="eyebrow">{typeLabel}</span>
-        {p.status === 'full' && <span className="rounded-full bg-surface-2 px-2.5 py-1 text-xs text-muted">Waitlist</span>}
+        <span className="flex items-center gap-2">
+          {p.status === 'full' && <span className="rounded-full bg-surface-2 px-2.5 py-1 text-xs text-muted">Waitlist</span>}
+          {p.brand === 'academy' && (
+            <span className="bg-black px-2 py-1" title="Rowville Foundation Academy">
+              <RfaLogo className="h-3 w-auto" ink="#fff" paper="#000" />
+            </span>
+          )}
+        </span>
       </div>
       <h3 className="mt-3 font-display text-2xl font-bold leading-tight">{p.title}</h3>
       <p className="mt-2 flex-1 text-sm text-muted">{p.summary}</p>

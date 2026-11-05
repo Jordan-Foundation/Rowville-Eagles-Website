@@ -7,10 +7,15 @@
   Teams, Programs (registrations, camps, tournaments, Academy terms/trials, 1-on-1s), Bookings, News, Sponsors, Site settings
 - Pages: Home, Foundation Academy, Camps & Programs (+ detail), Teams, News (+ article), Fixtures
 
-## ⏳ Phase 2 — Brand & content (needs club input)
-- [ ] Official logo (SVG) → replace `src/components/Crest.tsx`
-- [ ] Official colours → update tokens in `styles.css`
-- [ ] Real photos, ground address, contact details, socials, sponsor logos
+## ✅ Phase 2a — Brand (done)
+- Club crest + colours (royal blue #1D4888, gold #F1CB22, red #CA272C) — `public/brand/`, `styles.css`
+- RFA sub-brand: monochrome black / grey / white / gloss black, RFA wordmark + Foundation triangle (vector redraws in `src/components/Logos.tsx`)
+- Ground (208 Dandelion Drive, Rowville), email, Facebook, Instagram
+- Two Stripe accounts: `Program.payee` (registrations → club, everything else → academy) — `src/lib/stripe-accounts.ts`
+
+## ⏳ Phase 2b — Content (needs club input)
+- [ ] Original vector logo files (SVG/AI/PDF) to replace the redraws
+- [ ] Real photos, sponsor logos, real program prices/dates, team training times
 - [ ] Migrate content from the current GoDaddy site; set up 301 redirects from old URLs
 
 ## Phase 3 — Payments & bookings (Stripe)

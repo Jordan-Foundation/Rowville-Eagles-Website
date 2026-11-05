@@ -15,7 +15,7 @@ export default async function ProgramsPage({ searchParams }: { searchParams: Pro
 
   return (
     <>
-      <section className="pitch-lines bg-[#0a1a3d] text-white">
+      <section className="pitch-lines bg-[#0f2a55] text-white">
         <div className="container-x py-16">
           <p className="eyebrow">Book & pay online</p>
           <h1 className="mt-3 font-[family-name:var(--font-barlow)] text-5xl font-extrabold uppercase sm:text-6xl">Camps & Programs</h1>

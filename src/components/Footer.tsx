@@ -1,30 +1,50 @@
 import Link from 'next/link'
 import type { SiteSetting } from '@/payload-types'
-import { Crest } from './Crest'
+import { Crest, RfaLogo } from './Logos'
 
 export function Footer({ settings }: { settings: SiteSetting }) {
+  const { ground, links } = settings
   return (
-    <footer className="bg-[#0a1a3d] text-white/80" style={{ ['--brand' as string]: '#12306b', ['--accent' as string]: '#f5b301' }}>
-      <div className="container-x grid gap-10 py-14 md:grid-cols-4">
-        <div className="md:col-span-2">
-          <div className="flex items-center gap-3 text-white">
-            <Crest className="h-11 w-10" />
-            <span className="font-[family-name:var(--font-barlow)] text-xl font-bold uppercase tracking-wide">{settings.clubName}</span>
+    <footer className="bg-[#0f2a55] text-white/80">
+      <div className="container-x grid gap-10 py-14 md:grid-cols-12">
+        <div className="md:col-span-4">
+          <div className="flex items-center gap-4 text-white">
+            <Crest className="h-16 w-auto" />
+            <div>
+              <p className="font-[family-name:var(--font-barlow)] text-xl font-bold uppercase tracking-wide">{settings.clubName}</p>
+              <p className="text-xs uppercase tracking-[0.25em] text-white/60">Established 1985</p>
+            </div>
           </div>
-          {settings.tagline && <p className="mt-4 max-w-sm text-sm">{settings.tagline}</p>}
+          {settings.tagline && <p className="mt-5 max-w-sm text-sm">{settings.tagline}</p>}
+          <Link href="/academy" className="mt-6 inline-flex items-center gap-3 border border-white/15 bg-black px-4 py-3 transition hover:border-white/40">
+            <RfaLogo className="h-5 w-auto" ink="#fff" paper="#000" />
+            <span className="text-xs uppercase tracking-[0.2em] text-white/70">Foundation Academy →</span>
+          </Link>
         </div>
-        <div className="text-sm">
-          <h3 className="mb-3 font-semibold text-white">Visit</h3>
-          <p>{settings.ground?.name}</p>
-          <p>{settings.ground?.address}</p>
+        <div className="text-sm md:col-span-3">
+          <h3 className="mb-3 font-semibold text-white">Home ground</h3>
+          {ground?.name && <p>{ground.name}</p>}
+          {ground?.address && <p>{ground.address}</p>}
+          {ground?.mapUrl && (
+            <a href={ground.mapUrl} className="mt-2 inline-block text-accent hover:underline">
+              Get directions →
+            </a>
+          )}
         </div>
-        <div className="text-sm">
+        <div className="text-sm md:col-span-3">
           <h3 className="mb-3 font-semibold text-white">Contact</h3>
-          {settings.email && <p><a href={`mailto:${settings.email}`} className="hover:text-white">{settings.email}</a></p>}
-          <div className="mt-3 flex gap-4">
-            {settings.links?.facebook && <a href={settings.links.facebook} className="hover:text-white">Facebook</a>}
-            {settings.links?.instagram && <a href={settings.links.instagram} className="hover:text-white">Instagram</a>}
-          </div>
+          {settings.email && (
+            <a href={`mailto:${settings.email}`} className="hover:text-white">
+              {settings.email}
+            </a>
+          )}
+        </div>
+        <div className="text-sm md:col-span-2">
+          <h3 className="mb-3 font-semibold text-white">Follow</h3>
+          <ul className="space-y-1">
+            {links?.facebook && <li><a href={links.facebook} className="hover:text-white" rel="noopener" target="_blank">Facebook</a></li>}
+            {links?.instagram && <li><a href={links.instagram} className="hover:text-white" rel="noopener" target="_blank">Instagram</a></li>}
+          </ul>
         </div>
       </div>
       <div className="border-t border-white/10">

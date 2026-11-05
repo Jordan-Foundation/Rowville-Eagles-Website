@@ -14,6 +14,9 @@ export const programTypes = [
   { label: '1-on-1 session', value: 'private-session' },
 ] as const
 
+/** Which Stripe account is paid. Team registrations → Club; everything else → Academy (override per program). */
+export const defaultPayee = (type?: string | null): 'club' | 'academy' => (type === 'registration' ? 'club' : 'academy')
+
 export const Programs: CollectionConfig = {
   slug: 'programs',
   admin: {
@@ -28,7 +31,23 @@ export const Programs: CollectionConfig = {
     delete: isStaff,
   },
   defaultSort: 'startDate',
+  hooks: {
+    beforeValidate: [({ data }) => (data && !data.payee ? { ...data, payee: defaultPayee(data.type) } : data)],
+  },
   fields: [
+    {
+      name: 'payee',
+      label: 'Payments go to',
+      type: 'select',
+      options: [
+        { label: 'Rowville Eagles FC (club Stripe account)', value: 'club' },
+        { label: 'Rowville Foundation Academy (academy Stripe account)', value: 'academy' },
+      ],
+      admin: {
+        position: 'sidebar',
+        description: 'Auto-set from program type: team registrations → Club, everything else → Academy.',
+      },
+    },
     { name: 'title', type: 'text', required: true },
     { name: 'slug', type: 'text', required: true, unique: true, index: true },
     {
@@ -42,7 +61,7 @@ export const Programs: CollectionConfig = {
           defaultValue: 'club',
           options: [
             { label: 'Rowville Eagles', value: 'club' },
-            { label: 'Foundation Academy', value: 'academy' },
+            { label: 'Rowville Foundation Academy', value: 'academy' },
           ],
         },
         {

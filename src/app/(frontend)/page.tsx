@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { payload, formatDate } from '@/lib/payload'
 import { ProgramCard } from '@/components/ProgramCard'
-import { Crest } from '@/components/Crest'
+import { Crest, FoundationMark, RfaLogo } from '@/components/Logos'
 
 export const revalidate = 60
 
@@ -13,20 +13,23 @@ const pathway = [
 
 export default async function Home() {
   const p = await payload()
-  const [programs, posts, sponsors] = await Promise.all([
-    p.find({ collection: 'programs', where: { status: { equals: 'open' }, brand: { equals: 'club' } }, limit: 3, depth: 0 }),
+  const [registrations, others, posts, sponsors] = await Promise.all([
+    p.find({ collection: 'programs', where: { status: { equals: 'open' }, type: { equals: 'registration' } }, limit: 3, depth: 0 }),
+    p.find({ collection: 'programs', where: { status: { equals: 'open' }, type: { not_equals: 'registration' } }, limit: 3, depth: 0, sort: 'startDate' }),
     p.find({ collection: 'posts', where: { status: { equals: 'published' } }, limit: 3, depth: 0 }),
     p.find({ collection: 'sponsors', limit: 12, depth: 0 }),
   ])
+  // Registrations lead, then the next camps/academy programs
+  const programs = { docs: [...registrations.docs, ...others.docs].slice(0, 3) }
 
   return (
     <>
       {/* HERO */}
-      <section className="pitch-lines relative overflow-hidden bg-[#0a1a3d] text-white">
-        <div className="absolute inset-0 bg-linear-to-br from-[#12306b]/80 via-transparent to-black/40" />
+      <section className="pitch-lines relative overflow-hidden bg-[#0f2a55] text-white">
+        <div className="absolute inset-0 bg-linear-to-br from-[#1d4888]/80 via-transparent to-black/40" />
         <div className="container-x relative grid gap-12 py-24 md:py-32 lg:grid-cols-[1.4fr_1fr] lg:items-end">
           <div>
-            <p className="eyebrow">Rowville · Victoria</p>
+            <p className="eyebrow">Rowville · Victoria · Est. 1985</p>
             <h1 className="mt-5 font-[family-name:var(--font-barlow)] text-5xl font-extrabold uppercase leading-[0.92] tracking-tight sm:text-7xl lg:text-8xl">
               Soar together.
               <br />
@@ -49,7 +52,7 @@ export default async function Home() {
               { k: '12–16', v: 'MiniRoos teams' },
               { k: '3', v: 'Senior squads' },
               { k: 'Boys & Girls', v: 'Junior pathway' },
-              { k: 'Academy', v: 'Elite development' },
+              { k: 'Since 1985', v: 'Proudly community' },
             ].map((s) => (
               <div key={s.v} className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur">
                 <div className="font-[family-name:var(--font-barlow)] text-3xl font-bold text-white">{s.k}</div>
@@ -67,7 +70,7 @@ export default async function Home() {
             { href: '/programs?type=registration', t: 'Season registration', d: 'Pay club fees online' },
             { href: '/programs?type=holiday-camp', t: 'Holiday camps', d: 'School holiday clinics' },
             { href: '/fixtures', t: 'Fixtures & results', d: 'Every team, every round' },
-            { href: '/academy', t: 'Book a trial', d: 'Foundation Academy' },
+            { href: '/academy', t: 'Academy trials', d: 'Rowville Foundation Academy' },
           ].map((a) => (
             <Link key={a.t} href={a.href} className="group px-2 py-6 sm:px-6">
               <div className="font-semibold group-hover:text-brand">{a.t} →</div>
@@ -112,23 +115,24 @@ export default async function Home() {
       )}
 
       {/* ACADEMY TEASER */}
-      <section data-brand="academy" className="relative overflow-hidden">
-        <div className="container-x grid gap-10 py-24 lg:grid-cols-2 lg:items-center">
+      <section data-brand="academy" className="slant-lines relative overflow-hidden">
+        <FoundationMark className="pointer-events-none absolute -right-16 top-1/2 h-[30rem] w-auto -translate-y-1/2 opacity-[0.08]" ink="#fff" />
+        <div className="container-x relative grid gap-10 py-24 lg:grid-cols-2 lg:items-center">
           <div>
-            <p className="eyebrow">Foundation Academy</p>
-            <h2 className="mt-4 font-display text-5xl font-semibold leading-[1.05] sm:text-6xl">
-              Where ambition
+            <RfaLogo className="h-16 w-auto sm:h-20" ink="#fff" paper="#000" />
+            <h2 className="mt-8 font-display text-4xl font-semibold uppercase leading-[0.95] tracking-tight sm:text-6xl">
+              Rowville Foundation
               <br />
-              <em className="text-accent">meets expertise.</em>
+              <span className="text-muted">Academy</span>
             </h2>
           </div>
           <div>
             <p className="text-lg text-muted">
-              Our elite development program for committed players — small groups, specialist coaching, individual development plans and
-              video-led feedback.
+              Elite development for committed players — term programs, 1-on-1 coaching, holiday camps and tournaments, with an individual
+              plan for every athlete.
             </p>
-            <Link href="/academy" className="mt-8 inline-block border border-accent px-7 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-accent transition hover:bg-accent hover:text-accent-ink">
-              Discover the Academy
+            <Link href="/academy" className="mt-8 inline-block bg-white px-7 py-4 text-sm font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-white/85">
+              Explore the Academy
             </Link>
           </div>
         </div>
@@ -144,8 +148,8 @@ export default async function Home() {
           <div className="mt-10 grid gap-8 md:grid-cols-3">
             {posts.docs.map((post) => (
               <Link key={post.id} href={`/news/${post.slug}`} className="group">
-                <div className="pitch-lines grid aspect-[16/10] place-items-center overflow-hidden rounded-2xl bg-[#12306b] transition group-hover:bg-[#0a1a3d]">
-                  <Crest className="h-16 w-14 opacity-90" />
+                <div className="pitch-lines grid aspect-[16/10] place-items-center overflow-hidden rounded-2xl bg-[#1d4888] transition group-hover:bg-[#0f2a55]">
+                  <Crest className="h-20 w-auto opacity-95" />
                 </div>
                 <p className="mt-4 text-xs font-semibold uppercase tracking-wider text-brand">
                   {post.category} · {formatDate(post.publishedAt)}

@@ -1,0 +1,10 @@
+
+> rowville-eagles@1.0.0 start
+> cross-env NODE_OPTIONS=--no-deprecation next start
+
+▲ Next.js 16.3.3
+- Local:         http://localhost:3000
+- Network:       http://192.0.2.2:3000
+✓ Ready in 125ms
+✓ Running next.config.ts took 46ms
+[07:12:23] [33mWARN[39m: [36mNo email adapter provided. Email will be written to console. More info at https://payloadcms.com/docs/email/overview.[39m
