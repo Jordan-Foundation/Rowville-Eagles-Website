@@ -48,7 +48,8 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
     const cover = s.needsCover ? (s.coverCoach && typeof s.coverCoach === 'object' ? `Cover: ${s.coverCoach.displayName}` : 'Replacement coach being arranged') : null
     const pay = sessionPayment(s, b)
     return (
-      <li key={s.id} className="grid gap-1 p-5 sm:grid-cols-[10rem_1fr_auto] sm:items-center sm:gap-6">
+      <li key={s.id}>
+        <Link href={`/account/bookings/${b.reference}`} className="grid gap-1 p-5 transition hover:bg-surface-2 sm:grid-cols-[10rem_1fr_auto] sm:items-center sm:gap-6">
         <p className="font-[family-name:var(--font-barlow)] text-lg font-bold uppercase text-brand">{formatDate(s.startsAt, { weekday: 'short', day: 'numeric', month: 'short' })}</p>
         <div>
           <p className="font-semibold">
@@ -62,7 +63,8 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
             <span className="text-muted"> · {b.reference}</span>
           </p>
         </div>
-        <span className="w-fit rounded-full bg-black px-2.5 py-1 text-xs font-semibold text-white">RFA</span>
+        <span className="w-fit rounded-full bg-black px-2.5 py-1 text-xs font-semibold text-white">RFA →</span>
+        </Link>
       </li>
     )
   }
@@ -109,12 +111,14 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
                 {clubBookings.map((b) => {
                   const prog = b.program as Program
                   return (
-                    <li key={b.id} className="flex flex-wrap items-center justify-between gap-2 p-5">
+                    <li key={b.id}>
+                      <Link href={`/account/bookings/${b.reference}`} className="flex flex-wrap items-center justify-between gap-2 p-5 transition hover:bg-surface-2">
                       <div>
                         <p className="font-semibold">{b.bookingType === 'trial' ? `Trial — ${prog.title}` : prog.title}</p>
                         <p className="text-sm text-muted">{[prog.startDate && formatDate(prog.startDate, { day: 'numeric', month: 'short', year: 'numeric' }), prog.location].filter(Boolean).join(' · ')}</p>
                       </div>
-                      <span className="text-sm text-muted">{b.reference}</span>
+                      <span className="text-sm text-muted">{b.reference} →</span>
+                      </Link>
                     </li>
                   )
                 })}

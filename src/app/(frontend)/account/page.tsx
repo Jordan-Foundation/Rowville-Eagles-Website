@@ -30,7 +30,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   const credit = await creditBalance(p, user.id)
   const pendingOffers = participants.docs.filter((x) => x.registrationOffer?.status === 'offered' && x.registrationOffer.program)
   const now = Date.now()
-  type Item = { key: string; date: string | null; title: string; detail: string; badge: 'RFA' | 'Club'; status?: string }
+  type Item = { key: string; date: string | null; title: string; detail: string; badge: 'RFA' | 'Club'; status?: string; href?: string }
   const clubItems: Item[] = bookings.docs
     .map((b) => {
       const prog = b.program as Program
@@ -44,6 +44,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
       title: b.bookingType === 'trial' ? `Trial — ${prog.title}` : prog.title,
       detail: [b.player?.teamName || b.player?.firstName, b.sessionStart && formatDate(b.sessionStart, { hour: 'numeric', minute: '2-digit' }), prog.location].filter(Boolean).join(' · '),
       badge: b.payee === 'academy' ? 'RFA' : 'Club',
+      href: b.reference ? `/account/bookings/${b.reference}` : undefined,
     }))
   const sessionItems = academy.docs.map((s) => {
     const booking = s.booking as AcademyBooking
@@ -57,6 +58,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
       detail: [booking.player.firstName, formatDate(s.startsAt, { hour: 'numeric', minute: '2-digit' }), paid].join(' · ') + cover,
       badge: 'RFA' as const,
       status: s.status,
+      href: `/account/bookings/${booking.reference}`,
     }
   })
   const upcoming = [...clubItems, ...sessionItems.filter((i) => new Date(i.date).getTime() >= now)].sort((a, b) => (a.date ?? '9999').localeCompare(b.date ?? '9999'))
@@ -185,11 +187,12 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   )
 }
 
-function ItemList({ items, muted }: { items: { key: string; date: string | null; title: string; detail: string; badge: 'RFA' | 'Club'; status?: string }[]; muted?: boolean }) {
+function ItemList({ items, muted }: { items: { key: string; date: string | null; title: string; detail: string; badge: 'RFA' | 'Club'; status?: string; href?: string }[]; muted?: boolean }) {
   return (
     <ol className={`mt-4 divide-y divide-line rounded-2xl border border-line ${muted ? 'opacity-70' : ''}`}>
       {items.map((i) => (
-        <li key={i.key} className="grid gap-1 p-5 sm:grid-cols-[9rem_1fr_auto] sm:items-center sm:gap-6">
+        <li key={i.key}>
+          <Row href={i.href}>
           <p className="font-[family-name:var(--font-barlow)] text-lg font-bold uppercase text-brand">
             {i.date ? formatDate(i.date, { weekday: 'short', day: 'numeric', month: 'short' }) : 'Flexible'}
           </p>
@@ -197,9 +200,18 @@ function ItemList({ items, muted }: { items: { key: string; date: string | null;
             <p className="font-semibold">{i.title}{i.status === 'no_show' ? ' (missed)' : ''}</p>
             <p className="text-sm text-muted">{i.detail}</p>
           </div>
-          <span className={`w-fit rounded-full px-2.5 py-1 text-xs font-semibold ${i.badge === 'RFA' ? 'bg-black text-white' : 'bg-brand/10 text-brand'}`}>{i.badge}</span>
+          <span className="flex items-center gap-3">
+            <span className={`w-fit rounded-full px-2.5 py-1 text-xs font-semibold ${i.badge === 'RFA' ? 'bg-black text-white' : 'bg-brand/10 text-brand'}`}>{i.badge}</span>
+            {i.href && <span aria-hidden className="text-muted">→</span>}
+          </span>
+          </Row>
         </li>
       ))}
     </ol>
   )
+}
+
+function Row({ href, children }: { href?: string; children: React.ReactNode }) {
+  const cls = 'grid gap-1 p-5 sm:grid-cols-[9rem_1fr_auto] sm:items-center sm:gap-6'
+  return href ? <Link href={href} className={`${cls} transition hover:bg-surface-2`}>{children}</Link> : <div className={cls}>{children}</div>
 }
