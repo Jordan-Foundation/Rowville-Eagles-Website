@@ -54,6 +54,24 @@ export const AcademySessions: CollectionConfig = {
       ],
     },
     { name: 'paid', type: 'checkbox', defaultValue: false },
+    {
+      type: 'collapsible',
+      label: 'Coach',
+      fields: [
+        { type: 'row', fields: [
+          { name: 'attendanceBy', label: 'Attendance marked by', type: 'relationship', relationTo: 'users', admin: { readOnly: true } },
+          { name: 'attendanceAt', type: 'date', admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } } },
+        ] },
+        {
+          name: 'coachNotes',
+          label: 'Coach’s private notes',
+          type: 'textarea',
+          // Families can read their own sessions through the API — this field is hidden from them.
+          access: { read: ({ req: { user } }) => hasRole(user as never, 'admin', 'committee', 'coach') },
+          admin: { description: 'Seen by coaches and admins only — never shown to the family.' },
+        },
+      ],
+    },
     { name: 'reminderSentAt', type: 'date', admin: { readOnly: true } },
   ],
 }

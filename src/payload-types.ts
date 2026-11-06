@@ -408,6 +408,14 @@ export interface Participant {
   account: number | User;
   team?: (number | null) | Team;
   ffaNumber?: string | null;
+  /**
+   * Shared with the player’s coaches. Filled in from their first 1-on-1 booking; families can update it in their account.
+   */
+  football?: {
+    currentClub?: string | null;
+    position?: string | null;
+    goals?: string | null;
+  };
   medical?: {
     conditions?: string | null;
     emergencyContact?: string | null;
@@ -590,6 +598,12 @@ export interface AcademySession {
   coverCoach?: (number | null) | AcademyCoach;
   coverNote?: string | null;
   paid?: boolean | null;
+  attendanceBy?: (number | null) | User;
+  attendanceAt?: string | null;
+  /**
+   * Seen by coaches and admins only — never shown to the family.
+   */
+  coachNotes?: string | null;
   reminderSentAt?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -1230,6 +1244,9 @@ export interface AcademySessionsSelect<T extends boolean = true> {
   coverCoach?: T;
   coverNote?: T;
   paid?: T;
+  attendanceBy?: T;
+  attendanceAt?: T;
+  coachNotes?: T;
   reminderSentAt?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -1604,6 +1621,13 @@ export interface ParticipantsSelect<T extends boolean = true> {
   account?: T;
   team?: T;
   ffaNumber?: T;
+  football?:
+    | T
+    | {
+        currentClub?: T;
+        position?: T;
+        goals?: T;
+      };
   medical?:
     | T
     | {

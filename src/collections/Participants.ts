@@ -39,6 +39,16 @@ export const Participants: CollectionConfig = {
     { name: 'team', type: 'relationship', relationTo: 'teams' },
     { name: 'ffaNumber', label: 'FFA / PlayFootball number', type: 'text' },
     {
+      name: 'football',
+      label: 'Football details',
+      type: 'group',
+      admin: { description: 'Shared with the player’s coaches. Filled in from their first 1-on-1 booking; families can update it in their account.' },
+      fields: [
+        { type: 'row', fields: [{ name: 'currentClub', type: 'text' }, { name: 'position', type: 'text' }] },
+        { name: 'goals', label: 'Main goals', type: 'textarea' },
+      ],
+    },
+    {
       name: 'medical',
       type: 'group',
       fields: [

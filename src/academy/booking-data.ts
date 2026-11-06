@@ -168,7 +168,22 @@ async function afterConfirmed(payload: Payload, booking: AcademyBooking) {
   const participant = booking.participant
     ? await payload.findByID({ collection: 'participants', id: id(booking.participant)!, depth: 0, overrideAccess: true })
     : await findOrCreateParticipant(payload, user.id, { firstName: booking.player.firstName, lastName: booking.player.lastName, dateOfBirth: booking.player.dateOfBirth })
-  await addMembership(payload, participant, 'rfa')
+  // Fill in the player record from the checkout details — only where it's still blank, so the family's own edits win
+  const bp = booking.player
+  const fill = <T,>(current: T | null | undefined, next: T | null | undefined) => (current ? current : next || undefined)
+  await addMembership(payload, participant, 'rfa', {
+    football: {
+      currentClub: fill(participant.football?.currentClub, bp.currentClub),
+      position: fill(participant.football?.position, bp.position),
+      goals: fill(participant.football?.goals, bp.goals),
+    },
+    medical: {
+      conditions: fill(participant.medical?.conditions, bp.medical),
+      emergencyContact: fill(participant.medical?.emergencyContact, bp.emergencyName),
+      emergencyPhone: fill(participant.medical?.emergencyPhone, bp.emergencyPhone),
+    },
+    photoConsent: participant.photoConsent || Boolean(bp.photoConsent),
+  })
   await payload.update({ collection: 'academy-bookings', id: booking.id, data: { account: user.id, participant: participant.id }, overrideAccess: true })
   await payload.update({ collection: 'academy-sessions', where: { booking: { equals: booking.id } }, data: { account: user.id }, overrideAccess: true })
 

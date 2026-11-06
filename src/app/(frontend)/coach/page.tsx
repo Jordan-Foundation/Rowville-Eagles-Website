@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { payload, formatDate } from '@/lib/payload'
 import { requireCoach } from '@/academy/portal'
+import { attendanceDue, coachSessions } from '@/academy/coach-sessions'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,6 +12,8 @@ export default async function CoachHome() {
     p.find({ collection: 'academy-terms', where: { status: { in: ['availability', 'open'] } }, sort: 'startDate', depth: 0, limit: 10 }),
     p.find({ collection: 'academy-availability', where: { coach: { equals: coach.id } }, depth: 0, limit: 50, overrideAccess: true }),
   ])
+  const now = new Date()
+  const [next, due] = await Promise.all([coachSessions(p, coach.id, { from: now, to: new Date(now.getTime() + 7 * 86_400_000) }), attendanceDue(p, coach.id, now)])
   const byTerm = new Map(mine.map((a) => [typeof a.term === 'object' ? a.term.id : a.term, a]))
   const profileGaps = [!coach.photo && 'a photo', !coach.bio && 'a short bio', !(coach.specialties?.length) && 'your specialties'].filter(Boolean) as string[]
 
@@ -20,6 +23,19 @@ export default async function CoachHome() {
         <h1 className="font-display text-4xl font-semibold uppercase tracking-tight sm:text-5xl">Hi {coach.displayName}</h1>
         <p className="mt-3 text-muted">Set your 1-on-1 availability for each term and keep your profile up to date — families see it when they book.</p>
       </div>
+
+      <Link href="/coach/sessions" className="panel gloss-sheen group block border border-line p-6 transition hover:border-white/40">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="font-display text-xl font-semibold uppercase">Sessions</p>
+            <p className="mt-1 text-sm text-muted">
+              {next.length ? `${next.length} in the next 7 days · next ${formatDate(next[0].session.startsAt, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })} with ${next[0].booking.player.firstName}` : 'Nothing booked in the next 7 days.'}
+            </p>
+          </div>
+          {due.length > 0 && <span className="bg-red-500/20 px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-red-300">{due.length} to mark</span>}
+        </div>
+        <p className="mt-4 text-xs font-semibold uppercase tracking-[0.2em] transition group-hover:translate-x-1">Open my sessions →</p>
+      </Link>
 
       {(profileGaps.length > 0 || !coach.active) && (
         <div className="panel gloss-sheen border border-line p-6">

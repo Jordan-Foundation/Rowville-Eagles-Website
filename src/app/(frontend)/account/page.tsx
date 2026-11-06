@@ -5,6 +5,7 @@ import { payload, formatAUD, formatDate } from '@/lib/payload'
 import { currentUser } from '@/lib/auth'
 import type { AcademyBooking, AcademyCoach, Program, Team } from '@/payload-types'
 import { LogoutButton } from './LogoutButton'
+import { sessionPayment } from '@/academy/session-view'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'My account', robots: { index: false } }
@@ -46,16 +47,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
     const booking = s.booking as AcademyBooking
     const coach = s.coach as AcademyCoach
     const cover = s.needsCover ? (s.coverCoach && typeof s.coverCoach === 'object' ? ` · cover: ${s.coverCoach.displayName}` : ' · replacement coach being arranged') : ''
-    const paid =
-      booking.paymentMode === 'weekly'
-        ? s.paid
-          ? 'paid (weekly plan)'
-          : booking.status === 'payment_failed'
-            ? 'payment overdue'
-            : `weekly — ${formatAUD(booking.amount / (booking.sessionsTotal || 1))} charged ${formatDate(new Date(new Date(s.startsAt).getTime() - 48 * 3600_000).toISOString(), { weekday: 'short', day: 'numeric', month: 'short' })}`
-        : booking.type === 'term'
-          ? 'term paid in full'
-          : 'paid'
+    const paid = sessionPayment(s, booking).label.toLowerCase()
     return {
       key: `s${s.id}`,
       date: s.startsAt,
@@ -150,7 +142,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
             <ul className="mt-3 space-y-3">
               {participants.docs.map((x) => (
                 <li key={x.id}>
-                  <p className="font-medium">{x.firstName} {x.lastName}</p>
+                  <Link href={`/account/players/${x.id}`} className="font-medium hover:text-brand hover:underline">{x.firstName} {x.lastName} →</Link>
                   <div className="mt-1 flex flex-wrap gap-1.5">
                     {(x.memberships ?? []).map((m) => (
                       <span key={m} className={`rounded-full px-2 py-0.5 text-xs font-semibold ${m === 'rfa' ? 'bg-black text-white' : 'bg-brand text-white'}`}>{tagLabel[m]}</span>

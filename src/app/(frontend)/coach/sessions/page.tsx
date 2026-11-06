@@ -1,0 +1,108 @@
+import Link from 'next/link'
+import type { Metadata } from 'next'
+import { payload, formatDate } from '@/lib/payload'
+import { requireCoach } from '@/academy/portal'
+import { attendanceDue, coachSessions } from '@/academy/coach-sessions'
+import { ageOn, sessionPayment } from '@/academy/session-view'
+import { toYmd } from '@/academy/term-dates'
+import { localToUtc } from '@/lib/time'
+
+export const dynamic = 'force-dynamic'
+export const metadata: Metadata = { title: 'My sessions' }
+
+const DAY = 86_400_000
+const roleNote = { coach: null, cover: 'You’re covering', covered: 'Being covered' } as const
+
+export default async function CoachSessionsPage({ searchParams }: { searchParams: Promise<{ weeks?: string }> }) {
+  const { coach } = await requireCoach('/coach/sessions')
+  const weeks = Math.min(12, Math.max(1, Number((await searchParams).weeks) || 4))
+  const p = await payload()
+  const now = new Date()
+  const startOfToday = localToUtc(toYmd(now.toISOString()), '00:00') // Sydney midnight
+  const [upcoming, due] = await Promise.all([
+    coachSessions(p, coach.id, { from: startOfToday, to: new Date(now.getTime() + weeks * 7 * DAY) }),
+    attendanceDue(p, coach.id, now),
+  ])
+  const dueIds = new Set(due.map((d) => d.session.id))
+  const future = upcoming.filter((x) => !dueIds.has(x.session.id))
+  const days = new Map<string, typeof future>()
+  for (const x of future) {
+    const k = toYmd(x.session.startsAt)
+    days.set(k, [...(days.get(k) ?? []), x])
+  }
+  const todayKey = toYmd(now.toISOString())
+
+  const Row = ({ x, showDate }: { x: (typeof future)[number]; showDate?: boolean }) => {
+    const pay = sessionPayment(x.session, x.booking)
+    const note = roleNote[x.role]
+    return (
+      <li>
+        <Link href={`/coach/sessions/${x.session.id}`} className="grid gap-1 p-5 transition hover:bg-white/5 sm:grid-cols-[7rem_1fr_auto] sm:items-center sm:gap-6">
+          <p className="font-display text-xl font-semibold">
+            {showDate && <span className="mr-2 text-sm font-normal uppercase text-muted">{formatDate(x.session.startsAt, { weekday: 'short', day: 'numeric', month: 'short' })}</span>}
+            {formatDate(x.session.startsAt, { hour: 'numeric', minute: '2-digit' })}
+          </p>
+          <div>
+            <p className="font-semibold">
+              {x.booking.player.firstName} {x.booking.player.lastName}
+              <span className="ml-2 text-sm font-normal text-muted">age {ageOn(x.booking.player.dateOfBirth)}</span>
+            </p>
+            <p className="text-sm text-muted">
+              {x.booking.type === 'term' ? 'Term' : 'Casual'}
+              {x.booking.player.medical ? ' · medical notes' : ''}
+              {' · '}
+              <span className={pay.tone === 'bad' ? 'font-semibold text-red-300' : ''}>{pay.label}</span>
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {note && <span className="border border-white/40 px-2 py-1 text-xs font-semibold uppercase tracking-wider">{note}</span>}
+            {x.session.status === 'completed' && <span className="bg-white px-2 py-1 text-xs font-semibold uppercase tracking-wider text-black">Attended</span>}
+            {x.session.status === 'no_show' && <span className="bg-red-500/20 px-2 py-1 text-xs font-semibold uppercase tracking-wider text-red-300">No-show</span>}
+          </div>
+        </Link>
+      </li>
+    )
+  }
+
+  return (
+    <div className="space-y-12">
+      <div>
+        <h1 className="font-display text-4xl font-semibold uppercase tracking-tight sm:text-5xl">My sessions</h1>
+        <p className="mt-3 text-muted">Your 1-on-1s, including sessions you’re covering. Open one for the player’s goals, medical notes and parent contact.</p>
+      </div>
+
+      {due.length > 0 && (
+        <section>
+          <h2 className="font-display text-2xl font-semibold uppercase">Mark attendance</h2>
+          <p className="mt-1 text-sm text-muted">These sessions have started but haven’t been marked yet.</p>
+          <ol className="panel mt-4 divide-y divide-line border border-line">{due.map((x) => <Row key={x.session.id} x={x} showDate />)}</ol>
+        </section>
+      )}
+
+      <section>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <h2 className="font-display text-2xl font-semibold uppercase">Coming up</h2>
+          <div className="flex gap-1 text-sm">
+            {[2, 4, 8].map((w) => (
+              <Link key={w} href={`/coach/sessions?weeks=${w}`} className={`px-3 py-1.5 ${w === weeks ? 'bg-white text-black' : 'text-muted hover:text-ink'}`}>{w} weeks</Link>
+            ))}
+          </div>
+        </div>
+        {days.size === 0 ? (
+          <p className="mt-4 text-muted">No sessions in the next {weeks} weeks.</p>
+        ) : (
+          <div className="mt-4 space-y-6">
+            {[...days.entries()].map(([day, list]) => (
+              <div key={day}>
+                <p className="text-xs font-semibold uppercase tracking-[0.25em] text-muted">
+                  {day === todayKey ? 'Today' : formatDate(list[0].session.startsAt, { weekday: 'long', day: 'numeric', month: 'long' })} · {list.length} session{list.length === 1 ? '' : 's'}
+                </p>
+                <ol className="panel mt-2 divide-y divide-line border border-line">{list.map((x) => <Row key={x.session.id} x={x} />)}</ol>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  )
+}
