@@ -113,6 +113,16 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
           </div>
           <Link href="/shop" className="block rounded-2xl border border-line p-6 font-semibold hover:border-brand">Shop team kit →</Link>
           <Link href="/account/preferences" className="block rounded-2xl border border-line p-6 font-semibold hover:border-brand">Communication preferences →</Link>
+          {(user.roles?.includes('admin') || user.roles?.includes('committee')) && (
+            <div className="rounded-2xl border border-line p-6">
+              <p className="font-semibold">Staff tools</p>
+              <ul className="mt-2 space-y-1 text-sm">
+                <li><Link href="/admin" className="text-brand underline">Admin</Link></li>
+                <li><Link href="/staff/academy" className="text-brand underline">Academy coach availability</Link></li>
+                <li><Link href="/staff/consent" className="text-brand underline">Consent review</Link></li>
+              </ul>
+            </div>
+          )}
           {user.roles?.includes('coach') && (
             <Link href="/coach" className="block rounded-2xl bg-black p-6 font-semibold text-white hover:bg-black/85">Coach portal →</Link>
           )}

@@ -8,6 +8,7 @@ import * as migration_20261106_110441_consent_invites_message_log from './202611
 import * as migration_20261106_115745_academy_terms_coaches_availability from './20261106_115745_academy_terms_coaches_availability';
 import * as migration_20261106_121446_remove_term_sessions_skip_dates from './20261106_121446_remove_term_sessions_skip_dates';
 import * as migration_20261106_121459_weekend_times_away_periods from './20261106_121459_weekend_times_away_periods';
+import * as migration_20261106_122301_academy_reminder_log from './20261106_122301_academy_reminder_log';
 
 export const migrations = [
   {
@@ -58,6 +59,11 @@ export const migrations = [
   {
     up: migration_20261106_121459_weekend_times_away_periods.up,
     down: migration_20261106_121459_weekend_times_away_periods.down,
-    name: '20261106_121459_weekend_times_away_periods'
+    name: '20261106_121459_weekend_times_away_periods',
+  },
+  {
+    up: migration_20261106_122301_academy_reminder_log.up,
+    down: migration_20261106_122301_academy_reminder_log.down,
+    name: '20261106_122301_academy_reminder_log'
   },
 ];

@@ -70,6 +70,7 @@ export interface Config {
     'academy-terms': AcademyTerm;
     'academy-coaches': AcademyCoach;
     'academy-availability': AcademyAvailability;
+    'academy-reminder-log': AcademyReminderLog;
     posts: Post;
     'trial-registrations': TrialRegistration;
     'trial-sessions': TrialSession;
@@ -95,6 +96,7 @@ export interface Config {
     'academy-terms': AcademyTermsSelect<false> | AcademyTermsSelect<true>;
     'academy-coaches': AcademyCoachesSelect<false> | AcademyCoachesSelect<true>;
     'academy-availability': AcademyAvailabilitySelect<false> | AcademyAvailabilitySelect<true>;
+    'academy-reminder-log': AcademyReminderLogSelect<false> | AcademyReminderLogSelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
     'trial-registrations': TrialRegistrationsSelect<false> | TrialRegistrationsSelect<true>;
     'trial-sessions': TrialSessionsSelect<false> | TrialSessionsSelect<true>;
@@ -351,6 +353,19 @@ export interface AcademyAvailability {
         id?: string | null;
       }[]
     | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "academy-reminder-log".
+ */
+export interface AcademyReminderLog {
+  id: number;
+  coach: number | AcademyCoach;
+  term: number | AcademyTerm;
+  kind: '14d' | '7d' | '3d' | '1d';
+  to?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -918,6 +933,10 @@ export interface PayloadLockedDocument {
         value: number | AcademyAvailability;
       } | null)
     | ({
+        relationTo: 'academy-reminder-log';
+        value: number | AcademyReminderLog;
+      } | null)
+    | ({
         relationTo: 'posts';
         value: number | Post;
       } | null)
@@ -1106,6 +1125,18 @@ export interface AcademyAvailabilitySelect<T extends boolean = true> {
         removed?: T;
         id?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "academy-reminder-log_select".
+ */
+export interface AcademyReminderLogSelect<T extends boolean = true> {
+  coach?: T;
+  term?: T;
+  kind?: T;
+  to?: T;
   updatedAt?: T;
   createdAt?: T;
 }
