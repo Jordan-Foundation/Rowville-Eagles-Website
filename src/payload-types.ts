@@ -78,6 +78,9 @@ export interface Config {
     sponsors: Sponsor;
     participants: Participant;
     users: User;
+    'consent-records': ConsentRecord;
+    'message-log': MessageLog;
+    'invite-tokens': InviteToken;
     media: Media;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
@@ -97,6 +100,9 @@ export interface Config {
     sponsors: SponsorsSelect<false> | SponsorsSelect<true>;
     participants: ParticipantsSelect<false> | ParticipantsSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
+    'consent-records': ConsentRecordsSelect<false> | ConsentRecordsSelect<true>;
+    'message-log': MessageLogSelect<false> | MessageLogSelect<true>;
+    'invite-tokens': InviteTokensSelect<false> | InviteTokensSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -219,6 +225,11 @@ export interface User {
   firstName?: string | null;
   lastName?: string | null;
   phone?: string | null;
+  serviceConsentAt?: string | null;
+  marketingEmail?: boolean | null;
+  marketingSms?: boolean | null;
+  smsOptOut?: boolean | null;
+  consentReviewStatus?: ('new' | 'pending' | 'sent' | 'confirmed') | null;
   /**
    * Has set their own password / logged in
    */
@@ -677,6 +688,58 @@ export interface Sponsor {
   createdAt: string;
 }
 /**
+ * Read-only history. Changes are made from the member’s preferences, unsubscribe links or STOP replies.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "consent-records".
+ */
+export interface ConsentRecord {
+  id: number;
+  user?: (number | null) | User;
+  email?: string | null;
+  phone?: string | null;
+  channel: 'service' | 'marketing_email' | 'marketing_sms' | 'sms_all';
+  action: 'granted' | 'withdrawn';
+  basis?: ('express' | 'inferred') | null;
+  wording: string;
+  source: 'signup' | 'checkout' | 'profile' | 'consent_email' | 'unsubscribe_link' | 'stop_reply' | 'admin';
+  ip?: string | null;
+  userAgent?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "message-log".
+ */
+export interface MessageLog {
+  id: number;
+  to: string;
+  subject: string;
+  kind: 'service' | 'marketing';
+  sender?: ('club' | 'academy') | null;
+  userId?: number | null;
+  status?: ('sent' | 'failed' | 'not-configured' | 'skipped-opted-out') | null;
+  error?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "invite-tokens".
+ */
+export interface InviteToken {
+  id: number;
+  purpose: 'create-account' | 'confirm-consent';
+  user: number | User;
+  email: string;
+  tokenHash: string;
+  expiresAt: string;
+  usedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -743,6 +806,18 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'users';
         value: number | User;
+      } | null)
+    | ({
+        relationTo: 'consent-records';
+        value: number | ConsentRecord;
+      } | null)
+    | ({
+        relationTo: 'message-log';
+        value: number | MessageLog;
+      } | null)
+    | ({
+        relationTo: 'invite-tokens';
+        value: number | InviteToken;
       } | null)
     | ({
         relationTo: 'media';
@@ -1082,6 +1157,11 @@ export interface UsersSelect<T extends boolean = true> {
   firstName?: T;
   lastName?: T;
   phone?: T;
+  serviceConsentAt?: T;
+  marketingEmail?: T;
+  marketingSms?: T;
+  smsOptOut?: T;
+  consentReviewStatus?: T;
   activated?: T;
   roles?: T;
   wwcc?:
@@ -1107,6 +1187,53 @@ export interface UsersSelect<T extends boolean = true> {
         createdAt?: T;
         expiresAt?: T;
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "consent-records_select".
+ */
+export interface ConsentRecordsSelect<T extends boolean = true> {
+  user?: T;
+  email?: T;
+  phone?: T;
+  channel?: T;
+  action?: T;
+  basis?: T;
+  wording?: T;
+  source?: T;
+  ip?: T;
+  userAgent?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "message-log_select".
+ */
+export interface MessageLogSelect<T extends boolean = true> {
+  to?: T;
+  subject?: T;
+  kind?: T;
+  sender?: T;
+  userId?: T;
+  status?: T;
+  error?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "invite-tokens_select".
+ */
+export interface InviteTokensSelect<T extends boolean = true> {
+  purpose?: T;
+  user?: T;
+  email?: T;
+  tokenHash?: T;
+  expiresAt?: T;
+  usedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

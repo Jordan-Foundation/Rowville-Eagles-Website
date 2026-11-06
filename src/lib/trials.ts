@@ -94,7 +94,7 @@ export async function notifyInterestsOfTrial(payload: Payload, session: TrialSes
       },
       rfaPromoBlock(),
     ])
-    await sendEmail(payload, { to: reg.contact.email, subject: `${reg.ageGroup} trial dates announced — Rowville Eagles`, html, sender: 'club', replyTo: await replyTo(payload, req) })
+    await sendEmail(payload, { to: reg.contact.email, subject: `${reg.ageGroup} trial dates announced — Rowville Eagles`, html, sender: 'club', replyTo: await replyTo(payload, req), req })
     await payload.update({
       collection: 'trial-registrations',
       id: reg.id,
@@ -149,7 +149,7 @@ export async function sendOffer(payload: Payload, reg: TrialRegistration, req?: 
         'After paying the club fee you’ll complete the Football Victoria section in PlayFootball. This link is personal — please don’t forward it.',
     },
   ])
-  await sendEmail(payload, { to: reg.contact.email, subject: `Your place in ${team.name} — Rowville Eagles ${reg.season}`, html, sender: 'club', replyTo: await replyTo(payload, req) })
+  await sendEmail(payload, { to: reg.contact.email, subject: `Your place in ${team.name} — Rowville Eagles ${reg.season}`, html, sender: 'club', replyTo: await replyTo(payload, req), userId: user.id, req })
 }
 
 async function replyTo(payload: Payload, req?: PayloadRequest) {

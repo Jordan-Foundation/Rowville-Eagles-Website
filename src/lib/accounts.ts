@@ -2,6 +2,7 @@ import { randomBytes } from 'crypto'
 import type { Payload, PayloadRequest } from 'payload'
 import type { Participant, User } from '@/payload-types'
 import { siteUrl } from './payments'
+import { createInvite } from './invites'
 
 export type Membership = 'rowville' | 'rfa'
 
@@ -30,11 +31,11 @@ export async function ensureAccount(
   return { user, created: true }
 }
 
-/** Link for the email: set a password (new/unactivated accounts) or log in (activated). */
+/** Link for the email: create an account (single-use, expires after INVITE_TTL_DAYS) or log in (already activated). */
 export async function accountLink(payload: Payload, user: User, req?: PayloadRequest): Promise<{ label: string; href: string }> {
   if (user.activated) return { label: 'Log in to your account', href: `${siteUrl()}/login` }
-  const token = await payload.forgotPassword({ collection: 'users', data: { email: user.email }, disableEmail: true, req })
-  return { label: 'Create your account', href: `${siteUrl()}/account/activate?token=${encodeURIComponent(String(token))}` }
+  const token = await createInvite(payload, { userId: user.id, email: user.email, purpose: 'create-account', req })
+  return { label: 'Create your account', href: `${siteUrl()}/account/activate?invite=${token}` }
 }
 
 /** Find a player under this account by name + date of birth, or create them. */

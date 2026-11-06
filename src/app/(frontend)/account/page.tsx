@@ -112,6 +112,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
             </ul>
           </div>
           <Link href="/shop" className="block rounded-2xl border border-line p-6 font-semibold hover:border-brand">Shop team kit →</Link>
+          <Link href="/account/preferences" className="block rounded-2xl border border-line p-6 font-semibold hover:border-brand">Communication preferences →</Link>
         </aside>
       </div>
     </div>

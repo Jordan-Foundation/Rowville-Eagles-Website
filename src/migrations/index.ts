@@ -4,6 +4,7 @@ import * as migration_20261105_095659_trials_memberships_accounts from './202611
 import * as migration_20261105_104026_sponsor_logos from './20261105_104026_sponsor_logos';
 import * as migration_20261105_110000_sponsor_logo_backfill from './20261105_110000_sponsor_logo_backfill';
 import * as migration_20261105_122821_admin_created_records from './20261105_122821_admin_created_records';
+import * as migration_20261106_110441_consent_invites_message_log from './20261106_110441_consent_invites_message_log';
 
 export const migrations = [
   {
@@ -34,6 +35,11 @@ export const migrations = [
   {
     up: migration_20261105_122821_admin_created_records.up,
     down: migration_20261105_122821_admin_created_records.down,
-    name: '20261105_122821_admin_created_records'
+    name: '20261105_122821_admin_created_records',
+  },
+  {
+    up: migration_20261106_110441_consent_invites_message_log.up,
+    down: migration_20261106_110441_consent_invites_message_log.down,
+    name: '20261106_110441_consent_invites_message_log'
   },
 ];

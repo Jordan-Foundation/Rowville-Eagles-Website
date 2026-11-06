@@ -1,6 +1,6 @@
 import type { Payload } from 'payload'
 import type { Program } from '@/payload-types'
-import { datesOnWeekday, melbourneToUtc, melbourneYmd } from './melbourne-time'
+import { datesOnWeekday, localToUtc, localYmd } from './time'
 import { formatDate } from './format'
 
 export type TrialNight = { start: string; label: string; ageGroups: string[]; remaining: Record<string, number> }
@@ -21,8 +21,8 @@ export async function currentAcademyTerm(payload: Payload): Promise<Program | un
 /** Every upcoming night of the term, with trial spots left per age group. */
 export async function trialNights(payload: Payload, term: Program): Promise<TrialNight[]> {
   const tomorrow = new Date(Date.now() + 24 * 3600 * 1000)
-  const from = melbourneYmd(term.startDate && new Date(term.startDate) > tomorrow ? new Date(term.startDate) : tomorrow)
-  const to = melbourneYmd(term.endDate ? new Date(term.endDate) : new Date(Date.now() + 70 * 24 * 3600 * 1000))
+  const from = localYmd(term.startDate && new Date(term.startDate) > tomorrow ? new Date(term.startDate) : tomorrow)
+  const to = localYmd(term.endDate ? new Date(term.endDate) : new Date(Date.now() + 70 * 24 * 3600 * 1000))
 
   // Count existing trial bookings in one query
   const holdCutoff = new Date(Date.now() - 35 * 60 * 1000).toISOString()
@@ -45,7 +45,7 @@ export async function trialNights(payload: Payload, term: Program): Promise<Tria
   const nights: TrialNight[] = []
   for (const ws of term.weeklySessions ?? []) {
     for (const ymd of datesOnWeekday(from, to, ws.day)) {
-      const start = melbourneToUtc(ymd, ws.startTime).toISOString()
+      const start = localToUtc(ymd, ws.startTime).toISOString()
       const groups = (ws.ageGroups ?? []) as string[]
       nights.push({
         start,

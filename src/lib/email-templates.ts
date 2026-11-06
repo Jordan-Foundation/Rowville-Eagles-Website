@@ -1,11 +1,20 @@
 import { siteUrl } from './payments'
+import { senderIdentity } from '../academy/brand'
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!)
 
-type Block = { heading: string; intro: string; rows?: [string, string][]; cta?: { label: string; href: string }; after?: string }
+export type Block = { heading: string; intro: string; rows?: [string, string][]; cta?: { label: string; href: string }; after?: string }
+
+export type LayoutOptions = {
+  footerNote?: string
+  /** Marketing emails only: one-click unsubscribe link shown in the footer. */
+  unsubscribeUrl?: string
+}
 
 /** Table-based, inline-styled layout that renders in Gmail/Outlook/Apple Mail. */
-export function emailLayout(brand: 'club' | 'academy', blocks: Block[], footerNote?: string) {
+export function emailLayout(brand: 'club' | 'academy', blocks: Block[], options: string | LayoutOptions = {}) {
+  const opts: LayoutOptions = typeof options === 'string' ? { footerNote: options } : options
+  const footerNote = opts.footerNote
   const a = brand === 'academy'
   const c = a
     ? { head: '#000000', bg: '#0b0b0c', card: '#141416', ink: '#ffffff', muted: '#a1a3a8', line: '#2a2a2e', btn: '#ffffff', btnInk: '#000000', logo: '/brand/rfa-logo-white.png', logoW: 120 }
@@ -25,17 +34,18 @@ export function emailLayout(brand: 'club' | 'academy', blocks: Block[], footerNo
   return `<!doctype html><html><body style="margin:0;background:${c.bg}">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:${c.bg};padding:24px 0"><tr><td align="center">
   <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:${c.card};border-radius:12px;overflow:hidden">
-    <tr><td style="background:${c.head};padding:24px 32px"><img src="${base}${c.logo}" width="${c.logoW}" alt="${a ? 'Rowville Foundation Academy' : 'Rowville Eagles FC'}" style="display:block;border:0"></td></tr>
+    <tr><td style="background:${c.head};padding:24px 32px"><img src="${base}${c.logo}" width="${c.logoW}" alt="${a ? 'Foundation Academy' : 'Rowville Eagles FC'}" style="display:block;border:0"></td></tr>
     ${blocks.map(block).join(`<tr><td style="padding:0 32px"><hr style="border:0;border-top:1px solid ${c.line};margin:8px 0"></td></tr>`)}
     <tr><td style="padding:20px 32px;background:${c.head};font:12px/1.5 Arial,sans-serif;color:#ffffffaa">
-      ${footerNote ? esc(footerNote) + '<br>' : ''}Rowville Eagles Football Club · 208 Dandelion Drive, Rowville VIC 3178 · <a href="${base}" style="color:#ffffffcc">${base.replace(/^https?:\/\//, '')}</a>
+      ${footerNote ? esc(footerNote) + '<br>' : ''}${esc(senderIdentity(brand))} · <a href="${base}" style="color:#ffffffcc">${base.replace(/^https?:\/\//, '')}</a>
+      ${opts.unsubscribeUrl ? `<br><br>You're receiving this because you're subscribed to ${a ? 'Foundation Academy' : 'Rowville Eagles'} news and offers. <a href="${opts.unsubscribeUrl}" style="color:#ffffff">Unsubscribe</a> · <a href="${base}/account/preferences" style="color:#ffffffcc">Manage preferences</a>` : ''}
     </td></tr>
   </table></td></tr></table></body></html>`
 }
 
 /** The RFA promo block appended to club trial / EOI emails. */
 export const rfaPromoBlock = (): Block => ({
-  heading: 'Want more? Rowville Foundation Academy',
+  heading: 'Want more? Foundation Academy',
   intro:
     'Our elite development program runs alongside the club season: small groups, specialist coaches and an individual plan for every player. Book a trial night at the current term — places are limited per age group.',
   cta: { label: 'Book an RFA trial', href: `${siteUrl()}/academy/trial` },

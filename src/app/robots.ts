@@ -3,7 +3,7 @@ import { siteUrl } from '@/lib/payments'
 
 export default function robots(): MetadataRoute.Robots {
   return {
-    rules: [{ userAgent: '*', allow: '/', disallow: ['/admin', '/api', '/account', '/checkout', '/shop/cart', '/join/choose', '/join/thanks'] }],
+    rules: [{ userAgent: '*', allow: '/', disallow: ['/admin', '/api', '/cron', '/staff', '/unsubscribe', '/unsubscribed', '/account', '/checkout', '/shop/cart', '/join/choose', '/join/thanks'] }],
     sitemap: `${siteUrl()}/sitemap.xml`,
   }
 }

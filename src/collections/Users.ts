@@ -44,7 +44,41 @@ export const Users: CollectionConfig = {
         { name: 'lastName', type: 'text' },
       ],
     },
-    { name: 'phone', type: 'text' },
+    { name: 'phone', label: 'Mobile', type: 'text' },
+    {
+      type: 'collapsible',
+      label: 'Communication preferences',
+      admin: {
+        initCollapsed: true,
+        description: 'Change these from the member’s own preferences page so every change is recorded in Consent records.',
+      },
+      fields: [
+        { name: 'serviceConsentAt', type: 'date', access: { update: isAdminField }, admin: { readOnly: true } },
+        { name: 'marketingEmail', type: 'checkbox', defaultValue: false, access: { create: isAdminField, update: isAdminField }, admin: { readOnly: true } },
+        { name: 'marketingSms', type: 'checkbox', defaultValue: false, access: { create: isAdminField, update: isAdminField }, admin: { readOnly: true } },
+        {
+          name: 'smsOptOut',
+          label: 'Replied STOP (no SMS at all)',
+          type: 'checkbox',
+          defaultValue: false,
+          access: { create: isAdminField, update: isAdminField },
+          admin: { readOnly: true },
+        },
+        {
+          name: 'consentReviewStatus',
+          type: 'select',
+          defaultValue: 'new',
+          access: { create: isAdminField, update: isAdminField },
+          options: [
+            { label: 'New account (chose on sign-up)', value: 'new' },
+            { label: 'Existing member — needs review', value: 'pending' },
+            { label: 'Confirm email sent', value: 'sent' },
+            { label: 'Confirmed', value: 'confirmed' },
+          ],
+          admin: { readOnly: true },
+        },
+      ],
+    },
     {
       name: 'activated',
       type: 'checkbox',
