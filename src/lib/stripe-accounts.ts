@@ -42,6 +42,12 @@ const clients: Partial<Record<Payee, Stripe>> = {}
 export function stripeFor(payee: Payee): Stripe {
   const key = process.env[stripeAccounts[payee].secretKeyEnv]
   if (!key) throw new Error(`Missing ${stripeAccounts[payee].secretKeyEnv}`)
+  // Local testing only: point the Stripe client at a mock server (never honoured in production)
+  const mock = process.env.NODE_ENV !== 'production' ? process.env.STRIPE_MOCK_URL : undefined
+  if (mock) {
+    const u = new URL(mock)
+    return (clients[payee] ??= new Stripe(key, { host: u.hostname, port: Number(u.port), protocol: u.protocol.replace(':', '') as 'http' }))
+  }
   return (clients[payee] ??= new Stripe(key))
 }
 

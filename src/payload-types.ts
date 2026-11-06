@@ -221,6 +221,7 @@ export interface AcademyBooking {
       }[]
     | null;
   stripeCheckoutId?: string | null;
+  stripeScheduleId?: string | null;
   stripeSubscriptionId?: string | null;
   stripeCustomerId?: string | null;
   organisation?: string | null;
@@ -1204,6 +1205,7 @@ export interface AcademyBookingsSelect<T extends boolean = true> {
         id?: T;
       };
   stripeCheckoutId?: T;
+  stripeScheduleId?: T;
   stripeSubscriptionId?: T;
   stripeCustomerId?: T;
   organisation?: T;

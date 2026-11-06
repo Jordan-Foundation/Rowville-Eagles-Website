@@ -32,9 +32,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ payee: 
     if ((kind === 'booking' || kind === 'order' || kind === 'academy') && reference && metaPayee === payee) {
       if ((event.type === 'checkout.session.completed' && session.payment_status === 'paid') || event.type === 'checkout.session.async_payment_succeeded') {
         await confirmPayment(p, kind, reference)
-        if (kind === 'academy' && session.mode === 'subscription' && session.subscription) {
-          await activateWeeklyPlan(p, reference, { subscriptionId: idOf(session.subscription)!, customerId: idOf(session.customer) })
-        }
+        // Weekly plans: schedule the remaining charges on the saved card (no-op for other bookings)
+        if (kind === 'academy') await activateWeeklyPlan(p, reference, session.id)
       } else if (event.type === 'checkout.session.expired' || event.type === 'checkout.session.async_payment_failed') {
         await cancelPending(p, kind, reference)
       }
@@ -44,8 +43,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ payee: 
   if (payee === 'academy' && (event.type === 'invoice.paid' || event.type === 'invoice.payment_failed')) {
     const invoice = event.data.object as Stripe.Invoice
     const sub = invoice.parent?.subscription_details
-    // Today's checkout payment is handled by checkout.session.completed; here we only want the weekly charges
-    if (sub && invoice.billing_reason === 'subscription_cycle' && sub.metadata?.kind === 'academy') {
+    // Checkout is a one-off payment, so every subscription invoice is a weekly charge (the first one,
+    // when the schedule starts, is 'subscription_create'; later ones 'subscription_cycle').
+    if (sub && (invoice.billing_reason === 'subscription_create' || invoice.billing_reason === 'subscription_cycle') && sub.metadata?.kind === 'academy') {
       const charge = {
         reference: sub.metadata.reference,
         subscriptionId: idOf(sub.subscription),

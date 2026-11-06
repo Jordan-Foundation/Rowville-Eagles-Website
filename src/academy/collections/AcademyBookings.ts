@@ -105,6 +105,7 @@ export const AcademyBookings: CollectionConfig = {
       ],
     },
     { name: 'stripeCheckoutId', type: 'text', admin: { readOnly: true } },
+    { name: 'stripeScheduleId', label: 'Stripe subscription schedule (weekly plan)', type: 'text', admin: { readOnly: true } },
     { name: 'stripeSubscriptionId', type: 'text', index: true, admin: { readOnly: true } },
     { name: 'stripeCustomerId', type: 'text', admin: { readOnly: true } },
     { name: 'organisation', type: 'text', defaultValue: 'rowville', admin: { readOnly: true, position: 'sidebar' } },

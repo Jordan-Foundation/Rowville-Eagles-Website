@@ -30,10 +30,11 @@ export async function startCheckout(opts: {
   /** Minutes the Stripe checkout link stays open (Stripe minimum 30) */
   expiresInMinutes?: number
   /**
-   * Weekly plan: `items` are charged today, then `weekly` is charged automatically every 7 days
-   * from `anchor` (unix seconds, at least 48h away). The subscription is cancelled after the last charge by the webhook.
+   * Weekly plan: charge `items` today as a normal payment and save the card for later charges.
+   * The weekly charges themselves are scheduled after payment (see academy/weekly-payments.ts) —
+   * so Stripe's checkout never shows a subscription or "free trial". `note` is shown above the pay button.
    */
-  weekly?: { name: string; description?: string; unitAmount: number; anchor: number }
+  saveCardFor?: { note: string }
 }): Promise<{ url: string; sessionId?: string; simulated: boolean }> {
   const success = `${siteUrl()}${opts.successPath ?? '/checkout/success'}?kind=${opts.kind}&ref=${opts.reference}`
 
@@ -51,35 +52,14 @@ export async function startCheckout(opts: {
       product_data: { name: i.name, ...(i.description ? { description: i.description } : {}) },
     },
   }))
-  const w = opts.weekly
+  const save = opts.saveCardFor
   const session = await stripeFor(opts.payee).checkout.sessions.create({
+    mode: 'payment',
     customer_email: opts.email,
     metadata,
-    ...(w
-      ? {
-          mode: 'subscription' as const,
-          line_items: [
-            ...lineItems, // one-off: today's payment
-            {
-              quantity: 1,
-              price_data: {
-                currency: 'aud',
-                unit_amount: toCents(w.unitAmount),
-                recurring: { interval: 'week' as const },
-                product_data: { name: w.name, ...(w.description ? { description: w.description } : {}) },
-              },
-            },
-          ],
-          // Today's one-off item is charged now; the weekly price starts at `anchor`. A trial (allowed up to
-          // 2 years ahead) is used rather than billing_cycle_anchor, which Stripe caps at one billing period —
-          // a week — and terms are often booked months in advance.
-          subscription_data: { metadata, description, trial_end: w.anchor },
-        }
-      : {
-          mode: 'payment' as const,
-          line_items: lineItems,
-          payment_intent_data: { metadata, description },
-        }),
+    line_items: lineItems,
+    payment_intent_data: { metadata, description, ...(save ? { setup_future_usage: 'off_session' as const } : {}) },
+    ...(save ? { customer_creation: 'always' as const, custom_text: { submit: { message: save.note } } } : {}),
     success_url: `${success}&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${siteUrl()}${opts.cancelPath}`,
     expires_at: Math.floor(Date.now() / 1000) + Math.max(30, opts.expiresInMinutes ?? 30) * 60,

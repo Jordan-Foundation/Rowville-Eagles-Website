@@ -138,11 +138,8 @@ export async function bookSession(_prev: BookState, fd: FormData): Promise<BookS
       email: contact.email,
       ...(plan
         ? {
-            weekly: {
-              name: `Weekly 1-on-1 with ${coach.displayName}`,
-              description: `${player.firstName} ${player.lastName} · ${weekday}s ${formatDate(first, { hour: 'numeric', minute: '2-digit' })} · ${plan.recurringCharges} weekly payments, 2 days before each session, ending ${formatDate(plan.chargeDates.at(-1)!, { day: 'numeric', month: 'short' })}`,
-              unitAmount: term.pricePerSession,
-              anchor: plan.anchor,
+            saveCardFor: {
+              note: `Today you pay for the first session. Your card is then saved and ${formatPrice(term.pricePerSession)} is charged automatically 2 days before each later session — ${plan.recurringCharges} payments, ${formatDate(plan.chargeDates[1], { day: 'numeric', month: 'short' })} to ${formatDate(plan.chargeDates.at(-1)!, { day: 'numeric', month: 'short' })}. Total ${formatPrice(amount)}.`,
             },
           }
         : {}),

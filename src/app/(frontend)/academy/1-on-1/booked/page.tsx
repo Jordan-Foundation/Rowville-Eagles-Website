@@ -23,10 +23,7 @@ export default async function BookedPage({ searchParams }: { searchParams: Promi
       const paid = (mode === 'simulate' && Boolean(simulated)) || (checkout?.payment_status === 'paid' && checkout.metadata?.reference === booking.reference)
       if (paid) {
         await confirmAcademyBooking(p, booking.reference)
-        if (checkout?.mode === 'subscription' && checkout.subscription) {
-          const sid = (v: string | { id: string } | null) => (v ? (typeof v === 'string' ? v : v.id) : null)
-          await activateWeeklyPlan(p, booking.reference, { subscriptionId: sid(checkout.subscription)!, customerId: sid(checkout.customer) })
-        }
+        if (checkout) await activateWeeklyPlan(p, booking.reference, checkout.id)
         booking = (await p.find({ collection: 'academy-bookings', where: { reference: { equals: booking.reference } }, limit: 1, depth: 1, overrideAccess: true })).docs[0]
       }
     } catch (e) {

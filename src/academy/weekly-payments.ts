@@ -49,21 +49,63 @@ export async function syncPaidSessions(payload: Payload, booking: Pick<AcademyBo
 const paidCount = (b: AcademyBooking) => Math.min(b.sessionsTotal ?? 1, 1 + (b.payments ?? []).filter((x) => x.status === 'paid').length)
 
 /**
- * Checkout finished for a weekly plan: remember the Stripe ids and tell Stripe to stop after
- * the last session's charge. Safe to call from both the webhook and the success page.
+ * Today's payment went through for a weekly plan: schedule the remaining weekly charges on the
+ * card the family just used. A Stripe subscription schedule starts at the session-2 charge, bills
+ * weekly, and ends (cancels) by itself after the final charge — no trial, nothing shown at checkout.
+ *
+ * Called from both the webhook and the success page, so it may run twice at once: Stripe
+ * idempotency keys make the second call return the same price and schedule instead of a duplicate.
  */
-export async function activateWeeklyPlan(payload: Payload, reference: string, ids: { subscriptionId: string; customerId?: string | null }) {
+export async function activateWeeklyPlan(payload: Payload, reference: string, checkoutSessionId: string) {
   const booking = await findWeekly(payload, { reference })
-  if (!booking || booking.stripeSubscriptionId) return booking
+  if (!booking || booking.stripeScheduleId || paymentsMode('academy') !== 'stripe') return booking
+  if (booking.status !== 'confirmed' && booking.status !== 'payment_failed') return booking
   const plan = planOf(booking)
-  if (plan && paymentsMode('academy') === 'stripe') {
-    const cancelAt = plan.anchor + (plan.recurringCharges - 1) * 7 * 86400 + 86400
-    await stripeFor('academy').subscriptions.update(ids.subscriptionId, { cancel_at: cancelAt, proration_behavior: 'none' })
-  }
+  if (!plan || plan.recurringCharges < 1) return booking
+
+  const stripe = stripeFor('academy')
+  const checkout = await stripe.checkout.sessions.retrieve(checkoutSessionId, { expand: ['payment_intent'] })
+  if (checkout.metadata?.reference !== reference) throw new Error(`Checkout ${checkoutSessionId} is not for ${reference}`)
+  const customer = typeof checkout.customer === 'string' ? checkout.customer : checkout.customer?.id
+  const intent = checkout.payment_intent && typeof checkout.payment_intent === 'object' ? checkout.payment_intent : null
+  const paymentMethod = intent && (typeof intent.payment_method === 'string' ? intent.payment_method : intent.payment_method?.id)
+  if (!customer || !paymentMethod) throw new Error(`No saved card on checkout ${checkoutSessionId} for ${reference}`)
+
+  const coach = await payload.findByID({ collection: 'academy-coaches', id: relId(booking.coach)!, depth: 0, overrideAccess: true })
+  const perSession = Math.round((booking.amount / (booking.sessionsTotal || 1)) * 100)
+  const metadata = { kind: 'academy', reference, payee: 'academy' }
+  const price = await stripe.prices.create(
+    {
+      currency: 'aud',
+      unit_amount: perSession,
+      recurring: { interval: 'week' },
+      product_data: { name: `Weekly 1-on-1 with ${coach.displayName}` },
+      metadata,
+    },
+    { idempotencyKey: `weekly-price-${reference}` },
+  )
+  const schedule = await stripe.subscriptionSchedules.create(
+    {
+      customer,
+      start_date: plan.anchor,
+      end_behavior: 'cancel',
+      metadata,
+      phases: [
+        {
+          items: [{ price: price.id, quantity: 1 }],
+          end_date: plan.anchor + plan.recurringCharges * 7 * 86400,
+          default_payment_method: paymentMethod,
+          description: `${reference} — ${booking.player.firstName} ${booking.player.lastName}, weekly 1-on-1s with ${coach.displayName}`,
+          metadata,
+        },
+      ],
+    },
+    { idempotencyKey: `weekly-schedule-${reference}` },
+  )
   return payload.update({
     collection: 'academy-bookings',
     id: booking.id,
-    data: { stripeSubscriptionId: ids.subscriptionId, stripeCustomerId: ids.customerId ?? undefined },
+    data: { stripeScheduleId: schedule.id, stripeCustomerId: customer },
     overrideAccess: true,
   })
 }
@@ -102,6 +144,7 @@ export async function recordWeeklyPaid(payload: Payload, c: Charge) {
     data: {
       payments,
       sessionsPaid: paid,
+      ...(c.subscriptionId && !booking.stripeSubscriptionId ? { stripeSubscriptionId: c.subscriptionId } : {}),
       nextChargeAt: plan ? nextChargeAt(plan, paid) : null,
       ...(booking.status === 'payment_failed' && !stillFailing ? { status: 'confirmed' as const } : {}),
     },
@@ -124,7 +167,7 @@ export async function recordWeeklyFailed(payload: Payload, c: Charge) {
   if (existing) Object.assign(existing, { payUrl: c.payUrl ?? existing.payUrl, at: new Date().toISOString() })
   else payments.push({ invoiceId: c.invoiceId, status: 'failed', amount: c.amount, at: new Date().toISOString(), payUrl: c.payUrl ?? undefined })
 
-  const updated = await payload.update({ collection: 'academy-bookings', id: booking.id, data: { payments, status: 'payment_failed' }, overrideAccess: true })
+  const updated = await payload.update({ collection: 'academy-bookings', id: booking.id, data: { payments, status: 'payment_failed', ...(c.subscriptionId && !booking.stripeSubscriptionId ? { stripeSubscriptionId: c.subscriptionId } : {}) }, overrideAccess: true })
   // Email the family on the first failure and again when Stripe gives up; the admin hears about both.
   if (first || c.final) await notifyFailed(payload, updated, { payUrl: c.payUrl, final: Boolean(c.final), amount: c.amount })
   return { ok: true as const, booking: updated }
