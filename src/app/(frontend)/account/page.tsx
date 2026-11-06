@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { payload, formatAUD, formatDate } from '@/lib/payload'
 import { currentUser } from '@/lib/auth'
-import type { Program, Team } from '@/payload-types'
+import type { AcademyBooking, AcademyCoach, Program, Team } from '@/payload-types'
 import { LogoutButton } from './LogoutButton'
 
 export const dynamic = 'force-dynamic'
@@ -16,21 +16,47 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   if (!user) redirect('/login?next=/account')
   const { welcome } = await searchParams
   const p = await payload()
-  const [participants, bookings] = await Promise.all([
+  const [participants, bookings, academy] = await Promise.all([
     p.find({ collection: 'participants', where: { account: { equals: user.id } }, depth: 1, limit: 50, overrideAccess: true }),
     p.find({ collection: 'bookings', where: { account: { equals: user.id }, status: { equals: 'paid' } }, depth: 1, limit: 100, sort: '-createdAt', overrideAccess: true }),
+    // Foundation Academy 1-on-1 sessions (one row per session)
+    p.find({ collection: 'academy-sessions', where: { account: { equals: user.id }, status: { in: ['scheduled', 'completed', 'no_show'] } }, depth: 2, limit: 300, sort: 'startsAt', overrideAccess: true }),
   ])
 
   const pendingOffers = participants.docs.filter((x) => x.registrationOffer?.status === 'offered' && x.registrationOffer.program)
   const now = Date.now()
-  const upcoming = bookings.docs
+  type Item = { key: string; date: string | null; title: string; detail: string; badge: 'RFA' | 'Club'; status?: string }
+  const clubItems: Item[] = bookings.docs
     .map((b) => {
       const prog = b.program as Program
       const date = b.sessionStart || prog.startDate || null
       return { b, prog, date }
     })
     .filter((x) => !x.date || new Date(x.prog.endDate || x.date).getTime() >= now)
-    .sort((a, b) => (a.date ?? '9999').localeCompare(b.date ?? '9999'))
+    .map(({ b, prog, date }) => ({
+      key: `b${b.id}`,
+      date,
+      title: b.bookingType === 'trial' ? `Trial — ${prog.title}` : prog.title,
+      detail: [b.player?.teamName || b.player?.firstName, b.sessionStart && formatDate(b.sessionStart, { hour: 'numeric', minute: '2-digit' }), prog.location].filter(Boolean).join(' · '),
+      badge: b.payee === 'academy' ? 'RFA' : 'Club',
+    }))
+  const sessionItems = academy.docs.map((s) => {
+    const booking = s.booking as AcademyBooking
+    const coach = s.coach as AcademyCoach
+    const cover = s.needsCover ? (s.coverCoach && typeof s.coverCoach === 'object' ? ` · cover: ${s.coverCoach.displayName}` : ' · replacement coach being arranged') : ''
+    const paid =
+      booking.paymentMode === 'weekly' ? `weekly — ${booking.sessionsPaid ?? 0} of ${booking.sessionsTotal ?? 0} paid` : booking.type === 'term' ? 'term paid in full' : 'paid'
+    return {
+      key: `s${s.id}`,
+      date: s.startsAt,
+      title: `1-on-1 with ${coach.displayName}`,
+      detail: [booking.player.firstName, formatDate(s.startsAt, { hour: 'numeric', minute: '2-digit' }), paid].join(' · ') + cover,
+      badge: 'RFA' as const,
+      status: s.status,
+    }
+  })
+  const upcoming = [...clubItems, ...sessionItems.filter((i) => new Date(i.date).getTime() >= now)].sort((a, b) => (a.date ?? '9999').localeCompare(b.date ?? '9999'))
+  const past = sessionItems.filter((i) => new Date(i.date).getTime() < now).reverse()
 
   return (
     <div className="container-x py-14">
@@ -73,24 +99,13 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
               <Link href="/academy/trial" className="font-semibold text-brand underline">book an RFA trial</Link>
             </p>
           ) : (
-            <ol className="mt-4 divide-y divide-line rounded-2xl border border-line">
-              {upcoming.map(({ b, prog, date }) => (
-                <li key={b.id} className="grid gap-1 p-5 sm:grid-cols-[9rem_1fr_auto] sm:items-center sm:gap-6">
-                  <p className="font-[family-name:var(--font-barlow)] text-lg font-bold uppercase text-brand">
-                    {date ? formatDate(date, { weekday: 'short', day: 'numeric', month: 'short' }) : 'Flexible'}
-                  </p>
-                  <div>
-                    <p className="font-semibold">{b.bookingType === 'trial' ? `Trial — ${prog.title}` : prog.title}</p>
-                    <p className="text-sm text-muted">
-                      {[b.player?.teamName || b.player?.firstName, b.sessionStart && formatDate(b.sessionStart, { hour: 'numeric', minute: '2-digit' }), prog.location].filter(Boolean).join(' · ')}
-                    </p>
-                  </div>
-                  <span className={`w-fit rounded-full px-2.5 py-1 text-xs font-semibold ${b.payee === 'academy' ? 'bg-black text-white' : 'bg-brand/10 text-brand'}`}>
-                    {b.payee === 'academy' ? 'RFA' : 'Club'}
-                  </span>
-                </li>
-              ))}
-            </ol>
+            <ItemList items={upcoming} />
+          )}
+          {past.length > 0 && (
+            <>
+              <h2 className="mt-10 font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase">Past sessions</h2>
+              <ItemList items={past} muted />
+            </>
           )}
         </section>
         <aside className="space-y-4">
@@ -129,5 +144,24 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
         </aside>
       </div>
     </div>
+  )
+}
+
+function ItemList({ items, muted }: { items: { key: string; date: string | null; title: string; detail: string; badge: 'RFA' | 'Club'; status?: string }[]; muted?: boolean }) {
+  return (
+    <ol className={`mt-4 divide-y divide-line rounded-2xl border border-line ${muted ? 'opacity-70' : ''}`}>
+      {items.map((i) => (
+        <li key={i.key} className="grid gap-1 p-5 sm:grid-cols-[9rem_1fr_auto] sm:items-center sm:gap-6">
+          <p className="font-[family-name:var(--font-barlow)] text-lg font-bold uppercase text-brand">
+            {i.date ? formatDate(i.date, { weekday: 'short', day: 'numeric', month: 'short' }) : 'Flexible'}
+          </p>
+          <div>
+            <p className="font-semibold">{i.title}{i.status === 'no_show' ? ' (missed)' : ''}</p>
+            <p className="text-sm text-muted">{i.detail}</p>
+          </div>
+          <span className={`w-fit rounded-full px-2.5 py-1 text-xs font-semibold ${i.badge === 'RFA' ? 'bg-black text-white' : 'bg-brand/10 text-brand'}`}>{i.badge}</span>
+        </li>
+      ))}
+    </ol>
   )
 }
