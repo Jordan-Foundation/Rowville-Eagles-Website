@@ -27,7 +27,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ payee: 
   if (event.type.startsWith('checkout.session.')) {
     const session = event.data.object as Stripe.Checkout.Session
     const { kind, reference, payee: metaPayee } = session.metadata ?? {}
-    if ((kind === 'booking' || kind === 'order') && reference && metaPayee === payee) {
+    if ((kind === 'booking' || kind === 'order' || kind === 'academy') && reference && metaPayee === payee) {
       if ((event.type === 'checkout.session.completed' && session.payment_status === 'paid') || event.type === 'checkout.session.async_payment_succeeded') {
         await confirmPayment(p, kind, reference)
       } else if (event.type === 'checkout.session.expired' || event.type === 'checkout.session.async_payment_failed') {

@@ -9,11 +9,11 @@ export const metadata: Metadata = { title: 'Camps & Programs' }
 
 export default async function ProgramsPage({ searchParams }: { searchParams: Promise<{ type?: string }> }) {
   const { type } = await searchParams
-  const listed = programTypes.filter((t) => t.value !== 'registration' && t.value !== 'academy-trial')
+  const listed = programTypes.filter((t) => !['registration', 'academy-trial', 'private-session'].includes(t.value))
   const active = listed.find((t) => t.value === type)?.value
   const where: Where = {
     status: { in: ['open', 'full'] },
-    type: active ? { equals: active } : { not_in: ['registration', 'academy-trial'] },
+    type: active ? { equals: active } : { not_in: ['registration', 'academy-trial', 'private-session'] },
   }
   const { docs } = await (await payload()).find({ collection: 'programs', where, depth: 0, limit: 100 })
 

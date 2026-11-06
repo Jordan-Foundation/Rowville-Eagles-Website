@@ -26,11 +26,11 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
     try {
       const mode = paymentsMode(doc.payee)
       if (mode === 'simulate' && simulated) {
-        status = (await confirmPayment(p, kind, doc.reference ?? ''))?.status ?? status
+        status = ((await confirmPayment(p, kind, doc.reference ?? '')) as typeof doc | undefined)?.status ?? status
       } else if (mode === 'stripe' && session_id) {
         const session = await stripeFor(doc.payee).checkout.sessions.retrieve(session_id)
         if (session.metadata?.reference === doc.reference && session.payment_status === 'paid') {
-          status = (await confirmPayment(p, kind, doc.reference ?? ''))?.status ?? status
+          status = ((await confirmPayment(p, kind, doc.reference ?? '')) as typeof doc | undefined)?.status ?? status
         }
       }
     } catch (e) {

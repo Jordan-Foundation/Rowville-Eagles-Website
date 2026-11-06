@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { APIError } from 'payload'
 import { hasRole, isAdminField } from '../access'
 
 /**
@@ -15,6 +16,19 @@ export const Users: CollectionConfig = {
   },
   auth: { tokenExpiration: 60 * 60 * 24 * 14, cookies: { sameSite: 'Lax' } },
   hooks: {
+    beforeDelete: [
+      async ({ id, req }) => {
+        const { totalDocs } = await req.payload.count({ collection: 'academy-coaches', where: { user: { equals: id } }, overrideAccess: true, req })
+        if (totalDocs > 0) {
+          throw new APIError(
+            'This user has a Foundation Academy coach profile. Untick “Active” on their coach profile (and remove the Coach role) instead of deleting them, so their booking history is kept.',
+            400,
+            undefined,
+            true,
+          )
+        }
+      },
+    ],
     afterLogin: [
       async ({ user, req }) => {
         if (!user.activated) await req.payload.update({ collection: 'users', id: user.id, data: { activated: true }, overrideAccess: true, req })

@@ -2,6 +2,7 @@ import type { Payload } from 'payload'
 import { paymentsMode, stripeAccounts, stripeFor, type Payee } from './stripe-accounts'
 import { onBookingPaid, onOrderPaid } from './notifications'
 import { makeReference } from './reference'
+import { confirmAcademyBooking, releaseAcademyHold } from '../academy/booking-data'
 
 export const siteUrl = () =>
   process.env.NEXT_PUBLIC_SITE_URL ||
@@ -15,15 +16,21 @@ const toCents = (aud: number) => Math.round(aud * 100)
 type LineItem = { name: string; description?: string; unitAmount: number; quantity: number }
 
 /** Creates a Stripe Checkout Session on the right account and returns the URL to redirect to. */
+export type CheckoutKind = 'booking' | 'order' | 'academy'
+
 export async function startCheckout(opts: {
   payee: Payee
-  kind: 'booking' | 'order'
+  kind: CheckoutKind
   reference: string
   email: string
   items: LineItem[]
   cancelPath: string
+  /** Page to return to after paying (default /checkout/success) */
+  successPath?: string
+  /** Minutes the Stripe checkout link stays open (Stripe minimum 30) */
+  expiresInMinutes?: number
 }): Promise<{ url: string; sessionId?: string; simulated: boolean }> {
-  const success = `${siteUrl()}/checkout/success?kind=${opts.kind}&ref=${opts.reference}`
+  const success = `${siteUrl()}${opts.successPath ?? '/checkout/success'}?kind=${opts.kind}&ref=${opts.reference}`
 
   if (paymentsMode(opts.payee) === 'simulate') {
     return { url: `${success}&simulated=1`, simulated: true }
@@ -45,14 +52,15 @@ export async function startCheckout(opts: {
     payment_intent_data: { metadata, description: `${opts.reference} — ${opts.items.map((i) => i.name).join(', ')}` },
     success_url: `${success}&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${siteUrl()}${opts.cancelPath}`,
-    expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
+    expires_at: Math.floor(Date.now() / 1000) + Math.max(30, opts.expiresInMinutes ?? 30) * 60,
   })
   if (!session.url) throw new Error('Stripe did not return a checkout URL')
   return { url: session.url, sessionId: session.id, simulated: false }
 }
 
 /** Idempotently confirm payment for a booking or order (called by webhook, success page and simulate mode). */
-export async function confirmPayment(payload: Payload, kind: 'booking' | 'order', reference: string) {
+export async function confirmPayment(payload: Payload, kind: CheckoutKind, reference: string) {
+  if (kind === 'academy') return confirmAcademyBooking(payload, reference)
   if (kind === 'booking') {
     const { docs } = await payload.find({ collection: 'bookings', where: { reference: { equals: reference } }, limit: 1, depth: 0 })
     const b = docs[0]
@@ -89,7 +97,8 @@ export async function confirmPayment(payload: Payload, kind: 'booking' | 'order'
 }
 
 /** Release an unpaid booking/order when its Stripe session expires. */
-export async function cancelPending(payload: Payload, kind: 'booking' | 'order', reference: string) {
+export async function cancelPending(payload: Payload, kind: CheckoutKind, reference: string) {
+  if (kind === 'academy') return releaseAcademyHold(payload, reference)
   const collection = kind === 'booking' ? 'bookings' : 'orders'
   const { docs } = await payload.find({ collection, where: { reference: { equals: reference } }, limit: 1, depth: 0 })
   const doc = docs[0]

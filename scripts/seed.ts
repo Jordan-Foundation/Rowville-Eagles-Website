@@ -43,7 +43,7 @@ if (hosted) {
   }
 }
 
-for (const c of ['academy-availability', 'academy-coaches', 'academy-terms', 'trial-registrations', 'trial-sessions', 'bookings', 'orders', 'products', 'participants', 'programs', 'teams', 'posts', 'sponsors'] as const) {
+for (const c of ['academy-sessions', 'academy-bookings', 'academy-reminder-log', 'academy-availability', 'academy-coaches', 'academy-terms', 'trial-registrations', 'trial-sessions', 'bookings', 'orders', 'products', 'participants', 'programs', 'teams', 'posts', 'sponsors'] as const) {
   await payload.delete({ collection: c, where: { id: { exists: true } } })
 }
 
@@ -146,7 +146,7 @@ const term = await payload.create({
   collection: 'academy-terms',
   data: {
     name: 'Term 1 2027',
-    status: 'availability',
+    status: 'open',
     // Sample school term: Mon 1 Feb – Thu 1 Apr 2027 (replace with the real Victorian term dates)
     startDate: '2027-01-31T13:00:00.000Z',
     endDate: '2027-03-31T13:00:00.000Z',
@@ -164,9 +164,17 @@ if (!hosted) {
   for (const [first, last, email] of [['Sam', 'Rossi', 'coach@rowvilleeagles.local'], ['Priya', 'Nair', 'coach2@rowvilleeagles.local']]) {
     const found = await payload.find({ collection: 'users', where: { email: { equals: email } }, limit: 1 })
     const coachUser = found.docs[0] ?? (await payload.create({ collection: 'users', data: { email, password: 'change-me-now', firstName: first, lastName: last, roles: ['coach'], activated: true } }))
-    await payload.create({
+    const coachProfile = await payload.create({
       collection: 'academy-coaches',
       data: { user: coachUser.id, displayName: `Coach ${first}`, active: true, bio: `Sample bio for Coach ${first} — replace in the coach portal.`, specialties: [{ label: 'Ball mastery' }, { label: 'Finishing' }] },
+    })
+    const slots =
+      first === 'Sam'
+        ? [{ weekday: 'Tuesday', startTime: '17:00' }, { weekday: 'Tuesday', startTime: '18:00' }, { weekday: 'Saturday', startTime: '09:00' }, { weekday: 'Saturday', startTime: '10:00' }]
+        : [{ weekday: 'Tuesday', startTime: '17:00' }, { weekday: 'Thursday', startTime: '16:00' }, { weekday: 'Saturday', startTime: '09:00' }]
+    await payload.create({
+      collection: 'academy-availability',
+      data: { coach: coachProfile.id, term: term.id, slots: slots as { weekday: 'Tuesday' | 'Thursday' | 'Saturday'; startTime: string }[], submittedAt: new Date().toISOString() },
     })
   }
 }

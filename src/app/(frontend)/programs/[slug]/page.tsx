@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { RichText } from '@payloadcms/richtext-lexical/react'
 import { payload, formatAUD, formatDate } from '@/lib/payload'
 import { programTypes } from '@/collections/Programs'
@@ -11,6 +11,7 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
   const { docs } = await (await payload()).find({ collection: 'programs', where: { slug: { equals: slug } }, limit: 1, depth: 1 })
   const p = docs[0]
   if (!p) notFound()
+  if (p.type === 'private-session') redirect('/academy/1-on-1')
   const academy = p.brand === 'academy'
 
   const facts = [

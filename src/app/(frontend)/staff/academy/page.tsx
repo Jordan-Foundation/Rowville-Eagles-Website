@@ -24,6 +24,14 @@ export default async function StaffAcademyPage() {
     p.find({ collection: 'academy-reminder-log', where: { term: { in: terms.map((t) => t.id) } }, depth: 0, limit: 5000, overrideAccess: true }),
   ])
   const id = (v: number | { id: number }) => (typeof v === 'object' ? v.id : v)
+  const { docs: cover } = await p.find({
+    collection: 'academy-sessions',
+    where: { needsCover: { equals: true }, status: { in: ['held', 'scheduled'] }, startsAt: { greater_than: new Date().toISOString() } },
+    sort: 'startsAt',
+    depth: 1,
+    limit: 200,
+    overrideAccess: true,
+  })
 
   return (
     <div data-brand="academy" data-page-brand="academy">
@@ -37,6 +45,37 @@ export default async function StaffAcademyPage() {
           </p>
           <div className="mt-6"><RunButton /></div>
         </div>
+
+        <section id="cover" className="scroll-mt-24">
+          <h2 className="font-display text-2xl font-semibold uppercase">Sessions needing cover</h2>
+          {cover.length === 0 ? (
+            <p className="mt-3 text-sm text-muted">None — every upcoming session has its booked coach.</p>
+          ) : (
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full min-w-[640px] text-left text-sm">
+                <thead className="border-b border-line text-xs uppercase tracking-wider text-muted">
+                  <tr><th className="py-3 pr-4">When</th><th className="pr-4">Booked coach (away)</th><th className="pr-4">Player</th><th className="pr-4">Cover coach</th><th /></tr>
+                </thead>
+                <tbody className="divide-y divide-line">
+                  {cover.map((s) => {
+                    const b = typeof s.booking === 'object' ? s.booking : null
+                    const c = typeof s.coach === 'object' ? s.coach : null
+                    const cc = s.coverCoach && typeof s.coverCoach === 'object' ? s.coverCoach : null
+                    return (
+                      <tr key={s.id}>
+                        <td className="py-3 pr-4 font-medium">{formatDate(s.startsAt, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}</td>
+                        <td className="pr-4">{c?.displayName}</td>
+                        <td className="pr-4">{b ? `${b.player.firstName} ${b.player.lastName}` : '—'}</td>
+                        <td className="pr-4">{cc ? cc.displayName : <span className="text-red-300">Not assigned</span>}</td>
+                        <td><a href={`/admin/collections/academy-sessions/${s.id}`} className="underline">Assign →</a></td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
 
         {terms.length === 0 && <p className="text-muted">No terms are collecting availability.</p>}
         {terms.map((term) => {

@@ -7,6 +7,7 @@ import { WEEKDAYS, startTimesFor, type Weekday } from '@/academy/constants'
 import { toYmd } from '@/academy/term-dates'
 import { localToUtc } from '@/lib/time'
 import type { AcademyAvailability, AcademyTerm } from '@/payload-types'
+import { alertBlockedRemoval, alertCoverNeeded, sessionsOnSlot, syncCoverFlags, upcomingSessions } from '@/academy/cover'
 
 export type AvailabilityState = { error?: string; saved?: boolean; first?: boolean }
 
@@ -43,7 +44,23 @@ export async function saveAvailability(_prev: AvailabilityState, fd: FormData): 
   const after = new Set(unique.map(key))
   const added = [...after].filter((k) => !before.has(k))
   const removed = [...before].filter((k) => !after.has(k))
-  // Stage 5 will block removing slots that already have bookings; there are no 1-on-1 bookings yet.
+
+  // Families have already booked these times — block the removal and tell the admin
+  if (removed.length) {
+    const booked = await upcomingSessions(p, me.coach.id, term)
+    const blocked = removed
+      .map((k) => {
+        const [weekday, time] = k.split(' ')
+        return { slot: k, sessions: sessionsOnSlot(booked, weekday, time) }
+      })
+      .filter((b) => b.sessions.length > 0)
+    if (blocked.length) {
+      await alertBlockedRemoval(p, me.coach, term.name, blocked)
+      return {
+        error: `Families are booked on ${blocked.map((b) => b.slot).join(', ')}, so those times can’t be removed here. Please contact the Academy admin — we’ve let them know. If you’ll be away, add an away period below instead.`,
+      }
+    }
+  }
 
   const now = new Date().toISOString()
   const change = added.length || removed.length ? [{ at: now, added: added.join(', ') || undefined, removed: removed.join(', ') || undefined }] : []
@@ -84,7 +101,6 @@ export async function updateAway(_prev: AwayState, fd: FormData): Promise<AwaySt
     periods.push({ from: localToUtc(from, '00:00').toISOString(), to: localToUtc(to, '23:59').toISOString(), note: note || undefined })
     periods.sort((a, b) => a.from.localeCompare(b.from))
     change = `away added ${from} – ${to}${note ? ` (${note})` : ''}`
-    // Stage 5: sessions already booked on these dates get flagged "needs cover" for the admin.
   }
 
   const entry = { at: new Date().toISOString(), added: removeIndex === null ? change : undefined, removed: removeIndex !== null ? change : undefined }
@@ -93,6 +109,11 @@ export async function updateAway(_prev: AwayState, fd: FormData): Promise<AwaySt
   } else {
     await p.create({ collection: 'academy-availability', overrideAccess: true, data: { coach: me.coach.id, term: term.id, slots: [], awayPeriods: periods, changes: [entry] } })
   }
+
+  // Sessions families have already booked on away days now need a replacement coach
+  const flagged = await syncCoverFlags(p, me.coach.id, term, periods)
+  if (flagged.length) await alertCoverNeeded(p, me.coach, flagged, `will be away (${change.replace(/^away added /, '')})`)
+
   revalidatePath(`/coach/availability/${term.id}`)
   return { saved: true }
 }

@@ -77,6 +77,7 @@ export const AcademyTerms: CollectionConfig = {
       type: 'collapsible',
       label: '1-on-1 pricing & booking rules',
       fields: [
+        { name: 'location', type: 'text', defaultValue: '208 Dandelion Drive, Rowville VIC 3178', admin: { description: 'Where 1-on-1 sessions are held (shown in confirmations and reminders)' } },
         { type: 'row', fields: [
           { name: 'pricePerSession', label: 'Term price per session (AUD)', type: 'number', required: true, defaultValue: 80, min: 0 },
           { name: 'casualPrice', label: 'Casual session price (AUD)', type: 'number', required: true, defaultValue: 85, min: 0 },
@@ -103,7 +104,7 @@ export const AcademyTerms: CollectionConfig = {
         { type: 'row', fields: [
           { name: 'bookingCutoffHours', label: 'Booking cut-off (hours before a session)', type: 'number', defaultValue: 24, min: 0 },
           { name: 'minTermSessions', label: 'Minimum sessions left to book a term', type: 'number', defaultValue: 2, min: 1 },
-          { name: 'holdMinutes', label: 'Checkout hold (minutes)', type: 'number', defaultValue: 15, min: 5, max: 60 },
+          { name: 'holdMinutes', label: 'Checkout hold (minutes)', type: 'number', defaultValue: 30, min: 30, max: 60, admin: { description: 'Stripe checkout links last at least 30 minutes' } },
         ] },
         { type: 'row', fields: [
           { name: 'shareLinkHoldHours', label: 'Default coach share-link hold (hours)', type: 'number', defaultValue: 24, min: 0, max: 72 },

@@ -18,7 +18,7 @@ export default async function Home() {
   const p = await payload()
   const [settings, others, posts, sponsors] = await Promise.all([
     p.findGlobal({ slug: 'site-settings', depth: 0 }),
-    p.find({ collection: 'programs', where: { status: { equals: 'open' }, type: { not_in: ['registration', 'academy-trial'] } }, limit: 3, depth: 0, sort: 'startDate' }),
+    p.find({ collection: 'programs', where: { status: { equals: 'open' }, type: { not_in: ['registration', 'academy-trial', 'private-session'] } }, limit: 3, depth: 0, sort: 'startDate' }),
     p.find({ collection: 'posts', where: { status: { equals: 'published' } }, limit: 3, depth: 0 }),
     p.find({ collection: 'sponsors', limit: 20, depth: 1, sort: 'order' }),
   ])

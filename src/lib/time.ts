@@ -40,3 +40,10 @@ export function datesOnWeekday(fromYmd: string, toYmd: string, day: string): str
   }
   return out
 }
+
+/** Local weekday name and "HH:MM" of an instant, e.g. { weekday: 'Tuesday', time: '17:00' }. */
+export function localWeekdayTime(at: Date | string) {
+  const parts = new Intl.DateTimeFormat('en-AU', { timeZone: TZ, weekday: 'long', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date(at))
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? ''
+  return { weekday: get('weekday'), time: `${get('hour')}:${get('minute')}` }
+}

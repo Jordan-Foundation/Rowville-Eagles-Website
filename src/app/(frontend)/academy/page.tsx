@@ -29,7 +29,7 @@ const labelOf = (v: string) => programTypes.find((t) => t.value === v)?.label
 export default async function AcademyPage() {
   const { docs } = await (await payload()).find({
     collection: 'programs',
-    where: { brand: { equals: 'academy' }, status: { in: ['open', 'full'] }, type: { not_equals: 'academy-trial' } },
+    where: { brand: { equals: 'academy' }, status: { in: ['open', 'full'] }, type: { not_in: ['academy-trial', 'private-session'] } },
     depth: 0,
     limit: 50,
   })
@@ -55,8 +55,8 @@ export default async function AcademyPage() {
             <a href="/academy/trial" className="bg-white px-7 py-4 text-sm font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-white/85">
               Book a trial
             </a>
-            <a href="#programs" className="border border-white/25 px-7 py-4 text-sm font-semibold uppercase tracking-[0.18em] transition hover:border-white">
-              View programs
+            <a href="/academy/1-on-1" className="border border-white/25 px-7 py-4 text-sm font-semibold uppercase tracking-[0.18em] transition hover:border-white">
+              Book a 1-on-1
             </a>
           </div>
         </div>
