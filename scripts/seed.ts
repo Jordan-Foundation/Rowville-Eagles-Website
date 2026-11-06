@@ -153,6 +153,8 @@ const term = await payload.create({
     availabilityDeadline: '2027-01-15T07:00:00.000Z',
     pricePerSession: 80,
     casualPrice: 85,
+    termMemberPrice: 70,
+    termMemberWindowDays: 14,
     sessionMinutes: 60,
   },
 })

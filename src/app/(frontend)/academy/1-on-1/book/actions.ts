@@ -8,9 +8,10 @@ import { startCheckout } from '@/lib/payments'
 import { paymentsMode } from '@/lib/stripe-accounts'
 import { findTermSlot, isCasualOpen } from '@/academy/slots'
 import { confirmAcademyBooking, createHold, holdMinutesFor, loadTermBookingData, releaseAcademyHold, releaseExpiredHolds } from '@/academy/booking-data'
-import { creditBalance, creditSum, reserveCredit } from '@/academy/credits'
+import { creditBalance, creditStateFor, reserveCredit } from '@/academy/credits'
 import { toYmd } from '@/academy/term-dates'
 import { weeklyPlan, type WeeklyPlan } from '@/academy/weekly'
+import { casualPrice, isTermMember } from '@/academy/pricing'
 import { formatDate } from '@/lib/format'
 import type { Weekday } from '@/academy/constants'
 
@@ -42,6 +43,7 @@ export async function bookSession(_prev: BookState, fd: FormData): Promise<BookS
   let weekday: Weekday | undefined
   let startTime: string | undefined
   let plan: WeeklyPlan | null = null
+  let memberPrice = false
   if (mode === 'term') {
     const slot = findTermSlot({ ...engine, minSessions: term.minTermSessions ?? 2, coachId, weekday: s('weekday'), time: s('time') })
     if (!slot) return fail('Sorry — that weekly time has just been booked. Please choose another.')
@@ -61,7 +63,10 @@ export async function bookSession(_prev: BookState, fd: FormData): Promise<BookS
     const startsAt = s('start')
     if (Number.isNaN(Date.parse(startsAt)) || !isCasualOpen({ ...engine, coachId, startsAt })) return fail('Sorry — that time has just been booked. Please choose another.')
     sessions = [{ startsAt: new Date(startsAt).toISOString() }]
-    amount = term.casualPrice
+    // Term families pay the member price for sessions in the next couple of weeks
+    const priced = casualPrice(term, { startsAt: sessions[0].startsAt, now: new Date(), termMember: await isTermMember(p, user?.id) })
+    amount = priced.price
+    memberPrice = priced.memberPrice
   }
 
   // Parent / guardian
@@ -91,8 +96,11 @@ export async function bookSession(_prev: BookState, fd: FormData): Promise<BookS
     return fail('Online payments aren’t set up yet — please contact the Academy to book.')
   }
 
-  // Account credit (logged-in families; not used with weekly plans, which charge week by week)
-  const creditUse = user && !plan ? Math.min(await creditBalance(p, user.id), amount) : 0
+  // Session credits (logged-in families; not with weekly plans, which charge week by week).
+  // One credit covers one session: the casual session, or one week of an upfront term.
+  const perSession = amount / sessions.length
+  const creditSessionsUsed = user && !plan ? Math.min(await creditBalance(p, user.id), sessions.length) : 0
+  const creditUse = Math.round(creditSessionsUsed * perSession * 100) / 100
   const charge = Math.round((amount - creditUse) * 100) / 100
 
   const coach = await p.findByID({ collection: 'academy-coaches', id: coachId, depth: 0 })
@@ -103,6 +111,8 @@ export async function bookSession(_prev: BookState, fd: FormData): Promise<BookS
     type: mode,
     paymentMode: mode === 'casual' ? 'casual' : plan ? 'weekly' : 'upfront',
     creditApplied: creditUse,
+    creditSessionsUsed,
+    termMemberPrice: memberPrice,
     chargeAnchorAt: plan ? new Date(plan.anchor * 1000).toISOString() : undefined,
     amount,
     sessionsTotal: sessions.length,
@@ -132,9 +142,9 @@ export async function bookSession(_prev: BookState, fd: FormData): Promise<BookS
   })
   if (!hold.ok) return fail('Sorry — someone booked that time a moment ago. Please choose another.')
   if (creditUse > 0) {
-    await reserveCredit(p, { account: user!.id, amount: creditUse, booking: hold.booking.id })
+    await reserveCredit(p, { account: user!.id, sessions: creditSessionsUsed, value: creditUse, booking: hold.booking.id })
     // Two checkouts at once could both see the same credit — the second one backs off
-    if ((await creditSum(p, user!.id)) < 0) {
+    if ((await creditStateFor(p, user!.id)).overdrawn) {
       await releaseAcademyHold(p, reference)
       return fail('Your account credit is being used in another checkout. Please try again in a moment.')
     }
@@ -165,10 +175,10 @@ export async function bookSession(_prev: BookState, fd: FormData): Promise<BookS
       items: plan
         ? [{ name: `First session — ${formatDate(first, { weekday: 'short', day: 'numeric', month: 'short' })}`, description: `Term of 1-on-1s with ${coach.displayName} · ${sessions.length} sessions, paid weekly`, unitAmount: term.pricePerSession, quantity: 1 }]
         : creditUse > 0
-          ? [{ name: mode === 'term' ? `Term of 1-on-1s with ${coach.displayName}` : `1-on-1 with ${coach.displayName}`, description: `${player.firstName} ${player.lastName} · ${sessions.length} session${sessions.length === 1 ? '' : 's'} from ${formatDate(first, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })} · ${formatPrice(amount)} less ${formatPrice(creditUse)} account credit`, unitAmount: charge, quantity: 1 }]
+          ? [{ name: mode === 'term' ? `Term of 1-on-1s with ${coach.displayName}` : `1-on-1 with ${coach.displayName}`, description: `${player.firstName} ${player.lastName} · ${sessions.length} session${sessions.length === 1 ? '' : 's'} from ${formatDate(first, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })} · ${formatPrice(amount)} less ${creditSessionsUsed} session credit${creditSessionsUsed === 1 ? '' : 's'}`, unitAmount: charge, quantity: 1 }]
           : mode === 'term'
           ? [{ name: `Term of 1-on-1s with ${coach.displayName}`, description: `${player.firstName} ${player.lastName} · ${weekday}s ${formatDate(first, { hour: 'numeric', minute: '2-digit' })} · ${sessions.length} sessions, ${formatDate(first, { day: 'numeric', month: 'short' })} – ${formatDate(last, { day: 'numeric', month: 'short' })}`, unitAmount: term.pricePerSession, quantity: sessions.length }]
-          : [{ name: `1-on-1 with ${coach.displayName}`, description: `${player.firstName} ${player.lastName} · ${formatDate(first, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}`, unitAmount: term.casualPrice, quantity: 1 }],
+          : [{ name: `1-on-1 with ${coach.displayName}${memberPrice ? ' (term member price)' : ''}`, description: `${player.firstName} ${player.lastName} · ${formatDate(first, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}`, unitAmount: amount, quantity: 1 }],
       cancelPath: `/academy/1-on-1/book?${back}&cancelled=${reference}`,
       successPath: '/academy/1-on-1/booked',
       expiresInMinutes: holdMinutes,

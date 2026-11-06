@@ -42,6 +42,7 @@ export async function submitCancellation(_prev: StaffActionState, fd: FormData):
     by: fd.get('by') === 'coach' ? 'coach' : 'family',
     outcome,
     overrideAmount: amountRaw === '' ? undefined : Number(amountRaw),
+    overrideSessions: String(fd.get('creditSessions') ?? '').trim() === '' ? undefined : Number(fd.get('creditSessions')),
     reason: String(fd.get('reason') ?? ''),
     actorId: user.id,
     makeUp: outcome === 'makeup' && makeDate && makeTime ? { startsAt: localToUtc(makeDate, makeTime).toISOString(), coachId: Number(fd.get('makeUpCoach')) } : undefined,
@@ -51,7 +52,7 @@ export async function submitCancellation(_prev: StaffActionState, fd: FormData):
   revalidatePath(`/staff/academy/bookings/${bookingId}`)
   const parts = [
     res.cash > 0 && `${res.refund === 'failed' ? 'Refund FAILED' : 'Refunded'} $${res.cash.toFixed(2)}${res.refund === 'simulated' ? ' (simulated)' : ''}`,
-    res.credit > 0 && `credit $${res.credit.toFixed(2)}`,
+    res.creditSessions > 0 && `${res.creditSessions} session credit${res.creditSessions === 1 ? '' : 's'}`,
     outcome === 'makeup' && 'make-up booked',
   ].filter(Boolean)
   // Redirect so the result shows even when the booking closes (and the cancel panel disappears)
@@ -73,7 +74,7 @@ export async function submitGoodwill(_prev: StaffActionState, fd: FormData): Pro
   const user = await staff()
   if (!user) return { error: 'Staff only.' }
   const bookingId = Number(fd.get('bookingId'))
-  const res = await goodwillCredit(await payload(), { bookingId, amount: Number(fd.get('amount')), reason: String(fd.get('reason') ?? ''), actorId: user.id })
+  const res = await goodwillCredit(await payload(), { bookingId, sessions: Number(fd.get('sessions')), reason: String(fd.get('reason') ?? ''), actorId: user.id })
   revalidatePath(`/staff/academy/bookings/${bookingId}`)
-  return res.ok ? { done: 'Credit added.' } : { error: res.error }
+  return res.ok ? { done: 'Session credits added.' } : { error: res.error }
 }

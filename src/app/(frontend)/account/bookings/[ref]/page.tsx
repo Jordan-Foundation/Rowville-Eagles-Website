@@ -45,10 +45,10 @@ export default async function MyBookingPage({ params }: { params: Promise<{ ref:
     const money: [string, string][] = [
       ['Price', b.type === 'term' ? `${formatAUD(b.amount)} (${b.sessionsTotal} × ${formatAUD(per)})` : formatAUD(b.amount)],
       ...(b.paymentMode === 'weekly' ? ([['Weekly payments', `${b.sessionsPaid ?? 0} of ${b.sessionsTotal} paid${b.nextChargeAt ? ` · next ${formatDate(b.nextChargeAt, { weekday: 'short', day: 'numeric', month: 'short' })}` : ''}`]] as [string, string][]) : []),
-      ...((b.creditApplied ?? 0) > 0 ? ([['Account credit used', formatAUD(b.creditApplied!)]] as [string, string][]) : []),
+      ...((b.creditSessionsUsed ?? 0) > 0 ? ([['Session credits used', String(b.creditSessionsUsed)]] as [string, string][]) : []),
       ['Paid by card', card > 0 ? formatAUD(card) : '$0'],
       ...((b.refundedAmount ?? 0) > 0 ? ([['Refunded to your card', formatAUD(b.refundedAmount!)]] as [string, string][]) : []),
-      ...((b.creditedAmount ?? 0) > 0 ? ([['Returned as account credit', formatAUD(b.creditedAmount!)]] as [string, string][]) : []),
+      ...((b.creditedSessions ?? 0) > 0 ? ([['Returned as session credits', String(b.creditedSessions)]] as [string, string][]) : []),
     ]
 
     return (

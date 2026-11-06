@@ -8,6 +8,7 @@ import { loadTermBookingData, openTerms, releaseAcademyHold, releaseExpiredHolds
 import { toYmd } from '@/academy/term-dates'
 import { weeklyPlan } from '@/academy/weekly'
 import { creditBalance } from '@/academy/credits'
+import { casualPrice, isTermMember } from '@/academy/pricing'
 import { BookForm } from './BookForm'
 
 export const dynamic = 'force-dynamic'
@@ -51,7 +52,8 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
   const awayDates = new Set(termSlot?.awayDates[coachId] ?? [])
   const coachAway = data?.availability.find((a) => a.coachId === coachId)?.away ?? []
   const ranges = termSlot && awayDates.size ? awayRanges([...awayDates], coachAway) : []
-  const total = term ? (mode === 'term' ? term.pricePerSession * sessions.length : term.casualPrice) : 0
+  const priced = term && mode === 'casual' && q.start ? casualPrice(term, { startsAt: new Date(q.start).toISOString(), now: new Date(), termMember: await isTermMember(p, user?.id) }) : null
+  const total = term ? (mode === 'term' ? term.pricePerSession * sessions.length : (priced?.price ?? term.casualPrice)) : 0
   const plan = termSlot ? weeklyPlan(sessions) : null
   const short = (iso: string) => formatDate(iso, { weekday: 'short', day: 'numeric', month: 'short' })
   const weekly =
@@ -86,7 +88,7 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
                 slot={mode === 'term' ? { mode: 'term', weekday: termSlot!.weekday, time: termSlot!.time, sessions: sessions.length } : { mode: 'casual', start: q.start! }}
                 price={formatAUD(total)}
                 weekly={weekly}
-                credit={user ? { balance: await creditBalance(p, user.id), total } : undefined}
+                credit={user ? { balance: await creditBalance(p, user.id), total, sessions: sessions.length } : undefined}
                 loginHref={`/login?next=${encodeURIComponent(`/academy/1-on-1/book?${new URLSearchParams(Object.entries(q).filter(([k, v]) => k !== 'cancelled' && v) as [string, string][]).toString()}`)}`}
                 me={user ? { firstName: user.firstName, lastName: user.lastName, email: user.email, phone: user.phone } : null}
                 players={players}
@@ -129,6 +131,12 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
                   <p className="mt-3 text-sm">{formatDate(q.start!, { weekday: 'long', day: 'numeric', month: 'long' })}</p>
                   <p className="text-sm">{formatDate(q.start!, { hour: 'numeric', minute: '2-digit' })} · {term.sessionMinutes} minutes</p>
                   <p className="mt-1 text-sm text-muted">{term.location}</p>
+                  {priced?.memberPrice && (
+                    <div className="mt-5 flex justify-between border-t border-line pt-4 text-sm text-muted">
+                      <span>Term member price</span>
+                      <span><s>{formatAUD(term.casualPrice)}</s> {formatAUD(total)}</span>
+                    </div>
+                  )}
                   <div className="mt-5 flex items-baseline justify-between border-t border-line pt-4">
                     <span className="text-muted">Total</span>
                     <span className="font-display text-3xl font-semibold">{formatAUD(total)}</span>

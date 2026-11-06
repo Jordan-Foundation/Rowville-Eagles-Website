@@ -130,10 +130,12 @@ export interface Config {
   globals: {
     'site-settings': SiteSetting;
     about: About;
+    'academy-settings': AcademySetting;
   };
   globalsSelect: {
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
     about: AboutSelect<false> | AboutSelect<true>;
+    'academy-settings': AcademySettingsSelect<false> | AcademySettingsSelect<true>;
   };
   locale: null;
   widgets: {
@@ -177,6 +179,10 @@ export interface AcademyBooking {
    * AUD (calculated on the server)
    */
   amount: number;
+  /**
+   * Casual session at the term-member price
+   */
+  termMemberPrice?: boolean | null;
   sessionsTotal?: number | null;
   sessionsPaid?: number | null;
   coach: number | AcademyCoach;
@@ -222,8 +228,10 @@ export interface AcademyBooking {
         id?: string | null;
       }[]
     | null;
+  creditSessionsUsed?: number | null;
   creditApplied?: number | null;
   refundedAmount?: number | null;
+  creditedSessions?: number | null;
   creditedAmount?: number | null;
   adjustments?:
     | {
@@ -234,6 +242,7 @@ export interface AcademyBooking {
         sessions?: string | null;
         cash?: number | null;
         credit?: number | null;
+        creditSessions?: number | null;
         refundStatus?: ('none' | 'pending' | 'refunded' | 'failed' | 'simulated') | null;
         rule?: string | null;
         reason?: string | null;
@@ -301,6 +310,7 @@ export interface User {
    * Has set their own password / logged in
    */
   activated?: boolean | null;
+  reviewRequestSentAt?: string | null;
   /**
    * The one reminder sent to a guest who hasn’t set up their account yet
    */
@@ -387,6 +397,14 @@ export interface AcademyTerm {
   location?: string | null;
   pricePerSession: number;
   casualPrice: number;
+  /**
+   * Casual price for families with an active term booking
+   */
+  termMemberPrice: number;
+  /**
+   * Only for sessions starting within this many days of booking
+   */
+  termMemberWindowDays: number;
   sessionMinutes: number;
   /**
    * 24-hour, e.g. 17:00. Default 3pm–9pm.
@@ -694,7 +712,7 @@ export interface AcademyReminderLog {
   createdAt: string;
 }
 /**
- * Credit given for cancellations (and used at checkout). Give goodwill credit from a booking’s page in Staff → Academy.
+ * Session credits given for cancellations (and used at checkout). One credit = one 1-on-1. Give goodwill credits from a booking’s page in Staff → Academy.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "academy-credits".
@@ -703,9 +721,13 @@ export interface AcademyCredit {
   id: number;
   account: number | User;
   /**
-   * AUD. Positive = given, negative = used.
+   * Positive = given, negative = used. One credit = one 1-on-1.
    */
-  amount: number;
+  sessions: number;
+  /**
+   * Credits given expire 12 months later
+   */
+  expiresAt?: string | null;
   status: 'active' | 'pending' | 'void';
   reason: 'cancellation' | 'coach_cancellation' | 'goodwill' | 'used' | 'adjustment';
   /**
@@ -713,6 +735,10 @@ export interface AcademyCredit {
    */
   booking?: (number | null) | AcademyBooking;
   note?: string | null;
+  /**
+   * For reporting only — credits are always worth one session.
+   */
+  amount?: number | null;
   createdBy?: (number | null) | User;
   updatedAt: string;
   createdAt: string;
@@ -1232,6 +1258,7 @@ export interface AcademyBookingsSelect<T extends boolean = true> {
   type?: T;
   paymentMode?: T;
   amount?: T;
+  termMemberPrice?: T;
   sessionsTotal?: T;
   sessionsPaid?: T;
   coach?: T;
@@ -1278,8 +1305,10 @@ export interface AcademyBookingsSelect<T extends boolean = true> {
         payUrl?: T;
         id?: T;
       };
+  creditSessionsUsed?: T;
   creditApplied?: T;
   refundedAmount?: T;
+  creditedSessions?: T;
   creditedAmount?: T;
   adjustments?:
     | T
@@ -1291,6 +1320,7 @@ export interface AcademyBookingsSelect<T extends boolean = true> {
         sessions?: T;
         cash?: T;
         credit?: T;
+        creditSessions?: T;
         refundStatus?: T;
         rule?: T;
         reason?: T;
@@ -1347,6 +1377,8 @@ export interface AcademyTermsSelect<T extends boolean = true> {
   location?: T;
   pricePerSession?: T;
   casualPrice?: T;
+  termMemberPrice?: T;
+  termMemberWindowDays?: T;
   sessionMinutes?: T;
   slotStartTimes?:
     | T
@@ -1442,11 +1474,13 @@ export interface AcademyReminderLogSelect<T extends boolean = true> {
  */
 export interface AcademyCreditsSelect<T extends boolean = true> {
   account?: T;
-  amount?: T;
+  sessions?: T;
+  expiresAt?: T;
   status?: T;
   reason?: T;
   booking?: T;
   note?: T;
+  amount?: T;
   createdBy?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -1757,6 +1791,7 @@ export interface UsersSelect<T extends boolean = true> {
   smsOptOut?: T;
   consentReviewStatus?: T;
   activated?: T;
+  reviewRequestSentAt?: T;
   accountReminderSentAt?: T;
   roles?: T;
   wwcc?:
@@ -1956,6 +1991,21 @@ export interface About {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "academy-settings".
+ */
+export interface AcademySetting {
+  id: number;
+  /**
+   * From your Google Business Profile: “Ask for reviews” → copy the link (looks like https://g.page/r/…/review). Nothing is sent until this is filled in.
+   */
+  googleReviewUrl?: string | null;
+  reviewAfterSessions?: number | null;
+  reviewRequestsOn?: boolean | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "site-settings_select".
  */
 export interface SiteSettingsSelect<T extends boolean = true> {
@@ -2013,6 +2063,18 @@ export interface AboutSelect<T extends boolean = true> {
         id?: T;
       };
   childSafe?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "academy-settings_select".
+ */
+export interface AcademySettingsSelect<T extends boolean = true> {
+  googleReviewUrl?: T;
+  reviewAfterSessions?: T;
+  reviewRequestsOn?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

@@ -10,6 +10,7 @@ import { academyBrand } from './brand'
 import { quoteCancellation, splitReturn, type CancelBy, type Outcome, type Quote } from './cancellation'
 import { giveCredit } from './credits'
 import { refundToCard, stopWeeklyCharges } from './refunds'
+import { alertCoachNewBooking } from './coach-alerts'
 
 /**
  * Staff-run cancellations: applies the policy (./cancellation.ts), cancels the sessions, books any make-up,
@@ -48,8 +49,10 @@ export type CancelRequest = {
   cancel: 'booking' | number[]
   by: CancelBy
   outcome: Outcome
-  /** Staff override of the policy amount (goodwill). Requires a reason. */
+  /** Staff override (goodwill): refund amount in AUD … */
   overrideAmount?: number
+  /** … or number of session credits */
+  overrideSessions?: number
   reason: string
   actorId: number
   /** Make-up: the new time for the (single) cancelled session */
@@ -57,7 +60,7 @@ export type CancelRequest = {
   notify?: boolean
 }
 
-export type CancelResult = { ok: true; key: string; cash: number; credit: number; refund: string; quote: Quote; warnings: string[] } | { ok: false; error: string }
+export type CancelResult = { ok: true; key: string; cash: number; creditSessions: number; refund: string; quote: Quote; warnings: string[] } | { ok: false; error: string }
 
 export async function cancelAcademy(payload: Payload, r: CancelRequest): Promise<CancelResult> {
   const data = await loadForCancellation(payload, r.bookingId)
@@ -68,23 +71,28 @@ export async function cancelAcademy(payload: Payload, r: CancelRequest): Promise
   if (!quote.sessionIds.length) return { ok: false, error: quote.warnings[0] ?? 'No upcoming sessions selected.' }
   if (!r.reason.trim()) return { ok: false, error: 'Please give a reason — it’s kept on the booking.' }
 
-  // Amount and outcome
-  const override = r.overrideAmount !== undefined && !Number.isNaN(r.overrideAmount) && r.overrideAmount !== quote.value
+  // Amount and outcome. Refunds are money (up to what was paid); credit is whole sessions.
+  const num = (v?: number) => (v !== undefined && !Number.isNaN(v) ? v : undefined)
+  const amountOverride = r.outcome === 'refund' ? num(r.overrideAmount) : undefined
+  const sessionsOverride = r.outcome === 'credit' ? num(r.overrideSessions) : undefined
+  const override = (amountOverride !== undefined && amountOverride !== quote.value) || (sessionsOverride !== undefined && sessionsOverride !== quote.creditSessions)
   const ceiling = Math.max(quote.value, quote.maxReturn)
-  if (override && (r.overrideAmount! < 0 || r.overrideAmount! > ceiling)) return { ok: false, error: `The amount must be between $0 and ${formatAUD(ceiling)}.` }
-  if (!override && !quote.options.includes(r.outcome)) return { ok: false, error: `That outcome isn’t available under the policy (${quote.options.join(', ')}). Enter an amount to override it.` }
+  const maxSessions = Math.max(quote.creditSessions, quote.sessionIds.length, 1)
+  if (amountOverride !== undefined && (amountOverride < 0 || amountOverride > ceiling)) return { ok: false, error: `The refund must be between $0 and ${formatAUD(ceiling)}.` }
+  if (sessionsOverride !== undefined && (sessionsOverride < 0 || sessionsOverride > maxSessions || !Number.isInteger(sessionsOverride))) return { ok: false, error: `Session credits must be a whole number from 0 to ${maxSessions}.` }
+  if (!override && !quote.options.includes(r.outcome)) return { ok: false, error: `That outcome isn’t available under the policy (${quote.options.join(', ')}). Tick “override” to give goodwill.` }
   if (r.outcome === 'makeup') {
     if (quote.sessionIds.length !== 1) return { ok: false, error: 'Book make-ups one session at a time.' }
     if (!r.makeUp || Number.isNaN(Date.parse(r.makeUp.startsAt)) || new Date(r.makeUp.startsAt) <= new Date()) return { ok: false, error: 'Choose a future date and time for the make-up session.' }
   }
-  const amount = r.outcome === 'refund' || r.outcome === 'credit' ? round(override ? r.overrideAmount! : quote.value) : 0
-  let { cash, credit } = splitReturn(amount, r.outcome, quote.refundableCash)
+  const amount = r.outcome === 'refund' ? round(amountOverride ?? quote.value) : 0
+  let { cash, creditSessions } = splitReturn({ outcome: r.outcome, amount, sessions: sessionsOverride ?? quote.creditSessions, refundableCash: quote.refundableCash, perSession: quote.perSession })
   const accountId = rel(booking.account)
-  if (credit > 0 && !accountId) {
-    if (quote.refundableCash - cash <= 0) return { ok: false, error: 'This family has no account to hold credit — refund to card instead.' }
-    cash = round(cash + credit)
-    credit = 0
+  if (creditSessions > 0 && !accountId) {
+    if (r.outcome === 'credit') return { ok: false, error: 'This family has no account to hold session credits — refund to card instead.' }
+    creditSessions = 0 // nothing more can go to the card; staff are told below
   }
+  const creditValue = round(creditSessions * quote.perSession)
 
   const key = randomBytes(6).toString('hex')
   const targets = sessions.filter((s) => quote.sessionIds.includes(s.id))
@@ -105,7 +113,7 @@ export async function cancelAcademy(payload: Payload, r: CancelRequest): Promise
         data: { booking: booking.id, coach: r.makeUp!.coachId, startsAt: new Date(r.makeUp!.startsAt).toISOString(), status: 'scheduled', account: accountId, paid: targets[0].paid, makeUpFor: targets[0].id },
       })
     }
-    if (credit > 0) await giveCredit(payload, { account: accountId!, amount: credit, reason: r.by === 'coach' ? 'coach_cancellation' : override ? 'goodwill' : 'cancellation', booking: booking.id, note: r.reason, createdBy: r.actorId }, req)
+    if (creditSessions > 0) await giveCredit(payload, { account: accountId!, sessions: creditSessions, value: creditValue, reason: r.by === 'coach' ? 'coach_cancellation' : override ? 'goodwill' : 'cancellation', booking: booking.id, note: r.reason, createdBy: r.actorId }, req)
 
     const live = sessions.filter((s) => s.status !== 'cancelled' && !quote.sessionIds.includes(s.id)).length + (makeUpSession ? 1 : 0)
     const toCome = sessions.filter((s) => (s.status === 'scheduled' || s.status === 'held') && !quote.sessionIds.includes(s.id)).length + (makeUpSession ? 1 : 0)
@@ -117,7 +125,8 @@ export async function cancelAcademy(payload: Payload, r: CancelRequest): Promise
       req,
       data: {
         status,
-        creditedAmount: round((booking.creditedAmount ?? 0) + credit),
+        creditedAmount: round((booking.creditedAmount ?? 0) + creditValue),
+        creditedSessions: (booking.creditedSessions ?? 0) + creditSessions,
         ...(quote.stopWeekly ? { nextChargeAt: null } : {}),
         adjustments: [
           ...(booking.adjustments ?? []),
@@ -128,9 +137,10 @@ export async function cancelAcademy(payload: Payload, r: CancelRequest): Promise
             outcome: r.outcome,
             sessions: targets.map((s) => day(s.startsAt)).join(', ') + (makeUpSession ? ` → make-up ${when(makeUpSession.startsAt)}` : ''),
             cash,
-            credit,
+            credit: creditValue,
+            creditSessions,
             refundStatus: cash > 0 ? 'pending' : 'none',
-            rule: override ? `${quote.rule} Overridden by staff: ${formatAUD(amount)}.` : quote.rule,
+            rule: override ? `${quote.rule} Overridden by staff: ${r.outcome === 'refund' ? formatAUD(amount) : `${creditSessions} session credit${creditSessions === 1 ? '' : 's'}`}.` : quote.rule,
             reason: r.reason,
             actor: r.actorId,
             at: now,
@@ -163,14 +173,22 @@ export async function cancelAcademy(payload: Payload, r: CancelRequest): Promise
     refund = await runRefund(payload, fresh, key, cash)
     if (refund === 'failed') warnings.push('The card refund failed — use “Retry refund” on the booking.')
   }
+  if (r.notify !== false && makeUpSession && r.makeUp!.coachId !== rel(booking.coach)) {
+    // A different coach is running the make-up: tell them it's theirs
+    try {
+      await alertCoachNewBooking(payload, booking, [makeUpSession], { coachId: r.makeUp!.coachId, makeUp: true })
+    } catch (e) {
+      payload.logger.error({ err: e, msg: `Make-up coach alert failed for ${booking.reference}` })
+    }
+  }
   if (r.notify !== false) {
     try {
-      await notifyCancellation(payload, booking, targets, { by: r.by, cash: refund === 'failed' ? 0 : cash, credit, makeUp: makeUpSession, stopWeekly: quote.stopWeekly, reason: r.reason })
+      await notifyCancellation(payload, booking, targets, { by: r.by, cash: refund === 'failed' ? 0 : cash, creditSessions, makeUp: makeUpSession, stopWeekly: quote.stopWeekly, reason: r.reason })
     } catch (e) {
       payload.logger.error({ err: e, msg: `Cancellation emails failed for ${booking.reference}` })
     }
   }
-  return { ok: true, key, cash, credit, refund, quote, warnings }
+  return { ok: true, key, cash, creditSessions, refund, quote, warnings }
 }
 
 /** Run (or retry) the card refund for one adjustment. Idempotent per adjustment key. */
@@ -205,13 +223,14 @@ export async function retryRefund(payload: Payload, bookingId: number, key: stri
   return status === 'failed' ? { ok: false as const, error: 'The refund failed again — check the booking’s error and the Stripe dashboard.' } : { ok: true as const }
 }
 
-/** Goodwill credit without cancelling anything. */
-export async function goodwillCredit(payload: Payload, r: { bookingId: number; amount: number; reason: string; actorId: number }) {
+/** Goodwill session credits without cancelling anything. */
+export async function goodwillCredit(payload: Payload, r: { bookingId: number; sessions: number; reason: string; actorId: number }) {
   const booking = await payload.findByID({ collection: 'academy-bookings', id: r.bookingId, depth: 0, overrideAccess: true, disableErrors: true })
-  if (!booking?.account) return { ok: false as const, error: 'This booking has no family account to hold credit.' }
-  if (!(r.amount > 0) || r.amount > 500) return { ok: false as const, error: 'Enter an amount between $1 and $500.' }
+  if (!booking?.account) return { ok: false as const, error: 'This booking has no family account to hold credits.' }
+  if (!Number.isInteger(r.sessions) || r.sessions < 1 || r.sessions > 10) return { ok: false as const, error: 'Give between 1 and 10 session credits.' }
   if (!r.reason.trim()) return { ok: false as const, error: 'Please give a reason.' }
-  await giveCredit(payload, { account: rel(booking.account)!, amount: r.amount, reason: 'goodwill', booking: booking.id, note: r.reason, createdBy: r.actorId })
+  const value = round((booking.amount / (booking.sessionsTotal || 1)) * r.sessions)
+  await giveCredit(payload, { account: rel(booking.account)!, sessions: r.sessions, value, reason: 'goodwill', booking: booking.id, note: r.reason, createdBy: r.actorId })
   await payload.update({
     collection: 'academy-bookings',
     id: booking.id,
@@ -219,7 +238,7 @@ export async function goodwillCredit(payload: Payload, r: { bookingId: number; a
     data: {
       adjustments: [
         ...(booking.adjustments ?? []),
-        { key: randomBytes(6).toString('hex'), action: 'goodwill', by: 'admin', outcome: 'credit', credit: r.amount, cash: 0, refundStatus: 'none', rule: 'Goodwill credit', reason: r.reason, actor: r.actorId, at: new Date().toISOString() },
+        { key: randomBytes(6).toString('hex'), action: 'goodwill', by: 'admin', outcome: 'credit', credit: value, creditSessions: r.sessions, cash: 0, refundStatus: 'none', rule: 'Goodwill session credit', reason: r.reason, actor: r.actorId, at: new Date().toISOString() },
       ],
     },
   })
@@ -232,7 +251,7 @@ async function notifyCancellation(
   payload: Payload,
   booking: AcademyBooking,
   cancelled: AcademySession[],
-  o: { by: CancelBy; cash: number; credit: number; makeUp?: AcademySession; stopWeekly: boolean; reason: string },
+  o: { by: CancelBy; cash: number; creditSessions: number; makeUp?: AcademySession; stopWeekly: boolean; reason: string },
 ) {
   const coach = (await payload.findByID({ collection: 'academy-coaches', id: rel(booking.coach)!, depth: 1, overrideAccess: true })) as AcademyCoach
   const dates = cancelled.map((s) => when(s.startsAt))
@@ -242,11 +261,13 @@ async function notifyCancellation(
     ['Cancelled', dates.join(', ')],
     ...(o.makeUp ? ([['Make-up session', `${when(o.makeUp.startsAt)} (no charge)`]] as [string, string][]) : []),
     ...(o.cash > 0 ? ([['Refund to your card', `${formatAUD(o.cash)} — usually 5–10 business days`]] as [string, string][]) : []),
-    ...(o.credit > 0 ? ([['Account credit', `${formatAUD(o.credit)} — used automatically next time you book while logged in`]] as [string, string][]) : []),
+    ...(o.creditSessions > 0
+      ? ([['Session credits', `${o.creditSessions} × 1-on-1 session — used automatically next time you book while logged in (valid 12 months)`]] as [string, string][])
+      : []),
     ...(o.stopWeekly ? ([['Weekly payments', 'Stopped — no further charges']] as [string, string][]) : []),
     ['Reference', booking.reference],
   ]
-  const nothing = !o.makeUp && o.cash <= 0 && o.credit <= 0
+  const nothing = !o.makeUp && o.cash <= 0 && o.creditSessions <= 0
   const intro =
     o.by === 'coach'
       ? `Hi ${esc(booking.contact.firstName)}, we’re sorry — ${esc(coach.displayName)} can’t take ${esc(booking.player.firstName)}’s ${dates.length === 1 ? 'session' : 'sessions'} on ${esc(dates.join(', '))}.${o.makeUp ? ' We’ve booked a free make-up session instead.' : ''}`
@@ -257,7 +278,7 @@ async function notifyCancellation(
       intro,
       rows,
       after: 'Questions? Reply to this email or call ' + esc(academyBrand.phone) + '.',
-      cta: { label: o.credit > 0 ? 'Book with your credit' : 'View my account', href: `${siteUrl()}${o.credit > 0 ? '/academy/1-on-1' : '/account'}` },
+      cta: { label: o.creditSessions > 0 ? 'Book with your credit' : 'View my account', href: `${siteUrl()}${o.creditSessions > 0 ? '/academy/1-on-1' : '/account'}` },
     },
   ])
   await sendEmail(payload, { to: booking.contact.email, subject: o.makeUp ? `Make-up session booked for ${booking.player.firstName}` : `Cancelled: ${booking.player.firstName}’s 1-on-1${whole ? 's' : ''} with ${coach.displayName}`, html, sender: 'academy', userId: rel(booking.account) })

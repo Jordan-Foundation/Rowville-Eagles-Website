@@ -14,8 +14,8 @@ type Props = {
   price: string
   /** Term only: the weekly plan on offer (null when there aren't enough sessions left) */
   weekly?: { perSession: string; total: string; laterPayments: number; firstCharge: string; lastCharge: string } | null
-  /** Logged-in family's account credit, and the price as a number so we can show what's left to pay */
-  credit?: { balance: number; total: number }
+  /** Logged-in family's session credits (one credit = one session), and the price so we can show what's left to pay */
+  credit?: { balance: number; total: number; sessions: number }
   /** Guests: log in and come straight back to this time */
   loginHref?: string
   me: { firstName?: string | null; lastName?: string | null; email: string; phone?: string | null } | null
@@ -28,6 +28,10 @@ export function BookForm({ coach, slot, term, price, weekly, credit, loginHref, 
   const [who, setWho] = useState(v.participant ?? (players[0] ? String(players[0].id) : 'new'))
   const newPlayer = !me || who === 'new'
   const [payMode, setPayMode] = useState<'upfront' | 'weekly'>(v.payMode === 'weekly' && weekly ? 'weekly' : 'upfront')
+  // Session credits: each covers one session (weekly plans can't use them)
+  const used = credit && payMode !== 'weekly' ? Math.min(credit.balance, credit.sessions) : 0
+  const toPay = credit ? Math.round((credit.total - (credit.total / credit.sessions) * used) * 100) / 100 : 0
+  const covered = Boolean(credit) && used > 0 && toPay <= 0
 
   return (
     <form action={action} className="space-y-6">
@@ -150,10 +154,10 @@ export function BookForm({ coach, slot, term, price, weekly, credit, loginHref, 
       {credit && credit.balance > 0 && (
         <p className="panel border border-white/40 px-5 py-4 text-sm">
           {payMode === 'weekly'
-            ? `You have ${aud(credit.balance)} account credit. It can’t be used with weekly payments — choose “Pay upfront” to use it.`
-            : credit.balance >= credit.total
-              ? `Your ${aud(credit.balance)} account credit covers this booking — nothing to pay.`
-              : `${aud(credit.balance)} account credit applied — you pay ${aud(credit.total - credit.balance)}.`}
+            ? `You have ${creditWord(credit.balance)}. They can’t be used with weekly payments — choose “Pay upfront” to use them.`
+            : covered
+              ? `${used === 1 ? 'One session credit covers' : `${used} session credits cover`} this booking — nothing to pay.`
+              : `${creditWord(used)} applied (${used} of ${credit.sessions} sessions) — you pay ${aud(toPay)}.`}
         </p>
       )}
 
@@ -162,10 +166,10 @@ export function BookForm({ coach, slot, term, price, weekly, credit, loginHref, 
         price={
           slot.mode === 'term' && payMode === 'weekly' && weekly
             ? `${weekly.perSession} today`
-            : credit && credit.balance > 0
-              ? credit.balance >= credit.total
+            : used > 0
+              ? covered
                 ? 'covered by credit'
-                : aud(credit.total - credit.balance)
+                : aud(toPay)
               : price
         }
       />
@@ -174,6 +178,7 @@ export function BookForm({ coach, slot, term, price, weekly, credit, loginHref, 
   )
 }
 
+const creditWord = (n: number) => `${n} session credit${n === 1 ? '' : 's'}`
 const aud = (n: number) => new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', minimumFractionDigits: n % 1 ? 2 : 0 }).format(n)
 
 function PayOption({ title, detail, ...input }: { name: string; value: string; checked: boolean; onChange: () => void; title: string; detail: string }) {

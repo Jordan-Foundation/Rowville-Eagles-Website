@@ -9,7 +9,7 @@ type Session = { id: number; label: string; detail: string; cancellable: boolean
 
 const outcomeLabel: Record<Outcome, string> = {
   refund: 'Refund to card',
-  credit: 'Account credit',
+  credit: 'Session credits',
   makeup: 'Free make-up session',
   none: 'No refund or credit',
 }
@@ -96,7 +96,8 @@ export function CancelPanel(props: { bookingId: number; type: 'casual' | 'term';
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">Policy</p>
           <p className="mt-2 font-medium">{quote.rule}</p>
           <p className="mt-2 text-sm text-muted">
-            {quote.sessionIds.length} session{quote.sessionIds.length === 1 ? '' : 's'} · {money(quote.perSession)} each · back under policy: <strong className="text-ink">{money(quote.value)}</strong>
+            {quote.sessionIds.length} session{quote.sessionIds.length === 1 ? '' : 's'} · {money(quote.perSession)} each · back under policy:{' '}
+            <strong className="text-ink">{money(quote.value)} refund or {quote.creditSessions} session credit{quote.creditSessions === 1 ? '' : 's'}</strong>
             {' '}· refundable to card: {money(quote.refundableCash)}{quote.stopWeekly && ' · weekly charges will stop'}
           </p>
           {quote.warnings.map((w) => <p key={w} className="mt-2 text-sm text-amber-300">{w}</p>)}
@@ -139,13 +140,20 @@ export function CancelPanel(props: { bookingId: number; type: 'casual' | 'term';
                 />{' '}
                 Override the amount (goodwill)
               </label>
-              {override && (
+              {override && outcome === 'refund' && (
                 <label className="mt-2 block max-w-xs text-sm">
-                  Amount (AUD, up to {money(Math.max(quote.value, quote.maxReturn))})
+                  Refund (AUD, up to {money(Math.max(quote.value, quote.maxReturn))})
                   <input name="amount" type="number" min={0} step="0.01" max={Math.max(quote.value, quote.maxReturn)} defaultValue={quote.value} className={`${inputCls} mt-1 rounded-none`} />
                 </label>
               )}
-              {outcome === 'refund' && <p className="mt-2 text-xs text-muted">Anything above what can go back to the card is given as account credit.</p>}
+              {override && outcome === 'credit' && (
+                <label className="mt-2 block max-w-xs text-sm">
+                  Session credits (up to {Math.max(quote.creditSessions, quote.sessionIds.length, 1)})
+                  <input name="creditSessions" type="number" min={0} step={1} max={Math.max(quote.creditSessions, quote.sessionIds.length, 1)} defaultValue={quote.creditSessions || 1} className={`${inputCls} mt-1 rounded-none`} />
+                </label>
+              )}
+              {outcome === 'refund' && <p className="mt-2 text-xs text-muted">Anything above what can go back to the card is given as session credits.</p>}
+              {outcome === 'credit' && <p className="mt-2 text-xs text-muted">Each credit books one 1-on-1, whatever was paid. Credits expire after 12 months.</p>}
             </div>
           )}
         </div>
@@ -186,13 +194,13 @@ export function RetryRefund({ bookingId, refundKey }: { bookingId: number; refun
 
 export function Goodwill({ bookingId, disabled }: { bookingId: number; disabled?: boolean }) {
   const [state, action, pending] = useActionState<StaffActionState, FormData>(submitGoodwill, {})
-  if (disabled) return <p className="text-sm text-muted">This booking has no family account yet, so credit can’t be given.</p>
+  if (disabled) return <p className="text-sm text-muted">This booking has no family account yet, so session credits can’t be given.</p>
   return (
     <form action={action} className="grid gap-3 sm:grid-cols-[8rem_1fr_auto] sm:items-end">
       <input type="hidden" name="bookingId" value={bookingId} />
-      <label className="text-sm">Amount<input name="amount" type="number" min={1} max={500} step="0.01" required className={`${inputCls} mt-1 rounded-none`} /></label>
+      <label className="text-sm">Sessions<input name="sessions" type="number" min={1} max={10} step={1} defaultValue={1} required className={`${inputCls} mt-1 rounded-none`} /></label>
       <label className="text-sm">Reason<input name="reason" required className={`${inputCls} mt-1 rounded-none`} /></label>
-      <button disabled={pending} className="border border-line px-4 py-2.5 text-sm font-semibold uppercase">{pending ? 'Adding…' : 'Add credit'}</button>
+      <button disabled={pending} className="border border-line px-4 py-2.5 text-sm font-semibold uppercase">{pending ? 'Adding…' : 'Add session credits'}</button>
       {state.error && <p role="alert" className="text-sm text-red-300 sm:col-span-3">{state.error}</p>}
       {state.done && <p role="status" className="text-sm sm:col-span-3">{state.done}</p>}
     </form>

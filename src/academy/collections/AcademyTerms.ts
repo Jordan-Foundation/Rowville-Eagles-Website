@@ -81,6 +81,25 @@ export const AcademyTerms: CollectionConfig = {
         { type: 'row', fields: [
           { name: 'pricePerSession', label: 'Term price per session (AUD)', type: 'number', required: true, defaultValue: 80, min: 0 },
           { name: 'casualPrice', label: 'Casual session price (AUD)', type: 'number', required: true, defaultValue: 85, min: 0 },
+          {
+            name: 'termMemberPrice',
+            label: 'Term member casual price (AUD)',
+            type: 'number',
+            required: true,
+            defaultValue: 70,
+            min: 0,
+            admin: { description: 'Casual price for families with an active term booking' },
+          },
+          {
+            name: 'termMemberWindowDays',
+            label: 'Term member price window (days)',
+            type: 'number',
+            required: true,
+            defaultValue: 14,
+            min: 1,
+            max: 90,
+            admin: { description: 'Only for sessions starting within this many days of booking' },
+          },
           { name: 'sessionMinutes', type: 'number', required: true, defaultValue: 60, min: 15 },
         ] },
         { type: 'row', fields: [

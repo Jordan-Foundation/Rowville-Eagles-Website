@@ -38,6 +38,7 @@ export const AcademyBookings: CollectionConfig = {
     { name: 'type', type: 'select', required: true, options: [{ label: 'Casual session', value: 'casual' }, { label: 'Term (weekly)', value: 'term' }], admin: { position: 'sidebar' } },
     { name: 'paymentMode', type: 'select', required: true, options: ['casual', 'upfront', 'weekly'], admin: { position: 'sidebar' } },
     { name: 'amount', type: 'number', required: true, admin: { position: 'sidebar', description: 'AUD (calculated on the server)' } },
+    { name: 'termMemberPrice', label: 'Term member price', type: 'checkbox', admin: { readOnly: true, position: 'sidebar', description: 'Casual session at the term-member price' } },
     { type: 'row', fields: [
       { name: 'sessionsTotal', type: 'number', defaultValue: 1 },
       { name: 'sessionsPaid', type: 'number', defaultValue: 0 },
@@ -110,9 +111,11 @@ export const AcademyBookings: CollectionConfig = {
       admin: { initCollapsed: false, description: 'Cancel or refund from Staff → Academy → Bookings, which applies the policy and talks to Stripe.' },
       fields: [
         { type: 'row', fields: [
-          { name: 'creditApplied', label: 'Credit used at checkout', type: 'number', defaultValue: 0, admin: { readOnly: true } },
+          { name: 'creditSessionsUsed', label: 'Session credits used', type: 'number', defaultValue: 0, admin: { readOnly: true } },
+          { name: 'creditApplied', label: 'Value of credits used (AUD)', type: 'number', defaultValue: 0, admin: { readOnly: true } },
           { name: 'refundedAmount', label: 'Refunded to card', type: 'number', defaultValue: 0, admin: { readOnly: true } },
-          { name: 'creditedAmount', label: 'Returned as credit', type: 'number', defaultValue: 0, admin: { readOnly: true } },
+          { name: 'creditedSessions', label: 'Session credits given', type: 'number', defaultValue: 0, admin: { readOnly: true } },
+          { name: 'creditedAmount', label: 'Value of credits given (AUD)', type: 'number', defaultValue: 0, admin: { readOnly: true } },
         ] },
         {
           name: 'adjustments',
@@ -128,7 +131,8 @@ export const AcademyBookings: CollectionConfig = {
             { type: 'row', fields: [
               { name: 'sessions', label: 'Sessions', type: 'text' },
               { name: 'cash', label: 'Refund (AUD)', type: 'number' },
-              { name: 'credit', label: 'Credit (AUD)', type: 'number' },
+              { name: 'credit', label: 'Credit value (AUD)', type: 'number' },
+              { name: 'creditSessions', label: 'Session credits', type: 'number' },
               { name: 'refundStatus', type: 'select', options: ['none', 'pending', 'refunded', 'failed', 'simulated'] },
             ] },
             { name: 'rule', type: 'text' },

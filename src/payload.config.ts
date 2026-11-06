@@ -32,6 +32,7 @@ import { AcademySessions } from './academy/collections/AcademySessions'
 import { AcademyCredits } from './academy/collections/AcademyCredits'
 import { SiteSettings } from './globals/SiteSettings'
 import { About } from './globals/About'
+import { AcademySettings } from './academy/AcademySettings'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -46,7 +47,7 @@ export default buildConfig({
     importMap: { baseDir: path.resolve(dirname) },
   },
   collections: [AcademyBookings, AcademySessions, AcademyTerms, AcademyCoaches, AcademyAvailability, AcademyReminderLog, AcademyCredits, Posts, TrialRegistrations, TrialSessions, Programs, Bookings, Products, Orders, Teams, Sponsors, Participants, Users, ConsentRecords, MessageLog, InviteTokens, Media],
-  globals: [SiteSettings, About],
+  globals: [SiteSettings, About, AcademySettings],
   editor: lexicalEditor(),
   ...(process.env.RESEND_API_KEY
     ? {

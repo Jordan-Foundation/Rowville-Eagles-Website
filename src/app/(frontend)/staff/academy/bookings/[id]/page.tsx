@@ -5,7 +5,7 @@ import { payload, formatAUD, formatDate } from '@/lib/payload'
 import { currentUser } from '@/lib/auth'
 import { hasRole } from '@/access'
 import { cashPaid } from '@/academy/cancellation'
-import { creditBalance } from '@/academy/credits'
+import { creditStateFor } from '@/academy/credits'
 import { sessionPayment } from '@/academy/session-view'
 import type { AcademyCoach, AcademyTerm, User } from '@/payload-types'
 import { CancelPanel, Goodwill, RetryRefund } from './CancelPanel'
@@ -13,6 +13,8 @@ import { CancelPanel, Goodwill, RetryRefund } from './CancelPanel'
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Booking', robots: { index: false } }
 
+/** Money with $0 (formatAUD shows 0 as “Free”, which reads oddly here) */
+const aud0 = (n: number) => (n > 0 ? formatAUD(n) : '$0')
 const statusTone: Record<string, string> = { cancelled: 'text-muted line-through', completed: 'text-muted', no_show: 'text-red-300' }
 const sessionLabel: Record<string, string> = { held: 'Held', scheduled: 'Booked', completed: 'Attended', no_show: 'No-show', cancelled: 'Cancelled' }
 
@@ -31,7 +33,7 @@ export default async function StaffBookingPage({ params, searchParams }: { param
   const coach = b.coach as AcademyCoach
   const term = b.term as AcademyTerm
   const account = b.account && typeof b.account === 'object' ? (b.account as User) : null
-  const balance = account ? await creditBalance(p, account.id) : 0
+  const credits = account ? await creditStateFor(p, account.id) : null
   const now = Date.now()
   const plain = { ...b, sessionsTotal: b.sessionsTotal ?? 1 }
 
@@ -58,12 +60,12 @@ export default async function StaffBookingPage({ params, searchParams }: { param
 
         <dl className="grid gap-px border border-line bg-line sm:grid-cols-3 lg:grid-cols-6">
           {[
-            ['Price', formatAUD(b.amount)],
-            ['Credit used', formatAUD(b.creditApplied ?? 0)],
-            ['Paid by card', formatAUD(cashPaid(plain))],
-            ['Refunded', formatAUD(b.refundedAmount ?? 0)],
-            ['Given as credit', formatAUD(b.creditedAmount ?? 0)],
-            ['Family credit balance', account ? formatAUD(balance) : '—'],
+            ['Price', aud0(b.amount)],
+            ['Credits used', `${b.creditSessionsUsed ?? 0} session${b.creditSessionsUsed === 1 ? '' : 's'}`],
+            ['Paid by card', aud0(cashPaid(plain))],
+            ['Refunded', aud0(b.refundedAmount ?? 0)],
+            ['Credits given', `${b.creditedSessions ?? 0} session${b.creditedSessions === 1 ? '' : 's'}`],
+            ['Family credit balance', credits ? `${credits.available} session${credits.available === 1 ? '' : 's'}` : '—'],
           ].map(([k, v]) => (
             <div key={k} className="bg-surface p-4">
               <dt className="text-xs uppercase tracking-wider text-muted">{k}</dt>
@@ -117,8 +119,11 @@ export default async function StaffBookingPage({ params, searchParams }: { param
         )}
 
         <section className="panel border border-line p-6">
-          <h2 className="font-display text-xl font-semibold uppercase">Goodwill credit</h2>
-          <p className="mt-1 text-sm text-muted">Add credit to the family’s account without cancelling anything.</p>
+          <h2 className="font-display text-xl font-semibold uppercase">Goodwill session credits</h2>
+          <p className="mt-1 text-sm text-muted">
+            Give the family free 1-on-1 sessions without cancelling anything. Credits expire after 12 months.
+            {credits?.nextExpiry && ` Next to expire: ${credits.nextExpiry.sessions} on ${formatDate(credits.nextExpiry.at, { day: 'numeric', month: 'short', year: 'numeric' })}.`}
+          </p>
           <div className="mt-4"><Goodwill bookingId={b.id} disabled={!account} /></div>
         </section>
 
@@ -134,7 +139,13 @@ export default async function StaffBookingPage({ params, searchParams }: { param
                   </p>
                   {a.sessions && <p className="text-muted">{a.sessions}</p>}
                   <p>
-                    {a.outcome === 'none' ? 'No refund or credit' : [a.cash ? `Refund ${formatAUD(a.cash)} (${a.refundStatus})` : null, a.credit ? `Credit ${formatAUD(a.credit)}` : null, a.outcome === 'makeup' ? 'Make-up booked' : null].filter(Boolean).join(' · ')}
+                    {a.outcome === 'none'
+                      ? 'No refund or credit'
+                      : [
+                          a.cash ? `Refund ${formatAUD(a.cash)} (${a.refundStatus})` : null,
+                          a.creditSessions ? `${a.creditSessions} session credit${a.creditSessions === 1 ? '' : 's'}` : a.credit ? `Credit ${formatAUD(a.credit)}` : null,
+                          a.outcome === 'makeup' ? 'Make-up booked' : null,
+                        ].filter(Boolean).join(' · ')}
                   </p>
                   {a.refundStatus === 'failed' && <div className="pt-1"><RetryRefund bookingId={b.id} refundKey={a.key} /></div>}
                   <p className="text-muted">{a.rule}</p>

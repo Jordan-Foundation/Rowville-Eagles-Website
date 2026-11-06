@@ -6,7 +6,7 @@ import { currentUser } from '@/lib/auth'
 import type { AcademyBooking, AcademyCoach, Program, Team } from '@/payload-types'
 import { LogoutButton } from './LogoutButton'
 import { sessionPayment } from '@/academy/session-view'
-import { creditBalance } from '@/academy/credits'
+import { creditStateFor } from '@/academy/credits'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'My account', robots: { index: false } }
@@ -27,7 +27,8 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
     p.find({ collection: 'academy-bookings', where: { account: { equals: user.id }, paymentMode: { equals: 'weekly' }, status: { equals: 'payment_failed' } }, depth: 1, limit: 20, overrideAccess: true }),
   ])
 
-  const credit = await creditBalance(p, user.id)
+  const credits = await creditStateFor(p, user.id)
+  const credit = credits.available
   const pendingOffers = participants.docs.filter((x) => x.registrationOffer?.status === 'offered' && x.registrationOffer.program)
   const now = Date.now()
   type Item = { key: string; date: string | null; title: string; detail: string; badge: 'RFA' | 'Club'; status?: string; href?: string }
@@ -160,8 +161,11 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
           </div>
           {credit > 0 && (
             <Link href="/academy/1-on-1" className="block rounded-2xl border-2 border-accent p-6 hover:brightness-105">
-              <p className="font-semibold">{formatAUD(credit)} account credit</p>
-              <p className="mt-1 text-sm text-muted">Used automatically next time you book a 1-on-1 →</p>
+              <p className="font-semibold">{credit} free 1-on-1 session{credit === 1 ? '' : 's'}</p>
+              <p className="mt-1 text-sm text-muted">
+                Session credit{credit === 1 ? '' : 's'}, used automatically next time you book a 1-on-1.
+                {credits.nextExpiry && ` ${credits.nextExpiry.sessions === credit ? (credit === 1 ? 'Expires' : 'Expire') : `${credits.nextExpiry.sessions} expire${credits.nextExpiry.sessions === 1 ? 's' : ''}`} ${formatDate(credits.nextExpiry.at, { day: 'numeric', month: 'short', year: 'numeric' })}.`} Book now →
+              </p>
             </Link>
           )}
           <Link href="/shop" className="block rounded-2xl border border-line p-6 font-semibold hover:border-brand">Shop team kit →</Link>

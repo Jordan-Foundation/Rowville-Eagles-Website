@@ -71,9 +71,20 @@ describe('cancellation policy — coach', () => {
 })
 
 describe('refund vs credit split', () => {
-  it('refunds to card up to what is refundable, the rest as credit', () => {
-    expect(splitReturn(85, 'refund', 60)).toEqual({ cash: 60, credit: 25 })
-    expect(splitReturn(85, 'credit', 85)).toEqual({ cash: 0, credit: 85 })
-    expect(splitReturn(85, 'makeup', 85)).toEqual({ cash: 0, credit: 0 })
+  it('refunds to card up to what is refundable, the rest as session credits', () => {
+    expect(splitReturn({ outcome: 'refund', amount: 160, sessions: 2, refundableCash: 80, perSession: 80 })).toEqual({ cash: 80, creditSessions: 1 })
+    expect(splitReturn({ outcome: 'refund', amount: 85, sessions: 1, refundableCash: 85, perSession: 85 })).toEqual({ cash: 85, creditSessions: 0 })
+  })
+  it('credit is whole sessions, never dollars', () => {
+    expect(splitReturn({ outcome: 'credit', amount: 400, sessions: 5, refundableCash: 720, perSession: 80 })).toEqual({ cash: 0, creditSessions: 5 })
+    expect(splitReturn({ outcome: 'makeup', amount: 85, sessions: 1, refundableCash: 85, perSession: 85 })).toEqual({ cash: 0, creditSessions: 0 })
+  })
+  it('a $70 term-member session cancelled early comes back as one session credit', () => {
+    const q = quoteCancellation({ booking: { ...casual, amount: 70 }, sessions: weeks(1, 1, 30), cancel: 'booking', by: 'family', now })
+    expect(q).toMatchObject({ value: 70, creditSessions: 1, options: ['refund', 'credit'] })
+  })
+  it('whole term less one gives that many session credits', () => {
+    const q = quoteCancellation({ booking: term, sessions: weeks(6), cancel: 'booking', by: 'family', now })
+    expect(q.creditSessions).toBe(5)
   })
 })

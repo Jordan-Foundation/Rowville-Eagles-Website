@@ -8,6 +8,7 @@ import { loadTermBookingData } from '@/academy/booking-data'
 import { cashPaid } from '@/academy/cancellation'
 import { coachCapacity, utilisation } from '@/academy/dashboard'
 import { casualSlots } from '@/academy/slots'
+import { creditState, type LedgerEntry } from '@/academy/credit-ledger'
 import type { Participant } from '@/payload-types'
 
 export const dynamic = 'force-dynamic'
@@ -31,7 +32,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const [{ docs: bookingsAll }, data, { docs: credits }] = await Promise.all([
     p.find({ collection: 'academy-bookings', where: { term: { equals: term.id }, status: { in: ['confirmed', 'payment_failed', 'completed', 'cancelled', 'refunded'] } }, depth: 1, limit: 2000, overrideAccess: true }),
     loadTermBookingData(p, term),
-    p.find({ collection: 'academy-credits', where: { status: { in: ['active', 'pending'] } }, depth: 0, limit: 10000, overrideAccess: true, select: { amount: true } }),
+    p.find({ collection: 'academy-credits', where: { status: { in: ['active', 'pending'] } }, depth: 0, limit: 10000, overrideAccess: true, select: { account: true, sessions: true, status: true, createdAt: true, expiresAt: true } }),
   ])
   const isMember = (b: (typeof bookingsAll)[number]) => Boolean(b.participant && typeof b.participant === 'object' && (b.participant as Participant).memberships?.includes('rowville'))
   const bookings = bookingsAll.filter((b) => (!coachFilter || rel(b.coach) === coachFilter) && (!q.member || (q.member === 'club' ? isMember(b) : !isMember(b))))
@@ -44,9 +45,15 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const plain = (b: (typeof bookings)[number]) => ({ ...b, sessionsTotal: b.sessionsTotal ?? 1 })
   const collected = bookings.reduce((n, b) => n + cashPaid(plain(b)), 0)
   const refunded = bookings.reduce((n, b) => n + (b.refundedAmount ?? 0), 0)
-  const creditUsed = bookings.reduce((n, b) => n + (b.creditApplied ?? 0), 0)
-  const creditGiven = bookings.reduce((n, b) => n + (b.creditedAmount ?? 0), 0)
-  const creditOutstanding = Math.max(0, credits.reduce((n, c) => n + c.amount, 0))
+  const creditUsed = bookings.reduce((n, b) => n + (b.creditSessionsUsed ?? 0), 0)
+  const creditGiven = bookings.reduce((n, b) => n + (b.creditedSessions ?? 0), 0)
+  const byAccount = new Map<number, LedgerEntry[]>()
+  for (const c of credits) {
+    const a = rel(c.account)!
+    byAccount.set(a, [...(byAccount.get(a) ?? []), { id: c.id, sessions: c.sessions, status: c.status, createdAt: c.createdAt, expiresAt: c.expiresAt }])
+  }
+  const creditOutstanding = [...byAccount.values()].reduce((n, list) => n + creditState(list, now).available, 0)
+  const creditFamilies = [...byAccount.values()].filter((list) => creditState(list, now).available > 0).length
   const overdue = bookings.filter((b) => b.status === 'payment_failed')
   const overdueAmount = overdue.reduce((n, b) => n + (b.payments ?? []).filter((x) => x.status === 'failed').reduce((m, x) => m + (x.amount ?? 0), 0), 0)
   const live = sessions.filter((s) => s.status !== 'cancelled' && s.status !== 'held')
@@ -86,7 +93,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     ['Sessions booked', `${booked} / ${capacity}`, `${utilisation(booked, capacity)}% of offered hours · ${cancelled.length} cancelled`],
     ['Open in next 14 days', String(soon.length), 'bookable times, all coaches'],
     ['Weekly payments overdue', overdue.length ? `${overdue.length} · ${formatAUD(overdueAmount)}` : '0', overdue.length ? 'see Weekly payments' : 'all on track'],
-    ['Account credit', formatAUD(creditOutstanding), `outstanding, all families · this term: ${formatAUD(creditGiven)} given, ${formatAUD(creditUsed)} used`],
+    ['Session credits', `${creditOutstanding}`, `outstanding across ${creditFamilies} famil${creditFamilies === 1 ? 'y' : 'ies'} · this term: ${creditGiven} given, ${creditUsed} used`],
   ]
 
   return (

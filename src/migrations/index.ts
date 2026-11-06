@@ -15,6 +15,7 @@ import * as migration_20261106_140019_academy_weekly_schedule from './20261106_1
 import * as migration_20261106_141649_account_reminder from './20261106_141649_account_reminder';
 import * as migration_20261106_145310_player_profile_coach_sessions from './20261106_145310_player_profile_coach_sessions';
 import * as migration_20261106_202041_academy_cancellations_credits from './20261106_202041_academy_cancellations_credits';
+import * as migration_20261106_211833_stage14_session_credits_member_price from './20261106_211833_stage14_session_credits_member_price';
 
 export const migrations = [
   {
@@ -100,6 +101,11 @@ export const migrations = [
   {
     up: migration_20261106_202041_academy_cancellations_credits.up,
     down: migration_20261106_202041_academy_cancellations_credits.down,
-    name: '20261106_202041_academy_cancellations_credits'
+    name: '20261106_202041_academy_cancellations_credits',
+  },
+  {
+    up: migration_20261106_211833_stage14_session_credits_member_price.up,
+    down: migration_20261106_211833_stage14_session_credits_member_price.down,
+    name: '20261106_211833_stage14_session_credits_member_price'
   },
 ];

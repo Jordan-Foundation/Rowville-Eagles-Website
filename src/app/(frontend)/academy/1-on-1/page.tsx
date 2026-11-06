@@ -5,6 +5,8 @@ import { loadTermBookingData, openTerms, releaseExpiredHolds } from '@/academy/b
 import { AcademyBackdrop } from '@/components/AcademyBackdrop'
 import { RfaLogo } from '@/components/Logos'
 import { SlotBrowser } from './SlotBrowser'
+import { currentUser } from '@/lib/auth'
+import { isTermMember, memberWindowEnd } from '@/academy/pricing'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = {
@@ -22,6 +24,13 @@ export default async function OneOnOnePage({ searchParams }: { searchParams: Pro
   const engine = term && data ? { term, coaches: data.availability, taken: data.taken, now: new Date(), cutoffHours: term.bookingCutoffHours ?? 24 } : null
   const slots = engine ? casualSlots(engine) : []
   const weekly = engine ? termSlots({ ...engine, minSessions: term!.minTermSessions ?? 2 }) : []
+  // Families with an active term booking: lower casual price for the next couple of weeks
+  const user = await currentUser()
+  const now = new Date()
+  const member =
+    term && term.termMemberPrice != null && term.termMemberPrice < term.casualPrice && (await isTermMember(p, user?.id, now))
+      ? { price: term.termMemberPrice, until: memberWindowEnd(term, now).toISOString() }
+      : null
 
   return (
     <div data-brand="academy" data-page-brand="academy">
@@ -38,6 +47,7 @@ export default async function OneOnOnePage({ searchParams }: { searchParams: Pro
             <div className="mt-8 flex flex-wrap gap-3 text-sm" role="tablist" aria-label="Booking type">
               <a href="/academy/1-on-1" role="tab" aria-selected={mode === 'casual'} className={`px-4 py-2 ${mode === 'casual' ? 'bg-white text-black' : 'border border-line text-muted hover:text-ink'}`}>
                 Casual session · <strong>{formatAUD(term.casualPrice)}</strong>
+                {member && <> · <strong>{formatAUD(member.price)}</strong> for you</>}
               </a>
               <a href="/academy/1-on-1?mode=term" role="tab" aria-selected={mode === 'term'} className={`px-4 py-2 ${mode === 'term' ? 'bg-white text-black' : 'border border-line text-muted hover:text-ink'}`}>
                 Whole term · <strong>{formatAUD(term.pricePerSession)}</strong>/session
@@ -55,6 +65,12 @@ export default async function OneOnOnePage({ searchParams }: { searchParams: Pro
           </p>
         ) : (
           <>
+            {member && mode === 'casual' && (
+              <p className="panel mb-6 border border-white/40 px-5 py-4 text-sm">
+                <strong>Term member price:</strong> as you have a term booking, casual sessions in the next {term.termMemberWindowDays ?? 14} days are{' '}
+                <strong>{formatAUD(member.price)}</strong> (normally {formatAUD(term.casualPrice)}) — up to {formatDate(member.until, { weekday: 'short', day: 'numeric', month: 'short' })}.
+              </p>
+            )}
             <p className="mb-6 text-sm text-muted">
               {term.name}: {formatDate(term.startDate)} – {formatDate(term.endDate)} ·{' '}
               {mode === 'term'
@@ -69,6 +85,7 @@ export default async function OneOnOnePage({ searchParams }: { searchParams: Pro
               coaches={data.coaches}
               casualPrice={term.casualPrice}
               pricePerSession={term.pricePerSession}
+              member={member}
             />
           </>
         )}

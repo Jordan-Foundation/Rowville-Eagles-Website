@@ -107,6 +107,12 @@ export const Users: CollectionConfig = {
       admin: { readOnly: true, position: 'sidebar', description: 'Has set their own password / logged in' },
     },
     {
+      name: 'reviewRequestSentAt',
+      label: 'Google review request sent',
+      type: 'date',
+      admin: { readOnly: true, position: 'sidebar', date: { pickerAppearance: 'dayAndTime' } },
+    },
+    {
       name: 'accountReminderSentAt',
       label: 'Create-account reminder sent',
       type: 'date',

@@ -10,6 +10,7 @@ import { sendEmail } from '../lib/email'
 import { formatAUD, formatDate } from '../lib/format'
 import { academyBrand } from './brand'
 import { alertCoverNeeded } from './cover'
+import { alertCoachNewBooking } from './coach-alerts'
 import { syncPaidSessions } from './weekly-payments'
 import { settleReservedCredit } from './credits'
 
@@ -242,8 +243,8 @@ async function afterConfirmed(payload: Payload, booking: AcademyBooking) {
               ['Term total', formatAUD(booking.amount)],
             ] as [string, string][])
           : booking.creditApplied
-            ? ([['Account credit used', formatAUD(booking.creditApplied)], ['Paid', booking.amount - booking.creditApplied <= 0 ? 'Nothing — covered by your credit' : formatAUD(booking.amount - booking.creditApplied)]] as [string, string][])
-            : ([['Paid', formatAUD(booking.amount)]] as [string, string][])),
+            ? ([['Session credits used', String(booking.creditSessionsUsed ?? 1)], ['Paid', booking.amount - booking.creditApplied <= 0 ? 'Nothing — covered by your credit' : formatAUD(booking.amount - booking.creditApplied)]] as [string, string][])
+            : ([['Paid', `${formatAUD(booking.amount)}${booking.termMemberPrice ? ' (term member price)' : ''}`]] as [string, string][])),
         ['Reference', booking.reference],
       ],
       after: `${dateList}${coverNote}${dateList || coverNote ? '<br><br>' : ''}Please bring boots, shin pads, a ball and a water bottle, and arrive 5 minutes early. Need to change something? Reply to this email.`,
@@ -257,4 +258,10 @@ async function afterConfirmed(payload: Payload, booking: AcademyBooking) {
     },
   ])
   await sendEmail(payload, { to: booking.contact.email, subject: `Booked: 1-on-1 with ${coach.displayName}`, html, sender: 'academy', userId: user.id })
+  // One alert to the coach for the whole booking (not one per session)
+  try {
+    await alertCoachNewBooking(payload, booking, sessions)
+  } catch (e) {
+    payload.logger.error({ err: e, msg: `Coach alert failed for ${booking.reference}` })
+  }
 }

@@ -8,8 +8,9 @@
  *  Coach cancels (any)              free make-up session, or the session's value back
  *
  * "Back" means money the family has actually paid for those sessions. On a weekly plan only sessions
- * already charged count; cancelling the whole plan also stops future charges. Whatever comes back
- * is a refund to card up to the cash still refundable on the booking — the rest is account credit.
+ * already charged count; cancelling the whole plan also stops future charges. What comes back is
+ * either a refund to card (up to the cash still refundable on the booking — any rest as session
+ * credits) or session credits: one credit per session, worth one 1-on-1 whatever was paid.
  */
 
 export type CancelBy = 'family' | 'coach'
@@ -39,6 +40,8 @@ export type Quote = {
   sessionsBack: number
   /** AUD coming back under the policy */
   value: number
+  /** Session credits if the family takes credit instead of a refund */
+  creditSessions: number
   /** Most that can go back to the card */
   refundableCash: number
   /** Most that can come back in total, for a goodwill override (paid, less anything already returned) */
@@ -122,20 +125,25 @@ export function quoteCancellation(input: {
   }
 
   const value = round(Math.min(sessionsBack * perSession, by === 'coach' ? Number.POSITIVE_INFINITY : maxReturn))
+  const creditSessions = perSession > 0 ? Math.min(sessionsBack, Math.round(value / perSession)) : 0
   const options: Outcome[] = []
   if (by === 'coach' && targets.length) options.push('makeup')
   if (value > 0 && refundableCash > 0) options.push('refund')
-  if (value > 0) options.push('credit')
+  if (creditSessions > 0) options.push('credit')
   if (!options.length) options.push('none')
-  return { sessionIds: targets.map((s) => s.id), perSession, sessionsBack, value, refundableCash, maxReturn, options, stopWeekly, rule, warnings }
+  return { sessionIds: targets.map((s) => s.id), perSession, sessionsBack, value, creditSessions, refundableCash, maxReturn, options, stopWeekly, rule, warnings }
 }
 
-/** Split an amount between card refund (up to what's refundable) and account credit. */
-export function splitReturn(amount: number, outcome: Outcome, refundableCash: number) {
-  if (outcome === 'refund') {
-    const cash = round(Math.min(amount, refundableCash))
-    return { cash, credit: round(amount - cash) }
+/**
+ * What actually goes back. Refund: up to `amount` AUD to the card, limited to what's refundable — any rest
+ * becomes session credits (rounded to whole sessions). Credit: `sessions` credits, nothing to the card.
+ */
+export function splitReturn(o: { outcome: Outcome; amount: number; sessions: number; refundableCash: number; perSession: number }) {
+  if (o.outcome === 'refund') {
+    const cash = round(Math.min(o.amount, o.refundableCash))
+    const rest = round(o.amount - cash)
+    return { cash, creditSessions: rest > 0 && o.perSession > 0 ? Math.max(1, Math.round(rest / o.perSession)) : 0 }
   }
-  if (outcome === 'credit') return { cash: 0, credit: round(amount) }
-  return { cash: 0, credit: 0 }
+  if (o.outcome === 'credit') return { cash: 0, creditSessions: Math.max(0, Math.floor(o.sessions)) }
+  return { cash: 0, creditSessions: 0 }
 }

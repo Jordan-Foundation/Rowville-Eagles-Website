@@ -1,43 +1,49 @@
 import type { Payload, PayloadRequest } from 'payload'
+import { creditState, expiryFrom, type CreditState } from './credit-ledger'
 
-const round = (n: number) => Math.round(n * 100) / 100
+/** Session credits: one credit = one 1-on-1. Expire 12 months after they're given. */
 
-/** Available account credit (AUD): everything given, less everything used or reserved by a checkout in progress. */
-export async function creditBalance(payload: Payload, accountId: number, req?: PayloadRequest) {
-  return Math.max(0, await creditSum(payload, accountId, req))
-}
-
-/** Raw ledger sum — negative only if two checkouts reserved the same credit at once. */
-export async function creditSum(payload: Payload, accountId: number, req?: PayloadRequest) {
+export async function creditStateFor(payload: Payload, accountId: number, req?: PayloadRequest): Promise<CreditState> {
   const { docs } = await payload.find({
     collection: 'academy-credits',
     where: { account: { equals: accountId }, status: { in: ['active', 'pending'] } },
-    limit: 1000,
+    limit: 2000,
     depth: 0,
     overrideAccess: true,
     req,
-    select: { amount: true },
+    select: { sessions: true, status: true, createdAt: true, expiresAt: true },
   })
-  return round(docs.reduce((n, d) => n + d.amount, 0))
+  return creditState(docs.map((d) => ({ id: d.id, sessions: d.sessions, status: d.status, createdAt: d.createdAt, expiresAt: d.expiresAt })))
+}
+
+/** Session credits available now. */
+export async function creditBalance(payload: Payload, accountId: number, req?: PayloadRequest) {
+  return (await creditStateFor(payload, accountId, req)).available
 }
 
 export async function giveCredit(
   payload: Payload,
-  c: { account: number; amount: number; reason: 'cancellation' | 'coach_cancellation' | 'goodwill' | 'adjustment'; booking?: number; note?: string; createdBy?: number },
+  c: { account: number; sessions: number; value?: number; reason: 'cancellation' | 'coach_cancellation' | 'goodwill' | 'adjustment'; booking?: number; note?: string; createdBy?: number },
   req?: PayloadRequest,
 ) {
-  if (c.amount <= 0) return null
-  return payload.create({ collection: 'academy-credits', overrideAccess: true, req, data: { ...c, amount: round(c.amount), status: 'active' } })
-}
-
-/** Hold credit for a checkout. Becomes final when paid; released if the checkout is abandoned. */
-export async function reserveCredit(payload: Payload, c: { account: number; amount: number; booking: number }, req?: PayloadRequest) {
-  if (c.amount <= 0) return null
+  const sessions = Math.floor(c.sessions)
+  if (sessions <= 0) return null
   return payload.create({
     collection: 'academy-credits',
     overrideAccess: true,
     req,
-    data: { account: c.account, amount: -round(c.amount), booking: c.booking, reason: 'used', status: 'pending', note: 'Used at checkout' },
+    data: { account: c.account, sessions, amount: c.value, reason: c.reason, booking: c.booking, note: c.note, createdBy: c.createdBy, status: 'active', expiresAt: expiryFrom(new Date()) },
+  })
+}
+
+/** Hold credits for a checkout. Become final when paid; released if the checkout is abandoned. */
+export async function reserveCredit(payload: Payload, c: { account: number; sessions: number; value: number; booking: number }, req?: PayloadRequest) {
+  if (c.sessions <= 0) return null
+  return payload.create({
+    collection: 'academy-credits',
+    overrideAccess: true,
+    req,
+    data: { account: c.account, sessions: -c.sessions, amount: -c.value, booking: c.booking, reason: 'used', status: 'pending', note: 'Used at checkout' },
   })
 }
 
