@@ -10,6 +10,7 @@ import { sendEmail } from '../lib/email'
 import { formatAUD, formatDate } from '../lib/format'
 import { academyBrand } from './brand'
 import { alertCoverNeeded } from './cover'
+import { syncPaidSessions } from './weekly-payments'
 
 /** Stripe Checkout links last at least 30 minutes, so a hold must never be shorter than that. */
 export const holdMinutesFor = (term: Pick<AcademyTerm, 'holdMinutes'>) => Math.max(30, term.holdMinutes ?? 30)
@@ -136,9 +137,15 @@ export async function confirmAcademyBooking(payload: Payload, reference: string)
   const confirmed = await payload.update({
     collection: 'academy-bookings',
     id: booking.id,
-    data: { status: 'confirmed', sessionsPaid: booking.paymentMode === 'weekly' ? 1 : booking.sessionsTotal },
+    data: {
+      status: 'confirmed',
+      sessionsPaid: booking.paymentMode === 'weekly' ? 1 : booking.sessionsTotal,
+      ...(booking.paymentMode === 'weekly' ? { nextChargeAt: booking.chargeAnchorAt } : {}),
+    },
     overrideAccess: true,
   })
+  // Weekly plan: today's payment covers the first session
+  if (booking.paymentMode === 'weekly') await syncPaidSessions(payload, booking, 1)
   try {
     await afterConfirmed(payload, confirmed)
   } catch (e) {
@@ -204,7 +211,16 @@ async function afterConfirmed(payload: Payload, booking: AcademyBooking) {
           : []),
         ['Where', term.location || academyBrand.address],
         ['Player', `${booking.player.firstName} ${booking.player.lastName}`],
-        ['Paid', formatAUD(booking.amount)],
+        ...(booking.paymentMode === 'weekly'
+          ? ([
+              ['Paid today', formatAUD(booking.amount / (booking.sessionsTotal || 1))],
+              [
+                'Weekly payments',
+                `${(booking.sessionsTotal ?? 1) - 1} × ${formatAUD(booking.amount / (booking.sessionsTotal || 1))}, charged 2 days before each session${booking.chargeAnchorAt ? ` from ${formatDate(booking.chargeAnchorAt, { weekday: 'short', day: 'numeric', month: 'short' })}` : ''}`,
+              ],
+              ['Term total', formatAUD(booking.amount)],
+            ] as [string, string][])
+          : ([['Paid', formatAUD(booking.amount)]] as [string, string][])),
         ['Reference', booking.reference],
       ],
       after: `${dateList}${coverNote}${dateList || coverNote ? '<br><br>' : ''}Please bring boots, shin pads, a ball and a water bottle, and arrive 5 minutes early. Need to change something? Reply to this email.`,

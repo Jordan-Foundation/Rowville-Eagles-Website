@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
-import { payload, formatDate } from '@/lib/payload'
+import { payload, formatAUD, formatDate } from '@/lib/payload'
 import { currentUser } from '@/lib/auth'
 import { hasRole } from '@/access'
 import { daysUntil } from '@/academy/reminders'
@@ -32,6 +32,16 @@ export default async function StaffAcademyPage() {
     limit: 200,
     overrideAccess: true,
   })
+  const { docs: weekly } = await p.find({
+    collection: 'academy-bookings',
+    where: { paymentMode: { equals: 'weekly' }, status: { in: ['confirmed', 'payment_failed'] } },
+    sort: 'nextChargeAt',
+    depth: 1,
+    limit: 300,
+    overrideAccess: true,
+  })
+  const overdue = weekly.filter((b) => b.status === 'payment_failed')
+  const onTrack = weekly.filter((b) => b.status !== 'payment_failed' && (b.sessionsPaid ?? 0) < (b.sessionsTotal ?? 0))
 
   return (
     <div data-brand="academy" data-page-brand="academy">
@@ -68,6 +78,40 @@ export default async function StaffAcademyPage() {
                         <td className="pr-4">{b ? `${b.player.firstName} ${b.player.lastName}` : '—'}</td>
                         <td className="pr-4">{cc ? cc.displayName : <span className="text-red-300">Not assigned</span>}</td>
                         <td><a href={`/admin/collections/academy-sessions/${s.id}`} className="underline">Assign →</a></td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+
+        <section id="payments" className="scroll-mt-24">
+          <h2 className="font-display text-2xl font-semibold uppercase">Weekly payments</h2>
+          <p className="mt-2 text-sm text-muted">
+            {overdue.length} overdue · {onTrack.length} on track. Stripe retries failed cards automatically and the family is emailed a link to pay; a booking returns to on-track by itself when the payment goes through.
+          </p>
+          {weekly.length > 0 && (
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full min-w-[720px] text-left text-sm">
+                <thead className="border-b border-line text-xs uppercase tracking-wider text-muted">
+                  <tr><th className="py-3 pr-4">Family</th><th className="pr-4">Coach</th><th className="pr-4">Paid</th><th className="pr-4">Status</th><th className="pr-4">Next charge</th><th /></tr>
+                </thead>
+                <tbody className="divide-y divide-line">
+                  {[...overdue, ...onTrack].map((b) => {
+                    const owed = (b.payments ?? []).filter((x) => x.status === 'failed').reduce((n, x) => n + (x.amount ?? 0), 0)
+                    return (
+                      <tr key={b.id}>
+                        <td className="py-3 pr-4">
+                          <span className="font-medium">{b.player.firstName} {b.player.lastName}</span>
+                          <span className="block text-xs text-muted">{b.contact.firstName} {b.contact.lastName} · {b.contact.mobile} · {b.reference}</span>
+                        </td>
+                        <td className="pr-4">{typeof b.coach === 'object' ? b.coach.displayName : ''}</td>
+                        <td className="pr-4">{b.sessionsPaid ?? 0} of {b.sessionsTotal}</td>
+                        <td className="pr-4">{b.status === 'payment_failed' ? <span className="text-red-300">Overdue {formatAUD(owed)}</span> : 'On track'}</td>
+                        <td className="pr-4">{b.nextChargeAt ? formatDate(b.nextChargeAt, { weekday: 'short', day: 'numeric', month: 'short' }) : '—'}</td>
+                        <td><a href={`/admin/collections/academy-bookings/${b.id}`} className="underline">Open →</a></td>
                       </tr>
                     )
                   })}

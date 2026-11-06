@@ -27,7 +27,7 @@ export const AcademyBookings: CollectionConfig = {
       options: [
         { label: 'Held (checkout in progress)', value: 'held' },
         { label: 'Confirmed', value: 'confirmed' },
-        { label: 'Payment failed', value: 'payment_failed' },
+        { label: 'Payment failed / overdue', value: 'payment_failed' },
         { label: 'Cancelled', value: 'cancelled' },
         { label: 'Refunded', value: 'refunded' },
         { label: 'Expired (not paid in time)', value: 'expired' },
@@ -79,8 +79,34 @@ export const AcademyBookings: CollectionConfig = {
     ] },
     { name: 'marketingOptIn', label: 'Ticked marketing opt-in at checkout', type: 'checkbox', admin: { readOnly: true } },
     { name: 'source', type: 'select', defaultValue: 'web', options: ['web', 'coach-link', 'admin'], admin: { position: 'sidebar' } },
+    {
+      type: 'collapsible',
+      label: 'Weekly payment plan',
+      admin: { condition: (data) => data?.paymentMode === 'weekly', initCollapsed: false },
+      fields: [
+        { type: 'row', fields: [
+          { name: 'nextChargeAt', label: 'Next automatic charge', type: 'date', admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } } },
+          { name: 'chargeAnchorAt', label: 'First automatic charge', type: 'date', admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } } },
+        ] },
+        {
+          name: 'payments',
+          type: 'array',
+          admin: { readOnly: true, description: 'Every weekly charge, written by the Stripe webhook.' },
+          fields: [
+            { type: 'row', fields: [
+              { name: 'invoiceId', type: 'text', required: true },
+              { name: 'status', type: 'select', required: true, options: ['paid', 'failed'] },
+              { name: 'amount', type: 'number' },
+              { name: 'at', type: 'date', admin: { date: { pickerAppearance: 'dayAndTime' } } },
+            ] },
+            { name: 'payUrl', label: 'Stripe payment page (for a failed charge)', type: 'text' },
+          ],
+        },
+      ],
+    },
     { name: 'stripeCheckoutId', type: 'text', admin: { readOnly: true } },
-    { name: 'stripeSubscriptionId', type: 'text', admin: { readOnly: true } },
+    { name: 'stripeSubscriptionId', type: 'text', index: true, admin: { readOnly: true } },
+    { name: 'stripeCustomerId', type: 'text', admin: { readOnly: true } },
     { name: 'organisation', type: 'text', defaultValue: 'rowville', admin: { readOnly: true, position: 'sidebar' } },
   ],
 }

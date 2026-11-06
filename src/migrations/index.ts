@@ -10,6 +10,7 @@ import * as migration_20261106_121446_remove_term_sessions_skip_dates from './20
 import * as migration_20261106_121459_weekend_times_away_periods from './20261106_121459_weekend_times_away_periods';
 import * as migration_20261106_122301_academy_reminder_log from './20261106_122301_academy_reminder_log';
 import * as migration_20261106_123856_academy_bookings_sessions from './20261106_123856_academy_bookings_sessions';
+import * as migration_20261106_133721_academy_weekly_payments from './20261106_133721_academy_weekly_payments';
 
 export const migrations = [
   {
@@ -70,6 +71,11 @@ export const migrations = [
   {
     up: migration_20261106_123856_academy_bookings_sessions.up,
     down: migration_20261106_123856_academy_bookings_sessions.down,
-    name: '20261106_123856_academy_bookings_sessions'
+    name: '20261106_123856_academy_bookings_sessions',
+  },
+  {
+    up: migration_20261106_133721_academy_weekly_payments.up,
+    down: migration_20261106_133721_academy_weekly_payments.down,
+    name: '20261106_133721_academy_weekly_payments'
   },
 ];

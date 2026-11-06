@@ -6,6 +6,7 @@ import { currentUser } from '@/lib/auth'
 import { findTermSlot, isCasualOpen } from '@/academy/slots'
 import { loadTermBookingData, openTerms, releaseAcademyHold, releaseExpiredHolds } from '@/academy/booking-data'
 import { toYmd } from '@/academy/term-dates'
+import { weeklyPlan } from '@/academy/weekly'
 import { BookForm } from './BookForm'
 
 export const dynamic = 'force-dynamic'
@@ -50,6 +51,12 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
   const coachAway = data?.availability.find((a) => a.coachId === coachId)?.away ?? []
   const ranges = termSlot && awayDates.size ? awayRanges([...awayDates], coachAway) : []
   const total = term ? (mode === 'term' ? term.pricePerSession * sessions.length : term.casualPrice) : 0
+  const plan = termSlot ? weeklyPlan(sessions) : null
+  const short = (iso: string) => formatDate(iso, { weekday: 'short', day: 'numeric', month: 'short' })
+  const weekly =
+    plan && term
+      ? { perSession: formatAUD(term.pricePerSession), total: formatAUD(total), laterPayments: plan.recurringCharges, firstCharge: short(plan.chargeDates[1]), lastCharge: short(plan.chargeDates.at(-1)!) }
+      : null
 
   return (
     <div data-brand="academy" data-page-brand="academy">
@@ -77,6 +84,7 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
                 term={term.id}
                 slot={mode === 'term' ? { mode: 'term', weekday: termSlot!.weekday, time: termSlot!.time, sessions: sessions.length } : { mode: 'casual', start: q.start! }}
                 price={formatAUD(total)}
+                weekly={weekly}
                 me={user ? { firstName: user.firstName, lastName: user.lastName, email: user.email, phone: user.phone } : null}
                 players={players}
               />
@@ -110,6 +118,7 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
                   <div className="mt-5 space-y-1 border-t border-line pt-4 text-sm">
                     <div className="flex justify-between text-muted"><span>{formatAUD(term.pricePerSession)} × {sessions.length} sessions</span><span>{formatAUD(total)}</span></div>
                     <div className="flex items-baseline justify-between pt-1"><span className="text-muted">Total</span><span className="font-display text-3xl font-semibold text-ink">{formatAUD(total)}</span></div>
+                    {weekly && <p className="pt-1 text-xs text-muted">or {weekly.perSession} a week — choose below</p>}
                   </div>
                 </>
               ) : (

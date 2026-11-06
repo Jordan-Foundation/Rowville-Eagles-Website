@@ -9,6 +9,7 @@ import { paymentsMode } from '@/lib/stripe-accounts'
 import { findTermSlot, isCasualOpen } from '@/academy/slots'
 import { createHold, holdMinutesFor, loadTermBookingData, releaseAcademyHold, releaseExpiredHolds } from '@/academy/booking-data'
 import { toYmd } from '@/academy/term-dates'
+import { weeklyPlan, type WeeklyPlan } from '@/academy/weekly'
 import { formatDate } from '@/lib/format'
 import type { Weekday } from '@/academy/constants'
 
@@ -39,6 +40,7 @@ export async function bookSession(_prev: BookState, fd: FormData): Promise<BookS
   let amount: number
   let weekday: Weekday | undefined
   let startTime: string | undefined
+  let plan: WeeklyPlan | null = null
   if (mode === 'term') {
     const slot = findTermSlot({ ...engine, minSessions: term.minTermSessions ?? 2, coachId, weekday: s('weekday'), time: s('time') })
     if (!slot) return fail('Sorry — that weekly time has just been booked. Please choose another.')
@@ -49,6 +51,10 @@ export async function bookSession(_prev: BookState, fd: FormData): Promise<BookS
     startTime = slot.time
     if (s('expectedSessions') && Number(s('expectedSessions')) !== sessions.length) {
       return fail(`The number of sessions left has changed to ${sessions.length} (${formatPrice(amount)}). Please check the details and continue.`)
+    }
+    if (s('payMode') === 'weekly') {
+      plan = weeklyPlan(sessions.map((x) => x.startsAt))
+      if (!plan) return fail('Weekly payments aren’t available for this booking — please pay for the term upfront.')
     }
   } else {
     const startsAt = s('start')
@@ -90,7 +96,8 @@ export async function bookSession(_prev: BookState, fd: FormData): Promise<BookS
   const hold = await createHold(p, {
     reference,
     type: mode,
-    paymentMode: mode === 'term' ? 'upfront' : 'casual',
+    paymentMode: mode === 'casual' ? 'casual' : plan ? 'weekly' : 'upfront',
+    chargeAnchorAt: plan ? new Date(plan.anchor * 1000).toISOString() : undefined,
     amount,
     sessionsTotal: sessions.length,
     sessionsPaid: 0,
@@ -129,8 +136,19 @@ export async function bookSession(_prev: BookState, fd: FormData): Promise<BookS
       kind: 'academy',
       reference,
       email: contact.email,
-      items:
-        mode === 'term'
+      ...(plan
+        ? {
+            weekly: {
+              name: `Weekly 1-on-1 with ${coach.displayName}`,
+              description: `${player.firstName} ${player.lastName} · ${weekday}s ${formatDate(first, { hour: 'numeric', minute: '2-digit' })} · ${plan.recurringCharges} weekly payments, 2 days before each session, ending ${formatDate(plan.chargeDates.at(-1)!, { day: 'numeric', month: 'short' })}`,
+              unitAmount: term.pricePerSession,
+              anchor: plan.anchor,
+            },
+          }
+        : {}),
+      items: plan
+        ? [{ name: `First session — ${formatDate(first, { weekday: 'short', day: 'numeric', month: 'short' })}`, description: `Term of 1-on-1s with ${coach.displayName} · ${sessions.length} sessions, paid weekly`, unitAmount: term.pricePerSession, quantity: 1 }]
+        : mode === 'term'
           ? [{ name: `Term of 1-on-1s with ${coach.displayName}`, description: `${player.firstName} ${player.lastName} · ${weekday}s ${formatDate(first, { hour: 'numeric', minute: '2-digit' })} · ${sessions.length} sessions, ${formatDate(first, { day: 'numeric', month: 'short' })} – ${formatDate(last, { day: 'numeric', month: 'short' })}`, unitAmount: term.pricePerSession, quantity: sessions.length }]
           : [{ name: `1-on-1 with ${coach.displayName}`, description: `${player.firstName} ${player.lastName} · ${formatDate(first, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}`, unitAmount: term.casualPrice, quantity: 1 }],
       cancelPath: `/academy/1-on-1/book?${back}&cancelled=${reference}`,

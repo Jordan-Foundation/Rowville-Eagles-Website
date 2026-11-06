@@ -12,15 +12,18 @@ type Props = {
   /** casual: the session start; term: weekday + time + how many sessions the family was shown */
   slot: { mode: 'casual'; start: string } | { mode: 'term'; weekday: string; time: string; sessions: number }
   price: string
+  /** Term only: the weekly plan on offer (null when there aren't enough sessions left) */
+  weekly?: { perSession: string; total: string; laterPayments: number; firstCharge: string; lastCharge: string } | null
   me: { firstName?: string | null; lastName?: string | null; email: string; phone?: string | null } | null
   players: { id: number; name: string }[]
 }
 
-export function BookForm({ coach, slot, term, price, me, players }: Props) {
+export function BookForm({ coach, slot, term, price, weekly, me, players }: Props) {
   const [state, action] = useActionState<BookState, FormData>(bookSession, {})
   const v = state.values ?? {}
   const [who, setWho] = useState(v.participant ?? (players[0] ? String(players[0].id) : 'new'))
   const newPlayer = !me || who === 'new'
+  const [payMode, setPayMode] = useState<'upfront' | 'weekly'>(v.payMode === 'weekly' && weekly ? 'weekly' : 'upfront')
 
   return (
     <form action={action} className="space-y-6">
@@ -96,6 +99,24 @@ export function BookForm({ coach, slot, term, price, me, players }: Props) {
         </label>
       </Fieldset>
 
+      {slot.mode === 'term' && (
+        <Fieldset legend="Payment">
+          <div className="grid gap-3 sm:col-span-2 sm:grid-cols-2">
+            <PayOption name="payMode" value="upfront" checked={payMode === 'upfront'} onChange={() => setPayMode('upfront')} title={`Pay upfront · ${price}`} detail={`All ${slot.sessions} sessions paid today.`} />
+            {weekly && (
+              <PayOption
+                name="payMode"
+                value="weekly"
+                checked={payMode === 'weekly'}
+                onChange={() => setPayMode('weekly')}
+                title={`Pay weekly · ${weekly.perSession}/week`}
+                detail={`${weekly.perSession} today, then ${weekly.laterPayments} automatic payments of ${weekly.perSession}, each taken 2 days before the session (${weekly.firstCharge} – ${weekly.lastCharge}). Same total: ${weekly.total}.`}
+              />
+            )}
+          </div>
+        </Fieldset>
+      )}
+
       <div className="space-y-3 text-sm">
         <label className="flex items-start gap-3">
           <input type="checkbox" name="terms" required defaultChecked={v.terms === 'on'} className="mt-1" />
@@ -104,6 +125,7 @@ export function BookForm({ coach, slot, term, price, me, players }: Props) {
             {slot.mode === 'casual'
               ? 'Casual sessions cancelled 24 hours or more before the start can be credited or refunded.'
               : 'Term bookings can be cancelled any time; unplayed future sessions are credited or refunded, less one session.'}
+            {slot.mode === 'term' && payMode === 'weekly' && ' I authorise Foundation Sports Australia Pty Ltd to charge my card weekly as shown until the last session is paid; weekly payments stop if the booking is cancelled.'}
           </span>
         </label>
         {!me && (
@@ -115,9 +137,21 @@ export function BookForm({ coach, slot, term, price, me, players }: Props) {
       </div>
 
       {state.error && <p role="alert" className="border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300">{state.error}</p>}
-      <Submit price={price} />
+      <Submit price={slot.mode === 'term' && payMode === 'weekly' && weekly ? `${weekly.perSession} today` : price} />
       <p className="text-center text-xs text-muted">Your time is held for 30 minutes while you pay · Secure payment by Stripe to Foundation Sports Australia Pty Ltd</p>
     </form>
+  )
+}
+
+function PayOption({ title, detail, ...input }: { name: string; value: string; checked: boolean; onChange: () => void; title: string; detail: string }) {
+  return (
+    <label className={`flex cursor-pointer items-start gap-3 border p-4 text-sm ${input.checked ? 'border-white bg-white/5' : 'border-line hover:border-white/40'}`}>
+      <input type="radio" {...input} className="mt-1" />
+      <span>
+        <span className="block font-semibold">{title}</span>
+        <span className="mt-1 block text-muted">{detail}</span>
+      </span>
+    </label>
   )
 }
 

@@ -2,6 +2,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { payload, formatAUD, formatDate } from '@/lib/payload'
 import { confirmAcademyBooking } from '@/academy/booking-data'
+import { activateWeeklyPlan } from '@/academy/weekly-payments'
 import { paymentsMode, stripeFor } from '@/lib/stripe-accounts'
 import { AcademyBackdrop } from '@/components/AcademyBackdrop'
 import type { AcademyCoach } from '@/payload-types'
@@ -18,11 +19,14 @@ export default async function BookedPage({ searchParams }: { searchParams: Promi
   if (booking && booking.status === 'held') {
     try {
       const mode = paymentsMode('academy')
-      const paid =
-        (mode === 'simulate' && Boolean(simulated)) ||
-        (mode === 'stripe' && Boolean(session_id) && (await stripeFor('academy').checkout.sessions.retrieve(session_id!)).payment_status === 'paid')
+      const checkout = mode === 'stripe' && session_id ? await stripeFor('academy').checkout.sessions.retrieve(session_id) : null
+      const paid = (mode === 'simulate' && Boolean(simulated)) || (checkout?.payment_status === 'paid' && checkout.metadata?.reference === booking.reference)
       if (paid) {
         await confirmAcademyBooking(p, booking.reference)
+        if (checkout?.mode === 'subscription' && checkout.subscription) {
+          const sid = (v: string | { id: string } | null) => (v ? (typeof v === 'string' ? v : v.id) : null)
+          await activateWeeklyPlan(p, booking.reference, { subscriptionId: sid(checkout.subscription)!, customerId: sid(checkout.customer) })
+        }
         booking = (await p.find({ collection: 'academy-bookings', where: { reference: { equals: booking.reference } }, limit: 1, depth: 1, overrideAccess: true })).docs[0]
       }
     } catch (e) {
@@ -58,7 +62,20 @@ export default async function BookedPage({ searchParams }: { searchParams: Promi
                 <div className="flex justify-between gap-4"><dt className="text-muted">When</dt><dd className="text-right font-medium">{booking.firstSessionAt ? formatDate(booking.firstSessionAt, { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' }) : ''}</dd></div>
               )}
               <div className="flex justify-between gap-4"><dt className="text-muted">Player</dt><dd className="font-medium">{booking.player.firstName}</dd></div>
-              <div className="flex justify-between gap-4"><dt className="text-muted">Paid</dt><dd className="font-medium">{formatAUD(booking.amount)}</dd></div>
+              {booking.paymentMode === 'weekly' ? (
+                <>
+                  <div className="flex justify-between gap-4"><dt className="text-muted">Paid today</dt><dd className="font-medium">{formatAUD(booking.amount / (booking.sessionsTotal || 1))}</dd></div>
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-muted">Then weekly</dt>
+                    <dd className="text-right font-medium">
+                      {(booking.sessionsTotal ?? 1) - 1} × {formatAUD(booking.amount / (booking.sessionsTotal || 1))}, 2 days before each session
+                      {booking.chargeAnchorAt && <span className="block text-xs text-muted">first on {formatDate(booking.chargeAnchorAt, { weekday: 'short', day: 'numeric', month: 'short' })}</span>}
+                    </dd>
+                  </div>
+                </>
+              ) : (
+                <div className="flex justify-between gap-4"><dt className="text-muted">Paid</dt><dd className="font-medium">{formatAUD(booking.amount)}</dd></div>
+              )}
             </dl>
             {covered.length > 0 && (
               <p className="mt-4 border border-white/40 p-4 text-left text-sm">

@@ -29,6 +29,11 @@ export async function startCheckout(opts: {
   successPath?: string
   /** Minutes the Stripe checkout link stays open (Stripe minimum 30) */
   expiresInMinutes?: number
+  /**
+   * Weekly plan: `items` are charged today, then `weekly` is charged automatically every 7 days
+   * from `anchor` (unix seconds, at least 48h away). The subscription is cancelled after the last charge by the webhook.
+   */
+  weekly?: { name: string; description?: string; unitAmount: number; anchor: number }
 }): Promise<{ url: string; sessionId?: string; simulated: boolean }> {
   const success = `${siteUrl()}${opts.successPath ?? '/checkout/success'}?kind=${opts.kind}&ref=${opts.reference}`
 
@@ -37,19 +42,44 @@ export async function startCheckout(opts: {
   }
 
   const metadata = { kind: opts.kind, reference: opts.reference, payee: opts.payee }
+  const description = `${opts.reference} — ${opts.items.map((i) => i.name).join(', ')}`
+  const lineItems = opts.items.map((i) => ({
+    quantity: i.quantity,
+    price_data: {
+      currency: 'aud',
+      unit_amount: toCents(i.unitAmount),
+      product_data: { name: i.name, ...(i.description ? { description: i.description } : {}) },
+    },
+  }))
+  const w = opts.weekly
   const session = await stripeFor(opts.payee).checkout.sessions.create({
-    mode: 'payment',
     customer_email: opts.email,
-    line_items: opts.items.map((i) => ({
-      quantity: i.quantity,
-      price_data: {
-        currency: 'aud',
-        unit_amount: toCents(i.unitAmount),
-        product_data: { name: i.name, ...(i.description ? { description: i.description } : {}) },
-      },
-    })),
     metadata,
-    payment_intent_data: { metadata, description: `${opts.reference} — ${opts.items.map((i) => i.name).join(', ')}` },
+    ...(w
+      ? {
+          mode: 'subscription' as const,
+          line_items: [
+            ...lineItems, // one-off: today's payment
+            {
+              quantity: 1,
+              price_data: {
+                currency: 'aud',
+                unit_amount: toCents(w.unitAmount),
+                recurring: { interval: 'week' as const },
+                product_data: { name: w.name, ...(w.description ? { description: w.description } : {}) },
+              },
+            },
+          ],
+          // Today's one-off item is charged now; the weekly price starts at `anchor`. A trial (allowed up to
+          // 2 years ahead) is used rather than billing_cycle_anchor, which Stripe caps at one billing period —
+          // a week — and terms are often booked months in advance.
+          subscription_data: { metadata, description, trial_end: w.anchor },
+        }
+      : {
+          mode: 'payment' as const,
+          line_items: lineItems,
+          payment_intent_data: { metadata, description },
+        }),
     success_url: `${success}&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${siteUrl()}${opts.cancelPath}`,
     expires_at: Math.floor(Date.now() / 1000) + Math.max(30, opts.expiresInMinutes ?? 30) * 60,

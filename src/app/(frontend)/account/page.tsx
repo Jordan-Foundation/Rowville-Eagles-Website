@@ -16,11 +16,13 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   if (!user) redirect('/login?next=/account')
   const { welcome } = await searchParams
   const p = await payload()
-  const [participants, bookings, academy] = await Promise.all([
+  const [participants, bookings, academy, plans] = await Promise.all([
     p.find({ collection: 'participants', where: { account: { equals: user.id } }, depth: 1, limit: 50, overrideAccess: true }),
     p.find({ collection: 'bookings', where: { account: { equals: user.id }, status: { equals: 'paid' } }, depth: 1, limit: 100, sort: '-createdAt', overrideAccess: true }),
     // Foundation Academy 1-on-1 sessions (one row per session)
     p.find({ collection: 'academy-sessions', where: { account: { equals: user.id }, status: { in: ['scheduled', 'completed', 'no_show'] } }, depth: 2, limit: 300, sort: 'startsAt', overrideAccess: true }),
+    // Weekly payment plans that need attention
+    p.find({ collection: 'academy-bookings', where: { account: { equals: user.id }, paymentMode: { equals: 'weekly' }, status: { equals: 'payment_failed' } }, depth: 1, limit: 20, overrideAccess: true }),
   ])
 
   const pendingOffers = participants.docs.filter((x) => x.registrationOffer?.status === 'offered' && x.registrationOffer.program)
@@ -45,7 +47,15 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
     const coach = s.coach as AcademyCoach
     const cover = s.needsCover ? (s.coverCoach && typeof s.coverCoach === 'object' ? ` · cover: ${s.coverCoach.displayName}` : ' · replacement coach being arranged') : ''
     const paid =
-      booking.paymentMode === 'weekly' ? `weekly — ${booking.sessionsPaid ?? 0} of ${booking.sessionsTotal ?? 0} paid` : booking.type === 'term' ? 'term paid in full' : 'paid'
+      booking.paymentMode === 'weekly'
+        ? s.paid
+          ? 'paid (weekly plan)'
+          : booking.status === 'payment_failed'
+            ? 'payment overdue'
+            : `weekly — ${formatAUD(booking.amount / (booking.sessionsTotal || 1))} charged ${formatDate(new Date(new Date(s.startsAt).getTime() - 48 * 3600_000).toISOString(), { weekday: 'short', day: 'numeric', month: 'short' })}`
+        : booking.type === 'term'
+          ? 'term paid in full'
+          : 'paid'
     return {
       key: `s${s.id}`,
       date: s.startsAt,
@@ -68,6 +78,32 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
         <LogoutButton />
       </div>
       {welcome && <p className="mt-6 rounded-xl border border-accent bg-accent/10 px-5 py-4">Your account is ready. Welcome to the Eagles!</p>}
+
+      {plans.docs.length > 0 && (
+        <section className="mt-10 space-y-3">
+          <h2 className="font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase">Payment needed</h2>
+          {plans.docs.map((b) => {
+            const failed = (b.payments ?? []).filter((x) => x.status === 'failed')
+            const payUrl = failed.at(-1)?.payUrl
+            const owed = failed.reduce((n, x) => n + (x.amount ?? 0), 0)
+            return (
+              <div key={b.id} className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border-2 border-red-500/60 bg-red-500/5 p-6">
+                <div>
+                  <p className="font-semibold">{b.player.firstName}’s weekly 1-on-1s with {(b.coach as AcademyCoach).displayName}</p>
+                  <p className="text-sm text-muted">
+                    The automatic {formatAUD(owed)} payment didn’t go through · {b.sessionsPaid ?? 0} of {b.sessionsTotal} sessions paid · {b.reference}
+                  </p>
+                </div>
+                {payUrl ? (
+                  <a href={payUrl} className="rounded-full bg-black px-6 py-3 font-semibold text-white hover:bg-black/85">Pay now →</a>
+                ) : (
+                  <span className="text-sm text-muted">We’ll retry automatically — or call 0451 525 684</span>
+                )}
+              </div>
+            )
+          })}
+        </section>
+      )}
 
       {pendingOffers.length > 0 && (
         <section className="mt-10 space-y-3">

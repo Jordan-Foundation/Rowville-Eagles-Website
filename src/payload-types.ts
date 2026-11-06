@@ -205,8 +205,24 @@ export interface AcademyBooking {
   participant?: (number | null) | Participant;
   marketingOptIn?: boolean | null;
   source?: ('web' | 'coach-link' | 'admin') | null;
+  nextChargeAt?: string | null;
+  chargeAnchorAt?: string | null;
+  /**
+   * Every weekly charge, written by the Stripe webhook.
+   */
+  payments?:
+    | {
+        invoiceId: string;
+        status: 'paid' | 'failed';
+        amount?: number | null;
+        at?: string | null;
+        payUrl?: string | null;
+        id?: string | null;
+      }[]
+    | null;
   stripeCheckoutId?: string | null;
   stripeSubscriptionId?: string | null;
+  stripeCustomerId?: string | null;
   organisation?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -1175,8 +1191,21 @@ export interface AcademyBookingsSelect<T extends boolean = true> {
   participant?: T;
   marketingOptIn?: T;
   source?: T;
+  nextChargeAt?: T;
+  chargeAnchorAt?: T;
+  payments?:
+    | T
+    | {
+        invoiceId?: T;
+        status?: T;
+        amount?: T;
+        at?: T;
+        payUrl?: T;
+        id?: T;
+      };
   stripeCheckoutId?: T;
   stripeSubscriptionId?: T;
+  stripeCustomerId?: T;
   organisation?: T;
   updatedAt?: T;
   createdAt?: T;
