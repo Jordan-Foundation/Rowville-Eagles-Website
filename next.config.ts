@@ -7,6 +7,10 @@ const __filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(__filename)
 
 const nextConfig: NextConfig = {
+  experimental: {
+    // Coach profile photos are resized in the browser first; this leaves headroom for the form data
+    serverActions: { bodySizeLimit: '3mb' },
+  },
   async redirects() {
     return [{ source: '/teams', destination: '/fixtures', permanent: true }]
   },

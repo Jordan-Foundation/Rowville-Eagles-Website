@@ -67,6 +67,9 @@ export interface Config {
   };
   blocks: {};
   collections: {
+    'academy-terms': AcademyTerm;
+    'academy-coaches': AcademyCoach;
+    'academy-availability': AcademyAvailability;
     posts: Post;
     'trial-registrations': TrialRegistration;
     'trial-sessions': TrialSession;
@@ -89,6 +92,9 @@ export interface Config {
   };
   collectionsJoins: {};
   collectionsSelect: {
+    'academy-terms': AcademyTermsSelect<false> | AcademyTermsSelect<true>;
+    'academy-coaches': AcademyCoachesSelect<false> | AcademyCoachesSelect<true>;
+    'academy-availability': AcademyAvailabilitySelect<false> | AcademyAvailabilitySelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
     'trial-registrations': TrialRegistrationsSelect<false> | TrialRegistrationsSelect<true>;
     'trial-sessions': TrialSessionsSelect<false> | TrialSessionsSelect<true>;
@@ -151,68 +157,91 @@ export interface UserAuthOperations {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "posts".
+ * via the `definition` "academy-terms".
  */
-export interface Post {
+export interface AcademyTerm {
   id: number;
-  title: string;
-  slug: string;
-  category?: ('Club news' | 'Match report' | 'Tournament' | 'Seniors' | 'Academy' | 'Community' | 'Sponsors') | null;
-  publishedAt: string;
-  status?: ('draft' | 'published') | null;
   /**
-   * Tag teams to show this on the Fixtures page team news (match reports, tournaments, senior games…)
+   * e.g. "Term 1 2027"
    */
-  teams?: (number | Team)[] | null;
-  excerpt: string;
-  heroImage?: (number | null) | Media;
-  content?: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  } | null;
+  name: string;
+  status: 'draft' | 'availability' | 'open' | 'closed';
+  /**
+   * First day of the term
+   */
+  startDate: string;
+  sessions: number;
+  /**
+   * Worked out automatically
+   */
+  endDate?: string | null;
+  /**
+   * No sessions on these days. That weekday runs one week later so it still gets the full number of sessions.
+   */
+  skipDates?:
+    | {
+        date: string;
+        reason?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Session dates for each weekday (save to refresh)
+   */
+  schedulePreview?: string | null;
+  /**
+   * Coaches must submit their 1-on-1 availability by this date. Reminders go out 2 weeks, 1 week, 3 days and 1 day before.
+   */
+  availabilityDeadline: string;
+  pricePerSession: number;
+  casualPrice: number;
+  sessionMinutes: number;
+  /**
+   * Fixed start times coaches can choose from (24-hour, e.g. 17:00).
+   */
+  slotStartTimes?:
+    | {
+        time: string;
+        id?: string | null;
+      }[]
+    | null;
+  bookingCutoffHours?: number | null;
+  minTermSessions?: number | null;
+  holdMinutes?: number | null;
+  shareLinkHoldHours?: number | null;
+  accountReminderDays?: number | null;
+  organisation?: string | null;
   updatedAt: string;
   createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "teams".
+ * via the `definition` "academy-coaches".
  */
-export interface Team {
+export interface AcademyCoach {
   id: number;
-  name: string;
-  slug: string;
-  category: 'miniroos' | 'junior-boys' | 'junior-girls' | 'senior-women' | 'senior-men';
+  user: number | User;
   /**
-   * e.g. U7, U12, Seniors, Reserves
+   * Name shown to families, e.g. "Coach Sam"
    */
-  ageGroup?: string | null;
-  /**
-   * League / division
-   */
-  competition?: string | null;
-  trainingTimes?: string | null;
-  coaches?: (number | User)[] | null;
-  /**
-   * Link to this team’s fixtures page on Dribl (shown on the Fixtures page).
-   */
-  driblUrl?: string | null;
-  /**
-   * Dribl team identifier — used to pull fixtures & results automatically.
-   */
-  driblTeamId?: string | null;
+  displayName: string;
   photo?: (number | null) | Media;
+  /**
+   * Short description shown in the booking carousel (max 400 characters)
+   */
+  bio?: string | null;
+  specialties?:
+    | {
+        label: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Inactive coaches are hidden from families
+   */
+  active?: boolean | null;
   order?: number | null;
+  organisation?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -282,6 +311,106 @@ export interface Media {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "academy-availability".
+ */
+export interface AcademyAvailability {
+  id: number;
+  coach: number | AcademyCoach;
+  term: number | AcademyTerm;
+  slots?:
+    | {
+        weekday: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
+        startTime: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * When the coach first submitted. Reminders stop once this is set.
+   */
+  submittedAt?: string | null;
+  /**
+   * History of edits made in the coach portal
+   */
+  changes?:
+    | {
+        at?: string | null;
+        added?: string | null;
+        removed?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "posts".
+ */
+export interface Post {
+  id: number;
+  title: string;
+  slug: string;
+  category?: ('Club news' | 'Match report' | 'Tournament' | 'Seniors' | 'Academy' | 'Community' | 'Sponsors') | null;
+  publishedAt: string;
+  status?: ('draft' | 'published') | null;
+  /**
+   * Tag teams to show this on the Fixtures page team news (match reports, tournaments, senior games…)
+   */
+  teams?: (number | Team)[] | null;
+  excerpt: string;
+  heroImage?: (number | null) | Media;
+  content?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "teams".
+ */
+export interface Team {
+  id: number;
+  name: string;
+  slug: string;
+  category: 'miniroos' | 'junior-boys' | 'junior-girls' | 'senior-women' | 'senior-men';
+  /**
+   * e.g. U7, U12, Seniors, Reserves
+   */
+  ageGroup?: string | null;
+  /**
+   * League / division
+   */
+  competition?: string | null;
+  trainingTimes?: string | null;
+  coaches?: (number | User)[] | null;
+  /**
+   * Link to this team’s fixtures page on Dribl (shown on the Fixtures page).
+   */
+  driblUrl?: string | null;
+  /**
+   * Dribl team identifier — used to pull fixtures & results automatically.
+   */
+  driblTeamId?: string | null;
+  photo?: (number | null) | Media;
+  order?: number | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -440,6 +569,10 @@ export interface Program {
         id?: string | null;
       }[]
     | null;
+  /**
+   * Start and end dates are taken from this term automatically.
+   */
+  academyTerm?: (number | null) | AcademyTerm;
   /**
    * Academy terms: the nights the program runs. Trial bookings are offered on these nights between the start and end dates.
    */
@@ -764,6 +897,18 @@ export interface PayloadLockedDocument {
   id: number;
   document?:
     | ({
+        relationTo: 'academy-terms';
+        value: number | AcademyTerm;
+      } | null)
+    | ({
+        relationTo: 'academy-coaches';
+        value: number | AcademyCoach;
+      } | null)
+    | ({
+        relationTo: 'academy-availability';
+        value: number | AcademyAvailability;
+      } | null)
+    | ({
         relationTo: 'posts';
         value: number | Post;
       } | null)
@@ -867,6 +1012,90 @@ export interface PayloadMigration {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "academy-terms_select".
+ */
+export interface AcademyTermsSelect<T extends boolean = true> {
+  name?: T;
+  status?: T;
+  startDate?: T;
+  sessions?: T;
+  endDate?: T;
+  skipDates?:
+    | T
+    | {
+        date?: T;
+        reason?: T;
+        id?: T;
+      };
+  schedulePreview?: T;
+  availabilityDeadline?: T;
+  pricePerSession?: T;
+  casualPrice?: T;
+  sessionMinutes?: T;
+  slotStartTimes?:
+    | T
+    | {
+        time?: T;
+        id?: T;
+      };
+  bookingCutoffHours?: T;
+  minTermSessions?: T;
+  holdMinutes?: T;
+  shareLinkHoldHours?: T;
+  accountReminderDays?: T;
+  organisation?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "academy-coaches_select".
+ */
+export interface AcademyCoachesSelect<T extends boolean = true> {
+  user?: T;
+  displayName?: T;
+  photo?: T;
+  bio?: T;
+  specialties?:
+    | T
+    | {
+        label?: T;
+        id?: T;
+      };
+  active?: T;
+  order?: T;
+  organisation?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "academy-availability_select".
+ */
+export interface AcademyAvailabilitySelect<T extends boolean = true> {
+  coach?: T;
+  term?: T;
+  slots?:
+    | T
+    | {
+        weekday?: T;
+        startTime?: T;
+        id?: T;
+      };
+  submittedAt?: T;
+  changes?:
+    | T
+    | {
+        at?: T;
+        added?: T;
+        removed?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "posts_select".
  */
 export interface PostsSelect<T extends boolean = true> {
@@ -967,6 +1196,7 @@ export interface ProgramsSelect<T extends boolean = true> {
         coach?: T;
         id?: T;
       };
+  academyTerm?: T;
   weeklySessions?:
     | T
     | {

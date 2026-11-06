@@ -5,6 +5,7 @@ import * as migration_20261105_104026_sponsor_logos from './20261105_104026_spon
 import * as migration_20261105_110000_sponsor_logo_backfill from './20261105_110000_sponsor_logo_backfill';
 import * as migration_20261105_122821_admin_created_records from './20261105_122821_admin_created_records';
 import * as migration_20261106_110441_consent_invites_message_log from './20261106_110441_consent_invites_message_log';
+import * as migration_20261106_115745_academy_terms_coaches_availability from './20261106_115745_academy_terms_coaches_availability';
 
 export const migrations = [
   {
@@ -40,6 +41,11 @@ export const migrations = [
   {
     up: migration_20261106_110441_consent_invites_message_log.up,
     down: migration_20261106_110441_consent_invites_message_log.down,
-    name: '20261106_110441_consent_invites_message_log'
+    name: '20261106_110441_consent_invites_message_log',
+  },
+  {
+    up: migration_20261106_115745_academy_terms_coaches_availability.up,
+    down: migration_20261106_115745_academy_terms_coaches_availability.down,
+    name: '20261106_115745_academy_terms_coaches_availability'
   },
 ];

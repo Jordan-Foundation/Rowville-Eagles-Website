@@ -113,6 +113,9 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
           </div>
           <Link href="/shop" className="block rounded-2xl border border-line p-6 font-semibold hover:border-brand">Shop team kit →</Link>
           <Link href="/account/preferences" className="block rounded-2xl border border-line p-6 font-semibold hover:border-brand">Communication preferences →</Link>
+          {user.roles?.includes('coach') && (
+            <Link href="/coach" className="block rounded-2xl bg-black p-6 font-semibold text-white hover:bg-black/85">Coach portal →</Link>
+          )}
         </aside>
       </div>
     </div>

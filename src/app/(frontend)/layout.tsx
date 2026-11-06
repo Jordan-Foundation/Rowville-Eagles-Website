@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const settings = await (await payload()).findGlobal({ slug: 'site-settings' })
   return (
-    <html lang="en-AU" className={`${inter.variable} ${barlow.variable} ${grotesk.variable}`}>
+    <html lang="en-AU" data-scroll-behavior="smooth" className={`${inter.variable} ${barlow.variable} ${grotesk.variable}`}>
       <body>
         <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded focus:bg-white focus:px-3 focus:py-2 focus:text-black">
           Skip to content

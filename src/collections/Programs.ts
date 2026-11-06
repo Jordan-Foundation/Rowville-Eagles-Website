@@ -34,8 +34,17 @@ export const Programs: CollectionConfig = {
   defaultSort: 'startDate',
   hooks: {
     beforeValidate: [
-      ({ data }) => {
+      async ({ data, req }) => {
         if (!data) return data
+        // Academy group programs follow their shared term's dates
+        const termId = typeof data.academyTerm === 'object' ? data.academyTerm?.id : data.academyTerm
+        if (data.type === 'academy-term' && termId) {
+          const term = await req.payload.findByID({ collection: 'academy-terms', id: termId, depth: 0, req, disableErrors: true })
+          if (term) {
+            data.startDate = term.startDate
+            data.endDate = term.endDate
+          }
+        }
         return {
           ...data,
           payee: data.payee || defaultPayee(data.type),
@@ -139,6 +148,16 @@ export const Programs: CollectionConfig = {
           ],
         },
       ],
+    },
+    {
+      name: 'academyTerm',
+      label: 'Academy term',
+      type: 'relationship',
+      relationTo: 'academy-terms',
+      admin: {
+        condition: (d) => d?.type === 'academy-term',
+        description: 'Start and end dates are taken from this term automatically.',
+      },
     },
     {
       name: 'weeklySessions',

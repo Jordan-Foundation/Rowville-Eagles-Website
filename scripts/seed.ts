@@ -43,7 +43,7 @@ if (hosted) {
   }
 }
 
-for (const c of ['trial-registrations', 'trial-sessions', 'bookings', 'orders', 'products', 'participants', 'programs', 'teams', 'posts', 'sponsors'] as const) {
+for (const c of ['academy-availability', 'academy-coaches', 'academy-terms', 'trial-registrations', 'trial-sessions', 'bookings', 'orders', 'products', 'participants', 'programs', 'teams', 'posts', 'sponsors'] as const) {
   await payload.delete({ collection: c, where: { id: { exists: true } } })
 }
 
@@ -139,6 +139,36 @@ for (const t of [
   { title: 'MiniRoos trials — night 2', start: '2027-01-21T06:30:00.000Z', ageGroups: ['U6', 'U7', 'U8', 'U9', 'U10', 'U11'], capacityPerAgeGroup: 20, status: 'published' },
 ] as const) {
   await payload.create({ collection: 'trial-sessions', data: { ...t, ageGroups: [...t.ageGroups] } })
+}
+
+// Foundation Academy: Term 1 2027 collecting coach availability (Melbourne/Sydney midnight 1 Feb = 31 Jan 13:00 UTC)
+const term = await payload.create({
+  collection: 'academy-terms',
+  data: {
+    name: 'Term 1 2027',
+    status: 'availability',
+    startDate: '2027-01-31T13:00:00.000Z',
+    sessions: 10,
+    availabilityDeadline: '2027-01-15T07:00:00.000Z',
+    skipDates: [{ date: '2027-03-07T13:00:00.000Z', reason: 'Labour Day' }],
+    pricePerSession: 80,
+    casualPrice: 85,
+    sessionMinutes: 60,
+  },
+})
+const academyProgram = (await payload.find({ collection: 'programs', where: { slug: { equals: 'academy-term-1-2027' } }, limit: 1 })).docs[0]
+if (academyProgram) await payload.update({ collection: 'programs', id: academyProgram.id, data: { academyTerm: term.id } })
+
+// Sample coach accounts (local development only — hosted deploys never get default passwords)
+if (!hosted) {
+  for (const [first, last, email] of [['Sam', 'Rossi', 'coach@rowvilleeagles.local'], ['Priya', 'Nair', 'coach2@rowvilleeagles.local']]) {
+    const found = await payload.find({ collection: 'users', where: { email: { equals: email } }, limit: 1 })
+    const coachUser = found.docs[0] ?? (await payload.create({ collection: 'users', data: { email, password: 'change-me-now', firstName: first, lastName: last, roles: ['coach'], activated: true } }))
+    await payload.create({
+      collection: 'academy-coaches',
+      data: { user: coachUser.id, displayName: `Coach ${first}`, active: true, bio: `Sample bio for Coach ${first} — replace in the coach portal.`, specialties: [{ label: 'Ball mastery' }, { label: 'Finishing' }] },
+    })
+  }
 }
 
 const teamIds = Object.fromEntries((await payload.find({ collection: 'teams', limit: 100, depth: 0 })).docs.map((t) => [t.slug, t.id]))
