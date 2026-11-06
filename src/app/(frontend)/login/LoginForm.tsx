@@ -25,7 +25,7 @@ export function LoginForm() {
     setPending(false)
     if (!res.ok) return setError('That email and password don’t match. Try again or reset your password.')
     window.dispatchEvent(new Event('refc-auth'))
-    router.push(next.startsWith('/') ? next : '/account')
+    router.push(next.startsWith('/') && !next.startsWith('//') ? next : '/account')
     router.refresh()
   }
 

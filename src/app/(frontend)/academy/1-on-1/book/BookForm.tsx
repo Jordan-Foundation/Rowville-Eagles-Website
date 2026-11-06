@@ -14,11 +14,13 @@ type Props = {
   price: string
   /** Term only: the weekly plan on offer (null when there aren't enough sessions left) */
   weekly?: { perSession: string; total: string; laterPayments: number; firstCharge: string; lastCharge: string } | null
+  /** Guests: log in and come straight back to this time */
+  loginHref?: string
   me: { firstName?: string | null; lastName?: string | null; email: string; phone?: string | null } | null
   players: { id: number; name: string }[]
 }
 
-export function BookForm({ coach, slot, term, price, weekly, me, players }: Props) {
+export function BookForm({ coach, slot, term, price, weekly, loginHref, me, players }: Props) {
   const [state, action] = useActionState<BookState, FormData>(bookSession, {})
   const v = state.values ?? {}
   const [who, setWho] = useState(v.participant ?? (players[0] ? String(players[0].id) : 'new'))
@@ -53,12 +55,19 @@ export function BookForm({ coach, slot, term, price, weekly, me, players }: Prop
           )}
         </div>
       ) : (
+        <>
+        {loginHref && (
+          <p className="panel border border-line px-5 py-4 text-sm">
+            Booked with us before? <a href={loginHref} className="font-semibold underline">Log in</a> to use your saved details and keep everything in your account.
+          </p>
+        )}
         <Fieldset legend="Parent / guardian">
           <Input label="First name" name="contactFirstName" autoComplete="given-name" required defaultValue={v.contactFirstName} />
           <Input label="Last name" name="contactLastName" autoComplete="family-name" required defaultValue={v.contactLastName} />
           <Input label="Email" name="contactEmail" type="email" autoComplete="email" required defaultValue={v.contactEmail} />
           <Input label="Mobile" name="contactMobile" type="tel" autoComplete="tel" required placeholder="0412 345 678" defaultValue={v.contactMobile} />
         </Fieldset>
+        </>
       )}
 
       <Fieldset legend="Player">

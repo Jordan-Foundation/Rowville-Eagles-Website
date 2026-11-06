@@ -69,3 +69,27 @@ export async function accountMemberships(payload: Payload, userId?: number | nul
   const { docs } = await payload.find({ collection: 'participants', where: { account: { equals: userId } }, limit: 50, depth: 0, overrideAccess: true })
   return new Set(docs.flatMap((d) => (d.memberships ?? []) as Membership[]))
 }
+
+/**
+ * Attach anything this family did as a guest (same email, no account yet) to their account:
+ * 1-on-1 bookings and their sessions, club/camp bookings and shop orders.
+ * Runs when an account is created or someone logs in; safe to run any number of times.
+ */
+export async function linkGuestRecords(payload: Payload, user: Pick<User, 'id' | 'email'>, req?: PayloadRequest) {
+  const email = user.email.trim().toLowerCase()
+  const unlinked = { 'contact.email': { equals: email }, account: { exists: false } }
+  const linked = { academy: 0, bookings: 0, orders: 0 }
+
+  const { docs: academy } = await payload.find({ collection: 'academy-bookings', where: unlinked, limit: 200, depth: 0, overrideAccess: true, req })
+  for (const b of academy) {
+    await payload.update({ collection: 'academy-bookings', id: b.id, data: { account: user.id }, overrideAccess: true, req })
+    await payload.update({ collection: 'academy-sessions', where: { booking: { equals: b.id } }, data: { account: user.id }, overrideAccess: true, req })
+    linked.academy++
+  }
+  for (const collection of ['bookings', 'orders'] as const) {
+    const { docs } = await payload.find({ collection, where: unlinked, limit: 200, depth: 0, overrideAccess: true, req })
+    for (const d of docs) await payload.update({ collection, id: d.id, data: { account: user.id }, overrideAccess: true, req })
+    linked[collection] = docs.length
+  }
+  return linked
+}

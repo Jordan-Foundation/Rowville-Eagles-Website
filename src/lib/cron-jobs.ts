@@ -1,6 +1,7 @@
 import type { Payload } from 'payload'
 import { purgeOldInvites } from './invites'
 import { sendAvailabilityReminders } from '../academy/reminders'
+import { sendAccountReminders } from './account-reminders'
 
 type Job = (payload: Payload) => Promise<Record<string, unknown>>
 
@@ -12,5 +13,6 @@ export const cronJobs: Record<string, Record<string, Job>> = {
   daily: {
     purgeOldInvites,
     availabilityReminders: (payload) => sendAvailabilityReminders(payload),
+    accountReminders: (payload) => sendAccountReminders(payload),
   },
 }

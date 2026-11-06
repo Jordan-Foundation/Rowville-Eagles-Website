@@ -32,6 +32,13 @@ export const Users: CollectionConfig = {
     afterLogin: [
       async ({ user, req }) => {
         if (!user.activated) await req.payload.update({ collection: 'users', id: user.id, data: { activated: true }, overrideAccess: true, req })
+        // Pick up anything booked or bought as a guest with this email
+        try {
+          const { linkGuestRecords } = await import('../lib/accounts') // lazy: avoids an import cycle with the config
+          await linkGuestRecords(req.payload, user, req)
+        } catch (e) {
+          req.payload.logger.error({ err: e, msg: `Linking guest records failed for user ${user.id}` })
+        }
       },
     ],
   },
@@ -98,6 +105,12 @@ export const Users: CollectionConfig = {
       type: 'checkbox',
       defaultValue: false,
       admin: { readOnly: true, position: 'sidebar', description: 'Has set their own password / logged in' },
+    },
+    {
+      name: 'accountReminderSentAt',
+      label: 'Create-account reminder sent',
+      type: 'date',
+      admin: { readOnly: true, position: 'sidebar', description: 'The one reminder sent to a guest who hasn’t set up their account yet', date: { pickerAppearance: 'dayAndTime' } },
     },
     {
       name: 'roles',

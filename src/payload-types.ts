@@ -277,6 +277,10 @@ export interface User {
    * Has set their own password / logged in
    */
   activated?: boolean | null;
+  /**
+   * The one reminder sent to a guest who hasn’t set up their account yet
+   */
+  accountReminderSentAt?: string | null;
   roles?: ('admin' | 'committee' | 'coach' | 'parent' | 'player')[] | null;
   wwcc?: {
     number?: string | null;
@@ -1632,6 +1636,7 @@ export interface UsersSelect<T extends boolean = true> {
   smsOptOut?: T;
   consentReviewStatus?: T;
   activated?: T;
+  accountReminderSentAt?: T;
   roles?: T;
   wwcc?:
     | T

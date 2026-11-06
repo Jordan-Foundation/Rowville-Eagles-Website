@@ -1,5 +1,6 @@
 'use server'
 
+import { linkGuestRecords } from '@/lib/accounts'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { payload } from '@/lib/payload'
@@ -43,6 +44,7 @@ export async function createAccountFromInvite(_prev: ConsentFormState, fd: FormD
   })
   await recordSignupConsent(p, user, { marketingOptIn: fd.get('marketingOptIn') === 'on' }, await requestMeta())
   await consumeInvite(p, check.invite.id)
+  await linkGuestRecords(p, user)
 
   const { token } = await p.login({ collection: 'users', data: { email: user.email, password } })
   if (token) {

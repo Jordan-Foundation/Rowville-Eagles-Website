@@ -12,6 +12,7 @@ import * as migration_20261106_122301_academy_reminder_log from './20261106_1223
 import * as migration_20261106_123856_academy_bookings_sessions from './20261106_123856_academy_bookings_sessions';
 import * as migration_20261106_133721_academy_weekly_payments from './20261106_133721_academy_weekly_payments';
 import * as migration_20261106_140019_academy_weekly_schedule from './20261106_140019_academy_weekly_schedule';
+import * as migration_20261106_141649_account_reminder from './20261106_141649_account_reminder';
 
 export const migrations = [
   {
@@ -82,6 +83,11 @@ export const migrations = [
   {
     up: migration_20261106_140019_academy_weekly_schedule.up,
     down: migration_20261106_140019_academy_weekly_schedule.down,
-    name: '20261106_140019_academy_weekly_schedule'
+    name: '20261106_140019_academy_weekly_schedule',
+  },
+  {
+    up: migration_20261106_141649_account_reminder.up,
+    down: migration_20261106_141649_account_reminder.down,
+    name: '20261106_141649_account_reminder'
   },
 ];

@@ -3,6 +3,8 @@ import type { Metadata } from 'next'
 import { payload, formatAUD, formatDate } from '@/lib/payload'
 import { confirmAcademyBooking } from '@/academy/booking-data'
 import { activateWeeklyPlan } from '@/academy/weekly-payments'
+import { accountBenefits } from '@/lib/account-reminders'
+import { currentUser } from '@/lib/auth'
 import { paymentsMode, stripeFor } from '@/lib/stripe-accounts'
 import { AcademyBackdrop } from '@/components/AcademyBackdrop'
 import type { AcademyCoach } from '@/payload-types'
@@ -31,6 +33,8 @@ export default async function BookedPage({ searchParams }: { searchParams: Promi
     }
   }
   const confirmed = booking?.status === 'confirmed'
+  const account = booking?.account && typeof booking.account === 'object' ? booking.account : null
+  const viewer = await currentUser()
   const coach = booking?.coach as AcademyCoach | undefined
   const sessions = booking
     ? (await p.find({ collection: 'academy-sessions', where: { booking: { equals: booking.id } }, sort: 'startsAt', limit: 60, depth: 0, overrideAccess: true })).docs
@@ -79,9 +83,23 @@ export default async function BookedPage({ searchParams }: { searchParams: Promi
                 {coach?.displayName} is away for {covered.length} session{covered.length === 1 ? '' : 's'} ({covered.map((x) => formatDate(x.startsAt, { day: 'numeric', month: 'short' })).join(', ')}). A replacement coach will be allocated, with a detailed handover so progress continues.
               </p>
             )}
-            <p className="mt-6 text-sm text-muted">
-              {confirmed ? 'We’ve emailed your confirmation, with a link to create your free account and see all your sessions in one place.' : 'Your payment is being confirmed — this page will update shortly. Refresh in a minute.'}
-            </p>
+            {!confirmed ? (
+              <p className="mt-6 text-sm text-muted">Your payment is being confirmed — this page will update shortly. Refresh in a minute.</p>
+            ) : account?.activated ? (
+              <div className="panel mt-6 border border-line p-5 text-sm">
+                <p>This booking is in your account, with all your sessions and payments.</p>
+                <Link href={viewer?.id === account.id ? '/account' : '/login?next=/account'} className="mt-3 inline-block font-semibold underline">
+                  {viewer?.id === account.id ? 'View my account →' : 'Log in to view →'}
+                </Link>
+              </div>
+            ) : (
+              <div className="panel mt-6 border border-line p-5 text-left text-sm">
+                <p className="font-semibold">We’ve emailed your confirmation and a link to create your free account.</p>
+                <ul className="mt-3 grid gap-1 text-muted sm:grid-cols-2">
+                  {accountBenefits.map((b) => <li key={b}>· {b}</li>)}
+                </ul>
+              </div>
+            )}
             <Link href="/academy/1-on-1" className="mt-8 inline-block bg-white px-6 py-3 text-sm font-semibold uppercase tracking-[0.15em] text-black">Book another session</Link>
           </>
         )}

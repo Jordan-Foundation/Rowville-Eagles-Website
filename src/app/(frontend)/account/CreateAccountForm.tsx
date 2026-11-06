@@ -38,7 +38,7 @@ export function CreateAccountForm(props: { invite: string; email: string; firstN
       </fieldset>
 
       {state.error && <p role="alert" className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-700">{state.error}</p>}
-      <button type="submit" disabled={pending} className="w-full rounded-full bg-brand px-6 py-3.5 font-semibold text-white hover:brightness-110 disabled:opacity-60">
+      <button type="submit" disabled={pending} className="w-full rounded-full bg-brand px-6 py-3.5 font-semibold text-white hover:brightness-110 disabled:opacity-60 [[data-brand=academy]_&]:rounded-none [[data-brand=academy]_&]:bg-white [[data-brand=academy]_&]:uppercase [[data-brand=academy]_&]:tracking-[0.18em] [[data-brand=academy]_&]:text-black">
         {pending ? 'Creating your account…' : 'Create account'}
       </button>
     </form>
