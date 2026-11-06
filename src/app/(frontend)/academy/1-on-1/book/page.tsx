@@ -7,6 +7,7 @@ import { findTermSlot, isCasualOpen } from '@/academy/slots'
 import { loadTermBookingData, openTerms, releaseAcademyHold, releaseExpiredHolds } from '@/academy/booking-data'
 import { toYmd } from '@/academy/term-dates'
 import { weeklyPlan } from '@/academy/weekly'
+import { creditBalance } from '@/academy/credits'
 import { BookForm } from './BookForm'
 
 export const dynamic = 'force-dynamic'
@@ -85,6 +86,7 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
                 slot={mode === 'term' ? { mode: 'term', weekday: termSlot!.weekday, time: termSlot!.time, sessions: sessions.length } : { mode: 'casual', start: q.start! }}
                 price={formatAUD(total)}
                 weekly={weekly}
+                credit={user ? { balance: await creditBalance(p, user.id), total } : undefined}
                 loginHref={`/login?next=${encodeURIComponent(`/academy/1-on-1/book?${new URLSearchParams(Object.entries(q).filter(([k, v]) => k !== 'cancelled' && v) as [string, string][]).toString()}`)}`}
                 me={user ? { firstName: user.firstName, lastName: user.lastName, email: user.email, phone: user.phone } : null}
                 players={players}

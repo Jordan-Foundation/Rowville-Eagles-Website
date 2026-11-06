@@ -53,7 +53,7 @@ export default async function StaffAcademyPage() {
             Reminders go out automatically every morning — 2 weeks, 1 week, 3 days and 1 day before each deadline — to coaches who haven’t submitted.
             Each coach gets each reminder once, and they stop as soon as the coach submits.
           </p>
-          <div className="mt-6"><RunButton /></div>
+          <div className="mt-6 flex flex-wrap items-center gap-4"><RunButton /><a href="/staff/academy/dashboard" className="text-sm underline">Dashboard</a><a href="/staff/academy/bookings" className="text-sm underline">Bookings & cancellations</a></div>
         </div>
 
         <section id="cover" className="scroll-mt-24">
@@ -111,7 +111,7 @@ export default async function StaffAcademyPage() {
                         <td className="pr-4">{b.sessionsPaid ?? 0} of {b.sessionsTotal}</td>
                         <td className="pr-4">{b.status === 'payment_failed' ? <span className="text-red-300">Overdue {formatAUD(owed)}</span> : 'On track'}</td>
                         <td className="pr-4">{b.nextChargeAt ? formatDate(b.nextChargeAt, { weekday: 'short', day: 'numeric', month: 'short' }) : '—'}</td>
-                        <td><a href={`/admin/collections/academy-bookings/${b.id}`} className="underline">Open →</a></td>
+                        <td><a href={`/staff/academy/bookings/${b.id}`} className="underline">Open →</a></td>
                       </tr>
                     )
                   })}

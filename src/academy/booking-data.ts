@@ -11,6 +11,7 @@ import { formatAUD, formatDate } from '../lib/format'
 import { academyBrand } from './brand'
 import { alertCoverNeeded } from './cover'
 import { syncPaidSessions } from './weekly-payments'
+import { settleReservedCredit } from './credits'
 
 /** Stripe Checkout links last at least 30 minutes, so a hold must never be shorter than that. */
 export const holdMinutesFor = (term: Pick<AcademyTerm, 'holdMinutes'>) => Math.max(30, term.holdMinutes ?? 30)
@@ -33,6 +34,7 @@ export async function releaseExpiredHolds(payload: Payload) {
 async function releaseBooking(payload: Payload, booking: AcademyBooking, status: 'expired' | 'cancelled') {
   await payload.update({ collection: 'academy-sessions', where: { booking: { equals: booking.id } }, data: { status: 'cancelled' }, overrideAccess: true })
   await payload.update({ collection: 'academy-bookings', id: booking.id, data: { status }, overrideAccess: true })
+  if (booking.creditApplied) await settleReservedCredit(payload, booking.id, 'void')
 }
 
 export async function openTerms(payload: Payload) {
@@ -144,6 +146,10 @@ export async function confirmAcademyBooking(payload: Payload, reference: string)
     },
     overrideAccess: true,
   })
+  // Credit reserved at checkout is now spent (and re-spent if a late payment brought an expired hold back)
+  if (booking.creditApplied) {
+    await payload.update({ collection: 'academy-credits', where: { booking: { equals: booking.id }, reason: { equals: 'used' }, status: { in: ['pending', 'void'] } }, data: { status: 'active' }, overrideAccess: true })
+  }
   // Weekly plan: today's payment covers the first session
   if (booking.paymentMode === 'weekly') await syncPaidSessions(payload, booking, 1)
   try {
@@ -235,7 +241,9 @@ async function afterConfirmed(payload: Payload, booking: AcademyBooking) {
               ],
               ['Term total', formatAUD(booking.amount)],
             ] as [string, string][])
-          : ([['Paid', formatAUD(booking.amount)]] as [string, string][])),
+          : booking.creditApplied
+            ? ([['Account credit used', formatAUD(booking.creditApplied)], ['Paid', booking.amount - booking.creditApplied <= 0 ? 'Nothing — covered by your credit' : formatAUD(booking.amount - booking.creditApplied)]] as [string, string][])
+            : ([['Paid', formatAUD(booking.amount)]] as [string, string][])),
         ['Reference', booking.reference],
       ],
       after: `${dateList}${coverNote}${dateList || coverNote ? '<br><br>' : ''}Please bring boots, shin pads, a ball and a water bottle, and arrive 5 minutes early. Need to change something? Reply to this email.`,

@@ -56,6 +56,19 @@ export const AcademySessions: CollectionConfig = {
     { name: 'paid', type: 'checkbox', defaultValue: false },
     {
       type: 'collapsible',
+      label: 'Cancellation / make-up',
+      admin: { condition: (d) => d?.status === 'cancelled' || Boolean(d?.makeUpFor) },
+      fields: [
+        { type: 'row', fields: [
+          { name: 'cancelledBy', type: 'select', options: ['family', 'coach', 'admin'], admin: { readOnly: true } },
+          { name: 'cancelledAt', type: 'date', admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } } },
+        ] },
+        { name: 'cancelReason', type: 'textarea', admin: { readOnly: true } },
+        { name: 'makeUpFor', label: 'Make-up for session', type: 'relationship', relationTo: 'academy-sessions', admin: { readOnly: true } },
+      ],
+    },
+    {
+      type: 'collapsible',
       label: 'Coach',
       fields: [
         { type: 'row', fields: [

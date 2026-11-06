@@ -104,6 +104,45 @@ export const AcademyBookings: CollectionConfig = {
         },
       ],
     },
+    {
+      type: 'collapsible',
+      label: 'Refunds, credit & cancellations',
+      admin: { initCollapsed: false, description: 'Cancel or refund from Staff → Academy → Bookings, which applies the policy and talks to Stripe.' },
+      fields: [
+        { type: 'row', fields: [
+          { name: 'creditApplied', label: 'Credit used at checkout', type: 'number', defaultValue: 0, admin: { readOnly: true } },
+          { name: 'refundedAmount', label: 'Refunded to card', type: 'number', defaultValue: 0, admin: { readOnly: true } },
+          { name: 'creditedAmount', label: 'Returned as credit', type: 'number', defaultValue: 0, admin: { readOnly: true } },
+        ] },
+        {
+          name: 'adjustments',
+          type: 'array',
+          admin: { readOnly: true },
+          fields: [
+            { type: 'row', fields: [
+              { name: 'key', type: 'text', required: true },
+              { name: 'action', type: 'select', required: true, options: ['cancel_booking', 'cancel_sessions', 'makeup', 'goodwill'] },
+              { name: 'by', type: 'select', options: ['family', 'coach', 'admin'] },
+              { name: 'outcome', type: 'select', options: ['refund', 'credit', 'makeup', 'none'] },
+            ] },
+            { type: 'row', fields: [
+              { name: 'sessions', label: 'Sessions', type: 'text' },
+              { name: 'cash', label: 'Refund (AUD)', type: 'number' },
+              { name: 'credit', label: 'Credit (AUD)', type: 'number' },
+              { name: 'refundStatus', type: 'select', options: ['none', 'pending', 'refunded', 'failed', 'simulated'] },
+            ] },
+            { name: 'rule', type: 'text' },
+            { name: 'reason', type: 'textarea' },
+            { name: 'stripeRefundIds', type: 'text' },
+            { name: 'error', type: 'text' },
+            { type: 'row', fields: [
+              { name: 'actor', type: 'relationship', relationTo: 'users' },
+              { name: 'at', type: 'date', admin: { date: { pickerAppearance: 'dayAndTime' } } },
+            ] },
+          ],
+        },
+      ],
+    },
     { name: 'stripeCheckoutId', type: 'text', admin: { readOnly: true } },
     { name: 'stripeScheduleId', label: 'Stripe subscription schedule (weekly plan)', type: 'text', admin: { readOnly: true } },
     { name: 'stripeSubscriptionId', type: 'text', index: true, admin: { readOnly: true } },

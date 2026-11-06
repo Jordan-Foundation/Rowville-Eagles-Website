@@ -14,13 +14,15 @@ type Props = {
   price: string
   /** Term only: the weekly plan on offer (null when there aren't enough sessions left) */
   weekly?: { perSession: string; total: string; laterPayments: number; firstCharge: string; lastCharge: string } | null
+  /** Logged-in family's account credit, and the price as a number so we can show what's left to pay */
+  credit?: { balance: number; total: number }
   /** Guests: log in and come straight back to this time */
   loginHref?: string
   me: { firstName?: string | null; lastName?: string | null; email: string; phone?: string | null } | null
   players: { id: number; name: string }[]
 }
 
-export function BookForm({ coach, slot, term, price, weekly, loginHref, me, players }: Props) {
+export function BookForm({ coach, slot, term, price, weekly, credit, loginHref, me, players }: Props) {
   const [state, action] = useActionState<BookState, FormData>(bookSession, {})
   const v = state.values ?? {}
   const [who, setWho] = useState(v.participant ?? (players[0] ? String(players[0].id) : 'new'))
@@ -145,12 +147,34 @@ export function BookForm({ coach, slot, term, price, weekly, loginHref, me, play
         )}
       </div>
 
+      {credit && credit.balance > 0 && (
+        <p className="panel border border-white/40 px-5 py-4 text-sm">
+          {payMode === 'weekly'
+            ? `You have ${aud(credit.balance)} account credit. It can’t be used with weekly payments — choose “Pay upfront” to use it.`
+            : credit.balance >= credit.total
+              ? `Your ${aud(credit.balance)} account credit covers this booking — nothing to pay.`
+              : `${aud(credit.balance)} account credit applied — you pay ${aud(credit.total - credit.balance)}.`}
+        </p>
+      )}
+
       {state.error && <p role="alert" className="border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300">{state.error}</p>}
-      <Submit price={slot.mode === 'term' && payMode === 'weekly' && weekly ? `${weekly.perSession} today` : price} />
+      <Submit
+        price={
+          slot.mode === 'term' && payMode === 'weekly' && weekly
+            ? `${weekly.perSession} today`
+            : credit && credit.balance > 0
+              ? credit.balance >= credit.total
+                ? 'covered by credit'
+                : aud(credit.total - credit.balance)
+              : price
+        }
+      />
       <p className="text-center text-xs text-muted">Your time is held for 30 minutes while you pay · Secure payment by Stripe to Foundation Sports Australia Pty Ltd</p>
     </form>
   )
 }
+
+const aud = (n: number) => new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', minimumFractionDigits: n % 1 ? 2 : 0 }).format(n)
 
 function PayOption({ title, detail, ...input }: { name: string; value: string; checked: boolean; onChange: () => void; title: string; detail: string }) {
   return (
@@ -168,7 +192,7 @@ function Submit({ price }: { price: string }) {
   const { pending } = useFormStatus()
   return (
     <button type="submit" disabled={pending} className="w-full bg-white px-6 py-4 text-sm font-semibold uppercase tracking-[0.18em] text-black hover:bg-white/85 disabled:opacity-60">
-      {pending ? 'Holding your time…' : `Continue to payment · ${price}`}
+      {pending ? 'Holding your time…' : price === 'covered by credit' ? 'Confirm booking · covered by credit' : `Continue to payment · ${price}`}
     </button>
   )
 }

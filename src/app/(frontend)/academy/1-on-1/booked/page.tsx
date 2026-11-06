@@ -75,7 +75,10 @@ export default async function BookedPage({ searchParams }: { searchParams: Promi
                   </div>
                 </>
               ) : (
-                <div className="flex justify-between gap-4"><dt className="text-muted">Paid</dt><dd className="font-medium">{formatAUD(booking.amount)}</dd></div>
+                <>
+                  {(booking.creditApplied ?? 0) > 0 && <div className="flex justify-between gap-4"><dt className="text-muted">Account credit used</dt><dd className="font-medium">{formatAUD(booking.creditApplied!)}</dd></div>}
+                  <div className="flex justify-between gap-4"><dt className="text-muted">Paid</dt><dd className="font-medium">{booking.amount - (booking.creditApplied ?? 0) <= 0 ? 'Nothing — covered by your credit' : formatAUD(booking.amount - (booking.creditApplied ?? 0))}</dd></div>
+                </>
               )}
             </dl>
             {covered.length > 0 && (

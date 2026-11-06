@@ -6,6 +6,7 @@ import { currentUser } from '@/lib/auth'
 import type { AcademyBooking, AcademyCoach, Program, Team } from '@/payload-types'
 import { LogoutButton } from './LogoutButton'
 import { sessionPayment } from '@/academy/session-view'
+import { creditBalance } from '@/academy/credits'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'My account', robots: { index: false } }
@@ -26,6 +27,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
     p.find({ collection: 'academy-bookings', where: { account: { equals: user.id }, paymentMode: { equals: 'weekly' }, status: { equals: 'payment_failed' } }, depth: 1, limit: 20, overrideAccess: true }),
   ])
 
+  const credit = await creditBalance(p, user.id)
   const pendingOffers = participants.docs.filter((x) => x.registrationOffer?.status === 'offered' && x.registrationOffer.program)
   const now = Date.now()
   type Item = { key: string; date: string | null; title: string; detail: string; badge: 'RFA' | 'Club'; status?: string }
@@ -154,6 +156,12 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
               {participants.docs.length === 0 && <li className="text-sm text-muted">Players appear here after your first booking or offer.</li>}
             </ul>
           </div>
+          {credit > 0 && (
+            <Link href="/academy/1-on-1" className="block rounded-2xl border-2 border-accent p-6 hover:brightness-105">
+              <p className="font-semibold">{formatAUD(credit)} account credit</p>
+              <p className="mt-1 text-sm text-muted">Used automatically next time you book a 1-on-1 →</p>
+            </Link>
+          )}
           <Link href="/shop" className="block rounded-2xl border border-line p-6 font-semibold hover:border-brand">Shop team kit →</Link>
           <Link href="/account/preferences" className="block rounded-2xl border border-line p-6 font-semibold hover:border-brand">Communication preferences →</Link>
           {(user.roles?.includes('admin') || user.roles?.includes('committee')) && (
@@ -161,6 +169,8 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
               <p className="font-semibold">Staff tools</p>
               <ul className="mt-2 space-y-1 text-sm">
                 <li><Link href="/admin" className="text-brand underline">Admin</Link></li>
+                <li><Link href="/staff/academy/dashboard" className="text-brand underline">Academy dashboard</Link></li>
+                <li><Link href="/staff/academy/bookings" className="text-brand underline">1-on-1 bookings & cancellations</Link></li>
                 <li><Link href="/staff/academy" className="text-brand underline">Academy coach availability</Link></li>
                 <li><Link href="/staff/consent" className="text-brand underline">Consent review</Link></li>
               </ul>

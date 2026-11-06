@@ -73,6 +73,7 @@ export interface Config {
     'academy-coaches': AcademyCoach;
     'academy-availability': AcademyAvailability;
     'academy-reminder-log': AcademyReminderLog;
+    'academy-credits': AcademyCredit;
     posts: Post;
     'trial-registrations': TrialRegistration;
     'trial-sessions': TrialSession;
@@ -101,6 +102,7 @@ export interface Config {
     'academy-coaches': AcademyCoachesSelect<false> | AcademyCoachesSelect<true>;
     'academy-availability': AcademyAvailabilitySelect<false> | AcademyAvailabilitySelect<true>;
     'academy-reminder-log': AcademyReminderLogSelect<false> | AcademyReminderLogSelect<true>;
+    'academy-credits': AcademyCreditsSelect<false> | AcademyCreditsSelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
     'trial-registrations': TrialRegistrationsSelect<false> | TrialRegistrationsSelect<true>;
     'trial-sessions': TrialSessionsSelect<false> | TrialSessionsSelect<true>;
@@ -217,6 +219,28 @@ export interface AcademyBooking {
         amount?: number | null;
         at?: string | null;
         payUrl?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  creditApplied?: number | null;
+  refundedAmount?: number | null;
+  creditedAmount?: number | null;
+  adjustments?:
+    | {
+        key: string;
+        action: 'cancel_booking' | 'cancel_sessions' | 'makeup' | 'goodwill';
+        by?: ('family' | 'coach' | 'admin') | null;
+        outcome?: ('refund' | 'credit' | 'makeup' | 'none') | null;
+        sessions?: string | null;
+        cash?: number | null;
+        credit?: number | null;
+        refundStatus?: ('none' | 'pending' | 'refunded' | 'failed' | 'simulated') | null;
+        rule?: string | null;
+        reason?: string | null;
+        stripeRefundIds?: string | null;
+        error?: string | null;
+        actor?: (number | null) | User;
+        at?: string | null;
         id?: string | null;
       }[]
     | null;
@@ -598,6 +622,10 @@ export interface AcademySession {
   coverCoach?: (number | null) | AcademyCoach;
   coverNote?: string | null;
   paid?: boolean | null;
+  cancelledBy?: ('family' | 'coach' | 'admin') | null;
+  cancelledAt?: string | null;
+  cancelReason?: string | null;
+  makeUpFor?: (number | null) | AcademySession;
   attendanceBy?: (number | null) | User;
   attendanceAt?: string | null;
   /**
@@ -662,6 +690,30 @@ export interface AcademyReminderLog {
   term: number | AcademyTerm;
   kind: '14d' | '7d' | '3d' | '1d';
   to?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Credit given for cancellations (and used at checkout). Give goodwill credit from a booking’s page in Staff → Academy.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "academy-credits".
+ */
+export interface AcademyCredit {
+  id: number;
+  account: number | User;
+  /**
+   * AUD. Positive = given, negative = used.
+   */
+  amount: number;
+  status: 'active' | 'pending' | 'void';
+  reason: 'cancellation' | 'coach_cancellation' | 'goodwill' | 'used' | 'adjustment';
+  /**
+   * Booking it came from, or was used on
+   */
+  booking?: (number | null) | AcademyBooking;
+  note?: string | null;
+  createdBy?: (number | null) | User;
   updatedAt: string;
   createdAt: string;
 }
@@ -1065,6 +1117,10 @@ export interface PayloadLockedDocument {
         value: number | AcademyReminderLog;
       } | null)
     | ({
+        relationTo: 'academy-credits';
+        value: number | AcademyCredit;
+      } | null)
+    | ({
         relationTo: 'posts';
         value: number | Post;
       } | null)
@@ -1222,6 +1278,28 @@ export interface AcademyBookingsSelect<T extends boolean = true> {
         payUrl?: T;
         id?: T;
       };
+  creditApplied?: T;
+  refundedAmount?: T;
+  creditedAmount?: T;
+  adjustments?:
+    | T
+    | {
+        key?: T;
+        action?: T;
+        by?: T;
+        outcome?: T;
+        sessions?: T;
+        cash?: T;
+        credit?: T;
+        refundStatus?: T;
+        rule?: T;
+        reason?: T;
+        stripeRefundIds?: T;
+        error?: T;
+        actor?: T;
+        at?: T;
+        id?: T;
+      };
   stripeCheckoutId?: T;
   stripeScheduleId?: T;
   stripeSubscriptionId?: T;
@@ -1244,6 +1322,10 @@ export interface AcademySessionsSelect<T extends boolean = true> {
   coverCoach?: T;
   coverNote?: T;
   paid?: T;
+  cancelledBy?: T;
+  cancelledAt?: T;
+  cancelReason?: T;
+  makeUpFor?: T;
   attendanceBy?: T;
   attendanceAt?: T;
   coachNotes?: T;
@@ -1351,6 +1433,21 @@ export interface AcademyReminderLogSelect<T extends boolean = true> {
   term?: T;
   kind?: T;
   to?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "academy-credits_select".
+ */
+export interface AcademyCreditsSelect<T extends boolean = true> {
+  account?: T;
+  amount?: T;
+  status?: T;
+  reason?: T;
+  booking?: T;
+  note?: T;
+  createdBy?: T;
   updatedAt?: T;
   createdAt?: T;
 }
