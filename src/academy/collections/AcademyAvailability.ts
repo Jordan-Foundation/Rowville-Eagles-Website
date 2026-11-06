@@ -27,6 +27,19 @@ export const AcademyAvailability: CollectionConfig = {
         ] },
       ],
     },
+    {
+      name: 'awayPeriods',
+      label: 'Away (unavailable) periods',
+      type: 'array',
+      admin: { description: 'Dates the coach is away during the term. Booked sessions on these dates are flagged as needing cover.' },
+      fields: [
+        { type: 'row', fields: [
+          { name: 'from', type: 'date', required: true, admin: { date: { pickerAppearance: 'dayOnly', displayFormat: 'd MMM yyyy' } } },
+          { name: 'to', type: 'date', required: true, admin: { date: { pickerAppearance: 'dayOnly', displayFormat: 'd MMM yyyy' } } },
+          { name: 'note', type: 'text' },
+        ] },
+      ],
+    },
     { name: 'submittedAt', type: 'date', admin: { readOnly: true, description: 'When the coach first submitted. Reminders stop once this is set.' } },
     {
       name: 'changes',

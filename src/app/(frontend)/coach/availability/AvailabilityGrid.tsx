@@ -3,14 +3,14 @@
 import { useActionState, useMemo, useState } from 'react'
 import { saveAvailability, type AvailabilityState } from './actions'
 
-type Props = { termId: number; weekdays: readonly string[]; times: string[]; initial: string[]; submitted: boolean; locked: boolean }
+type Props = { termId: number; weekdays: readonly string[]; times: string[]; allowed: Record<string, string[]>; initial: string[]; submitted: boolean; locked: boolean }
 
 const label12 = (t: string) => {
   const [h, m] = t.split(':').map(Number)
   return `${((h + 11) % 12) + 1}${m ? `:${String(m).padStart(2, '0')}` : ''}${h < 12 ? 'am' : 'pm'}`
 }
 
-export function AvailabilityGrid({ termId, weekdays, times, initial, submitted, locked }: Props) {
+export function AvailabilityGrid({ termId, weekdays, times, allowed, initial, submitted, locked }: Props) {
   const [picked, setPicked] = useState<Set<string>>(() => new Set(initial))
   const [state, action, pending] = useActionState<AvailabilityState, FormData>(saveAvailability, {})
   const dirty = useMemo(() => picked.size !== initial.length || [...picked].some((k) => !initial.includes(k)), [picked, initial])
@@ -23,7 +23,7 @@ export function AvailabilityGrid({ termId, weekdays, times, initial, submitted, 
     })
   const toggleDay = (day: string) =>
     setPicked((prev) => {
-      const keys = times.map((t) => `${day} ${t}`)
+      const keys = (allowed[day] ?? []).map((t) => `${day} ${t}`)
       const allOn = keys.every((k) => prev.has(k))
       const next = new Set(prev)
       keys.forEach((k) => (allOn ? next.delete(k) : next.add(k)))
@@ -57,6 +57,7 @@ export function AvailabilityGrid({ termId, weekdays, times, initial, submitted, 
                 {weekdays.map((d) => {
                   const k = `${d} ${t}`
                   const on = picked.has(k)
+                  if (!allowed[d]?.includes(t)) return <td key={k} aria-hidden className="h-11" />
                   return (
                     <td key={k}>
                       <button

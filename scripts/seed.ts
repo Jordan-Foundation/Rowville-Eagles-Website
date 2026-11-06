@@ -141,16 +141,16 @@ for (const t of [
   await payload.create({ collection: 'trial-sessions', data: { ...t, ageGroups: [...t.ageGroups] } })
 }
 
-// Foundation Academy: Term 1 2027 collecting coach availability (Melbourne/Sydney midnight 1 Feb = 31 Jan 13:00 UTC)
+// Foundation Academy: Term 1 2027 collecting coach availability (Sydney midnight 1 Feb = 31 Jan 13:00 UTC)
 const term = await payload.create({
   collection: 'academy-terms',
   data: {
     name: 'Term 1 2027',
     status: 'availability',
+    // Sample school term: Mon 1 Feb – Thu 1 Apr 2027 (replace with the real Victorian term dates)
     startDate: '2027-01-31T13:00:00.000Z',
-    sessions: 10,
+    endDate: '2027-03-31T13:00:00.000Z',
     availabilityDeadline: '2027-01-15T07:00:00.000Z',
-    skipDates: [{ date: '2027-03-07T13:00:00.000Z', reason: 'Labour Day' }],
     pricePerSession: 80,
     casualPrice: 85,
     sessionMinutes: 60,

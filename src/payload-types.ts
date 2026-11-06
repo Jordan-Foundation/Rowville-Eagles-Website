@@ -167,26 +167,15 @@ export interface AcademyTerm {
   name: string;
   status: 'draft' | 'availability' | 'open' | 'closed';
   /**
-   * First day of the term
+   * First day of the school term
    */
   startDate: string;
-  sessions: number;
   /**
-   * Worked out automatically
+   * Last day of the school term
    */
-  endDate?: string | null;
+  endDate: string;
   /**
-   * No sessions on these days. That weekday runs one week later so it still gets the full number of sessions.
-   */
-  skipDates?:
-    | {
-        date: string;
-        reason?: string | null;
-        id?: string | null;
-      }[]
-    | null;
-  /**
-   * Session dates for each weekday (save to refresh)
+   * Number of sessions and dates for each weekday — this sets the term price per weekday (save to refresh)
    */
   schedulePreview?: string | null;
   /**
@@ -197,9 +186,18 @@ export interface AcademyTerm {
   casualPrice: number;
   sessionMinutes: number;
   /**
-   * Fixed start times coaches can choose from (24-hour, e.g. 17:00).
+   * 24-hour, e.g. 17:00. Default 3pm–9pm.
    */
   slotStartTimes?:
+    | {
+        time: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * 24-hour. Default 8am–5pm (last session starts 4pm).
+   */
+  weekendStartTimes?:
     | {
         time: string;
         id?: string | null;
@@ -324,6 +322,17 @@ export interface AcademyAvailability {
     | {
         weekday: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
         startTime: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Dates the coach is away during the term. Booked sessions on these dates are flagged as needing cover.
+   */
+  awayPeriods?:
+    | {
+        from: string;
+        to: string;
+        note?: string | null;
         id?: string | null;
       }[]
     | null;
@@ -1018,21 +1027,19 @@ export interface AcademyTermsSelect<T extends boolean = true> {
   name?: T;
   status?: T;
   startDate?: T;
-  sessions?: T;
   endDate?: T;
-  skipDates?:
-    | T
-    | {
-        date?: T;
-        reason?: T;
-        id?: T;
-      };
   schedulePreview?: T;
   availabilityDeadline?: T;
   pricePerSession?: T;
   casualPrice?: T;
   sessionMinutes?: T;
   slotStartTimes?:
+    | T
+    | {
+        time?: T;
+        id?: T;
+      };
+  weekendStartTimes?:
     | T
     | {
         time?: T;
@@ -1080,6 +1087,14 @@ export interface AcademyAvailabilitySelect<T extends boolean = true> {
     | {
         weekday?: T;
         startTime?: T;
+        id?: T;
+      };
+  awayPeriods?:
+    | T
+    | {
+        from?: T;
+        to?: T;
+        note?: T;
         id?: T;
       };
   submittedAt?: T;

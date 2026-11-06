@@ -1,13 +1,14 @@
 import type { CollectionConfig } from 'payload'
 import { APIError } from 'payload'
 import { anyone, isStaff } from '../../access'
-import { DEFAULT_SLOT_TIMES, TIME_RE } from '../constants'
-import { scheduleSummary, termEndDate } from '../term-dates'
+import { DEFAULT_WEEKDAY_TIMES, DEFAULT_WEEKEND_TIMES, TIME_RE } from '../constants'
+import { scheduleSummary, toYmd } from '../term-dates'
 import { localToUtc } from '../../lib/time'
 
 /**
  * Foundation Academy terms — shared by 1-on-1 coaching and Academy group programs.
- * Always 10 sessions per weekday; skipped dates (breaks / public holidays) push the term later.
+ * Terms follow the school term dates, so the number of sessions varies by weekday (e.g. 9, 10 or 11)
+ * and the term price is always price-per-session × sessions remaining.
  */
 export const AcademyTerms: CollectionConfig = {
   slug: 'academy-terms',
@@ -20,12 +21,15 @@ export const AcademyTerms: CollectionConfig = {
       ({ data, originalDoc }) => {
         if (!data) return data
         const merged = { ...originalDoc, ...data }
-        for (const t of merged.slotStartTimes ?? []) {
+        for (const t of [...(merged.slotStartTimes ?? []), ...(merged.weekendStartTimes ?? [])]) {
           if (!TIME_RE.test(t?.time ?? '')) throw new APIError(`Start time "${t?.time}" must be 24-hour HH:MM, e.g. 17:00.`, 400, undefined, true)
         }
-        if (merged.startDate && merged.sessions) {
-          const end = termEndDate({ startDate: merged.startDate, sessions: merged.sessions, skipDates: (merged.skipDates ?? []).map((s: { date: string }) => s.date) })
-          // Store the end as the evening of the last session day so "ends after now" queries work all day
+        if (merged.startDate && merged.endDate) {
+          const start = toYmd(merged.startDate)
+          const end = toYmd(merged.endDate)
+          if (end < start) throw new APIError('The end date must be on or after the start date.', 400, undefined, true)
+          // Store the start/end as the very start/end of those days (Sydney time) so the last day counts in full
+          data.startDate = localToUtc(start, '00:00').toISOString()
           data.endDate = localToUtc(end, '23:59').toISOString()
         }
         return data
@@ -50,35 +54,17 @@ export const AcademyTerms: CollectionConfig = {
     {
       type: 'row',
       fields: [
-        { name: 'startDate', type: 'date', required: true, admin: { date: { pickerAppearance: 'dayOnly', displayFormat: 'd MMM yyyy' }, description: 'First day of the term' } },
-        { name: 'sessions', label: 'Sessions per weekday', type: 'number', required: true, defaultValue: 10, min: 1, max: 20 },
-        { name: 'endDate', type: 'date', admin: { readOnly: true, date: { pickerAppearance: 'dayOnly', displayFormat: 'd MMM yyyy' }, description: 'Worked out automatically' } },
-      ],
-    },
-    {
-      name: 'skipDates',
-      label: 'Skipped dates (breaks / public holidays)',
-      type: 'array',
-      admin: { description: 'No sessions on these days. That weekday runs one week later so it still gets the full number of sessions.' },
-      fields: [
-        { type: 'row', fields: [
-          { name: 'date', type: 'date', required: true, admin: { date: { pickerAppearance: 'dayOnly', displayFormat: 'd MMM yyyy' } } },
-          { name: 'reason', type: 'text' },
-        ] },
+        { name: 'startDate', type: 'date', required: true, admin: { date: { pickerAppearance: 'dayOnly', displayFormat: 'd MMM yyyy' }, description: 'First day of the school term' } },
+        { name: 'endDate', type: 'date', required: true, admin: { date: { pickerAppearance: 'dayOnly', displayFormat: 'd MMM yyyy' }, description: 'Last day of the school term' } },
       ],
     },
     {
       name: 'schedulePreview',
       type: 'textarea',
       virtual: true,
-      admin: { readOnly: true, description: 'Session dates for each weekday (save to refresh)' },
+      admin: { readOnly: true, description: 'Number of sessions and dates for each weekday — this sets the term price per weekday (save to refresh)' },
       hooks: {
-        afterRead: [
-          ({ siblingData }) =>
-            siblingData?.startDate && siblingData?.sessions
-              ? scheduleSummary({ startDate: siblingData.startDate, sessions: siblingData.sessions, skipDates: (siblingData.skipDates ?? []).map((s: { date: string }) => s.date) })
-              : '',
-        ],
+        afterRead: [({ siblingData }) => (siblingData?.startDate && siblingData?.endDate ? scheduleSummary({ startDate: siblingData.startDate, endDate: siblingData.endDate }) : '')],
       },
     },
     {
@@ -96,14 +82,24 @@ export const AcademyTerms: CollectionConfig = {
           { name: 'casualPrice', label: 'Casual session price (AUD)', type: 'number', required: true, defaultValue: 85, min: 0 },
           { name: 'sessionMinutes', type: 'number', required: true, defaultValue: 60, min: 15 },
         ] },
-        {
-          name: 'slotStartTimes',
-          label: 'Session start times',
-          type: 'array',
-          defaultValue: DEFAULT_SLOT_TIMES.map((time) => ({ time })),
-          admin: { description: 'Fixed start times coaches can choose from (24-hour, e.g. 17:00).' },
-          fields: [{ name: 'time', type: 'text', required: true }],
-        },
+        { type: 'row', fields: [
+          {
+            name: 'slotStartTimes',
+            label: 'Weekday start times (Mon–Fri)',
+            type: 'array',
+            defaultValue: DEFAULT_WEEKDAY_TIMES.map((time) => ({ time })),
+            admin: { description: '24-hour, e.g. 17:00. Default 3pm–9pm.', width: '50%' },
+            fields: [{ name: 'time', type: 'text', required: true }],
+          },
+          {
+            name: 'weekendStartTimes',
+            label: 'Weekend start times (Sat & Sun)',
+            type: 'array',
+            defaultValue: DEFAULT_WEEKEND_TIMES.map((time) => ({ time })),
+            admin: { description: '24-hour. Default 8am–5pm (last session starts 4pm).', width: '50%' },
+            fields: [{ name: 'time', type: 'text', required: true }],
+          },
+        ] },
         { type: 'row', fields: [
           { name: 'bookingCutoffHours', label: 'Booking cut-off (hours before a session)', type: 'number', defaultValue: 24, min: 0 },
           { name: 'minTermSessions', label: 'Minimum sessions left to book a term', type: 'number', defaultValue: 2, min: 1 },

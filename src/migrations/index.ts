@@ -6,6 +6,8 @@ import * as migration_20261105_110000_sponsor_logo_backfill from './20261105_110
 import * as migration_20261105_122821_admin_created_records from './20261105_122821_admin_created_records';
 import * as migration_20261106_110441_consent_invites_message_log from './20261106_110441_consent_invites_message_log';
 import * as migration_20261106_115745_academy_terms_coaches_availability from './20261106_115745_academy_terms_coaches_availability';
+import * as migration_20261106_121446_remove_term_sessions_skip_dates from './20261106_121446_remove_term_sessions_skip_dates';
+import * as migration_20261106_121459_weekend_times_away_periods from './20261106_121459_weekend_times_away_periods';
 
 export const migrations = [
   {
@@ -46,6 +48,16 @@ export const migrations = [
   {
     up: migration_20261106_115745_academy_terms_coaches_availability.up,
     down: migration_20261106_115745_academy_terms_coaches_availability.down,
-    name: '20261106_115745_academy_terms_coaches_availability'
+    name: '20261106_115745_academy_terms_coaches_availability',
+  },
+  {
+    up: migration_20261106_121446_remove_term_sessions_skip_dates.up,
+    down: migration_20261106_121446_remove_term_sessions_skip_dates.down,
+    name: '20261106_121446_remove_term_sessions_skip_dates',
+  },
+  {
+    up: migration_20261106_121459_weekend_times_away_periods.up,
+    down: migration_20261106_121459_weekend_times_away_periods.down,
+    name: '20261106_121459_weekend_times_away_periods'
   },
 ];
