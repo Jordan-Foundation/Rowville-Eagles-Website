@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { payload, formatAUD, formatDate } from '@/lib/payload'
-import { casualSlots } from '@/academy/slots'
+import { casualSlots, termSlots } from '@/academy/slots'
 import { loadTermBookingData, openTerms, releaseExpiredHolds } from '@/academy/booking-data'
 import { AcademyBackdrop } from '@/components/AcademyBackdrop'
 import { RfaLogo } from '@/components/Logos'
@@ -12,13 +12,16 @@ export const metadata: Metadata = {
   description: 'Book a 1-on-1 session with a Foundation Academy coach — choose a time, meet the coaches free then, and book online.',
 }
 
-export default async function OneOnOnePage() {
+export default async function OneOnOnePage({ searchParams }: { searchParams: Promise<{ mode?: string }> }) {
+  const mode = (await searchParams).mode === 'term' ? 'term' : 'casual'
   const p = await payload()
   await releaseExpiredHolds(p)
   const terms = await openTerms(p)
   const term = terms[0]
   const data = term ? await loadTermBookingData(p, term) : null
-  const slots = term && data ? casualSlots({ term, coaches: data.availability, taken: data.taken, now: new Date(), cutoffHours: term.bookingCutoffHours ?? 24 }) : []
+  const engine = term && data ? { term, coaches: data.availability, taken: data.taken, now: new Date(), cutoffHours: term.bookingCutoffHours ?? 24 } : null
+  const slots = engine ? casualSlots(engine) : []
+  const weekly = engine ? termSlots({ ...engine, minSessions: term!.minTermSessions ?? 2 }) : []
 
   return (
     <div data-brand="academy" data-page-brand="academy">
@@ -32,9 +35,13 @@ export default async function OneOnOnePage() {
             Pick a time, meet the coaches free then, and choose the one that suits your player. {term ? `${term.sessionMinutes}-minute sessions.` : ''}
           </p>
           {term && (
-            <div className="mt-8 flex flex-wrap gap-3 text-sm">
-              <span className="border border-white/30 px-4 py-2">Casual session · <strong>{formatAUD(term.casualPrice)}</strong></span>
-              <span className="border border-line px-4 py-2 text-muted">Whole-term bookings ({formatAUD(term.pricePerSession)}/session) — opening soon</span>
+            <div className="mt-8 flex flex-wrap gap-3 text-sm" role="tablist" aria-label="Booking type">
+              <a href="/academy/1-on-1" role="tab" aria-selected={mode === 'casual'} className={`px-4 py-2 ${mode === 'casual' ? 'bg-white text-black' : 'border border-line text-muted hover:text-ink'}`}>
+                Casual session · <strong>{formatAUD(term.casualPrice)}</strong>
+              </a>
+              <a href="/academy/1-on-1?mode=term" role="tab" aria-selected={mode === 'term'} className={`px-4 py-2 ${mode === 'term' ? 'bg-white text-black' : 'border border-line text-muted hover:text-ink'}`}>
+                Whole term · <strong>{formatAUD(term.pricePerSession)}</strong>/session
+              </a>
             </div>
           )}
         </div>
@@ -42,14 +49,27 @@ export default async function OneOnOnePage() {
       <div className="container-x py-12">
         {!term || !data ? (
           <p className="panel border border-line p-6 text-muted">1-on-1 bookings for the next term open soon.</p>
-        ) : slots.length === 0 ? (
-          <p className="panel border border-line p-6 text-muted">All {term.name} sessions are booked out for now — please check back soon.</p>
+        ) : (mode === 'term' ? weekly : slots).length === 0 ? (
+          <p className="panel border border-line p-6 text-muted">
+            {mode === 'term' ? `No weekly times are free for the rest of ${term.name} — try a casual session instead.` : `All ${term.name} sessions are booked out for now — please check back soon.`}
+          </p>
         ) : (
           <>
             <p className="mb-6 text-sm text-muted">
-              {term.name}: {formatDate(term.startDate)} – {formatDate(term.endDate)} · bookings close {term.bookingCutoffHours ?? 24} hours before each session · all times Sydney/Melbourne time
+              {term.name}: {formatDate(term.startDate)} – {formatDate(term.endDate)} ·{' '}
+              {mode === 'term'
+                ? `the same coach, day and time every week for the rest of term — ${formatAUD(term.pricePerSession)} × sessions left`
+                : `bookings close ${term.bookingCutoffHours ?? 24} hours before each session`}{' '}
+              · all times Sydney/Melbourne time
             </p>
-            <SlotBrowser slots={slots} coaches={data.coaches} price={formatAUD(term.casualPrice)} />
+            <SlotBrowser
+              mode={mode}
+              slots={slots}
+              weekly={weekly}
+              coaches={data.coaches}
+              casualPrice={term.casualPrice}
+              pricePerSession={term.pricePerSession}
+            />
           </>
         )}
       </div>

@@ -9,6 +9,7 @@ import { emailLayout, esc } from '../lib/email-templates'
 import { sendEmail } from '../lib/email'
 import { formatAUD, formatDate } from '../lib/format'
 import { academyBrand } from './brand'
+import { alertCoverNeeded } from './cover'
 
 /** Stripe Checkout links last at least 30 minutes, so a hold must never be shorter than that. */
 export const holdMinutesFor = (term: Pick<AcademyTerm, 'holdMinutes'>) => Math.max(30, term.holdMinutes ?? 30)
@@ -72,14 +73,17 @@ export async function loadTermBookingData(payload: Payload, term: AcademyTerm) {
   return { availability, taken: live.map((s) => ({ coachId: id(s.coach)!, startsAt: s.startsAt })), coaches: cards }
 }
 
-type HoldInput = Omit<AcademyBooking, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'holdExpiresAt'> & { sessionStarts: string[]; holdMinutes: number }
+type HoldInput = Omit<AcademyBooking, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'holdExpiresAt'> & {
+  sessions: { startsAt: string; needsCover?: boolean }[]
+  holdMinutes: number
+}
 
 /**
  * Atomically create a held booking and its session rows. If any session clashes with a live one,
  * the database's unique index rejects it and the whole thing is rolled back.
  */
 export async function createHold(payload: Payload, input: HoldInput): Promise<{ ok: true; booking: AcademyBooking } | { ok: false }> {
-  const { sessionStarts, holdMinutes, ...data } = input
+  const { sessions, holdMinutes, ...data } = input
   const req = await createLocalReq({}, payload)
   await initTransaction(req)
   try {
@@ -89,8 +93,13 @@ export async function createHold(payload: Payload, input: HoldInput): Promise<{ 
       req,
       data: { ...data, status: 'held', holdExpiresAt: new Date(Date.now() + (holdMinutes + 2) * 60000).toISOString() },
     })
-    for (const startsAt of sessionStarts) {
-      await payload.create({ collection: 'academy-sessions', overrideAccess: true, req, data: { booking: booking.id, coach: id(data.coach)!, startsAt, status: 'held', account: id(data.account) } })
+    for (const s of sessions) {
+      await payload.create({
+        collection: 'academy-sessions',
+        overrideAccess: true,
+        req,
+        data: { booking: booking.id, coach: id(data.coach)!, startsAt: s.startsAt, status: 'held', account: id(data.account), needsCover: Boolean(s.needsCover) },
+      })
     }
     await commitTransaction(req)
     return { ok: true, booking }
@@ -171,6 +180,15 @@ async function afterConfirmed(payload: Payload, booking: AcademyBooking) {
   const { docs: sessions } = await payload.find({ collection: 'academy-sessions', where: { booking: { equals: booking.id } }, sort: 'startsAt', limit: 60, depth: 0, overrideAccess: true })
   const when = (iso: string) => formatDate(iso, { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' })
   const link = await accountLink(payload, user)
+  const coverDates = sessions.filter((x) => x.needsCover).map((x) => formatDate(x.startsAt, { weekday: 'short', day: 'numeric', month: 'short' }))
+  const dateList =
+    sessions.length > 1
+      ? `<strong>Your ${sessions.length} sessions:</strong><br>${sessions.map((x) => esc(formatDate(x.startsAt, { weekday: 'short', day: 'numeric', month: 'short' })) + (x.needsCover ? ' — replacement coach' : '')).join('<br>')}`
+      : ''
+  const coverNote = coverDates.length
+    ? `<br><br><strong>${esc(coach.displayName)} will be away for ${coverDates.length} of these sessions (${esc(coverDates.join(', '))}).</strong> A suitable replacement coach will be allocated for those sessions, with a detailed handover from ${esc(coach.displayName)} to make sure progress continues while they’re away.`
+    : ''
+  if (coverDates.length) await alertCoverNeeded(payload, coach, sessions.filter((x) => x.needsCover), `is away for part of a new term booking (${booking.reference})`)
   const html = emailLayout('academy', [
     {
       heading: booking.type === 'casual' ? 'Your 1-on-1 is booked' : 'Your term of 1-on-1s is booked',
@@ -178,13 +196,18 @@ async function afterConfirmed(payload: Payload, booking: AcademyBooking) {
       rows: [
         ['Coach', coach.displayName],
         [booking.type === 'casual' ? 'When' : 'First session', when(sessions[0]?.startsAt ?? booking.firstSessionAt ?? '')],
-        ...(sessions.length > 1 ? ([['Sessions', `${sessions.length} weekly sessions`]] as [string, string][]) : []),
+        ...(sessions.length > 1
+          ? ([
+              ['Weekly', `${formatDate(sessions[0].startsAt, { weekday: 'long' })}s at ${formatDate(sessions[0].startsAt, { hour: 'numeric', minute: '2-digit' })}`],
+              ['Sessions', `${sessions.length} (${formatDate(sessions[0].startsAt, { day: 'numeric', month: 'short' })} – ${formatDate(sessions.at(-1)!.startsAt, { day: 'numeric', month: 'short' })})`],
+            ] as [string, string][])
+          : []),
         ['Where', term.location || academyBrand.address],
         ['Player', `${booking.player.firstName} ${booking.player.lastName}`],
         ['Paid', formatAUD(booking.amount)],
         ['Reference', booking.reference],
       ],
-      after: 'Please bring boots, shin pads, a ball and a water bottle, and arrive 5 minutes early. Need to change something? Reply to this email.',
+      after: `${dateList}${coverNote}${dateList || coverNote ? '<br><br>' : ''}Please bring boots, shin pads, a ball and a water bottle, and arrive 5 minutes early. Need to change something? Reply to this email.`,
     },
     {
       heading: user.activated ? 'See it in your account' : 'Create your free account',

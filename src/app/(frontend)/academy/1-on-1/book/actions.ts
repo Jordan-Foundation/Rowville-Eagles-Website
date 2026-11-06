@@ -6,32 +6,55 @@ import { currentUser } from '@/lib/auth'
 import { makeReference } from '@/lib/reference'
 import { startCheckout } from '@/lib/payments'
 import { paymentsMode } from '@/lib/stripe-accounts'
-import { isCasualOpen } from '@/academy/slots'
-import { createHold, holdMinutesFor, loadTermBookingData, releaseExpiredHolds } from '@/academy/booking-data'
+import { findTermSlot, isCasualOpen } from '@/academy/slots'
+import { createHold, holdMinutesFor, loadTermBookingData, releaseAcademyHold, releaseExpiredHolds } from '@/academy/booking-data'
+import { toYmd } from '@/academy/term-dates'
 import { formatDate } from '@/lib/format'
+import type { Weekday } from '@/academy/constants'
 
 export type BookState = { error?: string; values?: Record<string, string> }
 
 const MOBILE = /^(\+?61|0)4\d{8}$/
 
-export async function bookCasual(_prev: BookState, fd: FormData): Promise<BookState> {
+/** Casual one-off or whole-term booking. Price and session dates are always worked out here, on the server. */
+export async function bookSession(_prev: BookState, fd: FormData): Promise<BookState> {
   const values = Object.fromEntries([...fd.entries()].filter(([k]) => !k.startsWith('$')).map(([k, v]) => [k, String(v)]))
   const fail = (error: string): BookState => ({ error, values })
   const s = (k: string) => (values[k] ?? '').trim()
+  const mode = s('mode') === 'term' ? 'term' : 'casual'
 
   const p = await payload()
   const user = await currentUser()
   await releaseExpiredHolds(p)
 
-  // Slot — recheck on the server; never trust the page
   const coachId = Number(s('coach'))
-  const startsAt = s('start')
   const termId = Number(s('term'))
   const term = termId ? await p.findByID({ collection: 'academy-terms', id: termId, depth: 0, disableErrors: true }) : null
-  if (!term || term.status !== 'open' || !coachId || Number.isNaN(Date.parse(startsAt))) return fail('This session isn’t available any more.')
+  if (!term || term.status !== 'open' || !coachId) return fail('This booking isn’t available any more.')
   const data = await loadTermBookingData(p, term)
-  if (!isCasualOpen({ term, coaches: data.availability, taken: data.taken, now: new Date(), cutoffHours: term.bookingCutoffHours ?? 24, coachId, startsAt })) {
-    return fail('Sorry — that time has just been booked. Please choose another.')
+  const engine = { term, coaches: data.availability, taken: data.taken, now: new Date(), cutoffHours: term.bookingCutoffHours ?? 24 }
+
+  // Re-check the slot and work out the sessions + price
+  let sessions: { startsAt: string; needsCover?: boolean }[]
+  let amount: number
+  let weekday: Weekday | undefined
+  let startTime: string | undefined
+  if (mode === 'term') {
+    const slot = findTermSlot({ ...engine, minSessions: term.minTermSessions ?? 2, coachId, weekday: s('weekday'), time: s('time') })
+    if (!slot) return fail('Sorry — that weekly time has just been booked. Please choose another.')
+    const away = new Set(slot.awayDates[coachId] ?? [])
+    sessions = slot.sessions.map((startsAt) => ({ startsAt, needsCover: away.has(toYmd(startsAt)) }))
+    amount = term.pricePerSession * sessions.length
+    weekday = slot.weekday
+    startTime = slot.time
+    if (s('expectedSessions') && Number(s('expectedSessions')) !== sessions.length) {
+      return fail(`The number of sessions left has changed to ${sessions.length} (${formatPrice(amount)}). Please check the details and continue.`)
+    }
+  } else {
+    const startsAt = s('start')
+    if (Number.isNaN(Date.parse(startsAt)) || !isCasualOpen({ ...engine, coachId, startsAt })) return fail('Sorry — that time has just been booked. Please choose another.')
+    sessions = [{ startsAt: new Date(startsAt).toISOString() }]
+    amount = term.casualPrice
   }
 
   // Parent / guardian
@@ -66,14 +89,16 @@ export async function bookCasual(_prev: BookState, fd: FormData): Promise<BookSt
   const holdMinutes = holdMinutesFor(term)
   const hold = await createHold(p, {
     reference,
-    type: 'casual',
-    paymentMode: 'casual',
-    amount: term.casualPrice, // server price, never from the browser
-    sessionsTotal: 1,
+    type: mode,
+    paymentMode: mode === 'term' ? 'upfront' : 'casual',
+    amount,
+    sessionsTotal: sessions.length,
     sessionsPaid: 0,
     coach: coachId,
     term: term.id,
-    firstSessionAt: startsAt,
+    weekday,
+    startTime,
+    firstSessionAt: sessions[0].startsAt,
     contact,
     player: {
       ...player,
@@ -89,11 +114,14 @@ export async function bookCasual(_prev: BookState, fd: FormData): Promise<BookSt
     participant: participantId,
     marketingOptIn: !user && fd.get('marketingOptIn') === 'on',
     source: 'web',
-    sessionStarts: [new Date(startsAt).toISOString()],
+    sessions,
     holdMinutes,
   })
   if (!hold.ok) return fail('Sorry — someone booked that time a moment ago. Please choose another.')
 
+  const first = sessions[0].startsAt
+  const last = sessions.at(-1)!.startsAt
+  const back = mode === 'term' ? `mode=term&coach=${coachId}&weekday=${weekday}&time=${startTime}` : `coach=${coachId}&start=${encodeURIComponent(first)}`
   let url: string
   try {
     const checkout = await startCheckout({
@@ -101,8 +129,11 @@ export async function bookCasual(_prev: BookState, fd: FormData): Promise<BookSt
       kind: 'academy',
       reference,
       email: contact.email,
-      items: [{ name: `1-on-1 with ${coach.displayName}`, description: `${player.firstName} ${player.lastName} · ${formatDate(startsAt, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}`, unitAmount: term.casualPrice, quantity: 1 }],
-      cancelPath: `/academy/1-on-1/book?coach=${coachId}&start=${encodeURIComponent(startsAt)}&cancelled=${reference}`,
+      items:
+        mode === 'term'
+          ? [{ name: `Term of 1-on-1s with ${coach.displayName}`, description: `${player.firstName} ${player.lastName} · ${weekday}s ${formatDate(first, { hour: 'numeric', minute: '2-digit' })} · ${sessions.length} sessions, ${formatDate(first, { day: 'numeric', month: 'short' })} – ${formatDate(last, { day: 'numeric', month: 'short' })}`, unitAmount: term.pricePerSession, quantity: sessions.length }]
+          : [{ name: `1-on-1 with ${coach.displayName}`, description: `${player.firstName} ${player.lastName} · ${formatDate(first, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}`, unitAmount: term.casualPrice, quantity: 1 }],
+      cancelPath: `/academy/1-on-1/book?${back}&cancelled=${reference}`,
       successPath: '/academy/1-on-1/booked',
       expiresInMinutes: holdMinutes,
     })
@@ -110,9 +141,10 @@ export async function bookCasual(_prev: BookState, fd: FormData): Promise<BookSt
     url = checkout.url
   } catch (e) {
     p.logger.error(e)
-    const { releaseAcademyHold } = await import('@/academy/booking-data')
     await releaseAcademyHold(p, reference)
     return fail('We couldn’t start the payment. Please try again shortly.')
   }
   redirect(url)
 }
+
+const formatPrice = (n: number) => new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 }).format(n)

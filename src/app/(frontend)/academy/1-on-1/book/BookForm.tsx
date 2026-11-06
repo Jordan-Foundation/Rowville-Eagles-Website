@@ -4,19 +4,20 @@ import { useActionState, useState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { Field, Fieldset, Input, inputCls } from '@/components/forms/Field'
 import { CONSENT_WORDING } from '@/lib/consent-wording'
-import { bookCasual, type BookState } from './actions'
+import { bookSession, type BookState } from './actions'
 
 type Props = {
   coach: number
-  start: string
   term: number
+  /** casual: the session start; term: weekday + time + how many sessions the family was shown */
+  slot: { mode: 'casual'; start: string } | { mode: 'term'; weekday: string; time: string; sessions: number }
   price: string
   me: { firstName?: string | null; lastName?: string | null; email: string; phone?: string | null } | null
   players: { id: number; name: string }[]
 }
 
-export function BookForm({ coach, start, term, price, me, players }: Props) {
-  const [state, action] = useActionState<BookState, FormData>(bookCasual, {})
+export function BookForm({ coach, slot, term, price, me, players }: Props) {
+  const [state, action] = useActionState<BookState, FormData>(bookSession, {})
   const v = state.values ?? {}
   const [who, setWho] = useState(v.participant ?? (players[0] ? String(players[0].id) : 'new'))
   const newPlayer = !me || who === 'new'
@@ -24,8 +25,17 @@ export function BookForm({ coach, start, term, price, me, players }: Props) {
   return (
     <form action={action} className="space-y-6">
       <input type="hidden" name="coach" value={coach} />
-      <input type="hidden" name="start" value={start} />
       <input type="hidden" name="term" value={term} />
+      <input type="hidden" name="mode" value={slot.mode} />
+      {slot.mode === 'casual' ? (
+        <input type="hidden" name="start" value={slot.start} />
+      ) : (
+        <>
+          <input type="hidden" name="weekday" value={slot.weekday} />
+          <input type="hidden" name="time" value={slot.time} />
+          <input type="hidden" name="expectedSessions" value={slot.sessions} />
+        </>
+      )}
 
       {me ? (
         <div className="panel border border-line p-5 text-sm">
@@ -69,7 +79,7 @@ export function BookForm({ coach, start, term, price, me, players }: Props) {
         <Input label="Current club" name="currentClub" defaultValue={v.currentClub} />
         <Input label="Position" name="position" placeholder="e.g. Winger, Goalkeeper" defaultValue={v.position} />
         <div className="sm:col-span-2">
-          <Field label="Main goals for the session">
+          <Field label={slot.mode === 'term' ? 'Main goals for the term' : 'Main goals for the session'}>
             <textarea name="goals" rows={2} className={inputCls} defaultValue={v.goals} placeholder="e.g. Improve weak foot, confidence in 1v1s" />
           </Field>
         </div>
@@ -89,7 +99,12 @@ export function BookForm({ coach, start, term, price, me, players }: Props) {
       <div className="space-y-3 text-sm">
         <label className="flex items-start gap-3">
           <input type="checkbox" name="terms" required defaultChecked={v.terms === 'on'} className="mt-1" />
-          <span>I agree to the Foundation Academy terms, Code of Conduct and Child Safe policy. Casual sessions cancelled 24 hours or more before the start can be credited or refunded.</span>
+          <span>
+            I agree to the Foundation Academy terms, Code of Conduct and Child Safe policy.{' '}
+            {slot.mode === 'casual'
+              ? 'Casual sessions cancelled 24 hours or more before the start can be credited or refunded.'
+              : 'Term bookings can be cancelled any time; unplayed future sessions are credited or refunded, less one session.'}
+          </span>
         </label>
         {!me && (
           <label className="flex items-start gap-3">

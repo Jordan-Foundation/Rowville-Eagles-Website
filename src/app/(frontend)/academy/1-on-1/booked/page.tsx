@@ -31,6 +31,10 @@ export default async function BookedPage({ searchParams }: { searchParams: Promi
   }
   const confirmed = booking?.status === 'confirmed'
   const coach = booking?.coach as AcademyCoach | undefined
+  const sessions = booking
+    ? (await p.find({ collection: 'academy-sessions', where: { booking: { equals: booking.id } }, sort: 'startsAt', limit: 60, depth: 0, overrideAccess: true })).docs
+    : []
+  const covered = sessions.filter((x) => x.needsCover)
 
   return (
     <div data-brand="academy" data-page-brand="academy" className="relative overflow-hidden">
@@ -41,14 +45,26 @@ export default async function BookedPage({ searchParams }: { searchParams: Promi
         ) : (
           <>
             <div className="mx-auto grid h-14 w-14 place-items-center bg-white text-2xl text-black">✓</div>
-            <h1 className="mt-6 font-display text-4xl font-semibold uppercase">{confirmed ? 'You’re booked in' : 'Payment processing'}</h1>
+            <h1 className="mt-6 font-display text-4xl font-semibold uppercase">{confirmed ? (booking.type === 'term' ? 'Your term is booked' : 'You’re booked in') : 'Payment processing'}</h1>
             <p className="mt-2 text-sm text-muted">Reference <span className="font-mono text-ink">{booking.reference}</span></p>
             <dl className="panel mt-8 space-y-3 border border-line p-6 text-left text-sm">
               <div className="flex justify-between gap-4"><dt className="text-muted">Coach</dt><dd className="font-medium">{coach?.displayName}</dd></div>
-              <div className="flex justify-between gap-4"><dt className="text-muted">When</dt><dd className="text-right font-medium">{booking.firstSessionAt ? formatDate(booking.firstSessionAt, { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' }) : ''}</dd></div>
+              {booking.type === 'term' && sessions.length > 0 ? (
+                <>
+                  <div className="flex justify-between gap-4"><dt className="text-muted">Weekly</dt><dd className="text-right font-medium">{booking.weekday}s · {formatDate(sessions[0].startsAt, { hour: 'numeric', minute: '2-digit' })}</dd></div>
+                  <div className="flex justify-between gap-4"><dt className="text-muted">Sessions</dt><dd className="text-right font-medium">{sessions.length} · {formatDate(sessions[0].startsAt, { day: 'numeric', month: 'short' })} – {formatDate(sessions.at(-1)!.startsAt, { day: 'numeric', month: 'short' })}</dd></div>
+                </>
+              ) : (
+                <div className="flex justify-between gap-4"><dt className="text-muted">When</dt><dd className="text-right font-medium">{booking.firstSessionAt ? formatDate(booking.firstSessionAt, { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' }) : ''}</dd></div>
+              )}
               <div className="flex justify-between gap-4"><dt className="text-muted">Player</dt><dd className="font-medium">{booking.player.firstName}</dd></div>
               <div className="flex justify-between gap-4"><dt className="text-muted">Paid</dt><dd className="font-medium">{formatAUD(booking.amount)}</dd></div>
             </dl>
+            {covered.length > 0 && (
+              <p className="mt-4 border border-white/40 p-4 text-left text-sm">
+                {coach?.displayName} is away for {covered.length} session{covered.length === 1 ? '' : 's'} ({covered.map((x) => formatDate(x.startsAt, { day: 'numeric', month: 'short' })).join(', ')}). A replacement coach will be allocated, with a detailed handover so progress continues.
+              </p>
+            )}
             <p className="mt-6 text-sm text-muted">
               {confirmed ? 'We’ve emailed your confirmation, with a link to create your free account and see all your sessions in one place.' : 'Your payment is being confirmed — this page will update shortly. Refresh in a minute.'}
             </p>
