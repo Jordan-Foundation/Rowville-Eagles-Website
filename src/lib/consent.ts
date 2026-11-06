@@ -49,11 +49,11 @@ export async function recordConsent(
   await payload.update({ collection: 'users', id: user.id, data, overrideAccess: true, req: meta.req })
 }
 
-/** Sign-up (and guest → account): service is required; marketing is on unless they ticked the opt-out boxes. */
+/** Sign-up (and guest → account): service is required; marketing only if they ticked the opt-in box (express consent). */
 export async function recordSignupConsent(
   payload: Payload,
   user: Pick<User, 'id' | 'email' | 'phone'>,
-  choice: { optOutEmail: boolean; optOutSms: boolean },
+  choice: { marketingOptIn: boolean },
   meta: Meta = {},
 ) {
   await recordConsent(payload, user, { channel: 'service', action: 'granted', wording: CONSENT_WORDING.service, source: 'signup', basis: 'express' }, meta)
@@ -62,10 +62,10 @@ export async function recordSignupConsent(
     user,
     {
       channel: 'marketing_email',
-      action: choice.optOutEmail ? 'withdrawn' : 'granted',
-      wording: `${CONSENT_WORDING.marketingNotice} [${choice.optOutEmail ? 'ticked' : 'not ticked'}: "${CONSENT_WORDING.marketingEmailOptOut}"]`,
+      action: choice.marketingOptIn ? 'granted' : 'withdrawn',
+      wording: `${CONSENT_WORDING.marketingSignupOptIn} [${choice.marketingOptIn ? 'ticked' : 'not ticked'}]`,
       source: 'signup',
-      basis: choice.optOutEmail ? 'express' : 'inferred',
+      basis: 'express',
     },
     meta,
   )
@@ -74,10 +74,10 @@ export async function recordSignupConsent(
     user,
     {
       channel: 'marketing_sms',
-      action: choice.optOutSms ? 'withdrawn' : 'granted',
-      wording: `${CONSENT_WORDING.marketingNotice} [${choice.optOutSms ? 'ticked' : 'not ticked'}: "${CONSENT_WORDING.marketingSmsOptOut}"]`,
+      action: choice.marketingOptIn ? 'granted' : 'withdrawn',
+      wording: `${CONSENT_WORDING.marketingSignupOptIn} [${choice.marketingOptIn ? 'ticked' : 'not ticked'}]`,
       source: 'signup',
-      basis: choice.optOutSms ? 'express' : 'inferred',
+      basis: 'express',
     },
     meta,
   )

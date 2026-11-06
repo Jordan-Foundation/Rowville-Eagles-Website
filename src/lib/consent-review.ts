@@ -29,7 +29,7 @@ export async function sendConsentReviewBatch(payload: Payload, limit = 100) {
       [
         {
           heading: 'Please confirm your preferences',
-          intro: `Hi ${user.firstName || 'there'} — we’ve updated how Rowville Eagles and Foundation Academy contact members. We’ll keep sending you service messages about your bookings, sessions, payments and account. We won’t send you club news, offers or programs unless you tell us you’d like them.`,
+          intro: `Hi ${user.firstName || 'there'} — we’ve updated how Rowville Eagles and Foundation Academy contact members. We’ll keep sending you service messages about your bookings, sessions, payments and account. We won’t send you programs, offers or rewards unless you tell us you’d like them.`,
           cta: { label: 'Choose my preferences', href: `${siteUrl()}/account/confirm-preferences?invite=${token}` },
           after: 'It takes 10 seconds. If you do nothing, you’ll only receive service messages.',
         },

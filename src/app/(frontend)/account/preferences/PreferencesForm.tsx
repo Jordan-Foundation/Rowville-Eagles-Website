@@ -7,10 +7,10 @@ export function PreferencesForm({ marketingEmail, marketingSms, smsOptOut }: { m
   const [state, action, pending] = useActionState<ConsentFormState, FormData>(savePreferences, {})
   return (
     <form action={action} className="space-y-4">
-      <Toggle name="marketingEmail" label="Club news, offers & programs by email" defaultChecked={marketingEmail} />
+      <Toggle name="marketingEmail" label="Programs, offers & rewards by email" defaultChecked={marketingEmail} />
       <Toggle
         name="marketingSms"
-        label="Club news, offers & programs by SMS"
+        label="Programs, offers & rewards by SMS"
         defaultChecked={marketingSms}
         note={smsOptOut ? 'You replied STOP, so we can’t text you at all. Text START to our number to turn SMS back on.' : undefined}
       />

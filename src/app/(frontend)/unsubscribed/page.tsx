@@ -11,7 +11,7 @@ export default async function UnsubscribedPage({ searchParams }: { searchParams:
       <p className="mt-4 text-muted">
         {invalid
           ? 'We couldn’t match this link to an account. Log in to manage your preferences instead.'
-          : 'You won’t receive any more club news, offers or program emails from us. You’ll still get service messages about your bookings, payments and account.'}
+          : 'You won’t receive any more programs, offers or rewards emails from us. You’ll still get service messages about your bookings, payments and account.'}
       </p>
       <p className="mt-8">
         <Link href="/account/preferences" className="font-semibold text-brand underline">Manage preferences</Link>

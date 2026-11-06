@@ -45,7 +45,7 @@ export default async function PreferencesPage() {
       </section>
 
       <section className="mt-10">
-        <h2 className="mb-4 font-semibold">News & offers — your choice</h2>
+        <h2 className="mb-4 font-semibold">Programs, offers & rewards — your choice</h2>
         <PreferencesForm marketingEmail={Boolean(user.marketingEmail)} marketingSms={Boolean(user.marketingSms)} smsOptOut={Boolean(user.smsOptOut)} />
       </section>
 

@@ -41,7 +41,7 @@ export async function createAccountFromInvite(_prev: ConsentFormState, fd: FormD
       activated: true,
     },
   })
-  await recordSignupConsent(p, user, { optOutEmail: fd.get('optOutEmail') === 'on', optOutSms: fd.get('optOutSms') === 'on' }, await requestMeta())
+  await recordSignupConsent(p, user, { marketingOptIn: fd.get('marketingOptIn') === 'on' }, await requestMeta())
   await consumeInvite(p, check.invite.id)
 
   const { token } = await p.login({ collection: 'users', data: { email: user.email, password } })

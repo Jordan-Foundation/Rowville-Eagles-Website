@@ -38,7 +38,7 @@ export function emailLayout(brand: 'club' | 'academy', blocks: Block[], options:
     ${blocks.map(block).join(`<tr><td style="padding:0 32px"><hr style="border:0;border-top:1px solid ${c.line};margin:8px 0"></td></tr>`)}
     <tr><td style="padding:20px 32px;background:${c.head};font:12px/1.5 Arial,sans-serif;color:#ffffffaa">
       ${footerNote ? esc(footerNote) + '<br>' : ''}${esc(senderIdentity(brand))} · <a href="${base}" style="color:#ffffffcc">${base.replace(/^https?:\/\//, '')}</a>
-      ${opts.unsubscribeUrl ? `<br><br>You're receiving this because you're subscribed to ${a ? 'Foundation Academy' : 'Rowville Eagles'} news and offers. <a href="${opts.unsubscribeUrl}" style="color:#ffffff">Unsubscribe</a> · <a href="${base}/account/preferences" style="color:#ffffffcc">Manage preferences</a>` : ''}
+      ${opts.unsubscribeUrl ? `<br><br>You're receiving this because you asked for ${a ? 'Foundation Academy' : 'Rowville Eagles'} programs, offers and rewards. <a href="${opts.unsubscribeUrl}" style="color:#ffffff">Unsubscribe</a> · <a href="${base}/account/preferences" style="color:#ffffffcc">Manage preferences</a>` : ''}
     </td></tr>
   </table></td></tr></table></body></html>`
 }

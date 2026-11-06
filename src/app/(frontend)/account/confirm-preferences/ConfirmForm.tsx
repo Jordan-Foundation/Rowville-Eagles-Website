@@ -19,7 +19,7 @@ export function ConfirmForm({ invite }: { invite: string }) {
         </span>
       </label>
       <div className="space-y-3 rounded-2xl border border-line p-5">
-        <p className="font-medium">Would you also like club news, offers and programs?</p>
+        <p className="font-medium">Would you also like programs, offers and rewards?</p>
         <label className="flex items-start gap-3">
           <input type="checkbox" name="marketingEmail" className="mt-1" />
           <span>{CONSENT_WORDING.marketingEmailOptIn}</span>

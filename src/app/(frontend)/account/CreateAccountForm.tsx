@@ -29,19 +29,12 @@ export function CreateAccountForm(props: { invite: string; email: string; firstN
             {CONSENT_WORDING.service} <span className="text-red-600">*</span>
           </span>
         </label>
-        <div className="rounded-lg bg-surface-2 p-4 text-sm">
-          <p>{CONSENT_WORDING.marketingNotice}</p>
-          <div className="mt-3 space-y-2">
-            <label className="flex items-start gap-3">
-              <input type="checkbox" name="optOutEmail" className="mt-1" />
-              <span>{CONSENT_WORDING.marketingEmailOptOut}</span>
-            </label>
-            <label className="flex items-start gap-3">
-              <input type="checkbox" name="optOutSms" className="mt-1" />
-              <span>{CONSENT_WORDING.marketingSmsOptOut}</span>
-            </label>
-          </div>
-        </div>
+        <label className="flex items-start gap-3 rounded-lg bg-surface-2 p-4 text-sm">
+          <input type="checkbox" name="marketingOptIn" className="mt-1" />
+          <span>
+            {CONSENT_WORDING.marketingSignupOptIn} <span className="text-muted">(optional)</span>
+          </span>
+        </label>
       </fieldset>
 
       {state.error && <p role="alert" className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-700">{state.error}</p>}
