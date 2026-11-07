@@ -27,6 +27,7 @@ import * as migration_20261107_042144_academy_term_slots from './20261107_042144
 import * as migration_20261107_043914_program_price_per_session from './20261107_043914_program_price_per_session';
 import * as migration_20261107_065357_pdr_content from './20261107_065357_pdr_content';
 import * as migration_20261107_070958_foundation_plus_progress from './20261107_070958_foundation_plus_progress';
+import * as migration_20261107_072405_foundation_plus_submissions from './20261107_072405_foundation_plus_submissions';
 
 export const migrations = [
   {
@@ -172,6 +173,11 @@ export const migrations = [
   {
     up: migration_20261107_070958_foundation_plus_progress.up,
     down: migration_20261107_070958_foundation_plus_progress.down,
-    name: '20261107_070958_foundation_plus_progress'
+    name: '20261107_070958_foundation_plus_progress',
+  },
+  {
+    up: migration_20261107_072405_foundation_plus_submissions.up,
+    down: migration_20261107_072405_foundation_plus_submissions.down,
+    name: '20261107_072405_foundation_plus_submissions'
   },
 ];

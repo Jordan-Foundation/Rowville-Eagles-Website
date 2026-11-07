@@ -45,7 +45,8 @@ export const PdrProgress: CollectionConfig = {
       type: 'row',
       fields: [
         { name: 'method', type: 'select', required: true, defaultValue: 'verified', options: [{ label: 'Verified from video', value: 'verified' }, { label: 'Promoted by a coach', value: 'promoted' }] },
-        { name: 'score', label: 'Score', type: 'number', admin: { description: 'Verified score (promoted scores show on the report only, never on leaderboards)' } },
+        { name: 'score', label: 'Best verified score', type: 'number', admin: { description: 'From videos checked by a coach — used for leaderboards and rankings' } },
+        { name: 'promotedScore', label: 'Score seen by the coach', type: 'number', admin: { description: 'Promotions only — shown on the report, never on leaderboards' } },
         { name: 'passedAt', type: 'date' },
       ],
     },

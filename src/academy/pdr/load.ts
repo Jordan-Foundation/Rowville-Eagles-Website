@@ -46,7 +46,7 @@ export async function loadReport(p: Payload, kid: Participant) {
     areas: areas.docs.map((a) => ({ id: a.id, name: a.name, slug: a.slug, order: a.order, colour: a.colour, hasLeaderboard: a.hasLeaderboard })),
     levels: levels.docs.map((l) => ({ id: l.id, area: rel(l.area), number: l.number, title: l.title })),
     stages: stages.docs.map((s) => ({ id: s.id, area: rel(s.area), levelNumber: s.levelNumber ?? 0, stageNumber: s.stageNumber, code: s.code ?? '', skillName: s.skillName, published: s.published, placeholder: s.placeholder })),
-    progress: progress.docs.map((x) => ({ stage: rel(x.stage), method: x.method, score: x.score, passedAt: x.passedAt })),
+    progress: progress.docs.map((x) => ({ stage: rel(x.stage), method: x.method, score: x.score, promotedScore: x.promotedScore, passedAt: x.passedAt })),
     tier,
   })
   return { report, tier, stageDocs: stages.docs }

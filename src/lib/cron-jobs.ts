@@ -5,6 +5,7 @@ import { sendAccountReminders } from './account-reminders'
 import { sendReviewRequests } from '../academy/review-requests'
 import { runSelectionReminders } from '../selections/payment'
 import { syncTeamMembers } from '../teams/service'
+import { purgeSubmissionVideos } from '../academy/pdr/review'
 
 type Job = (payload: Payload) => Promise<Record<string, unknown>>
 
@@ -20,5 +21,6 @@ export const cronJobs: Record<string, Record<string, Job>> = {
     reviewRequests: (payload) => sendReviewRequests(payload),
     selectionPaymentReminders: (payload) => runSelectionReminders(payload),
     teamMembers: (payload) => syncTeamMembers(payload),
+    foundationVideos: (payload) => purgeSubmissionVideos(payload),
   },
 }

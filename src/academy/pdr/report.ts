@@ -9,7 +9,7 @@ export type Tier = 'free' | 'standard' | 'premium'
 export type AreaLite = { id: number; name: string; slug: string; order?: number | null; colour?: string | null; hasLeaderboard?: boolean | null }
 export type LevelLite = { id: number; area: number; number: number; title?: string | null }
 export type StageLite = { id: number; area: number; levelNumber: number; stageNumber: number; code: string; skillName: string; published?: boolean | null; placeholder?: boolean | null }
-export type ProgressLite = { stage: number; method: 'verified' | 'promoted'; score?: number | null; passedAt?: string | null }
+export type ProgressLite = { stage: number; method: 'verified' | 'promoted'; score?: number | null; promotedScore?: number | null; passedAt?: string | null }
 
 export type StageStatus = 'passed_verified' | 'passed_promoted' | 'not_started' | 'locked' | 'coming_soon'
 export const STATUS_LABEL: Record<StageStatus, string> = {

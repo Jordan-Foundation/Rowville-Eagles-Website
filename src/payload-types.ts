@@ -78,6 +78,8 @@ export interface Config {
     'pdr-videos': PdrVideo;
     'pdr-badges': PdrBadge;
     'pdr-progress': PdrProgress;
+    'pdr-submissions': PdrSubmission;
+    'pdr-audit': PdrAudit;
     'academy-coaches': AcademyCoach;
     'academy-availability': AcademyAvailability;
     'academy-reminder-log': AcademyReminderLog;
@@ -121,6 +123,8 @@ export interface Config {
     'pdr-videos': PdrVideosSelect<false> | PdrVideosSelect<true>;
     'pdr-badges': PdrBadgesSelect<false> | PdrBadgesSelect<true>;
     'pdr-progress': PdrProgressSelect<false> | PdrProgressSelect<true>;
+    'pdr-submissions': PdrSubmissionsSelect<false> | PdrSubmissionsSelect<true>;
+    'pdr-audit': PdrAuditSelect<false> | PdrAuditSelect<true>;
     'academy-coaches': AcademyCoachesSelect<false> | AcademyCoachesSelect<true>;
     'academy-availability': AcademyAvailabilitySelect<false> | AcademyAvailabilitySelect<true>;
     'academy-reminder-log': AcademyReminderLogSelect<false> | AcademyReminderLogSelect<true>;
@@ -1287,11 +1291,60 @@ export interface PdrProgress {
   levelNumber?: number | null;
   method: 'verified' | 'promoted';
   /**
-   * Verified score (promoted scores show on the report only, never on leaderboards)
+   * From videos checked by a coach — used for leaderboards and rankings
    */
   score?: number | null;
+  /**
+   * Promotions only — shown on the report, never on leaderboards
+   */
+  promotedScore?: number | null;
   passedAt?: string | null;
   by?: (number | null) | User;
+  note?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pdr-submissions".
+ */
+export interface PdrSubmission {
+  id: number;
+  label?: string | null;
+  player: number | Participant;
+  stage: number | PdrStage;
+  area?: (number | null) | PdrArea;
+  levelNumber?: number | null;
+  type: 'verification' | 'feedback';
+  status: 'uploading' | 'pending' | 'verified' | 'rejected' | 'feedback_given';
+  claimedScore?: number | null;
+  verifiedScore?: number | null;
+  passed?: boolean | null;
+  playerNote?: string | null;
+  feedback?: string | null;
+  reviewedBy?: (number | null) | User;
+  reviewedAt?: string | null;
+  submittedBy?: (number | null) | User;
+  streamUid?: string | null;
+  deleteVideoAfter?: string | null;
+  videoDeletedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pdr-audit".
+ */
+export interface PdrAudit {
+  id: number;
+  summary?: string | null;
+  action: 'verify' | 'reject' | 'feedback' | 'score_change' | 'promote' | 'revoke';
+  actor?: (number | null) | User;
+  player?: (number | null) | Participant;
+  stage?: (number | null) | PdrStage;
+  submission?: (number | null) | PdrSubmission;
+  before?: string | null;
+  after?: string | null;
   note?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -1713,6 +1766,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'pdr-progress';
         value: number | PdrProgress;
+      } | null)
+    | ({
+        relationTo: 'pdr-submissions';
+        value: number | PdrSubmission;
+      } | null)
+    | ({
+        relationTo: 'pdr-audit';
+        value: number | PdrAudit;
       } | null)
     | ({
         relationTo: 'academy-coaches';
@@ -2204,8 +2265,52 @@ export interface PdrProgressSelect<T extends boolean = true> {
   levelNumber?: T;
   method?: T;
   score?: T;
+  promotedScore?: T;
   passedAt?: T;
   by?: T;
+  note?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pdr-submissions_select".
+ */
+export interface PdrSubmissionsSelect<T extends boolean = true> {
+  label?: T;
+  player?: T;
+  stage?: T;
+  area?: T;
+  levelNumber?: T;
+  type?: T;
+  status?: T;
+  claimedScore?: T;
+  verifiedScore?: T;
+  passed?: T;
+  playerNote?: T;
+  feedback?: T;
+  reviewedBy?: T;
+  reviewedAt?: T;
+  submittedBy?: T;
+  streamUid?: T;
+  deleteVideoAfter?: T;
+  videoDeletedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pdr-audit_select".
+ */
+export interface PdrAuditSelect<T extends boolean = true> {
+  summary?: T;
+  action?: T;
+  actor?: T;
+  player?: T;
+  stage?: T;
+  submission?: T;
+  before?: T;
+  after?: T;
   note?: T;
   updatedAt?: T;
   createdAt?: T;

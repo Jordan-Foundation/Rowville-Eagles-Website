@@ -15,6 +15,7 @@ export default async function CoachHome() {
   ])
   const now = new Date()
   const [next, due, groups] = await Promise.all([coachSessions(p, coach.id, { from: now, to: new Date(now.getTime() + 7 * 86_400_000) }), attendanceDue(p, coach.id, now), coachGroups(p, coach.id)])
+  const { totalDocs: toReview } = await p.count({ collection: 'pdr-submissions', where: { status: { equals: 'pending' } }, overrideAccess: true })
   const nextGroup = groups.map((g) => ({ g, s: nextSession(g, now) })).filter((x) => x.s).sort((a, b) => a.s!.startsAt.localeCompare(b.s!.startsAt))[0]
   const byTerm = new Map(mine.map((a) => [typeof a.term === 'object' ? a.term.id : a.term, a]))
   const profileGaps = [!coach.photo && 'a photo', !coach.bio && 'a short bio', !(coach.specialties?.length) && 'your specialties'].filter(Boolean) as string[]
@@ -38,6 +39,14 @@ export default async function CoachHome() {
         </div>
         <p className="mt-4 text-xs font-semibold uppercase tracking-[0.2em] transition group-hover:translate-x-1">Open my sessions →</p>
       </Link>
+
+      {toReview > 0 && (
+        <Link href="/coach/reviews" className="panel gloss-sheen group block border border-line p-6 transition hover:border-white/40">
+          <p className="font-display text-xl font-semibold uppercase">Foundation+ reviews</p>
+          <p className="mt-1 text-sm text-muted">{toReview} video{toReview === 1 ? '' : 's'} waiting for a coach</p>
+          <p className="mt-4 text-xs font-semibold uppercase tracking-[0.2em] transition group-hover:translate-x-1">Review now →</p>
+        </Link>
+      )}
 
       {groups.length > 0 && (
         <Link href="/coach/groups" className="panel gloss-sheen group block border border-line p-6 transition hover:border-white/40">
