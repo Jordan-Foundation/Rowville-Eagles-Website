@@ -10,7 +10,7 @@ import { FoundationPlusLogo } from './FoundationPlusLogo'
 const nav = [
   { href: '/join', label: 'Join us' },
   { href: '/about', label: 'About' },
-  { href: '/what-makes-us-different', label: 'What Makes Us Different', short: 'Why us' },
+  { href: '/what-makes-us-different', label: 'Why us' },
   { href: '/programs', label: 'Camps & Programs' },
   { href: '/academy', label: 'Academy' },
   { href: '/shop', label: 'Shop' },
@@ -80,7 +80,7 @@ export function Header() {
       <nav aria-label="Mobile" className="container-x flex gap-5 overflow-x-auto pb-3 text-sm lg:hidden">
         {nav.map((n) => (
           <Link key={n.href} href={n.href} className="shrink-0 opacity-85">
-            {n.short ?? n.label}
+            {n.label}
           </Link>
         ))}
       </nav>

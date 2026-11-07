@@ -81,6 +81,8 @@ export interface Config {
     'pdr-submissions': PdrSubmission;
     'pdr-audit': PdrAudit;
     'pdr-awards': PdrAward;
+    'fplus-waitlist': FplusWaitlist;
+    'form-throttle': FormThrottle;
     'academy-coaches': AcademyCoach;
     'academy-availability': AcademyAvailability;
     'academy-reminder-log': AcademyReminderLog;
@@ -127,6 +129,8 @@ export interface Config {
     'pdr-submissions': PdrSubmissionsSelect<false> | PdrSubmissionsSelect<true>;
     'pdr-audit': PdrAuditSelect<false> | PdrAuditSelect<true>;
     'pdr-awards': PdrAwardsSelect<false> | PdrAwardsSelect<true>;
+    'fplus-waitlist': FplusWaitlistSelect<false> | FplusWaitlistSelect<true>;
+    'form-throttle': FormThrottleSelect<false> | FormThrottleSelect<true>;
     'academy-coaches': AcademyCoachesSelect<false> | AcademyCoachesSelect<true>;
     'academy-availability': AcademyAvailabilitySelect<false> | AcademyAvailabilitySelect<true>;
     'academy-reminder-log': AcademyReminderLogSelect<false> | AcademyReminderLogSelect<true>;
@@ -1379,6 +1383,31 @@ export interface PdrAward {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "fplus-waitlist".
+ */
+export interface FplusWaitlist {
+  id: number;
+  email: string;
+  source?: string | null;
+  notifiedAt?: string | null;
+  claimedAt?: string | null;
+  wording?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "form-throttle".
+ */
+export interface FormThrottle {
+  id: number;
+  key: string;
+  form?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "academy-availability".
  */
 export interface AcademyAvailability {
@@ -1806,6 +1835,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'pdr-awards';
         value: number | PdrAward;
+      } | null)
+    | ({
+        relationTo: 'fplus-waitlist';
+        value: number | FplusWaitlist;
+      } | null)
+    | ({
+        relationTo: 'form-throttle';
+        value: number | FormThrottle;
       } | null)
     | ({
         relationTo: 'academy-coaches';
@@ -2358,6 +2395,29 @@ export interface PdrAwardsSelect<T extends boolean = true> {
   badge?: T;
   awardedAt?: T;
   celebratedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "fplus-waitlist_select".
+ */
+export interface FplusWaitlistSelect<T extends boolean = true> {
+  email?: T;
+  source?: T;
+  notifiedAt?: T;
+  claimedAt?: T;
+  wording?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "form-throttle_select".
+ */
+export interface FormThrottleSelect<T extends boolean = true> {
+  key?: T;
+  form?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -3309,6 +3369,14 @@ export interface PdrSetting {
    */
   programName: string;
   tagline?: string | null;
+  plans?: {
+    standardMonthly?: number | null;
+    standardYearly?: number | null;
+    premiumMonthly?: number | null;
+    premiumYearly?: number | null;
+    siblingDiscountPct?: number | null;
+    trialDays?: number | null;
+  };
   maxClipSeconds?: number | null;
   maxFileMB?: number | null;
   /**
@@ -3549,6 +3617,16 @@ export interface PdrSettingsSelect<T extends boolean = true> {
   enabled?: T;
   programName?: T;
   tagline?: T;
+  plans?:
+    | T
+    | {
+        standardMonthly?: T;
+        standardYearly?: T;
+        premiumMonthly?: T;
+        premiumYearly?: T;
+        siblingDiscountPct?: T;
+        trialDays?: T;
+      };
   maxClipSeconds?: T;
   maxFileMB?: T;
   retentionMonths?: T;

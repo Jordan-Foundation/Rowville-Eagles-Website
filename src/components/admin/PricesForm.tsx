@@ -49,6 +49,7 @@ export function PricesForm({ sections }: { sections: PriceSection[] }) {
                       {f.unit === 'aud' && '$'}
                       <input name={f.key} defaultValue={f.value ?? ''} placeholder={f.placeholder} inputMode="decimal" style={input} aria-label={`${r.title} — ${f.label}`} />
                       {f.unit === 'days' && 'days'}
+                      {f.unit === 'pct' && '%'}
                       <input type="hidden" name={`$orig:${f.key}`} value={f.value ?? ''} />
                     </span>
                   </label>

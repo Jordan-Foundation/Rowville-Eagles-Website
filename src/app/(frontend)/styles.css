@@ -124,3 +124,12 @@ body:has([data-page-brand='academy']) .site-footer .footer-rule { border-color: 
 .fp-label { font-family: var(--font-chakra), var(--font-inter), sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.22em; }
 .fp-ink { background: #0b0b0c; color: #fff; }
 .fp-paper { background: #fff; color: #0b0b0c; }
+
+/* Foundation+ pages: black header and footer (monochrome), club navigation kept */
+body:has([data-page-brand='fplus']) { background: #0b0b0c; }
+body:has([data-page-brand='fplus']) .site-header { background: rgb(11 11 12 / 0.95); border-color: rgb(255 255 255 / 0.08); }
+body:has([data-page-brand='fplus']) .site-header .text-accent { color: #fff; }
+body:has([data-page-brand='fplus']) .site-header .bg-accent { background: #fff; color: #0b0b0c; }
+body:has([data-page-brand='fplus']) .site-footer { background: #0b0b0c; border-top: 1px solid #1c1c1f; }
+body:has([data-page-brand='fplus']) .site-footer .footer-accent { color: #fff; }
+body:has([data-page-brand='fplus']) .site-footer .footer-rule { border-color: #1c1c1f; }

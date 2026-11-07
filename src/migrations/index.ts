@@ -31,6 +31,7 @@ import * as migration_20261107_072405_foundation_plus_submissions from './202611
 import * as migration_20261107_074307_foundation_plus_awards_setup from './20261107_074307_foundation_plus_awards_setup';
 import * as migration_20261107_090239_two_nights_a_week from './20261107_090239_two_nights_a_week';
 import * as migration_20261107_094545_difference_page from './20261107_094545_difference_page';
+import * as migration_20261107_113740_foundation_plus_waitlist from './20261107_113740_foundation_plus_waitlist';
 
 export const migrations = [
   {
@@ -196,6 +197,11 @@ export const migrations = [
   {
     up: migration_20261107_094545_difference_page.up,
     down: migration_20261107_094545_difference_page.down,
-    name: '20261107_094545_difference_page'
+    name: '20261107_094545_difference_page',
+  },
+  {
+    up: migration_20261107_113740_foundation_plus_waitlist.up,
+    down: migration_20261107_113740_foundation_plus_waitlist.down,
+    name: '20261107_113740_foundation_plus_waitlist'
   },
 ];

@@ -4,7 +4,7 @@ import type { Payload } from 'payload'
  * Every price the site charges, gathered for the admin Prices page. Each editable value is addressed as
  * "<collection>.<id>.<field>" so the page can save just the ones that changed.
  */
-export type PriceField = { key: string; label: string; value: number | null; unit?: 'aud' | 'days'; placeholder?: string }
+export type PriceField = { key: string; label: string; value: number | null; unit?: 'aud' | 'days' | 'pct'; placeholder?: string }
 export type PriceRow = { title: string; note?: string; href: string; muted?: boolean; fields: PriceField[] }
 export type PriceSection = { title: string; intro: string; rows: PriceRow[] }
 
@@ -17,6 +17,11 @@ export const EDITABLE: Record<string, { fields: string[]; nullable?: string[] }>
   products: { fields: ['price'] },
 }
 
+/** Global settings editable from the Prices page ("g:<global>:<field>"). */
+export const EDITABLE_GLOBAL: Record<string, { group: string; fields: string[] }> = {
+  'pdr-settings': { group: 'plans', fields: ['standardMonthly', 'standardYearly', 'premiumMonthly', 'premiumYearly', 'siblingDiscountPct', 'trialDays'] },
+}
+
 const typeLabel: Record<string, string> = {
   registration: 'Season registration',
   'holiday-camp': 'Holiday camp',
@@ -27,6 +32,8 @@ const typeLabel: Record<string, string> = {
 
 export async function loadPrices(payload: Payload): Promise<PriceSection[]> {
   const q = { depth: 0, overrideAccess: true } as const
+  const fplus = await payload.findGlobal({ slug: 'pdr-settings', depth: 0, overrideAccess: true })
+  const pl = fplus.plans ?? {}
   const [terms, groupPrograms, programs, rounds, squads, products] = await Promise.all([
     payload.find({ collection: 'academy-terms', sort: '-startDate', limit: 12, ...q }),
     payload.find({ collection: 'programs', where: { type: { equals: 'academy-term' } }, sort: '-startDate', limit: 30, ...q }),
@@ -42,6 +49,37 @@ export async function loadPrices(payload: Payload): Promise<PriceSection[]> {
     squadsByRound.set(r, [...(squadsByRound.get(r) ?? []), s])
   }
   return [
+    {
+      title: 'Foundation+ plans',
+      intro: 'Per player. Shown on the Foundation+ page; once Stripe is connected these become the Stripe prices.',
+      rows: [
+        {
+          title: 'Standard',
+          href: '/admin/globals/pdr-settings',
+          fields: [
+            { key: 'g:pdr-settings:standardMonthly', label: 'Monthly', value: pl.standardMonthly ?? 9.95, unit: 'aud' },
+            { key: 'g:pdr-settings:standardYearly', label: 'Yearly', value: pl.standardYearly ?? 89, unit: 'aud' },
+          ],
+        },
+        {
+          title: 'Premium',
+          href: '/admin/globals/pdr-settings',
+          fields: [
+            { key: 'g:pdr-settings:premiumMonthly', label: 'Monthly', value: pl.premiumMonthly ?? 24.95, unit: 'aud' },
+            { key: 'g:pdr-settings:premiumYearly', label: 'Yearly', value: pl.premiumYearly ?? 229, unit: 'aud' },
+          ],
+        },
+        {
+          title: 'Family & trial',
+          note: '2nd and later players; free Premium month',
+          href: '/admin/globals/pdr-settings',
+          fields: [
+            { key: 'g:pdr-settings:siblingDiscountPct', label: '2nd+ player discount', value: pl.siblingDiscountPct ?? 25, unit: 'pct' },
+            { key: 'g:pdr-settings:trialDays', label: 'Free trial', value: pl.trialDays ?? 30, unit: 'days' },
+          ],
+        },
+      ],
+    },
     {
       title: 'Foundation Academy 1-on-1s',
       intro: 'Per Academy term. Term bookings pay the term price × sessions left; casual sessions pay the casual price; families with an active term pay the term-member price for sessions within the window.',

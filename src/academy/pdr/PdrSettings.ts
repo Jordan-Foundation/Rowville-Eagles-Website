@@ -23,6 +23,23 @@ export const PdrSettings: GlobalConfig = {
     },
     {
       type: 'collapsible',
+      label: 'Plans & prices (AUD incl. GST)',
+      admin: { description: 'Also editable on Admin → Prices. Once Stripe is connected, the website shows the prices from Stripe.' },
+      fields: [
+        {
+          name: 'plans',
+          type: 'group',
+          label: false,
+          fields: [
+            { type: 'row', fields: [{ name: 'standardMonthly', label: 'Standard / month', type: 'number', defaultValue: 9.95, min: 0 }, { name: 'standardYearly', label: 'Standard / year', type: 'number', defaultValue: 89, min: 0 }] },
+            { type: 'row', fields: [{ name: 'premiumMonthly', label: 'Premium / month', type: 'number', defaultValue: 24.95, min: 0 }, { name: 'premiumYearly', label: 'Premium / year', type: 'number', defaultValue: 229, min: 0 }] },
+            { type: 'row', fields: [{ name: 'siblingDiscountPct', label: '2nd+ player discount (%)', type: 'number', defaultValue: 25, min: 0, max: 100 }, { name: 'trialDays', label: 'Free Premium trial (days)', type: 'number', defaultValue: 30, min: 0, max: 90 }] },
+          ],
+        },
+      ],
+    },
+    {
+      type: 'collapsible',
       label: 'Video submissions',
       fields: [
         {
