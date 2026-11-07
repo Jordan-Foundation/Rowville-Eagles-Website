@@ -1,6 +1,7 @@
 import { groupLabel } from './age-groups'
 import { markSelectionPaid } from '../selections/payment'
 import { addMember } from '../teams/service'
+import { markTermRegistrationPaid, slotRows } from '../academy/terms/service'
 import type { Payload } from 'payload'
 import type { Booking, Order, Program } from '@/payload-types'
 import { accountLink, addMembership, ensureAccount, findOrCreateParticipant } from './accounts'
@@ -73,6 +74,13 @@ export async function onBookingPaid(payload: Payload, booking: Booking) {
   await payload.update({ collection: 'bookings', id: booking.id, data: { account: user.id, participant: participantId || undefined }, overrideAccess: true })
   // Paid after selection (tournament / Rowville trials): the player is now registered
   await markSelectionPaid(payload, { ...booking, account: user.id, participant: participantId || null })
+  // Academy term: the registration is paid and the training time goes in the email
+  let termRows: [string, string][] = []
+  const termReg = await markTermRegistrationPaid(payload, { ...booking, account: user.id, participant: participantId || null })
+  if (termReg?.slot) {
+    const slot = await payload.findByID({ collection: 'academy-term-slots', id: typeof termReg.slot === 'object' ? termReg.slot.id : termReg.slot, depth: 0, overrideAccess: true, disableErrors: true })
+    if (slot) termRows = slotRows(slot, program)
+  }
 
   const link = await accountLink(payload, user)
   const who = booking.player?.teamName || [booking.player?.firstName, booking.player?.lastName].filter(Boolean).join(' ')
@@ -82,7 +90,7 @@ export async function onBookingPaid(payload: Payload, booking: Booking) {
       intro: `Thanks ${esc(booking.contact.firstName)} — here are the details for ${esc(who || 'your booking')}.`,
       rows: [
         ['Program', program.title],
-        ...(booking.sessionStart ? ([['Time', when(booking.sessionStart)]] as [string, string][]) : program.startDate ? ([['Starts', formatDate(program.startDate)]] as [string, string][]) : []),
+        ...(termRows.length ? [...termRows, ['Player', who] as [string, string]] : booking.sessionStart ? ([['Time', when(booking.sessionStart)]] as [string, string][]) : program.startDate ? ([['Starts', formatDate(program.startDate)]] as [string, string][]) : []),
         ['Paid', formatAUD(booking.amount)],
         ['Reference', booking.reference ?? ''],
       ],

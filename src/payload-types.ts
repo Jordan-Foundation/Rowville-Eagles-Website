@@ -70,6 +70,8 @@ export interface Config {
     'academy-bookings': AcademyBooking;
     'academy-sessions': AcademySession;
     'academy-terms': AcademyTerm;
+    'academy-term-slots': AcademyTermSlot;
+    'academy-registrations': AcademyRegistration;
     'academy-coaches': AcademyCoach;
     'academy-availability': AcademyAvailability;
     'academy-reminder-log': AcademyReminderLog;
@@ -105,6 +107,8 @@ export interface Config {
     'academy-bookings': AcademyBookingsSelect<false> | AcademyBookingsSelect<true>;
     'academy-sessions': AcademySessionsSelect<false> | AcademySessionsSelect<true>;
     'academy-terms': AcademyTermsSelect<false> | AcademyTermsSelect<true>;
+    'academy-term-slots': AcademyTermSlotsSelect<false> | AcademyTermSlotsSelect<true>;
+    'academy-registrations': AcademyRegistrationsSelect<false> | AcademyRegistrationsSelect<true>;
     'academy-coaches': AcademyCoachesSelect<false> | AcademyCoachesSelect<true>;
     'academy-availability': AcademyAvailabilitySelect<false> | AcademyAvailabilitySelect<true>;
     'academy-reminder-log': AcademyReminderLogSelect<false> | AcademyReminderLogSelect<true>;
@@ -734,6 +738,372 @@ export interface AcademySession {
   createdAt: string;
 }
 /**
+ * Weekly training times for Academy term programs. Families are placed in a slot by their year of birth.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "academy-term-slots".
+ */
+export interface AcademyTermSlot {
+  id: number;
+  title?: string | null;
+  /**
+   * The Academy term program (its dates come from the linked Academy term).
+   */
+  program: number | Program;
+  weekday: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
+  /**
+   * 24h, e.g. 17:00
+   */
+  startTime: string;
+  /**
+   * 24h, e.g. 18:00
+   */
+  endTime: string;
+  venue?: string | null;
+  /**
+   * e.g. 2017, 2018
+   */
+  birthYears: number[];
+  /**
+   * Leave empty for no limit
+   */
+  capacity?: number | null;
+  active?: boolean | null;
+  /**
+   * Optional: split the slot into groups, each with its own coaches.
+   */
+  groups?:
+    | {
+        /**
+         * e.g. Group A
+         */
+        name: string;
+        coaches?: (number | AcademyCoach)[] | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Cancel or move a single week. Changing the slot’s day/time above changes every week.
+   */
+  exceptions?:
+    | {
+        date: string;
+        cancelled?: boolean | null;
+        /**
+         * New start (optional)
+         */
+        startTime?: string | null;
+        /**
+         * New end (optional)
+         */
+        endTime?: string | null;
+        /**
+         * Shown to families, e.g. “Pitch closed — public holiday”
+         */
+        note?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "academy-registrations".
+ */
+export interface AcademyRegistration {
+  id: number;
+  displayName?: string | null;
+  reference?: string | null;
+  status: 'interest' | 'offered' | 'pending_payment' | 'paid' | 'cancelled';
+  program: number | Program;
+  slot?: (number | null) | AcademyTermSlot;
+  /**
+   * Group within the slot (set on the staff dashboard)
+   */
+  groupId?: string | null;
+  birthYear?: number | null;
+  /**
+   * Only when placed outside their own age group
+   */
+  playingBirthYear?: number | null;
+  amount?: number | null;
+  moves?:
+    | {
+        from?: string | null;
+        to?: string | null;
+        reason?: string | null;
+        by?: (number | null) | User;
+        at?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  contact: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+  };
+  player: {
+    firstName: string;
+    lastName: string;
+    dateOfBirth: string;
+    medical?: string | null;
+    emergencyName?: string | null;
+    emergencyPhone?: string | null;
+    photoConsent?: boolean | null;
+  };
+  account?: (number | null) | User;
+  participant?: (number | null) | Participant;
+  booking?: (number | null) | Booking;
+  offeredAt?: string | null;
+  offerExpiresAt?: string | null;
+  paidAt?: string | null;
+  notes?: string | null;
+  token?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "bookings".
+ */
+export interface Booking {
+  id: number;
+  /**
+   * Created automatically when saved
+   */
+  reference?: string | null;
+  program: number | Program;
+  status: 'pending' | 'paid' | 'waitlisted' | 'cancelled' | 'refunded';
+  /**
+   * Set from the program automatically
+   */
+  payee: 'club' | 'academy';
+  /**
+   * AUD. Defaults to the program price (e.g. for cash bookings).
+   */
+  amount: number;
+  bookingType?: ('enrolment' | 'trial') | null;
+  birthYear?: number | null;
+  sessionStart?: string | null;
+  account?: (number | null) | User;
+  participant?: (number | null) | Participant;
+  academyRegistration?: (number | null) | AcademyRegistration;
+  selectionEntry?: (number | null) | SelectionEntry;
+  contact: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+  };
+  player?: {
+    firstName?: string | null;
+    lastName?: string | null;
+    dateOfBirth?: string | null;
+    /**
+     * Tournament entries
+     */
+    teamName?: string | null;
+    medical?: string | null;
+    emergencyName?: string | null;
+    emergencyPhone?: string | null;
+    photoConsent?: boolean | null;
+  };
+  stripeCheckoutId?: string | null;
+  /**
+   * Season registrations: FV section completed in PlayFootball
+   */
+  playFootballComplete?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "selection-entries".
+ */
+export interface SelectionEntry {
+  id: number;
+  displayName?: string | null;
+  /**
+   * Created automatically when saved
+   */
+  reference?: string | null;
+  round: number | SelectionRound;
+  kind?: ('tournament' | 'rowville') | null;
+  status:
+    | 'interested'
+    | 'trial-booked'
+    | 'attended'
+    | 'selected'
+    | 'offered'
+    | 'unsuccessful'
+    | 'registered'
+    | 'released'
+    | 'withdrawn'
+    | 'closed';
+  birthYear?: number | null;
+  /**
+   * Set by the selection dashboard when a player is moved
+   */
+  playingBirthYear?: number | null;
+  season?: number | null;
+  flags?: 'outside-miniroos'[] | null;
+  /**
+   * Every move between age groups, with who made it and why
+   */
+  moves?:
+    | {
+        from: number;
+        to: number;
+        direction?: ('up' | 'down') | null;
+        steps?: number | null;
+        reason: string;
+        by?: (number | null) | User;
+        at?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  squad?: (number | null) | Squad;
+  /**
+   * Sent from the selection dashboard’s “Review & send”
+   */
+  outcomeQueued?: ('selected' | 'successful' | 'unsuccessful') | null;
+  outcomeEmail?: boolean | null;
+  /**
+   * Set when the outcome is sent; staff can extend it
+   */
+  paymentDueAt?: string | null;
+  remindersSent?: number[] | null;
+  paidAt?: string | null;
+  releasedAt?: string | null;
+  booking?: (number | null) | Booking;
+  selectedAt?: string | null;
+  outcomeSentAt?: string | null;
+  outcomeSentBy?: (number | null) | User;
+  trialSession?: (number | null) | TrialSession;
+  offeredTeam?: (number | null) | Team;
+  registrationProgram?: (number | null) | Program;
+  offerSentAt?: string | null;
+  contact: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+  };
+  player: {
+    firstName: string;
+    lastName: string;
+    dateOfBirth: string;
+    gender?: ('female' | 'male' | 'non-binary' | 'prefer-not-to-say') | null;
+    previousClub?: string | null;
+    notes?: string | null;
+  };
+  account?: (number | null) | User;
+  participant?: (number | null) | Participant;
+  token?: string | null;
+  /**
+   * Trial announcements already emailed
+   */
+  notifiedSessions?: (number | TrialSession)[] | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "selection-rounds".
+ */
+export interface SelectionRound {
+  id: number;
+  title: string;
+  kind: 'tournament' | 'rowville';
+  season: number;
+  status: 'open' | 'selecting' | 'closed';
+  /**
+   * Tournament: the tournament. Rowville: the season registration players pay once successful.
+   */
+  program?: (number | null) | Program;
+  /**
+   * Tournament fee. Rowville uses the registration program’s price.
+   */
+  fee?: number | null;
+  paymentDeadlineDays?: number | null;
+  reminderDays?: number[] | null;
+  /**
+   * Placeholders: {parent} {player} {playerFull} {team} {ageGroup} {event} {link} {deadline}. Staff review every message before it is sent.
+   */
+  templates?: {
+    selectedSubject?: string | null;
+    selectedBody?: string | null;
+    /**
+     * Leave blank to send no text
+     */
+    selectedSms?: string | null;
+    successfulSubject?: string | null;
+    successfulBody?: string | null;
+    /**
+     * Leave blank to send no text
+     */
+    successfulSms?: string | null;
+    unsuccessfulSubject?: string | null;
+    unsuccessfulBody?: string | null;
+    /**
+     * Leave blank to send no text
+     */
+    unsuccessfulSms?: string | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "squads".
+ */
+export interface Squad {
+  id: number;
+  round: number | SelectionRound;
+  name: string;
+  birthYears?: number[] | null;
+  capacity?: number | null;
+  /**
+   * Leave blank to use the round’s fee
+   */
+  fee?: number | null;
+  coaches?: (number | User)[] | null;
+  /**
+   * The club team / tournament team page players join once paid
+   */
+  team?: (number | null) | Team;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "trial-sessions".
+ */
+export interface TrialSession {
+  id: number;
+  /**
+   * e.g. "MiniRoos trials — night 1"
+   */
+  title: string;
+  start: string;
+  durationMinutes?: number | null;
+  capacityPerAgeGroup?: number | null;
+  /**
+   * Which age groups trial on this night, by year of birth — e.g. 2017, 2018
+   */
+  birthYears: number[];
+  location?: string | null;
+  whatToBring?: string | null;
+  /**
+   * Publishing emails everyone on the interest list for these age groups.
+   */
+  status?: ('draft' | 'published' | 'closed') | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "academy-availability".
  */
@@ -854,244 +1224,6 @@ export interface Post {
     };
     [k: string]: unknown;
   } | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "selection-rounds".
- */
-export interface SelectionRound {
-  id: number;
-  title: string;
-  kind: 'tournament' | 'rowville';
-  season: number;
-  status: 'open' | 'selecting' | 'closed';
-  /**
-   * Tournament: the tournament. Rowville: the season registration players pay once successful.
-   */
-  program?: (number | null) | Program;
-  /**
-   * Tournament fee. Rowville uses the registration program’s price.
-   */
-  fee?: number | null;
-  paymentDeadlineDays?: number | null;
-  reminderDays?: number[] | null;
-  /**
-   * Placeholders: {parent} {player} {playerFull} {team} {ageGroup} {event} {link} {deadline}. Staff review every message before it is sent.
-   */
-  templates?: {
-    selectedSubject?: string | null;
-    selectedBody?: string | null;
-    /**
-     * Leave blank to send no text
-     */
-    selectedSms?: string | null;
-    successfulSubject?: string | null;
-    successfulBody?: string | null;
-    /**
-     * Leave blank to send no text
-     */
-    successfulSms?: string | null;
-    unsuccessfulSubject?: string | null;
-    unsuccessfulBody?: string | null;
-    /**
-     * Leave blank to send no text
-     */
-    unsuccessfulSms?: string | null;
-  };
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "squads".
- */
-export interface Squad {
-  id: number;
-  round: number | SelectionRound;
-  name: string;
-  birthYears?: number[] | null;
-  capacity?: number | null;
-  /**
-   * Leave blank to use the round’s fee
-   */
-  fee?: number | null;
-  coaches?: (number | User)[] | null;
-  /**
-   * The club team / tournament team page players join once paid
-   */
-  team?: (number | null) | Team;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "selection-entries".
- */
-export interface SelectionEntry {
-  id: number;
-  displayName?: string | null;
-  /**
-   * Created automatically when saved
-   */
-  reference?: string | null;
-  round: number | SelectionRound;
-  kind?: ('tournament' | 'rowville') | null;
-  status:
-    | 'interested'
-    | 'trial-booked'
-    | 'attended'
-    | 'selected'
-    | 'offered'
-    | 'unsuccessful'
-    | 'registered'
-    | 'released'
-    | 'withdrawn'
-    | 'closed';
-  birthYear?: number | null;
-  /**
-   * Set by the selection dashboard when a player is moved
-   */
-  playingBirthYear?: number | null;
-  season?: number | null;
-  flags?: 'outside-miniroos'[] | null;
-  /**
-   * Every move between age groups, with who made it and why
-   */
-  moves?:
-    | {
-        from: number;
-        to: number;
-        direction?: ('up' | 'down') | null;
-        steps?: number | null;
-        reason: string;
-        by?: (number | null) | User;
-        at?: string | null;
-        id?: string | null;
-      }[]
-    | null;
-  squad?: (number | null) | Squad;
-  /**
-   * Sent from the selection dashboard’s “Review & send”
-   */
-  outcomeQueued?: ('selected' | 'successful' | 'unsuccessful') | null;
-  outcomeEmail?: boolean | null;
-  /**
-   * Set when the outcome is sent; staff can extend it
-   */
-  paymentDueAt?: string | null;
-  remindersSent?: number[] | null;
-  paidAt?: string | null;
-  releasedAt?: string | null;
-  booking?: (number | null) | Booking;
-  selectedAt?: string | null;
-  outcomeSentAt?: string | null;
-  outcomeSentBy?: (number | null) | User;
-  trialSession?: (number | null) | TrialSession;
-  offeredTeam?: (number | null) | Team;
-  registrationProgram?: (number | null) | Program;
-  offerSentAt?: string | null;
-  contact: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone: string;
-  };
-  player: {
-    firstName: string;
-    lastName: string;
-    dateOfBirth: string;
-    gender?: ('female' | 'male' | 'non-binary' | 'prefer-not-to-say') | null;
-    previousClub?: string | null;
-    notes?: string | null;
-  };
-  account?: (number | null) | User;
-  participant?: (number | null) | Participant;
-  token?: string | null;
-  /**
-   * Trial announcements already emailed
-   */
-  notifiedSessions?: (number | TrialSession)[] | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "bookings".
- */
-export interface Booking {
-  id: number;
-  /**
-   * Created automatically when saved
-   */
-  reference?: string | null;
-  program: number | Program;
-  status: 'pending' | 'paid' | 'waitlisted' | 'cancelled' | 'refunded';
-  /**
-   * Set from the program automatically
-   */
-  payee: 'club' | 'academy';
-  /**
-   * AUD. Defaults to the program price (e.g. for cash bookings).
-   */
-  amount: number;
-  bookingType?: ('enrolment' | 'trial') | null;
-  birthYear?: number | null;
-  sessionStart?: string | null;
-  account?: (number | null) | User;
-  participant?: (number | null) | Participant;
-  selectionEntry?: (number | null) | SelectionEntry;
-  contact: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone: string;
-  };
-  player?: {
-    firstName?: string | null;
-    lastName?: string | null;
-    dateOfBirth?: string | null;
-    /**
-     * Tournament entries
-     */
-    teamName?: string | null;
-    medical?: string | null;
-    emergencyName?: string | null;
-    emergencyPhone?: string | null;
-    photoConsent?: boolean | null;
-  };
-  stripeCheckoutId?: string | null;
-  /**
-   * Season registrations: FV section completed in PlayFootball
-   */
-  playFootballComplete?: boolean | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "trial-sessions".
- */
-export interface TrialSession {
-  id: number;
-  /**
-   * e.g. "MiniRoos trials — night 1"
-   */
-  title: string;
-  start: string;
-  durationMinutes?: number | null;
-  capacityPerAgeGroup?: number | null;
-  /**
-   * Which age groups trial on this night, by year of birth — e.g. 2017, 2018
-   */
-  birthYears: number[];
-  location?: string | null;
-  whatToBring?: string | null;
-  /**
-   * Publishing emails everyone on the interest list for these age groups.
-   */
-  status?: ('draft' | 'published' | 'closed') | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1356,6 +1488,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'academy-terms';
         value: number | AcademyTerm;
+      } | null)
+    | ({
+        relationTo: 'academy-term-slots';
+        value: number | AcademyTermSlot;
+      } | null)
+    | ({
+        relationTo: 'academy-registrations';
+        value: number | AcademyRegistration;
       } | null)
     | ({
         relationTo: 'academy-coaches';
@@ -1654,6 +1794,94 @@ export interface AcademyTermsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "academy-term-slots_select".
+ */
+export interface AcademyTermSlotsSelect<T extends boolean = true> {
+  title?: T;
+  program?: T;
+  weekday?: T;
+  startTime?: T;
+  endTime?: T;
+  venue?: T;
+  birthYears?: T;
+  capacity?: T;
+  active?: T;
+  groups?:
+    | T
+    | {
+        name?: T;
+        coaches?: T;
+        id?: T;
+      };
+  exceptions?:
+    | T
+    | {
+        date?: T;
+        cancelled?: T;
+        startTime?: T;
+        endTime?: T;
+        note?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "academy-registrations_select".
+ */
+export interface AcademyRegistrationsSelect<T extends boolean = true> {
+  displayName?: T;
+  reference?: T;
+  status?: T;
+  program?: T;
+  slot?: T;
+  groupId?: T;
+  birthYear?: T;
+  playingBirthYear?: T;
+  amount?: T;
+  moves?:
+    | T
+    | {
+        from?: T;
+        to?: T;
+        reason?: T;
+        by?: T;
+        at?: T;
+        id?: T;
+      };
+  contact?:
+    | T
+    | {
+        firstName?: T;
+        lastName?: T;
+        email?: T;
+        phone?: T;
+      };
+  player?:
+    | T
+    | {
+        firstName?: T;
+        lastName?: T;
+        dateOfBirth?: T;
+        medical?: T;
+        emergencyName?: T;
+        emergencyPhone?: T;
+        photoConsent?: T;
+      };
+  account?: T;
+  participant?: T;
+  booking?: T;
+  offeredAt?: T;
+  offerExpiresAt?: T;
+  paidAt?: T;
+  notes?: T;
+  token?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "academy-coaches_select".
  */
 export interface AcademyCoachesSelect<T extends boolean = true> {
@@ -1940,6 +2168,7 @@ export interface BookingsSelect<T extends boolean = true> {
   sessionStart?: T;
   account?: T;
   participant?: T;
+  academyRegistration?: T;
   selectionEntry?: T;
   contact?:
     | T

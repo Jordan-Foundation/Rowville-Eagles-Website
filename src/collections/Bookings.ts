@@ -71,6 +71,7 @@ export const Bookings: CollectionConfig = {
     { name: 'sessionStart', label: 'Booked time slot', type: 'date', admin: { date: { pickerAppearance: 'dayAndTime' } } },
     { name: 'account', type: 'relationship', relationTo: 'users' },
     { name: 'participant', type: 'relationship', relationTo: 'participants' },
+    { name: 'academyRegistration', label: 'Academy term registration', type: 'relationship', relationTo: 'academy-registrations', admin: { readOnly: true, position: 'sidebar' } },
     { name: 'selectionEntry', label: 'Selection (tournament / trials)', type: 'relationship', relationTo: 'selection-entries', admin: { readOnly: true, position: 'sidebar' } },
     {
       name: 'contact',

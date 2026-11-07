@@ -10,6 +10,7 @@ import { getAgeRules } from '@/lib/age-rules'
 import { SelectionList } from '@/selections/SelectionList'
 import { myTeams } from '@/teams/service'
 import { TeamCards } from '@/teams/TeamCards'
+import { TermList } from '@/academy/terms/TermList'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Player', robots: { index: false } }
@@ -26,9 +27,10 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
   if (!kid || (typeof kid.account === 'object' ? kid.account.id : kid.account) !== user.id) notFound()
 
   const teams = await myTeams(p, user, kid.id)
-  const [{ docs: selections }, rules] = await Promise.all([
+  const [{ docs: selections }, rules, { docs: termRegs }] = await Promise.all([
     p.find({ collection: 'selection-entries', where: { participant: { equals: kid.id }, status: { not_in: ['withdrawn', 'closed', 'released'] } }, sort: '-createdAt', depth: 2, limit: 30, overrideAccess: true }),
     getAgeRules(p),
+    p.find({ collection: 'academy-registrations', where: { participant: { equals: kid.id }, status: { not_equals: 'cancelled' } }, sort: '-createdAt', depth: 1, limit: 20, overrideAccess: true }),
   ])
   const [{ docs: academyBookings }, { docs: clubBookings }] = await Promise.all([
     p.find({ collection: 'academy-bookings', where: { participant: { equals: kid.id } }, depth: 0, limit: 100, overrideAccess: true }),
@@ -108,6 +110,12 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
             <div className="mb-10">
               <h2 className="font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase">Teams</h2>
               <TeamCards teams={teams} />
+            </div>
+          )}
+          {termRegs.length > 0 && (
+            <div className="mb-10">
+              <h2 className="font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase">Academy training</h2>
+              <TermList regs={termRegs} showPlayer={false} />
             </div>
           )}
           {selections.length > 0 && (

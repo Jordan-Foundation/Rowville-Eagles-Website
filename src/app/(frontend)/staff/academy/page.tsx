@@ -53,7 +53,7 @@ export default async function StaffAcademyPage() {
             Reminders go out automatically every morning — 2 weeks, 1 week, 3 days and 1 day before each deadline — to coaches who haven’t submitted.
             Each coach gets each reminder once, and they stop as soon as the coach submits.
           </p>
-          <div className="mt-6 flex flex-wrap items-center gap-4"><RunButton /><a href="/staff/academy/dashboard" className="text-sm underline">Dashboard</a><a href="/staff/academy/bookings" className="text-sm underline">Bookings & cancellations</a></div>
+          <div className="mt-6 flex flex-wrap items-center gap-4"><RunButton /><a href="/staff/academy/dashboard" className="text-sm underline">Dashboard</a><a href="/staff/academy/terms" className="text-sm underline">Academy terms</a><a href="/staff/academy/bookings" className="text-sm underline">Bookings & cancellations</a></div>
         </div>
 
         <section id="cover" className="scroll-mt-24">

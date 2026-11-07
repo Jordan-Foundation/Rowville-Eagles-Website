@@ -9,6 +9,7 @@ import { sessionPayment } from '@/academy/session-view'
 import { creditStateFor } from '@/academy/credits'
 import { getAgeRules } from '@/lib/age-rules'
 import { SelectionList } from '@/selections/SelectionList'
+import { TermList } from '@/academy/terms/TermList'
 import { myTeams } from '@/teams/service'
 import { TeamCards } from '@/teams/TeamCards'
 
@@ -33,9 +34,10 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
 
   const credits = await creditStateFor(p, user.id)
   const teams = await myTeams(p, user)
-  const [{ docs: selections }, rules] = await Promise.all([
+  const [{ docs: selections }, rules, { docs: termRegs }] = await Promise.all([
     p.find({ collection: 'selection-entries', where: { account: { equals: user.id }, status: { not_in: ['withdrawn', 'closed', 'released'] } }, sort: '-createdAt', depth: 2, limit: 50, overrideAccess: true }),
     getAgeRules(p),
+    p.find({ collection: 'academy-registrations', where: { account: { equals: user.id }, status: { not_equals: 'cancelled' } }, sort: '-createdAt', depth: 1, limit: 50, overrideAccess: true }),
   ])
   const credit = credits.available
   // Rowville offers that came through selections show in "Trials & selections" with their own button
@@ -142,6 +144,12 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
               <TeamCards teams={teams} />
             </div>
           )}
+          {termRegs.length > 0 && (
+            <div className="mb-10">
+              <h2 className="font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase">Academy training</h2>
+              <TermList regs={termRegs} />
+            </div>
+          )}
           {selections.length > 0 && (
             <div className="mb-10">
               <h2 className="font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase">Trials & selections</h2>
@@ -201,6 +209,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
                 <li><Link href="/staff/selections" className="text-brand underline">Selections (tournaments & trials)</Link></li>
                 <li><Link href="/staff/teams" className="text-brand underline">Team pages</Link></li>
                 <li><Link href="/staff/academy/dashboard" className="text-brand underline">Academy dashboard</Link></li>
+                <li><Link href="/staff/academy/terms" className="text-brand underline">Academy terms (training times & places)</Link></li>
                 <li><Link href="/staff/academy/bookings" className="text-brand underline">1-on-1 bookings & cancellations</Link></li>
                 <li><Link href="/staff/academy" className="text-brand underline">Academy coach availability</Link></li>
                 <li><Link href="/staff/consent" className="text-brand underline">Consent review</Link></li>

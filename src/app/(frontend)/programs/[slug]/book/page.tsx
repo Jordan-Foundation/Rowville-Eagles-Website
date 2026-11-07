@@ -9,6 +9,9 @@ import { BookingForm } from './BookingForm'
 import { redirect } from 'next/navigation'
 import { currentUser } from '@/lib/auth'
 import { AcademyBackdrop } from '@/components/AcademyBackdrop'
+import { TermBookingForm, type TermSlotOption } from './TermBookingForm'
+import { programSlots, slotTaken } from '@/academy/terms/service'
+import { slotLabel as termSlotLabel, spotsLeft, upcomingSessions, yearsLabel } from '@/academy/terms/slots'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Book', robots: { index: false } }
@@ -57,6 +60,29 @@ export default async function BookPage({
   }
   const payee = isPayee(program.payee) ? program.payee : defaultPayee(program.type)
   const now = new Date()
+
+  // Academy terms with training times: the player's year of birth picks the slot
+  let termSlots: TermSlotOption[] | null = null
+  let prefill: Record<string, string> | undefined
+  if (program.type === 'academy-term') {
+    const slots = (await programSlots(p, program.id)).filter((s) => s.active !== false)
+    if (slots.length) {
+      const taken = await slotTaken(p, program.id)
+      termSlots = slots.map((s) => {
+        const sessions = upcomingSessions(s, program)
+        return {
+          id: s.id,
+          label: termSlotLabel(s),
+          years: yearsLabel(s.birthYears),
+          birthYears: (s.birthYears ?? []) as number[],
+          remaining: spotsLeft(s, taken.get(s.id) ?? 0),
+          sessions: sessions.length ? `${sessions.length} sessions from ${formatDate(sessions[0].startsAt, { day: 'numeric', month: 'short' })}` : 'Term finished',
+        }
+      })
+      const user = await currentUser()
+      if (user) prefill = { contactFirstName: user.firstName ?? '', contactLastName: user.lastName ?? '', contactEmail: user.email, contactPhone: user.phone ?? '' }
+    }
+  }
   const slots = await Promise.all(
     (program.slots ?? [])
       .filter((s) => new Date(s.start) > now)
@@ -75,7 +101,7 @@ export default async function BookPage({
   const full =
     program.status !== 'open' ||
     (program.capacity ? (await placesTaken(p, program.id)) >= program.capacity : false) ||
-    ((program.slots?.length ?? 0) > 0 && slots.every((s) => s.remaining === 0))
+    (!termSlots && (program.slots?.length ?? 0) > 0 && slots.every((s) => s.remaining === 0))
 
   return (
     <div data-brand={academy ? 'academy' : undefined} data-page-brand={academy ? 'academy' : undefined} className="relative min-h-[70vh] overflow-hidden">
@@ -97,6 +123,8 @@ export default async function BookPage({
               <p className="panel rounded-2xl border border-line bg-surface-2 p-6">
                 This program is fully booked. Please check back later or contact the club about the waitlist.
               </p>
+            ) : termSlots ? (
+              <TermBookingForm slug={program.slug} slots={termSlots} priceLabel={formatAUD(program.price)} payeeLabel={stripeAccounts[payee].label} prefill={prefill} />
             ) : (
               <BookingForm
                 slug={program.slug}

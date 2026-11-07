@@ -78,7 +78,7 @@ export async function accountMemberships(payload: Payload, userId?: number | nul
 export async function linkGuestRecords(payload: Payload, user: Pick<User, 'id' | 'email'>, req?: PayloadRequest) {
   const email = user.email.trim().toLowerCase()
   const unlinked = { 'contact.email': { equals: email }, account: { exists: false } }
-  const linked = { academy: 0, bookings: 0, orders: 0 }
+  const linked = { academy: 0, bookings: 0, orders: 0, 'academy-registrations': 0 }
 
   const { docs: academy } = await payload.find({ collection: 'academy-bookings', where: unlinked, limit: 200, depth: 0, overrideAccess: true, req })
   for (const b of academy) {
@@ -86,7 +86,7 @@ export async function linkGuestRecords(payload: Payload, user: Pick<User, 'id' |
     await payload.update({ collection: 'academy-sessions', where: { booking: { equals: b.id } }, data: { account: user.id }, overrideAccess: true, req })
     linked.academy++
   }
-  for (const collection of ['bookings', 'orders'] as const) {
+  for (const collection of ['bookings', 'orders', 'academy-registrations'] as const) {
     const { docs } = await payload.find({ collection, where: unlinked, limit: 200, depth: 0, overrideAccess: true, req })
     for (const d of docs) await payload.update({ collection, id: d.id, data: { account: user.id }, overrideAccess: true, req })
     linked[collection] = docs.length
