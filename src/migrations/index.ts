@@ -18,6 +18,7 @@ import * as migration_20261106_202041_academy_cancellations_credits from './2026
 import * as migration_20261106_211833_stage14_session_credits_member_price from './20261106_211833_stage14_session_credits_member_price';
 import * as migration_20261107_004109_booking_reschedule from './20261107_004109_booking_reschedule';
 import * as migration_20261107_013526_birth_year_age_groups from './20261107_013526_birth_year_age_groups';
+import * as migration_20261107_015825_selection_rounds_entries from './20261107_015825_selection_rounds_entries';
 
 export const migrations = [
   {
@@ -118,6 +119,11 @@ export const migrations = [
   {
     up: migration_20261107_013526_birth_year_age_groups.up,
     down: migration_20261107_013526_birth_year_age_groups.down,
-    name: '20261107_013526_birth_year_age_groups'
+    name: '20261107_013526_birth_year_age_groups',
+  },
+  {
+    up: migration_20261107_015825_selection_rounds_entries.up,
+    down: migration_20261107_015825_selection_rounds_entries.down,
+    name: '20261107_015825_selection_rounds_entries'
   },
 ];

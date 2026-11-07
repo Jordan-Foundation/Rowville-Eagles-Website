@@ -75,7 +75,8 @@ export interface Config {
     'academy-reminder-log': AcademyReminderLog;
     'academy-credits': AcademyCredit;
     posts: Post;
-    'trial-registrations': TrialRegistration;
+    'selection-rounds': SelectionRound;
+    'selection-entries': SelectionEntry;
     'trial-sessions': TrialSession;
     programs: Program;
     bookings: Booking;
@@ -104,7 +105,8 @@ export interface Config {
     'academy-reminder-log': AcademyReminderLogSelect<false> | AcademyReminderLogSelect<true>;
     'academy-credits': AcademyCreditsSelect<false> | AcademyCreditsSelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
-    'trial-registrations': TrialRegistrationsSelect<false> | TrialRegistrationsSelect<true>;
+    'selection-rounds': SelectionRoundsSelect<false> | SelectionRoundsSelect<true>;
+    'selection-entries': SelectionEntriesSelect<false> | SelectionEntriesSelect<true>;
     'trial-sessions': TrialSessionsSelect<false> | TrialSessionsSelect<true>;
     programs: ProgramsSelect<false> | ProgramsSelect<true>;
     bookings: BookingsSelect<false> | BookingsSelect<true>;
@@ -767,24 +769,73 @@ export interface Post {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "trial-registrations".
+ * via the `definition` "selection-rounds".
  */
-export interface TrialRegistration {
+export interface SelectionRound {
+  id: number;
+  title: string;
+  kind: 'tournament' | 'rowville';
+  season: number;
+  status: 'open' | 'selecting' | 'closed';
+  /**
+   * Tournament: the tournament. Rowville: the season registration players pay once successful.
+   */
+  program?: (number | null) | Program;
+  /**
+   * Tournament fee. Rowville uses the registration program’s price.
+   */
+  fee?: number | null;
+  paymentDeadlineDays?: number | null;
+  reminderDays?: number[] | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "selection-entries".
+ */
+export interface SelectionEntry {
   id: number;
   displayName?: string | null;
   /**
    * Created automatically when saved
    */
   reference?: string | null;
-  status: 'interested' | 'trial-booked' | 'attended' | 'offered' | 'registered' | 'closed';
-  /**
-   * From the date of birth — the age group is shown as e.g. “2017s”
-   */
+  round: number | SelectionRound;
+  kind?: ('tournament' | 'rowville') | null;
+  status:
+    | 'interested'
+    | 'trial-booked'
+    | 'attended'
+    | 'selected'
+    | 'offered'
+    | 'unsuccessful'
+    | 'registered'
+    | 'released'
+    | 'withdrawn'
+    | 'closed';
   birthYear?: number | null;
   /**
-   * Set automatically
+   * Set by the selection dashboard when a player is moved
    */
+  playingBirthYear?: number | null;
   season?: number | null;
+  flags?: 'outside-miniroos'[] | null;
+  /**
+   * Every move between age groups, with who made it and why
+   */
+  moves?:
+    | {
+        from: number;
+        to: number;
+        direction?: ('up' | 'down') | null;
+        steps?: number | null;
+        reason: string;
+        by?: (number | null) | User;
+        at?: string | null;
+        id?: string | null;
+      }[]
+    | null;
   trialSession?: (number | null) | TrialSession;
   offeredTeam?: (number | null) | Team;
   registrationProgram?: (number | null) | Program;
@@ -1103,8 +1154,12 @@ export interface PayloadLockedDocument {
         value: number | Post;
       } | null)
     | ({
-        relationTo: 'trial-registrations';
-        value: number | TrialRegistration;
+        relationTo: 'selection-rounds';
+        value: number | SelectionRound;
+      } | null)
+    | ({
+        relationTo: 'selection-entries';
+        value: number | SelectionEntry;
       } | null)
     | ({
         relationTo: 'trial-sessions';
@@ -1456,14 +1511,46 @@ export interface PostsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "trial-registrations_select".
+ * via the `definition` "selection-rounds_select".
  */
-export interface TrialRegistrationsSelect<T extends boolean = true> {
+export interface SelectionRoundsSelect<T extends boolean = true> {
+  title?: T;
+  kind?: T;
+  season?: T;
+  status?: T;
+  program?: T;
+  fee?: T;
+  paymentDeadlineDays?: T;
+  reminderDays?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "selection-entries_select".
+ */
+export interface SelectionEntriesSelect<T extends boolean = true> {
   displayName?: T;
   reference?: T;
+  round?: T;
+  kind?: T;
   status?: T;
   birthYear?: T;
+  playingBirthYear?: T;
   season?: T;
+  flags?: T;
+  moves?:
+    | T
+    | {
+        from?: T;
+        to?: T;
+        direction?: T;
+        steps?: T;
+        reason?: T;
+        by?: T;
+        at?: T;
+        id?: T;
+      };
   trialSession?: T;
   offeredTeam?: T;
   registrationProgram?: T;

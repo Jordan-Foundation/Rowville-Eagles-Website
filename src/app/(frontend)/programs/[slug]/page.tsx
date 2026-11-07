@@ -56,6 +56,13 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
               <Link href="/join" className="block w-full rounded-full bg-accent px-6 py-3 text-center font-semibold text-accent-ink hover:brightness-110">Join us for trials</Link>
               <Link href="/login?next=/account" className="block text-center text-sm font-semibold underline">Have an offer? Log in</Link>
             </div>
+          ) : p.type === 'tournament' && p.status === 'open' ? (
+            <div className="mt-7 space-y-3">
+              <Link href={`/programs/${p.slug}/interest`} className={`block w-full bg-accent px-6 py-3 text-center font-semibold text-accent-ink transition hover:brightness-110 ${academy ? 'uppercase tracking-[0.18em]' : 'rounded-full'}`}>
+                Register interest
+              </Link>
+              <p className="text-center text-xs text-muted">No payment now — coaches select teams by age group, and selected players are invited to register.</p>
+            </div>
           ) : p.status === 'open' ? (
             <Link
               href={`/programs/${p.slug}/book`}

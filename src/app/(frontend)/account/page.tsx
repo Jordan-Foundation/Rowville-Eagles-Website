@@ -7,6 +7,8 @@ import type { AcademyBooking, AcademyCoach, Program, Team } from '@/payload-type
 import { LogoutButton } from './LogoutButton'
 import { sessionPayment } from '@/academy/session-view'
 import { creditStateFor } from '@/academy/credits'
+import { getAgeRules } from '@/lib/age-rules'
+import { SelectionList } from '@/selections/SelectionList'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'My account', robots: { index: false } }
@@ -28,6 +30,10 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   ])
 
   const credits = await creditStateFor(p, user.id)
+  const [{ docs: selections }, rules] = await Promise.all([
+    p.find({ collection: 'selection-entries', where: { account: { equals: user.id }, status: { not_in: ['withdrawn', 'closed', 'released'] } }, sort: '-createdAt', depth: 2, limit: 50, overrideAccess: true }),
+    getAgeRules(p),
+  ])
   const credit = credits.available
   const pendingOffers = participants.docs.filter((x) => x.registrationOffer?.status === 'offered' && x.registrationOffer.program)
   const now = Date.now()
@@ -125,6 +131,12 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
 
       <div className="mt-10 grid gap-8 lg:grid-cols-[1fr_22rem]">
         <section>
+          {selections.length > 0 && (
+            <div className="mb-10">
+              <h2 className="font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase">Trials & selections</h2>
+              <SelectionList entries={selections} rules={rules} />
+            </div>
+          )}
           <h2 className="font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase">Upcoming</h2>
           {upcoming.length === 0 ? (
             <p className="mt-4 rounded-2xl border border-line p-6 text-muted">

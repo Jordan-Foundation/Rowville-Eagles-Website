@@ -6,7 +6,10 @@ import { birthYearOf } from '@/lib/age-groups'
 import { getAgeRules } from '@/lib/age-rules'
 import { makeReference } from '@/lib/reference'
 import { emailInterestConfirmation, emailTrialConfirmation, newToken, openTrialSessions } from '@/lib/trials'
-import type { TrialRegistration } from '@/payload-types'
+import type { SelectionEntry } from '@/payload-types'
+import { currentUser } from '@/lib/auth'
+import { rowvilleRound } from '@/selections/rounds'
+import { entryFlags, linkFamily } from '@/selections/entries'
 
 export type JoinState = { error?: string; values?: Record<string, string> }
 
@@ -48,26 +51,30 @@ export async function joinUs(_prev: JoinState, fd: FormData): Promise<JoinState>
     trialSessionId = chosen.session.id
   }
 
-  // One registration per player per season
+  // One registration per player per season (Rowville trials round)
+  const round = await rowvilleRound(p, season)
   const existing = await p.find({
-    collection: 'trial-registrations',
-    where: { 'contact.email': { equals: contact.email }, 'player.firstName': { like: player.firstName }, 'player.lastName': { like: player.lastName }, season: { equals: season } },
+    collection: 'selection-entries',
+    where: { round: { equals: round.id }, 'contact.email': { equals: contact.email }, 'player.firstName': { like: player.firstName }, 'player.lastName': { like: player.lastName } },
     limit: 1,
     overrideAccess: true,
   })
-  let reg: TrialRegistration
+  let reg: SelectionEntry
   if (existing.docs[0]) {
     const prev = existing.docs[0]
     if (prev.status !== 'interested' || !trialSessionId) {
       return fail(`${player.firstName} is already registered for ${season} (reference ${prev.reference}). Check your email, or contact the club to make changes.`)
     }
-    reg = await p.update({ collection: 'trial-registrations', id: prev.id, data: { status: 'trial-booked', trialSession: trialSessionId }, overrideAccess: true, context: { skipOffer: true } })
+    reg = await p.update({ collection: 'selection-entries', id: prev.id, data: { status: 'trial-booked', trialSession: trialSessionId }, overrideAccess: true, context: { skipOffer: true } })
   } else {
     reg = await p.create({
-      collection: 'trial-registrations',
+      collection: 'selection-entries',
       overrideAccess: true,
       data: {
         reference: makeReference('TRY'),
+        round: round.id,
+        kind: 'rowville',
+        flags: [...entryFlags(birthYear, rules, 'rowville')],
         status: trialSessionId ? 'trial-booked' : 'interested',
         season,
         birthYear,
@@ -79,6 +86,11 @@ export async function joinUs(_prev: JoinState, fd: FormData): Promise<JoinState>
     })
   }
 
+  try {
+    reg = (await linkFamily(p, reg, await currentUser())).entry
+  } catch (e) {
+    p.logger.error({ err: e, msg: `Linking account for ${reg.reference} failed` })
+  }
   try {
     if (trialSessionId) {
       const session = sessions.find((x) => x.session.id === trialSessionId)!.session
@@ -97,7 +109,7 @@ export async function chooseTrial(_prev: JoinState, fd: FormData): Promise<JoinS
   const ref = String(fd.get('ref') ?? '')
   const token = String(fd.get('token') ?? '')
   const p = await payload()
-  const { docs } = await p.find({ collection: 'trial-registrations', where: { reference: { equals: ref } }, limit: 1, overrideAccess: true, showHiddenFields: true })
+  const { docs } = await p.find({ collection: 'selection-entries', where: { reference: { equals: ref } }, limit: 1, overrideAccess: true, showHiddenFields: true })
   const reg = docs[0]
   if (!reg || !token || reg.token !== token) return { error: 'This link is no longer valid. Please contact the club.' }
   if (reg.status !== 'interested') return { error: 'A trial is already booked for this player — check your email for the details.' }
@@ -105,7 +117,7 @@ export async function chooseTrial(_prev: JoinState, fd: FormData): Promise<JoinS
   const chosen = sessions.find((x) => String(x.session.id) === String(fd.get('trialSession')) && x.remaining > 0)
   if (!chosen) return { error: 'Please choose a trial night with places available.' }
   const updated = await p.update({
-    collection: 'trial-registrations',
+    collection: 'selection-entries',
     id: reg.id,
     data: { status: 'trial-booked', trialSession: chosen.session.id },
     overrideAccess: true,

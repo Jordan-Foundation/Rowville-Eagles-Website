@@ -6,7 +6,7 @@ import { notifyInterestsOfTrial } from '../lib/trials'
 export const TrialSessions: CollectionConfig = {
   slug: 'trial-sessions',
   labels: { singular: 'Club trial date', plural: 'Club trial dates' },
-  admin: { useAsTitle: 'title', defaultColumns: ['title', 'start', 'birthYears', 'status'], group: 'Trials & Registration' },
+  admin: { useAsTitle: 'title', defaultColumns: ['title', 'start', 'birthYears', 'status'], group: 'Selections' },
   access: { read: anyone, create: isStaff, update: isStaff, delete: isStaff },
   defaultSort: 'start',
   hooks: {

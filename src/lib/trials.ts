@@ -1,6 +1,6 @@
 import { randomBytes } from 'crypto'
 import type { Payload, PayloadRequest } from 'payload'
-import type { Program, Team, TrialRegistration, TrialSession } from '@/payload-types'
+import type { Program, Team, SelectionEntry, TrialSession } from '@/payload-types'
 import { accountLink, ensureAccount, findOrCreateParticipant } from './accounts'
 import { sendEmail } from './email'
 import { emailLayout, esc, rfaPromoBlock } from './email-templates'
@@ -17,7 +17,7 @@ const when = (iso: string) => formatDate(iso, { weekday: 'long', day: 'numeric',
 /** Places used in a club trial session for one age group (year of birth). */
 export async function trialPlacesTaken(payload: Payload, sessionId: number, birthYear: number) {
   const { totalDocs } = await payload.count({
-    collection: 'trial-registrations',
+    collection: 'selection-entries',
     where: { trialSession: { equals: sessionId }, birthYear: { equals: birthYear }, status: { in: ['trial-booked', 'attended', 'offered', 'registered'] } },
     overrideAccess: true,
   })
@@ -28,7 +28,7 @@ export async function trialPlacesTaken(payload: Payload, sessionId: number, birt
 export async function openTrialSessions(payload: Payload, birthYear: number) {
   const { docs } = await payload.find({
     collection: 'trial-sessions',
-    where: { status: { equals: 'published' }, start: { greater_than: new Date().toISOString() }, birthYears: { contains: birthYear } },
+    where: { status: { equals: 'published' }, start: { greater_than: new Date().toISOString() }, birthYears: { in: [birthYear] } },
     sort: 'start',
     limit: 20,
     depth: 0,
@@ -36,7 +36,7 @@ export async function openTrialSessions(payload: Payload, birthYear: number) {
   return Promise.all(docs.map(async (s) => ({ session: s, remaining: Math.max(0, (s.capacityPerAgeGroup ?? 20) - (await trialPlacesTaken(payload, s.id, birthYear))) })))
 }
 
-export async function emailTrialConfirmation(payload: Payload, reg: TrialRegistration, session: TrialSession) {
+export async function emailTrialConfirmation(payload: Payload, reg: SelectionEntry, session: TrialSession) {
   const html = emailLayout('club', [
     {
       heading: `${reg.player.firstName} is booked in for trials`,
@@ -54,7 +54,7 @@ export async function emailTrialConfirmation(payload: Payload, reg: TrialRegistr
   await sendEmail(payload, { to: reg.contact.email, subject: `Trial booked: ${session.title}`, html, sender: 'club', replyTo: await replyTo(payload) })
 }
 
-export async function emailInterestConfirmation(payload: Payload, reg: TrialRegistration) {
+export async function emailInterestConfirmation(payload: Payload, reg: SelectionEntry) {
   const html = emailLayout('club', [
     {
       heading: 'You’re on the list!',
@@ -74,7 +74,7 @@ export async function emailInterestConfirmation(payload: Payload, reg: TrialRegi
 export async function notifyInterestsOfTrial(payload: Payload, session: TrialSession, req?: PayloadRequest) {
   if (new Date(session.start) < new Date()) return
   const { docs } = await payload.find({
-    collection: 'trial-registrations',
+    collection: 'selection-entries',
     where: { status: { equals: 'interested' }, birthYear: { in: session.birthYears } },
     limit: 1000,
     depth: 0,
@@ -84,7 +84,7 @@ export async function notifyInterestsOfTrial(payload: Payload, session: TrialSes
   for (const reg of docs) {
     const notified = (reg.notifiedSessions ?? []).map((s) => (typeof s === 'object' ? s.id : s))
     if (notified.includes(session.id)) continue
-    const { token } = await payload.findByID({ collection: 'trial-registrations', id: reg.id, depth: 0, overrideAccess: true, showHiddenFields: true, req })
+    const { token } = await payload.findByID({ collection: 'selection-entries', id: reg.id, depth: 0, overrideAccess: true, showHiddenFields: true, req })
     const html = emailLayout('club', [
       {
         heading: `Trial dates are here for ${grp(reg.birthYear)}`,
@@ -99,7 +99,7 @@ export async function notifyInterestsOfTrial(payload: Payload, session: TrialSes
     ])
     await sendEmail(payload, { to: reg.contact.email, subject: `${grp(reg.birthYear)} trial dates announced — Rowville Eagles`, html, sender: 'club', replyTo: await replyTo(payload, req), req })
     await payload.update({
-      collection: 'trial-registrations',
+      collection: 'selection-entries',
       id: reg.id,
       data: { notifiedSessions: [...notified, session.id] },
       overrideAccess: true,
@@ -110,7 +110,7 @@ export async function notifyInterestsOfTrial(payload: Payload, session: TrialSes
 }
 
 /** Committee marked a registrant "Offer a place": create account + player, unlock registration, email the family. */
-export async function sendOffer(payload: Payload, reg: TrialRegistration, req?: PayloadRequest) {
+export async function sendOffer(payload: Payload, reg: SelectionEntry, req?: PayloadRequest) {
   const programId = typeof reg.registrationProgram === 'object' ? reg.registrationProgram?.id : reg.registrationProgram
   const teamId = typeof reg.offeredTeam === 'object' ? reg.offeredTeam?.id : reg.offeredTeam
   if (!programId || !teamId) return
@@ -129,7 +129,7 @@ export async function sendOffer(payload: Payload, reg: TrialRegistration, req?: 
     req,
   })
   await payload.update({
-    collection: 'trial-registrations',
+    collection: 'selection-entries',
     id: reg.id,
     data: { account: user.id, participant: participant.id, offerSentAt: new Date().toISOString() },
     overrideAccess: true,

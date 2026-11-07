@@ -43,7 +43,7 @@ if (hosted) {
   }
 }
 
-for (const c of ['academy-sessions', 'academy-bookings', 'academy-reminder-log', 'academy-availability', 'academy-coaches', 'academy-terms', 'trial-registrations', 'trial-sessions', 'bookings', 'orders', 'products', 'participants', 'programs', 'teams', 'posts', 'sponsors'] as const) {
+for (const c of ['academy-sessions', 'academy-bookings', 'academy-reminder-log', 'academy-availability', 'academy-coaches', 'academy-terms', 'selection-entries', 'trial-sessions', 'bookings', 'orders', 'products', 'participants', 'programs', 'teams', 'posts', 'sponsors'] as const) {
   await payload.delete({ collection: c, where: { id: { exists: true } } })
 }
 

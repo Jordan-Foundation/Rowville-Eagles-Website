@@ -26,7 +26,8 @@ export async function bookProgram(_prev: BookingState, fd: FormData): Promise<Bo
   const program = docs[0]
   if (!program) return fail('This program is no longer taking bookings.')
 
-  const isTeamEntry = program.type === 'tournament'
+  if (program.type === 'tournament') return { error: 'Tournaments are by selection — please register interest instead.' }
+  const isTeamEntry = false
   const isRegistration = program.type === 'registration'
 
   // Link to a logged-in account if there is one; guests are linked after payment by email.

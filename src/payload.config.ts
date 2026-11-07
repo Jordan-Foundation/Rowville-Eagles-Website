@@ -18,7 +18,8 @@ import { Sponsors } from './collections/Sponsors'
 import { Products } from './collections/Products'
 import { Orders } from './collections/Orders'
 import { TrialSessions } from './collections/TrialSessions'
-import { TrialRegistrations } from './collections/TrialRegistrations'
+import { SelectionEntries } from './selections/collections/SelectionEntries'
+import { SelectionRounds } from './selections/collections/SelectionRounds'
 import { resendAdapter } from '@payloadcms/email-resend'
 import { InviteTokens } from './collections/InviteTokens'
 import { ConsentRecords } from './collections/ConsentRecords'
@@ -46,7 +47,7 @@ export default buildConfig({
     meta: { titleSuffix: ' · Rowville Eagles Admin' },
     importMap: { baseDir: path.resolve(dirname) },
   },
-  collections: [AcademyBookings, AcademySessions, AcademyTerms, AcademyCoaches, AcademyAvailability, AcademyReminderLog, AcademyCredits, Posts, TrialRegistrations, TrialSessions, Programs, Bookings, Products, Orders, Teams, Sponsors, Participants, Users, ConsentRecords, MessageLog, InviteTokens, Media],
+  collections: [AcademyBookings, AcademySessions, AcademyTerms, AcademyCoaches, AcademyAvailability, AcademyReminderLog, AcademyCredits, Posts, SelectionRounds, SelectionEntries, TrialSessions, Programs, Bookings, Products, Orders, Teams, Sponsors, Participants, Users, ConsentRecords, MessageLog, InviteTokens, Media],
   globals: [SiteSettings, About, AcademySettings],
   editor: lexicalEditor(),
   ...(process.env.RESEND_API_KEY

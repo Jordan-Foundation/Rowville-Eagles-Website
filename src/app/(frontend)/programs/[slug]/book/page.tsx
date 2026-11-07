@@ -29,6 +29,8 @@ export default async function BookPage({
   const program = docs[0]
   if (!program) notFound()
 
+  // Tournaments are by selection: register interest instead
+  if (program.type === 'tournament') redirect(`/programs/${slug}/interest`)
   const academy = program.brand === 'academy'
 
   // Team registrations: only logged-in families with an offer for this program
@@ -98,7 +100,7 @@ export default async function BookPage({
             ) : (
               <BookingForm
                 slug={program.slug}
-                isTeamEntry={program.type === 'tournament'}
+                isTeamEntry={false}
                 offeredPlayers={offered}
                 defaultPlayer={participantParam}
                 slots={slots}

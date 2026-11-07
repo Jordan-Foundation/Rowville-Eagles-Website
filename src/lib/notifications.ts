@@ -58,9 +58,9 @@ export async function onBookingPaid(payload: Payload, booking: Booking) {
     const participant = await payload.findByID({ collection: 'participants', id: participantId, depth: 0, overrideAccess: true })
     if (program.type === 'registration') {
       await addMembership(payload, participant, 'rowville', { registrationOffer: { ...participant.registrationOffer, status: 'paid' } })
-      const regs = await payload.find({ collection: 'trial-registrations', where: { participant: { equals: participantId } }, limit: 5, depth: 0, overrideAccess: true })
+      const regs = await payload.find({ collection: 'selection-entries', where: { participant: { equals: participantId } }, limit: 5, depth: 0, overrideAccess: true })
       for (const r of regs.docs) {
-        await payload.update({ collection: 'trial-registrations', id: r.id, data: { status: 'registered' }, overrideAccess: true, context: { skipOffer: true } })
+        await payload.update({ collection: 'selection-entries', id: r.id, data: { status: 'registered' }, overrideAccess: true, context: { skipOffer: true } })
       }
     } else if (program.type === 'academy-term') {
       await addMembership(payload, participant, 'rfa')

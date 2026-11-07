@@ -6,6 +6,8 @@ import { currentUser } from '@/lib/auth'
 import { ageOn, sessionPayment } from '@/academy/session-view'
 import type { AcademyBooking, AcademyCoach, Program } from '@/payload-types'
 import { PlayerForm } from './PlayerForm'
+import { getAgeRules } from '@/lib/age-rules'
+import { SelectionList } from '@/selections/SelectionList'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Player', robots: { index: false } }
@@ -21,6 +23,10 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
   const kid = await p.findByID({ collection: 'participants', id: Number(id), depth: 0, overrideAccess: true, disableErrors: true })
   if (!kid || (typeof kid.account === 'object' ? kid.account.id : kid.account) !== user.id) notFound()
 
+  const [{ docs: selections }, rules] = await Promise.all([
+    p.find({ collection: 'selection-entries', where: { participant: { equals: kid.id }, status: { not_in: ['withdrawn', 'closed', 'released'] } }, sort: '-createdAt', depth: 2, limit: 30, overrideAccess: true }),
+    getAgeRules(p),
+  ])
   const [{ docs: academyBookings }, { docs: clubBookings }] = await Promise.all([
     p.find({ collection: 'academy-bookings', where: { participant: { equals: kid.id } }, depth: 0, limit: 100, overrideAccess: true }),
     p.find({ collection: 'bookings', where: { participant: { equals: kid.id }, status: { equals: 'paid' } }, depth: 1, limit: 50, sort: '-createdAt', overrideAccess: true }),
@@ -95,6 +101,12 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
 
       <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_24rem]">
         <section>
+          {selections.length > 0 && (
+            <div className="mb-10">
+              <h2 className="font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase">Trials & selections</h2>
+              <SelectionList entries={selections} rules={rules} showPlayer={false} />
+            </div>
+          )}
           <h2 className="font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase">Upcoming 1-on-1s</h2>
           {upcoming.length ? (
             <ol className="mt-4 divide-y divide-line rounded-2xl border border-line">{upcoming.map(row)}</ol>
