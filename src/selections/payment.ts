@@ -6,6 +6,7 @@ import { emailLayout, esc } from '../lib/email-templates'
 import { formatAUD, formatDate } from '../lib/format'
 import { siteUrl } from '../lib/payments'
 import { sendSms } from '../lib/sms'
+import { joinFromEntry } from '../teams/service'
 
 /**
  * Paying after selection: selected (tournament) and successful (Rowville) players complete registration
@@ -145,11 +146,17 @@ export async function releaseEntries(payload: Payload, ids: number[], o: { email
 export async function markSelectionPaid(payload: Payload, booking: Booking) {
   const id = rel(booking.selectionEntry)
   if (!id) return
-  await payload.update({
+  const entry = await payload.update({
     collection: 'selection-entries',
     id,
     overrideAccess: true,
     context: { skipOffer: true },
     data: { status: 'registered', paidAt: new Date().toISOString(), booking: booking.id, account: rel(booking.account), participant: rel(booking.participant) },
   })
+  // Join the squad's team (and its team page)
+  try {
+    await joinFromEntry(payload, entry)
+  } catch (err) {
+    payload.logger.error({ err, msg: `Adding ${entry.reference} to the team failed — the daily sync will retry` })
+  }
 }

@@ -87,7 +87,7 @@ for (const age of miniroos) {
   for (const n of [1, 2]) {
     await payload.create({
       collection: 'teams',
-      data: { name: `${age} Eagles ${n}`, slug: `${age}-eagles-${n}`.toLowerCase(), category: 'miniroos', ageGroup: age, trainingTimes: 'Tue & Thu 5:00pm', order: order++ },
+      data: { type: 'rowville', name: `${age} Eagles ${n}`, slug: `${age}-eagles-${n}`.toLowerCase(), category: 'miniroos', ageGroup: age, trainingTimes: 'Tue & Thu 5:00pm', order: order++ },
     })
   }
 }
@@ -96,7 +96,7 @@ for (const t of [
   { name: 'Senior Men', slug: 'senior-men', category: 'senior-men', ageGroup: 'Seniors' },
   { name: "Men's Reserves", slug: 'mens-reserves', category: 'senior-men', ageGroup: 'Reserves' },
 ] as const) {
-  await payload.create({ collection: 'teams', data: { ...t, trainingTimes: 'Tue & Thu 7:00pm', order: order++ } })
+  await payload.create({ collection: 'teams', data: { ...t, type: 'rowville', trainingTimes: 'Tue & Thu 7:00pm', order: order++ } })
 }
 
 const programs = [

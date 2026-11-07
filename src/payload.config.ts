@@ -21,6 +21,9 @@ import { TrialSessions } from './collections/TrialSessions'
 import { SelectionEntries } from './selections/collections/SelectionEntries'
 import { SelectionRounds } from './selections/collections/SelectionRounds'
 import { Squads } from './selections/collections/Squads'
+import { TeamMembers } from './teams/collections/TeamMembers'
+import { TeamPosts } from './teams/collections/TeamPosts'
+import { ForumReplies, ForumThreads } from './teams/collections/Forum'
 import { resendAdapter } from '@payloadcms/email-resend'
 import { InviteTokens } from './collections/InviteTokens'
 import { ConsentRecords } from './collections/ConsentRecords'
@@ -48,7 +51,7 @@ export default buildConfig({
     meta: { titleSuffix: ' · Rowville Eagles Admin' },
     importMap: { baseDir: path.resolve(dirname) },
   },
-  collections: [AcademyBookings, AcademySessions, AcademyTerms, AcademyCoaches, AcademyAvailability, AcademyReminderLog, AcademyCredits, Posts, SelectionRounds, Squads, SelectionEntries, TrialSessions, Programs, Bookings, Products, Orders, Teams, Sponsors, Participants, Users, ConsentRecords, MessageLog, InviteTokens, Media],
+  collections: [AcademyBookings, AcademySessions, AcademyTerms, AcademyCoaches, AcademyAvailability, AcademyReminderLog, AcademyCredits, Posts, SelectionRounds, Squads, SelectionEntries, TrialSessions, Programs, Bookings, Products, Orders, Teams, TeamMembers, TeamPosts, ForumThreads, ForumReplies, Sponsors, Participants, Users, ConsentRecords, MessageLog, InviteTokens, Media],
   globals: [SiteSettings, About, AcademySettings],
   editor: lexicalEditor(),
   ...(process.env.RESEND_API_KEY

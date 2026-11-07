@@ -84,6 +84,10 @@ export interface Config {
     products: Product;
     orders: Order;
     teams: Team;
+    'team-members': TeamMember;
+    'team-posts': TeamPost;
+    'forum-threads': ForumThread;
+    'forum-replies': ForumReply;
     sponsors: Sponsor;
     participants: Participant;
     users: User;
@@ -115,6 +119,10 @@ export interface Config {
     products: ProductsSelect<false> | ProductsSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
     teams: TeamsSelect<false> | TeamsSelect<true>;
+    'team-members': TeamMembersSelect<false> | TeamMembersSelect<true>;
+    'team-posts': TeamPostsSelect<false> | TeamPostsSelect<true>;
+    'forum-threads': ForumThreadsSelect<false> | ForumThreadsSelect<true>;
+    'forum-replies': ForumRepliesSelect<false> | ForumRepliesSelect<true>;
     sponsors: SponsorsSelect<false> | SponsorsSelect<true>;
     participants: ParticipantsSelect<false> | ParticipantsSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
@@ -490,23 +498,102 @@ export interface Team {
   id: number;
   name: string;
   slug: string;
-  category: 'miniroos' | 'junior-boys' | 'junior-girls' | 'senior-women' | 'senior-men';
+  type: 'rowville' | 'tournament';
+  season?: number | null;
   /**
-   * e.g. U7, U12, Seniors, Reserves
+   * Hides the team page from families after the season / tournament
+   */
+  archived?: boolean | null;
+  /**
+   * Look and sender of team emails
+   */
+  brand?: ('club' | 'academy') | null;
+  /**
+   * Shown as “[Tournament] – [Team]”
+   */
+  event?: string | null;
+  category?: ('miniroos' | 'junior-boys' | 'junior-girls' | 'senior-women' | 'senior-men') | null;
+  /**
+   * e.g. 2017s
    */
   ageGroup?: string | null;
   /**
    * League / division
    */
   competition?: string | null;
-  trainingTimes?: string | null;
-  coaches?: (number | User)[] | null;
   /**
-   * Link to this team’s fixtures page on Dribl (shown on the Fixtures page).
+   * Coaches/managers can post notices, edit training and fixtures, and moderate the forum
+   */
+  coaches?: (number | User)[] | null;
+  sections?: {
+    info?: boolean | null;
+    notices?: boolean | null;
+    fixtures?: boolean | null;
+    training?: boolean | null;
+    forum?: boolean | null;
+  };
+  info?: {
+    /**
+     * e.g. Sat 20 – Sun 21 March 2027
+     */
+    dates?: string | null;
+    venues?: string | null;
+    /**
+     * Arrival times, game times, presentations…
+     */
+    schedule?: string | null;
+    whatToBring?: string | null;
+    costs?: string | null;
+    /**
+     * Team manager / coach names and phone numbers
+     */
+    contacts?: string | null;
+  };
+  externalUrl?: string | null;
+  /**
+   * Families see “Fixtures not yet released” until this or fixtures below are added
    */
   driblUrl?: string | null;
   /**
-   * Dribl team identifier — used to pull fixtures & results automatically.
+   * Upcoming fixtures and results (coaches can also edit these on the team page)
+   */
+  fixtures?:
+    | {
+        startsAt: string;
+        opponent: string;
+        venue?: string | null;
+        /**
+         * e.g. W 3–1
+         */
+        result?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  training?:
+    | {
+        day: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
+        /**
+         * 24h, e.g. 17:00
+         */
+        start: string;
+        /**
+         * 24h, e.g. 18:00
+         */
+        end?: string | null;
+        location?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Changes are highlighted on the team page for 14 days
+   */
+  trainingChangedAt?: string | null;
+  /**
+   * Short text for the public Fixtures page, e.g. “Tue & Thu 5:00pm”
+   */
+  trainingTimes?: string | null;
+  /**
+   * Dribl team identifier (future automatic fixtures)
    */
   driblTeamId?: string | null;
   photo?: (number | null) | Media;
@@ -1080,6 +1167,73 @@ export interface Order {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "team-members".
+ */
+export interface TeamMember {
+  id: number;
+  team: number | Team;
+  participant: number | Participant;
+  account: number | User;
+  active?: boolean | null;
+  source?: ('selection' | 'registration' | 'admin') | null;
+  selectionEntry?: (number | null) | SelectionEntry;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "team-posts".
+ */
+export interface TeamPost {
+  id: number;
+  team: number | Team;
+  title: string;
+  body: string;
+  author: number | User;
+  pinned?: boolean | null;
+  sentAt?: string | null;
+  sentTo?: number | null;
+  editedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "forum-threads".
+ */
+export interface ForumThread {
+  id: number;
+  team: number | Team;
+  title: string;
+  body: string;
+  author: number | User;
+  pinned?: boolean | null;
+  locked?: boolean | null;
+  lastActivityAt?: string | null;
+  /**
+   * Removed by a moderator (kept for the record)
+   */
+  removedAt?: string | null;
+  removedBy?: (number | null) | User;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "forum-replies".
+ */
+export interface ForumReply {
+  id: number;
+  thread: number | ForumThread;
+  body: string;
+  author: number | User;
+  removedAt?: string | null;
+  removedBy?: (number | null) | User;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "sponsors".
  */
 export interface Sponsor {
@@ -1253,6 +1407,22 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'teams';
         value: number | Team;
+      } | null)
+    | ({
+        relationTo: 'team-members';
+        value: number | TeamMember;
+      } | null)
+    | ({
+        relationTo: 'team-posts';
+        value: number | TeamPost;
+      } | null)
+    | ({
+        relationTo: 'forum-threads';
+        value: number | ForumThread;
+      } | null)
+    | ({
+        relationTo: 'forum-replies';
+        value: number | ForumReply;
       } | null)
     | ({
         relationTo: 'sponsors';
@@ -1859,15 +2029,119 @@ export interface OrdersSelect<T extends boolean = true> {
 export interface TeamsSelect<T extends boolean = true> {
   name?: T;
   slug?: T;
+  type?: T;
+  season?: T;
+  archived?: T;
+  brand?: T;
+  event?: T;
   category?: T;
   ageGroup?: T;
   competition?: T;
-  trainingTimes?: T;
   coaches?: T;
+  sections?:
+    | T
+    | {
+        info?: T;
+        notices?: T;
+        fixtures?: T;
+        training?: T;
+        forum?: T;
+      };
+  info?:
+    | T
+    | {
+        dates?: T;
+        venues?: T;
+        schedule?: T;
+        whatToBring?: T;
+        costs?: T;
+        contacts?: T;
+      };
+  externalUrl?: T;
   driblUrl?: T;
+  fixtures?:
+    | T
+    | {
+        startsAt?: T;
+        opponent?: T;
+        venue?: T;
+        result?: T;
+        id?: T;
+      };
+  training?:
+    | T
+    | {
+        day?: T;
+        start?: T;
+        end?: T;
+        location?: T;
+        id?: T;
+      };
+  trainingChangedAt?: T;
+  trainingTimes?: T;
   driblTeamId?: T;
   photo?: T;
   order?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "team-members_select".
+ */
+export interface TeamMembersSelect<T extends boolean = true> {
+  team?: T;
+  participant?: T;
+  account?: T;
+  active?: T;
+  source?: T;
+  selectionEntry?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "team-posts_select".
+ */
+export interface TeamPostsSelect<T extends boolean = true> {
+  team?: T;
+  title?: T;
+  body?: T;
+  author?: T;
+  pinned?: T;
+  sentAt?: T;
+  sentTo?: T;
+  editedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "forum-threads_select".
+ */
+export interface ForumThreadsSelect<T extends boolean = true> {
+  team?: T;
+  title?: T;
+  body?: T;
+  author?: T;
+  pinned?: T;
+  locked?: T;
+  lastActivityAt?: T;
+  removedAt?: T;
+  removedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "forum-replies_select".
+ */
+export interface ForumRepliesSelect<T extends boolean = true> {
+  thread?: T;
+  body?: T;
+  author?: T;
+  removedAt?: T;
+  removedBy?: T;
   updatedAt?: T;
   createdAt?: T;
 }

@@ -17,7 +17,7 @@ export default async function FixturesPage({ searchParams }: { searchParams: Pro
   const { team: selectedSlug } = await searchParams
   const p = await payload()
   const [{ docs: teams }, settings] = await Promise.all([
-    p.find({ collection: 'teams', limit: 200, depth: 0, sort: 'order' }),
+    p.find({ collection: 'teams', where: { type: { not_equals: 'tournament' }, archived: { not_equals: true } }, limit: 200, depth: 0, sort: 'order' }),
     p.findGlobal({ slug: 'site-settings' }),
   ])
   const groups = teamCategories

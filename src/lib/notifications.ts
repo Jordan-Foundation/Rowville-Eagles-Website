@@ -1,5 +1,6 @@
 import { groupLabel } from './age-groups'
 import { markSelectionPaid } from '../selections/payment'
+import { addMember } from '../teams/service'
 import type { Payload } from 'payload'
 import type { Booking, Order, Program } from '@/payload-types'
 import { accountLink, addMembership, ensureAccount, findOrCreateParticipant } from './accounts'
@@ -58,7 +59,9 @@ export async function onBookingPaid(payload: Payload, booking: Booking) {
   if (participantId) {
     const participant = await payload.findByID({ collection: 'participants', id: participantId, depth: 0, overrideAccess: true })
     if (program.type === 'registration') {
-      await addMembership(payload, participant, 'rowville', { registrationOffer: { ...participant.registrationOffer, status: 'paid' } })
+      const updated = await addMembership(payload, participant, 'rowville', { registrationOffer: { ...participant.registrationOffer, status: 'paid' } })
+      // Club registration paid → onto the team (and its team page)
+      if (updated.team) await addMember(payload, { team: typeof updated.team === 'object' ? updated.team.id : updated.team, participant: updated.id, account: user.id, source: 'registration' })
       const regs = await payload.find({ collection: 'selection-entries', where: { participant: { equals: participantId } }, limit: 5, depth: 0, overrideAccess: true })
       for (const r of regs.docs) {
         await payload.update({ collection: 'selection-entries', id: r.id, data: { status: 'registered' }, overrideAccess: true, context: { skipOffer: true } })
