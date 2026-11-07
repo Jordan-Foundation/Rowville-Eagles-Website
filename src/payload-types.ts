@@ -83,6 +83,7 @@ export interface Config {
     'pdr-awards': PdrAward;
     'fplus-waitlist': FplusWaitlist;
     'fplus-events': FplusEvent;
+    'fplus-trial-cards': FplusTrialCard;
     'form-throttle': FormThrottle;
     'academy-coaches': AcademyCoach;
     'academy-availability': AcademyAvailability;
@@ -132,6 +133,7 @@ export interface Config {
     'pdr-awards': PdrAwardsSelect<false> | PdrAwardsSelect<true>;
     'fplus-waitlist': FplusWaitlistSelect<false> | FplusWaitlistSelect<true>;
     'fplus-events': FplusEventsSelect<false> | FplusEventsSelect<true>;
+    'fplus-trial-cards': FplusTrialCardsSelect<false> | FplusTrialCardsSelect<true>;
     'form-throttle': FormThrottleSelect<false> | FormThrottleSelect<true>;
     'academy-coaches': AcademyCoachesSelect<false> | AcademyCoachesSelect<true>;
     'academy-availability': AcademyAvailabilitySelect<false> | AcademyAvailabilitySelect<true>;
@@ -528,6 +530,7 @@ export interface Participant {
     cancelAtPeriodEnd?: boolean | null;
     pastDueSince?: string | null;
     trialUsedAt?: string | null;
+    trialReminderSentAt?: string | null;
     leaderboardOptOut?: boolean | null;
     /**
      * Default: first name + last initial, e.g. Mia T.
@@ -1440,6 +1443,19 @@ export interface FplusEvent {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "fplus-trial-cards".
+ */
+export interface FplusTrialCard {
+  id: number;
+  fingerprint: string;
+  account?: (number | null) | User;
+  player?: (number | null) | Participant;
+  subscriptionId?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "form-throttle".
  */
 export interface FormThrottle {
@@ -1790,7 +1806,7 @@ export interface MessageLog {
  */
 export interface InviteToken {
   id: number;
-  purpose: 'create-account' | 'confirm-consent';
+  purpose: 'create-account' | 'confirm-consent' | 'fplus-trial' | 'fplus-join';
   user: number | User;
   email: string;
   tokenHash: string;
@@ -1886,6 +1902,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'fplus-events';
         value: number | FplusEvent;
+      } | null)
+    | ({
+        relationTo: 'fplus-trial-cards';
+        value: number | FplusTrialCard;
       } | null)
     | ({
         relationTo: 'form-throttle';
@@ -2475,6 +2495,18 @@ export interface FplusEventsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "fplus-trial-cards_select".
+ */
+export interface FplusTrialCardsSelect<T extends boolean = true> {
+  fingerprint?: T;
+  account?: T;
+  player?: T;
+  subscriptionId?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "form-throttle_select".
  */
 export interface FormThrottleSelect<T extends boolean = true> {
@@ -3041,6 +3073,7 @@ export interface ParticipantsSelect<T extends boolean = true> {
         cancelAtPeriodEnd?: T;
         pastDueSince?: T;
         trialUsedAt?: T;
+        trialReminderSentAt?: T;
         leaderboardOptOut?: T;
         leaderboardName?: T;
         consentAt?: T;

@@ -70,6 +70,10 @@ export async function applySubscription(payload: Payload, sub: SubLike, now = ne
   const type = lifecycleEvent(before, { status: sub.status, plan })
   if (type) await logEvent(payload, { type, kid: updated, plan, subscriptionId: sub.id })
   if (type) await notify(payload, type, updated, plan)
+  if (type === 'trial_started') {
+    const { markTrialClaimed } = await import('./trial')
+    await markTrialClaimed(payload, updated)
+  }
   return updated
 }
 
@@ -100,7 +104,26 @@ async function notify(payload: Payload, type: string, kid: Participant, plan: Pl
   const { name } = await foundationSettings(payload)
   const page = `${siteUrl()}/foundation-plus/${kid.id}`
   const tier = tierName(plan)
+  const day = (v?: string | null) => (v ? formatDate(v, { weekday: 'long', day: 'numeric', month: 'long' }) : '')
   const msgs: Record<string, { subject: string; heading: string; intro: string; label: string } | undefined> = {
+    trial_started: {
+      subject: `Your free month of ${name} Premium has started`,
+      heading: 'Your free month has started',
+      intro: `Welcome! ${esc(kid.firstName)} has <strong>${esc(name)} Premium free until ${esc(day(kid.pdr?.trialEndsAt))}</strong> — every level, feedback videos and monthly challenges. We’ll email you 7 days before it ends. If you don’t cancel, it continues as Premium monthly; cancel any time from Manage plan and you won’t be charged.`,
+      label: `Open ${kid.firstName}’s player page`,
+    },
+    trial_converted: {
+      subject: `${name}: free month ended — you’re on Premium`,
+      heading: 'Your free month has ended',
+      intro: `${esc(kid.firstName)} is now on ${esc(name)} <strong>Premium</strong> monthly and the first payment has been taken. Thanks for staying with us! You can switch plans or cancel any time from Manage plan.`,
+      label: `Open ${kid.firstName}’s player page`,
+    },
+    trial_cancelled: {
+      subject: `${name}: your free month has ended`,
+      heading: 'Your free month has ended',
+      intro: `${esc(kid.firstName)}’s free month of ${esc(name)} Premium has ended and nothing was charged. They’re on the Free plan — Level 1 of every area, with progress, scores and badges kept. Come back any time.`,
+      label: 'See plans',
+    },
     subscribed: { subject: `Welcome to ${name} ${tier}`, heading: `Welcome to ${tier}`, intro: `${esc(kid.firstName)} is now on ${esc(name)} <strong>${esc(tier)}</strong>. Everything is unlocked on their player page — time to train!`, label: `Open ${kid.firstName}’s player page` },
     reactivated: { subject: `Welcome back to ${name}`, heading: 'Welcome back', intro: `${esc(kid.firstName)} is back on ${esc(name)} <strong>${esc(tier)}</strong>. Their progress was kept.`, label: `Open ${kid.firstName}’s player page` },
     plan_changed: { subject: `${name}: plan changed to ${tier}`, heading: 'Plan changed', intro: `${esc(kid.firstName)} is now on <strong>${esc(tier)}</strong>.`, label: 'Open the player page' },
@@ -119,8 +142,8 @@ async function notify(payload: Payload, type: string, kid: Participant, plan: Pl
   }
   const m = msgs[type]
   if (!m) return
-  const href = type === 'payment_failed' ? `${siteUrl()}/foundation-plus/billing?player=${kid.id}` : type === 'cancelled' ? `${siteUrl()}/foundation-plus#pricing` : page
-  const html = emailLayout('academy', [{ heading: m.heading, intro: m.intro, cta: { label: m.label, href }, after: kid.pdr?.currentPeriodEnd && type !== 'cancelled' ? `Current period ends ${esc(formatDate(kid.pdr.currentPeriodEnd, { day: 'numeric', month: 'long', year: 'numeric' }))}. Manage or cancel any time from the player page.` : undefined }])
+  const href = type === 'payment_failed' ? `${siteUrl()}/foundation-plus/billing?player=${kid.id}` : type === 'cancelled' || type === 'trial_cancelled' ? `${siteUrl()}/foundation-plus#pricing` : page
+  const html = emailLayout('academy', [{ heading: m.heading, intro: m.intro, cta: { label: m.label, href }, after: kid.pdr?.currentPeriodEnd && !['cancelled', 'trial_cancelled', 'trial_started'].includes(type) ? `Current period ends ${esc(formatDate(kid.pdr.currentPeriodEnd, { day: 'numeric', month: 'long', year: 'numeric' }))}. Manage or cancel any time from the player page.` : undefined }])
   await sendEmail(payload, { to: parent.email, subject: m.subject, html, sender: 'academy', userId: parent.id })
 }
 

@@ -17,6 +17,8 @@ export const InviteTokens: CollectionConfig = {
       options: [
         { label: 'Create account', value: 'create-account' },
         { label: 'Confirm communication preferences', value: 'confirm-consent' },
+        { label: 'Foundation+ free month', value: 'fplus-trial' },
+        { label: 'Foundation+ free account', value: 'fplus-join' },
       ],
     },
     { name: 'user', type: 'relationship', relationTo: 'users', required: true },

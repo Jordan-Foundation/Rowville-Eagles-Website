@@ -9,6 +9,16 @@ export const PdrSettings: GlobalConfig = {
   hooks: {
     afterChange: [
       async ({ doc, previousDoc, req }) => {
+        // Switched on → everyone on the waitlist gets their "claim your free month" email (first batch now, rest by the daily job)
+        if (doc.enabled && !previousDoc?.enabled) {
+          try {
+            const { sendLaunchEmails } = await import('./billing/trial')
+            const r = await sendLaunchEmails(req.payload, 100, { justEnabled: true })
+            req.payload.logger.info(`Foundation+ launch emails: ${JSON.stringify(r)}`)
+          } catch (e) {
+            req.payload.logger.error({ err: e, msg: 'Foundation+ launch emails failed — the daily job will retry' })
+          }
+        }
         // New plan prices → new Stripe prices (the lookup keys move to them)
         if (JSON.stringify(doc.plans ?? {}) === JSON.stringify(previousDoc?.plans ?? {})) return doc
         try {

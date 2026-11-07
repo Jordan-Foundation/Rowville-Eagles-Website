@@ -39,6 +39,6 @@ export async function addPlayerAction(_prev: AddPlayerState, fd: FormData): Prom
   const { findOrCreateParticipant } = await import('@/lib/accounts')
   await findOrCreateParticipant(p, user.id, { firstName, lastName, dateOfBirth })
   const { revalidatePath } = await import('next/cache')
-  revalidatePath('/foundation-plus/subscribe')
+  revalidatePath('/foundation-plus', 'layout')
   return { done: `${firstName} added.` }
 }

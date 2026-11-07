@@ -26,6 +26,13 @@ export async function joinWaitlist(_prev: WaitlistState, fd: FormData): Promise<
   const h = await headers()
   const ok = await throttle(p, 'fplus-waitlist', [{ key: hashKey('ip', clientIp(h)), limit: 5 }, { key: hashKey('email', email), limit: 3 }])
   if (!ok) return { error: 'Too many attempts — please try again later.' }
+  // Live: email a secure link instead (free month, or a free account)
+  const { foundationSettings } = await import('@/academy/pdr/load')
+  if ((await foundationSettings(p)).enabled) {
+    const { emailLink } = await import('@/academy/pdr/billing/trial')
+    await emailLink(p, email, fd.get('mode') === 'join' ? 'join' : 'trial')
+    return { done: true }
+  }
   const { totalDocs } = await p.count({ collection: 'fplus-waitlist', where: { email: { equals: email } }, overrideAccess: true })
   if (!totalDocs) {
     await p.create({ collection: 'fplus-waitlist', overrideAccess: true, data: { email, source: String(fd.get('source') ?? 'foundation-plus').slice(0, 40), wording: WAITLIST_WORDING } })

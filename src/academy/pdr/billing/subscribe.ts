@@ -64,7 +64,9 @@ export async function confirmCheckout(payload: Payload, sessionId: string) {
   const session = await stripe.checkout.sessions.retrieve(sessionId)
   if (session.mode !== 'subscription' || session.metadata?.kind !== 'fplus' || !session.subscription) return null
   const sub = await stripe.subscriptions.retrieve(typeof session.subscription === 'string' ? session.subscription : session.subscription.id, { expand: ['items.data.price'] })
-  return applySubscription(payload, sub as never)
+  const { guardTrialCard } = await import('./trial')
+  const blocked = await guardTrialCard(payload, sub as never)
+  return applySubscription(payload, (blocked ? { ...sub, status: 'canceled' } : sub) as never)
 }
 
 export const ownsPlayer = (kid: Participant | null, user: User) => Boolean(kid && rel(kid.account) === user.id)

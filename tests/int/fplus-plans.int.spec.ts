@@ -37,3 +37,13 @@ describe('Foundation+ plans', () => {
     expect(lifecycleEvent({ status: 'active', plan: 'standard_month' }, { status: 'active', plan: 'standard_month' })).toBeNull()
   })
 })
+
+import { trialEligibility } from '@/academy/pdr/billing/trial'
+describe('Foundation+ free month', () => {
+  const kid = (id: number, pdr: Record<string, unknown> = {}) => ({ id, firstName: `K${id}`, pdr }) as never
+  it('one free month per family, never for a player already on a plan', () => {
+    expect(trialEligibility([kid(1), kid(2)], kid(1)).ok).toBe(true)
+    expect(trialEligibility([kid(1, { trialUsedAt: '2026-01-01' }), kid(2)], kid(2))).toMatchObject({ ok: false, reason: expect.stringMatching(/already had its free month/) })
+    expect(trialEligibility([kid(1, { subscriptionStatus: 'active' })], kid(1, { subscriptionStatus: 'active' }))).toMatchObject({ ok: false })
+  })
+})

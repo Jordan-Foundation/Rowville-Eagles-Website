@@ -97,6 +97,7 @@ export const Participants: CollectionConfig = {
             { name: 'cancelAtPeriodEnd', label: 'Cancels at period end', type: 'checkbox', admin: { readOnly: true } },
             { name: 'pastDueSince', label: 'Payment failing since', type: 'date', admin: { readOnly: true } },
             { name: 'trialUsedAt', label: 'Free month used', type: 'date', admin: { readOnly: true } },
+            { name: 'trialReminderSentAt', label: '7-day reminder sent', type: 'date', admin: { readOnly: true } },
           ],
         },
         {

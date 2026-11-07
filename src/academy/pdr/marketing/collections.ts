@@ -46,3 +46,16 @@ export const FplusEvents: CollectionConfig = {
     { type: 'row', fields: [{ name: 'player', type: 'relationship', relationTo: 'participants', index: true }, { name: 'account', type: 'relationship', relationTo: 'users' }, { name: 'subscriptionId', type: 'text', index: true }] },
   ],
 }
+
+/** Cards (hashed fingerprints) that have started a free month — one free month per card. */
+export const FplusTrialCards: CollectionConfig = {
+  slug: 'fplus-trial-cards',
+  admin: { hidden: true },
+  access: { read: () => false, create: () => false, update: () => false, delete: () => false },
+  fields: [
+    { name: 'fingerprint', type: 'text', required: true, unique: true, index: true },
+    { name: 'account', type: 'relationship', relationTo: 'users' },
+    { name: 'player', type: 'relationship', relationTo: 'participants' },
+    { name: 'subscriptionId', type: 'text' },
+  ],
+}
