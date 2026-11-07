@@ -5,6 +5,7 @@ import { Crest, RfaLogo } from '@/components/Logos'
 import { AcademyBackdrop } from '@/components/AcademyBackdrop'
 import { SponsorCard } from '@/components/SponsorLogo'
 import { currentSeason } from '@/lib/age-groups'
+import { differenceContent } from '@/content/difference-load'
 
 export const revalidate = 60
 
@@ -23,6 +24,13 @@ export default async function Home() {
     p.find({ collection: 'sponsors', limit: 20, depth: 1, sort: 'order' }),
   ])
   const programs = others
+  const diff = await differenceContent(p)
+  const teaser = [
+    { id: 'coaches', t: diff.coaches.headline, d: diff.coaches.body },
+    { id: 'curriculum', t: diff.curriculum.headline, d: diff.curriculum.body },
+    { id: 'year-round', t: diff.year.headline, d: diff.year.body },
+    { id: 'community-night', t: diff.community.headline, d: diff.community.body },
+  ]
   const season = currentSeason(settings.season)
 
   return (
@@ -45,8 +53,8 @@ export default async function Home() {
               <Link href="/join" className="rounded-full bg-accent px-6 py-3 font-semibold text-accent-ink transition hover:brightness-110">
                 Join us for {season}
               </Link>
-              <Link href="/fixtures" className="rounded-full border border-white/30 px-6 py-3 font-semibold transition hover:border-white hover:bg-white/10">
-                Find your team
+              <Link href="/what-makes-us-different" className="rounded-full border border-white/30 px-6 py-3 font-semibold transition hover:border-white hover:bg-white/10">
+                What makes us different
               </Link>
             </div>
           </div>
@@ -72,7 +80,7 @@ export default async function Home() {
           {[
             { href: '/join', t: `Join us for ${season}`, d: 'Book a trial or register interest' },
             { href: '/programs?type=holiday-camp', t: 'Holiday camps', d: 'School holiday clinics' },
-            { href: '/fixtures', t: 'Fixtures & results', d: 'Every team, every round' },
+            { href: '/foundation-plus', t: 'Foundation+', d: 'Online training — drills, badges, leaderboards' },
             { href: '/academy', t: 'Academy trials', d: 'Rowville Foundation Academy' },
           ].map((a) => (
             <Link key={a.t} href={a.href} className="group px-2 py-6 sm:px-6">
@@ -80,6 +88,28 @@ export default async function Home() {
               <div className="text-sm text-muted">{a.d}</div>
             </Link>
           ))}
+        </div>
+      </section>
+
+      {/* WHAT MAKES US DIFFERENT — teaser */}
+      <section className="bg-surface-2 py-20">
+        <div className="container-x">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="eyebrow !text-brand">Why Rowville</p>
+              <h2 className="mt-3 max-w-2xl font-[family-name:var(--font-barlow)] text-4xl font-bold uppercase sm:text-5xl">What makes us different</h2>
+            </div>
+            <Link href="/what-makes-us-different" className="font-semibold text-brand hover:underline">See what makes us different →</Link>
+          </div>
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {teaser.map((x) => (
+              <Link key={x.id} href={`/what-makes-us-different#${x.id}`} className="group rounded-2xl border border-line bg-surface p-6 transition hover:border-brand">
+                <h3 className="font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase leading-tight group-hover:text-brand">{x.t}</h3>
+                <p className="mt-3 line-clamp-4 text-sm text-muted">{x.d}</p>
+                <p className="mt-4 text-sm font-semibold text-brand">Learn more →</p>
+              </Link>
+            ))}
+          </div>
         </div>
       </section>
 

@@ -23,6 +23,8 @@ const site = () => process.env.NEXT_PUBLIC_SITE_URL || (process.env.VERCEL_PROJE
 
 export async function setupChecklist(payload: Payload, ticked: Record<string, boolean>): Promise<SetupGroup[]> {
   const q = { overrideAccess: true } as const
+  const diff = await payload.findGlobal({ slug: 'difference-page', depth: 0, overrideAccess: true }).catch(() => null)
+  const diffPhotos = [diff?.hero?.image, diff?.coaches?.image, diff?.pathways?.image].filter(Boolean).length + ((diff?.community?.photos as unknown[] | null)?.length ? 1 : 0)
   const [academy, fplus, programs, slots, placeholders, badges, noArt, stagesLive] = await Promise.all([
     payload.findGlobal({ slug: 'academy-settings', depth: 0, ...q }).catch(() => null),
     payload.findGlobal({ slug: 'pdr-settings', depth: 0, ...q }).catch(() => null),
@@ -83,6 +85,13 @@ export async function setupChecklist(payload: Payload, ticked: Record<string, bo
         auto('term-slots', 'Training times added to open Academy term programs', 'Staff → Academy terms → Add a training time.', termsWithout.length === 0, { note: termsWithout.length ? `Missing: ${termsWithout.map((p) => p.title).join(', ')}` : undefined, href: '/staff/academy/terms' }),
         manual('prices-reviewed', 'Prices checked', 'Admin → Prices: 1-on-1 ($80/$85/$70), group terms ($25 per session, $20 on 2 nights a week), camps, registrations, tournaments, shop.', { href: '/admin/prices' }),
         manual('trial-years', 'Trial-night years of birth checked', 'Admin → Programs → each Academy term → Weekly training nights. For the 2027 season MiniRoos are born 2016–2021.'),
+      ],
+    },
+    {
+      title: 'Website content',
+      items: [
+        manual('wmud-copy', '“What Makes Us Different” copy checked', 'Admin → Club → What Makes Us Different: read each section (drafted from your notes) and adjust anything — especially the lesson-stage one-liners, curriculum strands and term months.', { href: '/admin/globals/difference-page' }),
+        auto('wmud-photos', '“What Makes Us Different” photos added', 'Hero (2400×1350), coaches (1600×1200), pathways (1600×1200) and 3–4 Community Night photos (1200×1200). Only children with photo consent.', diffPhotos >= 4, { note: `${diffPhotos} of 4 added`, href: '/admin/globals/difference-page' }),
       ],
     },
     {

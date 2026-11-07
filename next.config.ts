@@ -12,7 +12,11 @@ const nextConfig: NextConfig = {
     serverActions: { bodySizeLimit: '3mb' },
   },
   async redirects() {
-    return [{ source: '/teams', destination: '/fixtures', permanent: true }]
+    // Fixtures now live on each team's private page — old links go to the player portal (login first if needed)
+    return [
+      { source: '/fixtures', destination: '/account', permanent: true },
+      { source: '/teams', destination: '/account', permanent: true },
+    ]
   },
   images: {
     localPatterns: [

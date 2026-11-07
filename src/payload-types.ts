@@ -164,6 +164,7 @@ export interface Config {
   globals: {
     'site-settings': SiteSetting;
     about: About;
+    'difference-page': DifferencePage;
     'academy-settings': AcademySetting;
     'pdr-settings': PdrSetting;
     'setup-progress': SetupProgress;
@@ -171,6 +172,7 @@ export interface Config {
   globalsSelect: {
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
     about: AboutSelect<false> | AboutSelect<true>;
+    'difference-page': DifferencePageSelect<false> | DifferencePageSelect<true>;
     'academy-settings': AcademySettingsSelect<false> | AcademySettingsSelect<true>;
     'pdr-settings': PdrSettingsSelect<false> | PdrSettingsSelect<true>;
     'setup-progress': SetupProgressSelect<false> | SetupProgressSelect<true>;
@@ -3155,6 +3157,124 @@ export interface About {
   createdAt?: string | null;
 }
 /**
+ * Copy is pre-filled with a draft — check each section and add photos. Empty fields fall back to the draft.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "difference-page".
+ */
+export interface DifferencePage {
+  id: number;
+  hero?: {
+    title?: string | null;
+    intro?: string | null;
+    /**
+     * Coaches with players — 2400×1350
+     */
+    image?: (number | null) | Media;
+  };
+  coaches?: {
+    nav?: string | null;
+    headline?: string | null;
+    body?: string | null;
+    more?: string | null;
+    /**
+     * Coach leading a session — 1600×1200
+     */
+    image?: (number | null) | Media;
+  };
+  curriculum?: {
+    nav?: string | null;
+    headline?: string | null;
+    body?: string | null;
+    more?: string | null;
+    strands?:
+      | {
+          name: string;
+          line?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+    /**
+     * Optional: players in a drill — 1600×1200
+     */
+    image?: (number | null) | Media;
+  };
+  sessions?: {
+    nav?: string | null;
+    headline?: string | null;
+    body?: string | null;
+    more?: string | null;
+    lengths?: string | null;
+    stages?:
+      | {
+          name: string;
+          line?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  reports?: {
+    nav?: string | null;
+    headline?: string | null;
+    body?: string | null;
+    more?: string | null;
+    /**
+     * Optional: your own sample report image (otherwise a built-in sample with made-up data is shown)
+     */
+    image?: (number | null) | Media;
+  };
+  year?: {
+    nav?: string | null;
+    headline?: string | null;
+    body?: string | null;
+    more?: string | null;
+    sessionsPerYear?: string | null;
+    terms?:
+      | {
+          term?: string | null;
+          months?: string | null;
+          title?: string | null;
+          detail?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  pathways?: {
+    nav?: string | null;
+    headline?: string | null;
+    body?: string | null;
+    more?: string | null;
+    /**
+     * Rowville team + RFA training — 1600×1200
+     */
+    image?: (number | null) | Media;
+  };
+  community?: {
+    nav?: string | null;
+    headline?: string | null;
+    body?: string | null;
+    more?: string | null;
+    when?: string | null;
+    where?: string | null;
+    welcome?: string | null;
+    /**
+     * 3–4 warm photos (dinner, music, the game) — 1200×1200 each. Only children with photo consent.
+     */
+    photos?: (number | Media)[] | null;
+  };
+  fplus?: {
+    nav?: string | null;
+    headline?: string | null;
+    body?: string | null;
+  };
+  cta?: {
+    headline?: string | null;
+    body?: string | null;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "academy-settings".
  */
@@ -3285,6 +3405,124 @@ export interface AboutSelect<T extends boolean = true> {
         id?: T;
       };
   childSafe?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "difference-page_select".
+ */
+export interface DifferencePageSelect<T extends boolean = true> {
+  hero?:
+    | T
+    | {
+        title?: T;
+        intro?: T;
+        image?: T;
+      };
+  coaches?:
+    | T
+    | {
+        nav?: T;
+        headline?: T;
+        body?: T;
+        more?: T;
+        image?: T;
+      };
+  curriculum?:
+    | T
+    | {
+        nav?: T;
+        headline?: T;
+        body?: T;
+        more?: T;
+        strands?:
+          | T
+          | {
+              name?: T;
+              line?: T;
+              id?: T;
+            };
+        image?: T;
+      };
+  sessions?:
+    | T
+    | {
+        nav?: T;
+        headline?: T;
+        body?: T;
+        more?: T;
+        lengths?: T;
+        stages?:
+          | T
+          | {
+              name?: T;
+              line?: T;
+              id?: T;
+            };
+      };
+  reports?:
+    | T
+    | {
+        nav?: T;
+        headline?: T;
+        body?: T;
+        more?: T;
+        image?: T;
+      };
+  year?:
+    | T
+    | {
+        nav?: T;
+        headline?: T;
+        body?: T;
+        more?: T;
+        sessionsPerYear?: T;
+        terms?:
+          | T
+          | {
+              term?: T;
+              months?: T;
+              title?: T;
+              detail?: T;
+              id?: T;
+            };
+      };
+  pathways?:
+    | T
+    | {
+        nav?: T;
+        headline?: T;
+        body?: T;
+        more?: T;
+        image?: T;
+      };
+  community?:
+    | T
+    | {
+        nav?: T;
+        headline?: T;
+        body?: T;
+        more?: T;
+        when?: T;
+        where?: T;
+        welcome?: T;
+        photos?: T;
+      };
+  fplus?:
+    | T
+    | {
+        nav?: T;
+        headline?: T;
+        body?: T;
+      };
+  cta?:
+    | T
+    | {
+        headline?: T;
+        body?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

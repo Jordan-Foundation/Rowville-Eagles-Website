@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024.0 1024.0" width="1024" height="1024"><rect width="1024" height="1024" fill="#0B0B0C"/><defs><mask id="md" maskUnits="userSpaceOnUse" x="-500" y="-500" width="2000" height="2000">
+<rect x="-500" y="-500" width="2000" height="2000" fill="#fff"/>
+<path d="M30 20 H150 V56 H70 V84 H130 V118 H70 V180 H30 Z" fill="#000" stroke="#000" stroke-width="14" stroke-linejoin="miter"/>
+<path d="M150 70 L200 60 M150 136 L200 126" stroke="#000" stroke-width="7"/></mask></defs>
+<g transform="translate(146.64566929133858 257.511811023622) scale(2.5196850393700787) translate(62 0) skewX(-18)">
+<path d="M157 45 H193 V82 H230 V118 H193 V155 H157 V118 H120 V82 H157 Z" fill="#FFFFFF" mask="url(#md)"/>
+<path d="M30 20 H150 V56 H70 V84 H130 V118 H70 V180 H30 Z" fill="none" stroke="#FFFFFF" stroke-width="14" stroke-linejoin="miter"/></g></svg>

@@ -5,11 +5,12 @@ import { usePathname } from 'next/navigation'
 import { Crest, RfaLogo } from './Logos'
 import { useCart } from '@/lib/cart'
 import { useMe } from '@/lib/use-me'
+import { FoundationPlusLogo } from './FoundationPlusLogo'
 
 const nav = [
   { href: '/join', label: 'Join us' },
   { href: '/about', label: 'About' },
-  { href: '/fixtures', label: 'Fixtures' },
+  { href: '/what-makes-us-different', label: 'What Makes Us Different', short: 'Why us' },
   { href: '/programs', label: 'Camps & Programs' },
   { href: '/academy', label: 'Academy' },
   { href: '/shop', label: 'Shop' },
@@ -33,11 +34,11 @@ export function Header() {
             <RfaLogo className="h-6 w-auto" ink="#fff" paper="#000" />
           </span>
           <span className="club-only leading-tight">
-            <span className="block font-[family-name:var(--font-barlow)] text-lg font-bold uppercase tracking-wide">Rowville Eagles</span>
-            <span className="block text-[10px] uppercase tracking-[0.25em] opacity-70">Football Club · Est. 1985</span>
+            <span className="block whitespace-nowrap font-[family-name:var(--font-barlow)] text-lg font-bold uppercase tracking-wide">Rowville Eagles</span>
+            <span className="hidden whitespace-nowrap text-[10px] uppercase tracking-[0.25em] opacity-70 sm:block lg:hidden xl:block">Football Club · Est. 1985</span>
           </span>
         </Link>
-        <nav aria-label="Main" className="hidden items-center gap-7 text-sm font-medium lg:flex">
+        <nav aria-label="Main" className="hidden items-center gap-4 whitespace-nowrap text-[13px] font-medium lg:flex xl:gap-7 xl:text-sm">
           {nav.map((n) => (
             <Link
               key={n.href}
@@ -50,6 +51,15 @@ export function Header() {
           ))}
         </nav>
         <div className="flex items-center gap-4">
+        <Link
+          href="/foundation-plus"
+          aria-label="Foundation+ — online training"
+          aria-current={path.startsWith('/foundation-plus') ? 'page' : undefined}
+          className="group flex items-center rounded-sm border border-white/25 px-2 py-1 transition hover:border-white hover:shadow-[0_0_18px_rgba(255,255,255,0.28)] focus-visible:border-white aria-[current=page]:border-white"
+        >
+          <span className="hidden xl:block"><FoundationPlusLogo variant="horizontal" tone="white" height={32} alt="" /></span>
+          <span className="xl:hidden"><FoundationPlusLogo variant="mark" tone="white" height={24} alt="" /></span>
+        </Link>
         {count > 0 && (
           <Link href="/shop/cart" className="text-sm font-medium opacity-90 hover:opacity-100" aria-label={`Cart, ${count} items`}>
             Cart <span className="ml-1 rounded-full bg-white/15 px-2 py-0.5 text-xs">{count}</span>
@@ -70,7 +80,7 @@ export function Header() {
       <nav aria-label="Mobile" className="container-x flex gap-5 overflow-x-auto pb-3 text-sm lg:hidden">
         {nav.map((n) => (
           <Link key={n.href} href={n.href} className="shrink-0 opacity-85">
-            {n.label}
+            {n.short ?? n.label}
           </Link>
         ))}
       </nav>

@@ -49,6 +49,7 @@ import { PdrSettings } from './academy/pdr/PdrSettings'
 import { AcademyCredits } from './academy/collections/AcademyCredits'
 import { SiteSettings } from './globals/SiteSettings'
 import { SetupProgress } from './globals/SetupProgress'
+import { DifferencePage } from './globals/DifferencePage'
 import { About } from './globals/About'
 import { AcademySettings } from './academy/AcademySettings'
 
@@ -74,7 +75,7 @@ export default buildConfig({
     },
   },
   collections: [AcademyBookings, AcademySessions, AcademyTerms, AcademyTermSlots, AcademyRegistrations, PdrAreas, PdrLevels, PdrStages, PdrVideos, PdrBadges, PdrProgress, PdrSubmissions, PdrAudit, PdrAwards, AcademyCoaches, AcademyAvailability, AcademyReminderLog, AcademyCredits, Posts, SelectionRounds, Squads, SelectionEntries, TrialSessions, Programs, Bookings, Products, Orders, Teams, TeamMembers, TeamPosts, ForumThreads, ForumReplies, Sponsors, Participants, Users, ConsentRecords, MessageLog, InviteTokens, Media],
-  globals: [SiteSettings, About, AcademySettings, PdrSettings, SetupProgress],
+  globals: [SiteSettings, About, DifferencePage, AcademySettings, PdrSettings, SetupProgress],
   editor: lexicalEditor(),
   ...(process.env.RESEND_API_KEY
     ? {

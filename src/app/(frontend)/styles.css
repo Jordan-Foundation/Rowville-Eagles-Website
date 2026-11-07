@@ -118,3 +118,9 @@ body:has([data-page-brand='academy']) .site-header { background: rgb(0 0 0 / 0.9
 body:has([data-page-brand='academy']) .site-footer { background: #000; border-top: 1px solid #1c1c1f; }
 body:has([data-page-brand='academy']) .site-footer .footer-accent { color: #fff; }
 body:has([data-page-brand='academy']) .site-footer .footer-rule { border-color: #1c1c1f; }
+
+/* ── Foundation+ brand: monochrome ink #0B0B0C / white, Chakra Petch ─────────── */
+.fp-heading { font-family: var(--font-chakra), var(--font-inter), sans-serif; font-weight: 700; font-style: italic; letter-spacing: -0.01em; }
+.fp-label { font-family: var(--font-chakra), var(--font-inter), sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.22em; }
+.fp-ink { background: #0b0b0c; color: #fff; }
+.fp-paper { background: #fff; color: #0b0b0c; }
