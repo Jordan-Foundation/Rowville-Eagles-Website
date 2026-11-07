@@ -11,6 +11,7 @@ import { SelectionList } from '@/selections/SelectionList'
 import { myTeams } from '@/teams/service'
 import { TeamCards } from '@/teams/TeamCards'
 import { TermList } from '@/academy/terms/TermList'
+import { foundationSettings, isStaffOrCoach } from '@/academy/pdr/load'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Player', robots: { index: false } }
@@ -27,6 +28,8 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
   if (!kid || (typeof kid.account === 'object' ? kid.account.id : kid.account) !== user.id) notFound()
 
   const teams = await myTeams(p, user, kid.id)
+  const foundation = await foundationSettings(p)
+  const showFoundation = foundation.enabled || isStaffOrCoach(user)
   const [{ docs: selections }, rules, { docs: termRegs }] = await Promise.all([
     p.find({ collection: 'selection-entries', where: { participant: { equals: kid.id }, status: { not_in: ['withdrawn', 'closed', 'released'] } }, sort: '-createdAt', depth: 2, limit: 30, overrideAccess: true }),
     getAgeRules(p),
@@ -162,10 +165,13 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
             </>
           )}
 
-          <div className="mt-10 rounded-2xl border border-dashed border-line p-6">
-            <p className="font-semibold">Player Development Report — coming soon</p>
-            <p className="mt-1 text-sm text-muted">Levelled skills in six areas, video challenges checked by Academy coaches, badges and rankings.</p>
-          </div>
+          {showFoundation && (
+            <Link href={`/foundation-plus/${kid.id}`} className="mt-10 block rounded-2xl border border-line bg-black p-6 text-white transition hover:brightness-125">
+              <p className="font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase">{foundation.name}{!foundation.enabled ? ' (staff preview)' : ''}</p>
+              <p className="mt-1 text-sm text-white/70">{foundation.tagline || 'Skills, challenges, badges and coach feedback.'}</p>
+              <p className="mt-3 text-sm font-semibold">Open {kid.firstName}’s report →</p>
+            </Link>
+          )}
         </section>
 
         <aside className="h-fit rounded-2xl border border-line bg-surface-2 p-6">

@@ -5,7 +5,7 @@ import { isStaff } from '../../../access'
 export const PdrBadges: CollectionConfig = {
   slug: 'pdr-badges',
   labels: { singular: 'Badge', plural: 'Badges' },
-  admin: { group: 'Player Development', useAsTitle: 'name', defaultColumns: ['name', 'type', 'area', 'level', 'placeholder'] },
+  admin: { group: 'Foundation+', useAsTitle: 'name', defaultColumns: ['name', 'type', 'area', 'level', 'placeholder'] },
   access: { read: () => true, create: isStaff, update: isStaff, delete: isStaff },
   fields: [
     { type: 'row', fields: [{ name: 'name', type: 'text', required: true }, { name: 'type', type: 'select', required: true, defaultValue: 'level', options: [{ label: 'Level badge', value: 'level' }, { label: 'Monthly challenge', value: 'monthly' }] }] },

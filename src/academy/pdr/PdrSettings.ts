@@ -3,10 +3,24 @@ import { isStaff } from '../../access'
 
 export const PdrSettings: GlobalConfig = {
   slug: 'pdr-settings',
-  label: 'PDR settings',
-  admin: { group: 'Player Development' },
+  label: 'Foundation+ settings',
+  admin: { group: 'Foundation+' },
   access: { read: () => true, update: isStaff },
   fields: [
+    {
+      name: 'enabled',
+      label: 'Show Foundation+ on the website',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: { description: 'Off: families can’t see it anywhere (no pages, links or menu items). Staff and coaches can still preview it at /foundation-plus.' },
+    },
+    {
+      type: 'row',
+      fields: [
+        { name: 'programName', label: 'Program name', type: 'text', required: true, defaultValue: 'Foundation+', admin: { description: 'Shown to families everywhere, e.g. Foundation+' } },
+        { name: 'tagline', type: 'text', defaultValue: 'Level up your game — skills, challenges, badges and coach feedback.' },
+      ],
+    },
     {
       type: 'collapsible',
       label: 'Video submissions',

@@ -60,9 +60,9 @@ export const Participants: CollectionConfig = {
     { name: 'photoConsent', type: 'checkbox', defaultValue: false },
     {
       name: 'pdr',
-      label: 'Player Development Report',
+      label: 'Foundation+',
       type: 'group',
-      admin: { description: 'Plan, leaderboard privacy and parental consent for the PDR.' },
+      admin: { description: 'Foundation+ plan, leaderboard privacy and parental consent.' },
       fields: [
         {
           type: 'row',

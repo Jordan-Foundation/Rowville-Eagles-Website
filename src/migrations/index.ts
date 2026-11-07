@@ -26,6 +26,7 @@ import * as migration_20261107_032141_twilio_sms_voice from './20261107_032141_t
 import * as migration_20261107_042144_academy_term_slots from './20261107_042144_academy_term_slots';
 import * as migration_20261107_043914_program_price_per_session from './20261107_043914_program_price_per_session';
 import * as migration_20261107_065357_pdr_content from './20261107_065357_pdr_content';
+import * as migration_20261107_070958_foundation_plus_progress from './20261107_070958_foundation_plus_progress';
 
 export const migrations = [
   {
@@ -166,6 +167,11 @@ export const migrations = [
   {
     up: migration_20261107_065357_pdr_content.up,
     down: migration_20261107_065357_pdr_content.down,
-    name: '20261107_065357_pdr_content'
+    name: '20261107_065357_pdr_content',
+  },
+  {
+    up: migration_20261107_070958_foundation_plus_progress.up,
+    down: migration_20261107_070958_foundation_plus_progress.down,
+    name: '20261107_070958_foundation_plus_progress'
   },
 ];

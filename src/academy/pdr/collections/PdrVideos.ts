@@ -8,7 +8,7 @@ import { isStaff } from '../../../access'
 export const PdrVideos: CollectionConfig = {
   slug: 'pdr-videos',
   labels: { singular: 'Video', plural: 'Video library' },
-  admin: { group: 'Player Development', useAsTitle: 'title', defaultColumns: ['title', 'kind', 'durationSec', 'streamUid'] },
+  admin: { group: 'Foundation+', useAsTitle: 'title', defaultColumns: ['title', 'kind', 'durationSec', 'streamUid'] },
   access: { read: () => true, create: isStaff, update: isStaff, delete: isStaff },
   fields: [
     { name: 'title', type: 'text', required: true },

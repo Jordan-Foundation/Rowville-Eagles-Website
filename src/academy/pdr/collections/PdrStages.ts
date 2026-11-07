@@ -8,7 +8,7 @@ export const PdrStages: CollectionConfig = {
   slug: 'pdr-stages',
   labels: { singular: 'Stage', plural: 'Stages' },
   admin: {
-    group: 'Player Development',
+    group: 'Foundation+',
     useAsTitle: 'title',
     defaultColumns: ['code', 'skillName', 'scoring', 'placeholder', 'published'],
     listSearchableFields: ['code', 'skillName'],

@@ -12,7 +12,7 @@ export function PricesNavLink() {
 export function PdrNavLink() {
   return (
     <Link href="/admin/pdr" className="nav__link" style={{ display: 'block', padding: '6px 0', fontWeight: 600 }}>
-      🎯 PDR content map
+      🎯 Foundation+ content map
     </Link>
   )
 }

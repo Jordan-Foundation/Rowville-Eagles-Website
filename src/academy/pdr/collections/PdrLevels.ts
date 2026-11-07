@@ -7,7 +7,7 @@ import { levelTitle, PLACEHOLDER } from '../content'
 export const PdrLevels: CollectionConfig = {
   slug: 'pdr-levels',
   labels: { singular: 'Level', plural: 'Levels' },
-  admin: { group: 'Player Development', useAsTitle: 'displayName', defaultColumns: ['displayName', 'area', 'number'] },
+  admin: { group: 'Foundation+', useAsTitle: 'displayName', defaultColumns: ['displayName', 'area', 'number'] },
   access: { read: () => true, create: isStaff, update: isStaff, delete: isStaff },
   defaultSort: 'number',
   hooks: {

@@ -77,6 +77,7 @@ export interface Config {
     'pdr-stages': PdrStage;
     'pdr-videos': PdrVideo;
     'pdr-badges': PdrBadge;
+    'pdr-progress': PdrProgress;
     'academy-coaches': AcademyCoach;
     'academy-availability': AcademyAvailability;
     'academy-reminder-log': AcademyReminderLog;
@@ -119,6 +120,7 @@ export interface Config {
     'pdr-stages': PdrStagesSelect<false> | PdrStagesSelect<true>;
     'pdr-videos': PdrVideosSelect<false> | PdrVideosSelect<true>;
     'pdr-badges': PdrBadgesSelect<false> | PdrBadgesSelect<true>;
+    'pdr-progress': PdrProgressSelect<false> | PdrProgressSelect<true>;
     'academy-coaches': AcademyCoachesSelect<false> | AcademyCoachesSelect<true>;
     'academy-availability': AcademyAvailabilitySelect<false> | AcademyAvailabilitySelect<true>;
     'academy-reminder-log': AcademyReminderLogSelect<false> | AcademyReminderLogSelect<true>;
@@ -494,7 +496,7 @@ export interface Participant {
   };
   photoConsent?: boolean | null;
   /**
-   * Plan, leaderboard privacy and parental consent for the PDR.
+   * Foundation+ plan, leaderboard privacy and parental consent.
    */
   pdr?: {
     tier?: ('free' | 'standard' | 'premium') | null;
@@ -1274,6 +1276,28 @@ export interface PdrBadge {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pdr-progress".
+ */
+export interface PdrProgress {
+  id: number;
+  label?: string | null;
+  player: number | Participant;
+  stage: number | PdrStage;
+  area?: (number | null) | PdrArea;
+  levelNumber?: number | null;
+  method: 'verified' | 'promoted';
+  /**
+   * Verified score (promoted scores show on the report only, never on leaderboards)
+   */
+  score?: number | null;
+  passedAt?: string | null;
+  by?: (number | null) | User;
+  note?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "academy-availability".
  */
 export interface AcademyAvailability {
@@ -1685,6 +1709,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'pdr-badges';
         value: number | PdrBadge;
+      } | null)
+    | ({
+        relationTo: 'pdr-progress';
+        value: number | PdrProgress;
       } | null)
     | ({
         relationTo: 'academy-coaches';
@@ -2161,6 +2189,24 @@ export interface PdrBadgesSelect<T extends boolean = true> {
   artwork?: T;
   howToEarn?: T;
   placeholder?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pdr-progress_select".
+ */
+export interface PdrProgressSelect<T extends boolean = true> {
+  label?: T;
+  player?: T;
+  stage?: T;
+  area?: T;
+  levelNumber?: T;
+  method?: T;
+  score?: T;
+  passedAt?: T;
+  by?: T;
+  note?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -2984,6 +3030,15 @@ export interface AcademySetting {
  */
 export interface PdrSetting {
   id: number;
+  /**
+   * Off: families can’t see it anywhere (no pages, links or menu items). Staff and coaches can still preview it at /foundation-plus.
+   */
+  enabled?: boolean | null;
+  /**
+   * Shown to families everywhere, e.g. Foundation+
+   */
+  programName: string;
+  tagline?: string | null;
   maxClipSeconds?: number | null;
   maxFileMB?: number | null;
   retentionMonths?: number | null;
@@ -3082,6 +3137,9 @@ export interface AcademySettingsSelect<T extends boolean = true> {
  * via the `definition` "pdr-settings_select".
  */
 export interface PdrSettingsSelect<T extends boolean = true> {
+  enabled?: T;
+  programName?: T;
+  tagline?: T;
   maxClipSeconds?: T;
   maxFileMB?: T;
   retentionMonths?: T;

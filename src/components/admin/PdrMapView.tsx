@@ -33,7 +33,7 @@ export async function PdrMapView({ initPageResult, params, searchParams }: Admin
   return (
     <DefaultTemplate i18n={req.i18n} locale={locale} params={params} payload={req.payload} permissions={permissions} searchParams={searchParams} user={req.user ?? undefined} visibleEntities={visibleEntities}>
       <Gutter>
-        <h1 style={{ marginTop: 24 }}>Player Development — content map</h1>
+        <h1 style={{ marginTop: 24 }}>Foundation+ — content map</h1>
         {!allowed ? (
           <p>Only staff can see this page.</p>
         ) : (

@@ -41,6 +41,7 @@ import { PdrLevels } from './academy/pdr/collections/PdrLevels'
 import { PdrStages } from './academy/pdr/collections/PdrStages'
 import { PdrVideos } from './academy/pdr/collections/PdrVideos'
 import { PdrBadges } from './academy/pdr/collections/PdrBadges'
+import { PdrProgress } from './academy/pdr/collections/PdrProgress'
 import { PdrSettings } from './academy/pdr/PdrSettings'
 import { AcademyCredits } from './academy/collections/AcademyCredits'
 import { SiteSettings } from './globals/SiteSettings'
@@ -63,11 +64,11 @@ export default buildConfig({
       beforeDashboard: ['/components/admin/PricesNavLink#PricesDashboardCard'],
       views: {
         prices: { Component: '/components/admin/PricesView#PricesView', path: '/prices', meta: { title: 'Prices' } },
-        pdr: { Component: '/components/admin/PdrMapView#PdrMapView', path: '/pdr', meta: { title: 'PDR content map' } },
+        pdr: { Component: '/components/admin/PdrMapView#PdrMapView', path: '/pdr', meta: { title: 'Foundation+ content map' } },
       },
     },
   },
-  collections: [AcademyBookings, AcademySessions, AcademyTerms, AcademyTermSlots, AcademyRegistrations, PdrAreas, PdrLevels, PdrStages, PdrVideos, PdrBadges, AcademyCoaches, AcademyAvailability, AcademyReminderLog, AcademyCredits, Posts, SelectionRounds, Squads, SelectionEntries, TrialSessions, Programs, Bookings, Products, Orders, Teams, TeamMembers, TeamPosts, ForumThreads, ForumReplies, Sponsors, Participants, Users, ConsentRecords, MessageLog, InviteTokens, Media],
+  collections: [AcademyBookings, AcademySessions, AcademyTerms, AcademyTermSlots, AcademyRegistrations, PdrAreas, PdrLevels, PdrStages, PdrVideos, PdrBadges, PdrProgress, AcademyCoaches, AcademyAvailability, AcademyReminderLog, AcademyCredits, Posts, SelectionRounds, Squads, SelectionEntries, TrialSessions, Programs, Bookings, Products, Orders, Teams, TeamMembers, TeamPosts, ForumThreads, ForumReplies, Sponsors, Participants, Users, ConsentRecords, MessageLog, InviteTokens, Media],
   globals: [SiteSettings, About, AcademySettings, PdrSettings],
   editor: lexicalEditor(),
   ...(process.env.RESEND_API_KEY
