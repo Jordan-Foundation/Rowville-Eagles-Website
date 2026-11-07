@@ -2,7 +2,8 @@
 
 import { redirect } from 'next/navigation'
 import { payload } from '@/lib/payload'
-import { ageGroupFor, currentSeason } from '@/lib/age'
+import { birthYearOf } from '@/lib/age-groups'
+import { getAgeRules } from '@/lib/age-rules'
 import { makeReference } from '@/lib/reference'
 import { emailInterestConfirmation, emailTrialConfirmation, newToken, openTrialSessions } from '@/lib/trials'
 import type { TrialRegistration } from '@/payload-types'
@@ -32,13 +33,13 @@ export async function joinUs(_prev: JoinState, fd: FormData): Promise<JoinState>
   if (fd.get('consent') !== 'on') return fail('Please agree to be contacted about trials.')
 
   const p = await payload()
-  const settings = await p.findGlobal({ slug: 'site-settings', depth: 0 })
-  const season = currentSeason(settings.season)
-  const ageGroup = ageGroupFor(player.dateOfBirth, season)
-  if (!ageGroup) return fail(`Players must be at least 4 to join for ${season}. Please check the date of birth.`)
+  const rules = await getAgeRules(p)
+  const season = rules.season
+  const birthYear = birthYearOf(player.dateOfBirth)
+  if (!birthYear || birthYear > season || birthYear < season - 80) return fail('Please check the date of birth.')
 
   // Trial choice (required when trials are open for this age group)
-  const sessions = await openTrialSessions(p, ageGroup)
+  const sessions = await openTrialSessions(p, birthYear)
   const available = sessions.filter((x) => x.remaining > 0)
   let trialSessionId: number | undefined
   if (available.length) {
@@ -69,7 +70,7 @@ export async function joinUs(_prev: JoinState, fd: FormData): Promise<JoinState>
         reference: makeReference('TRY'),
         status: trialSessionId ? 'trial-booked' : 'interested',
         season,
-        ageGroup,
+        birthYear,
         trialSession: trialSessionId,
         contact,
         player,
@@ -100,7 +101,7 @@ export async function chooseTrial(_prev: JoinState, fd: FormData): Promise<JoinS
   const reg = docs[0]
   if (!reg || !token || reg.token !== token) return { error: 'This link is no longer valid. Please contact the club.' }
   if (reg.status !== 'interested') return { error: 'A trial is already booked for this player — check your email for the details.' }
-  const sessions = await openTrialSessions(p, reg.ageGroup || '')
+  const sessions = reg.birthYear ? await openTrialSessions(p, reg.birthYear) : []
   const chosen = sessions.find((x) => String(x.session.id) === String(fd.get('trialSession')) && x.remaining > 0)
   if (!chosen) return { error: 'Please choose a trial night with places available.' }
   const updated = await p.update({

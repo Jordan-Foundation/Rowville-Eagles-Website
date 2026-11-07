@@ -2,7 +2,7 @@
 
 import { redirect } from 'next/navigation'
 import { payload } from '@/lib/payload'
-import { ageGroupFor, currentSeason } from '@/lib/age'
+import { birthYearOf, groupLabel } from '@/lib/age-groups'
 import { confirmPayment, newReference, startCheckout } from '@/lib/payments'
 import { currentAcademyTerm, trialNights } from '@/lib/rfa-trials'
 
@@ -31,20 +31,19 @@ export async function bookRfaTrial(_prev: RfaTrialState, fd: FormData): Promise<
   const p = await payload()
   const term = await currentAcademyTerm(p)
   if (!term) return fail('There are no Academy trials available right now.')
-  const settings = await p.findGlobal({ slug: 'site-settings', depth: 0 })
-  const ageGroup = ageGroupFor(player.dateOfBirth, currentSeason(settings.season))
-  if (!ageGroup) return fail('Please check the date of birth.')
+  const birthYear = birthYearOf(player.dateOfBirth)
+  if (!birthYear) return fail('Please check the date of birth.')
 
   const night = (await trialNights(p, term)).find((n) => n.start === s('night'))
-  if (!night || !night.ageGroups.includes(ageGroup)) return fail(`Please choose a night that runs for ${ageGroup}.`)
-  if ((night.remaining[ageGroup] ?? 0) <= 0) return fail('Sorry — that night’s trial spots for this age group were just taken. Please choose another.')
+  if (!night || !night.birthYears.includes(birthYear)) return fail(`Please choose a night that runs for ${groupLabel(birthYear)}.`)
+  if ((night.remaining[String(birthYear)] ?? 0) <= 0) return fail('Sorry — that night’s trial spots for this age group were just taken. Please choose another.')
 
   const price = term.trialPrice ?? 0
   const reference = newReference('academy')
   const booking = await p.create({
     collection: 'bookings',
     overrideAccess: true,
-    data: { reference, program: term.id, bookingType: 'trial', ageGroup, sessionStart: night.start, status: 'pending', payee: 'academy', amount: price, contact, player },
+    data: { reference, program: term.id, bookingType: 'trial', birthYear, sessionStart: night.start, status: 'pending', payee: 'academy', amount: price, contact, player },
   })
 
   let url = `/checkout/success?kind=booking&ref=${reference}`

@@ -1,6 +1,5 @@
 import type { CollectionConfig } from 'payload'
 import { isStaff, staffOrOwner } from '../access'
-import { ageGroupOptions } from '../lib/age'
 import { defaultPayee } from './Programs'
 import { isPayee, stripeAccounts } from '../lib/stripe-accounts'
 import { makeReference } from '../lib/reference'
@@ -68,7 +67,7 @@ export const Bookings: CollectionConfig = {
       ],
       admin: { position: 'sidebar' },
     },
-    { name: 'ageGroup', type: 'select', options: ageGroupOptions, admin: { position: 'sidebar' } },
+    { name: 'birthYear', label: 'Age group (year of birth)', type: 'number', admin: { position: 'sidebar' } },
     { name: 'sessionStart', label: 'Booked time slot', type: 'date', admin: { date: { pickerAppearance: 'dayAndTime' } } },
     { name: 'account', type: 'relationship', relationTo: 'users' },
     { name: 'participant', type: 'relationship', relationTo: 'participants' },

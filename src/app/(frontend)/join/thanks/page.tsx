@@ -1,3 +1,4 @@
+import { groupLabel } from '@/lib/age-groups'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { payload, formatDate } from '@/lib/payload'
@@ -25,7 +26,7 @@ export default async function ThanksPage({ searchParams }: { searchParams: Promi
           <p className="mx-auto mt-4 max-w-xl text-lg text-muted">
             {booked
               ? `${reg.player.firstName} is booked in for ${formatDate(session.start, { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' })}. We’ve emailed you the details.`
-              : `We’ve registered ${reg.player.firstName}’s interest for ${reg.ageGroup}. We’ll email ${reg.contact.email} as soon as trial dates are set.`}
+              : `We’ve registered ${reg.player.firstName}’s interest for the ${reg.birthYear ? groupLabel(reg.birthYear) : 'their age group'}. We’ll email ${reg.contact.email} as soon as trial dates are set.`}
           </p>
         )}
         {reg && <p className="mt-2 text-sm text-muted">Reference <span className="font-mono font-semibold text-ink">{reg.reference}</span></p>}

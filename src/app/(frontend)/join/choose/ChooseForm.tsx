@@ -4,7 +4,7 @@ import { useActionState } from 'react'
 import { chooseTrial, type JoinState } from '../actions'
 import type { TrialOption } from '../JoinForm'
 
-export function ChooseForm({ refCode, token, ageGroup, options }: { refCode: string; token: string; ageGroup: string; options: TrialOption[] }) {
+export function ChooseForm({ refCode, token, birthYear, options }: { refCode: string; token: string; birthYear: number; options: TrialOption[] }) {
   const [state, action] = useActionState<JoinState, FormData>(chooseTrial, {})
   return (
     <form action={action} className="space-y-6">
@@ -12,7 +12,7 @@ export function ChooseForm({ refCode, token, ageGroup, options }: { refCode: str
       <input type="hidden" name="token" value={token} />
       <div className="grid gap-2 sm:grid-cols-2">
         {options.map((t) => {
-          const left = t.remaining[ageGroup] ?? 0
+          const left = t.remaining[String(birthYear)] ?? 0
           return (
             <label key={t.id} className={`flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-line px-4 py-3 text-sm has-[:checked]:border-brand has-[:checked]:ring-1 has-[:checked]:ring-brand ${left === 0 ? 'pointer-events-none opacity-40' : ''}`}>
               <span className="flex items-center gap-3"><input type="radio" name="trialSession" value={t.id} required disabled={left === 0} />{t.label}</span>

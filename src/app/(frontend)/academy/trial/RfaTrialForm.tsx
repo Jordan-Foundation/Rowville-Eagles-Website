@@ -2,18 +2,19 @@
 
 import { useActionState, useMemo, useState } from 'react'
 import { useFormStatus } from 'react-dom'
-import { ageGroupFor } from '@/lib/age'
+import { fullLabel, groupFor, groupLabel, type AgeRules } from '@/lib/age-groups'
 import type { TrialNight } from '@/lib/rfa-trials'
 import { Field, Fieldset, Input, inputCls } from '@/components/forms/Field'
 import { bookRfaTrial, type RfaTrialState } from './actions'
 
-export function RfaTrialForm({ season, nights, priceLabel }: { season: number; nights: TrialNight[]; priceLabel: string }) {
+export function RfaTrialForm({ rules, nights, priceLabel }: { rules: AgeRules; nights: TrialNight[]; priceLabel: string }) {
   const [state, action] = useActionState<RfaTrialState, FormData>(bookRfaTrial, {})
   const v = state.values ?? {}
   const [dob, setDob] = useState(v.playerDob ?? '')
-  const ageGroup = useMemo(() => (dob ? ageGroupFor(dob, season) : null), [dob, season])
-  const forGroup = ageGroup ? nights.filter((n) => n.ageGroups.includes(ageGroup)) : []
-  const offered = Array.from(new Set(nights.flatMap((n) => n.ageGroups)))
+  const group = useMemo(() => (dob ? groupFor(dob, rules) : null), [dob, rules])
+  const ageGroup = group ? fullLabel(group) : null
+  const forGroup = group ? nights.filter((n) => n.birthYears.includes(group.birthYear)) : []
+  const offered = Array.from(new Set(nights.flatMap((n) => n.birthYears))).sort().map(groupLabel)
 
   return (
     <form action={action} className="space-y-6">
@@ -39,7 +40,7 @@ export function RfaTrialForm({ season, nights, priceLabel }: { season: number; n
         ) : (
           <div className="grid max-h-[26rem] gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
             {forGroup.map((n) => {
-              const left = n.remaining[ageGroup] ?? 0
+              const left = n.remaining[String(group!.birthYear)] ?? 0
               return (
                 <label
                   key={n.start}

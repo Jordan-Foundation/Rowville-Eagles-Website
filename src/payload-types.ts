@@ -591,23 +591,10 @@ export interface Program {
          */
         startTime: string;
         durationMinutes?: number | null;
-        ageGroups: (
-          | 'U5'
-          | 'U6'
-          | 'U7'
-          | 'U8'
-          | 'U9'
-          | 'U10'
-          | 'U11'
-          | 'U12'
-          | 'U13'
-          | 'U14'
-          | 'U15'
-          | 'U16'
-          | 'U17'
-          | 'U18'
-          | 'Seniors'
-        )[];
+        /**
+         * e.g. 2017, 2018
+         */
+        birthYears: number[];
         trialSpots?: number | null;
         id?: string | null;
       }[]
@@ -791,27 +778,9 @@ export interface TrialRegistration {
   reference?: string | null;
   status: 'interested' | 'trial-booked' | 'attended' | 'offered' | 'registered' | 'closed';
   /**
-   * Worked out from the date of birth
+   * From the date of birth — the age group is shown as e.g. “2017s”
    */
-  ageGroup?:
-    | (
-        | 'U5'
-        | 'U6'
-        | 'U7'
-        | 'U8'
-        | 'U9'
-        | 'U10'
-        | 'U11'
-        | 'U12'
-        | 'U13'
-        | 'U14'
-        | 'U15'
-        | 'U16'
-        | 'U17'
-        | 'U18'
-        | 'Seniors'
-      )
-    | null;
+  birthYear?: number | null;
   /**
    * Set automatically
    */
@@ -857,9 +826,10 @@ export interface TrialSession {
   start: string;
   durationMinutes?: number | null;
   capacityPerAgeGroup?: number | null;
-  ageGroups: (
-    'U5' | 'U6' | 'U7' | 'U8' | 'U9' | 'U10' | 'U11' | 'U12' | 'U13' | 'U14' | 'U15' | 'U16' | 'U17' | 'U18' | 'Seniors'
-  )[];
+  /**
+   * Which age groups trial on this night, by year of birth — e.g. 2017, 2018
+   */
+  birthYears: number[];
   location?: string | null;
   whatToBring?: string | null;
   /**
@@ -890,25 +860,7 @@ export interface Booking {
    */
   amount: number;
   bookingType?: ('enrolment' | 'trial') | null;
-  ageGroup?:
-    | (
-        | 'U5'
-        | 'U6'
-        | 'U7'
-        | 'U8'
-        | 'U9'
-        | 'U10'
-        | 'U11'
-        | 'U12'
-        | 'U13'
-        | 'U14'
-        | 'U15'
-        | 'U16'
-        | 'U17'
-        | 'U18'
-        | 'Seniors'
-      )
-    | null;
+  birthYear?: number | null;
   sessionStart?: string | null;
   account?: (number | null) | User;
   participant?: (number | null) | Participant;
@@ -1510,7 +1462,7 @@ export interface TrialRegistrationsSelect<T extends boolean = true> {
   displayName?: T;
   reference?: T;
   status?: T;
-  ageGroup?: T;
+  birthYear?: T;
   season?: T;
   trialSession?: T;
   offeredTeam?: T;
@@ -1550,7 +1502,7 @@ export interface TrialSessionsSelect<T extends boolean = true> {
   start?: T;
   durationMinutes?: T;
   capacityPerAgeGroup?: T;
-  ageGroups?: T;
+  birthYears?: T;
   location?: T;
   whatToBring?: T;
   status?: T;
@@ -1594,7 +1546,7 @@ export interface ProgramsSelect<T extends boolean = true> {
         day?: T;
         startTime?: T;
         durationMinutes?: T;
-        ageGroups?: T;
+        birthYears?: T;
         trialSpots?: T;
         id?: T;
       };
@@ -1614,7 +1566,7 @@ export interface BookingsSelect<T extends boolean = true> {
   payee?: T;
   amount?: T;
   bookingType?: T;
-  ageGroup?: T;
+  birthYear?: T;
   sessionStart?: T;
   account?: T;
   participant?: T;
@@ -1932,9 +1884,24 @@ export interface SiteSetting {
   clubName?: string | null;
   tagline?: string | null;
   /**
-   * Used for "Join us for …" and age-group calculation
+   * Age groups are worked out from this: MiniRoos age group = season − year of birth (e.g. 2026: born 2017 → 9s). Change it each season and every group rolls over.
    */
   season?: number | null;
+  /**
+   * Football Victoria / FA MiniRoos rules. Players can move up freely; down only if they can’t take part in their rightful group.
+   */
+  ageGroups?: {
+    /**
+     * e.g. 6 = 6s
+     */
+    miniMin?: number | null;
+    /**
+     * e.g. 11 = 11s
+     */
+    miniMax?: number | null;
+    maxDown?: number | null;
+    warnDown?: number | null;
+  };
   email?: string | null;
   phone?: string | null;
   ground?: {
@@ -2012,6 +1979,14 @@ export interface SiteSettingsSelect<T extends boolean = true> {
   clubName?: T;
   tagline?: T;
   season?: T;
+  ageGroups?:
+    | T
+    | {
+        miniMin?: T;
+        miniMax?: T;
+        maxDown?: T;
+        warnDown?: T;
+      };
   email?: T;
   phone?: T;
   ground?:

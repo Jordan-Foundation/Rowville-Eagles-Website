@@ -1,6 +1,5 @@
 import type { CollectionConfig } from 'payload'
 import { isStaff, publishedOrStaff } from '../access'
-import { ageGroupOptions } from '../lib/age'
 
 /**
  * Anything a family can book and pay for. One model, one checkout, one calendar:
@@ -174,7 +173,7 @@ export const Programs: CollectionConfig = {
           { name: 'durationMinutes', type: 'number', defaultValue: 75 },
         ] },
         { type: 'row', fields: [
-          { name: 'ageGroups', type: 'select', hasMany: true, required: true, options: ageGroupOptions },
+          { name: 'birthYears', label: 'Years of birth', type: 'number', hasMany: true, required: true, admin: { description: 'e.g. 2017, 2018' } },
           { name: 'trialSpots', label: 'Trial spots per age group', type: 'number', defaultValue: 3, min: 0, max: 10 },
         ] },
       ],

@@ -120,7 +120,7 @@ export async function placesTaken(
   payload: Payload,
   programId: number | string,
   sessionStart?: string,
-  filter: { bookingType?: 'enrolment' | 'trial'; ageGroup?: string } = {},
+  filter: { bookingType?: 'enrolment' | 'trial'; birthYear?: number } = {},
 ) {
   const holdCutoff = new Date(Date.now() - 35 * 60 * 1000).toISOString()
   const { totalDocs } = await payload.count({
@@ -131,7 +131,7 @@ export async function placesTaken(
         ...(sessionStart ? [{ sessionStart: { equals: sessionStart } }] : []),
         ...(filter.bookingType === 'trial' ? [{ bookingType: { equals: 'trial' } }] : []),
         ...(filter.bookingType === 'enrolment' ? [{ bookingType: { not_equals: 'trial' } }] : []),
-        ...(filter.ageGroup ? [{ ageGroup: { equals: filter.ageGroup } }] : []),
+        ...(filter.birthYear ? [{ birthYear: { equals: filter.birthYear } }] : []),
         { or: [{ status: { equals: 'paid' } }, { and: [{ status: { equals: 'pending' } }, { createdAt: { greater_than: holdCutoff } }] }] },
       ],
     },

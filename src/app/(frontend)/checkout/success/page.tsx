@@ -1,3 +1,4 @@
+import { groupLabel } from '@/lib/age-groups'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { payload, formatAUD, formatDate } from '@/lib/payload'
@@ -52,7 +53,7 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
           <dl className={`panel mt-8 space-y-3 border border-line bg-surface-2 p-6 text-left text-sm ${academy ? 'gloss-sheen rounded-sm' : 'rounded-2xl'}`}>
             <Row k="Program" v={program.title} />
             <Row k={doc.player?.teamName ? 'Team' : 'Player'} v={doc.player?.teamName || doc.player?.firstName || ''} />
-            {doc.ageGroup && <Row k="Age group" v={doc.ageGroup} />}
+            {doc.birthYear && <Row k="Age group" v={groupLabel(doc.birthYear)} />}
             {doc.sessionStart && <Row k="Time" v={formatDate(doc.sessionStart, { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' })} />}
             {!doc.sessionStart && program.startDate && <Row k="Starts" v={formatDate(program.startDate)} />}
             {doc.amount > 0 && <Row k="Paid" v={`${formatAUD(doc.amount)} to ${payeeLabel}`} />}

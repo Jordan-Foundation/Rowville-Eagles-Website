@@ -106,8 +106,8 @@ const programs = [
   { title: 'Eagles Autumn Cup', slug: 'eagles-autumn-cup-2027', type: 'tournament', brand: 'academy', status: 'open', price: 250, ageRange: 'U8 – U12', scheduleNote: 'Per team entry', startDate: '2027-03-20T22:00:00.000Z', summary: 'Our annual junior tournament — enter your team for a full day of football at Rowville.' },
   { title: 'Academy Term 1', slug: 'academy-term-1-2027', type: 'academy-term', brand: 'academy', status: 'open', price: 440, capacity: 24, ageRange: 'U8 – U14', scheduleNote: 'Tuesdays & Thursdays · 9 weeks', location: '208 Dandelion Drive, Rowville', startDate: '2027-02-01T13:00:00.000Z', endDate: '2027-04-01T12:00:00.000Z', trialPrice: 0, summary: 'Weekly high-performance sessions in groups of no more than 12, with an individual development plan and end-of-term review.',
     weeklySessions: [
-      { day: 'Tuesday', startTime: '17:30', durationMinutes: 75, ageGroups: ['U8', 'U9', 'U10', 'U11'], trialSpots: 3 },
-      { day: 'Thursday', startTime: '17:30', durationMinutes: 75, ageGroups: ['U12', 'U13', 'U14'], trialSpots: 3 },
+      { day: 'Tuesday', startTime: '17:30', durationMinutes: 75, birthYears: [2017, 2018, 2019, 2020], trialSpots: 3 },
+      { day: 'Thursday', startTime: '17:30', durationMinutes: 75, birthYears: [2014, 2015, 2016], trialSpots: 3 },
     ] },
   { title: '1-on-1 Coaching', slug: 'private-coaching', type: 'private-session', brand: 'academy', status: 'open', price: 75, ageRange: 'All ages', scheduleNote: '60 minutes · choose your time', summary: 'Personalised technical sessions with an Academy coach, focused on your player’s individual goals.' },
 ] as const
@@ -129,16 +129,16 @@ const slotsFor: Record<string, ReturnType<typeof slotsFrom>> = {
 }
 
 for (const p of programs) {
-  const weeklySessions = 'weeklySessions' in p ? p.weeklySessions.map((w) => ({ ...w, ageGroups: [...w.ageGroups] })) : undefined
+  const weeklySessions = 'weeklySessions' in p ? p.weeklySessions.map((w) => ({ ...w, birthYears: [...w.birthYears] })) : undefined
   await payload.create({ collection: 'programs', data: { ...p, weeklySessions, slots: slotsFor[p.slug], description: para(`${p.summary}\n\nThis is sample copy — replace it in the admin with the full program details, what to bring, and cancellation policy.`) } })
 }
 
 // Club trial dates: MiniRoos published (open for booking); juniors/seniors not yet set → expressions of interest
 for (const t of [
-  { title: 'MiniRoos trials — night 1', start: '2027-01-19T06:30:00.000Z', ageGroups: ['U6', 'U7', 'U8', 'U9', 'U10', 'U11'], capacityPerAgeGroup: 20, status: 'published' },
-  { title: 'MiniRoos trials — night 2', start: '2027-01-21T06:30:00.000Z', ageGroups: ['U6', 'U7', 'U8', 'U9', 'U10', 'U11'], capacityPerAgeGroup: 20, status: 'published' },
+  { title: 'MiniRoos trials — night 1', start: '2027-01-19T06:30:00.000Z', birthYears: [2016, 2017, 2018, 2019, 2020, 2021], capacityPerAgeGroup: 20, status: 'published' },
+  { title: 'MiniRoos trials — night 2', start: '2027-01-21T06:30:00.000Z', birthYears: [2016, 2017, 2018, 2019, 2020, 2021], capacityPerAgeGroup: 20, status: 'published' },
 ] as const) {
-  await payload.create({ collection: 'trial-sessions', data: { ...t, ageGroups: [...t.ageGroups] } })
+  await payload.create({ collection: 'trial-sessions', data: { ...t, birthYears: [...t.birthYears] } })
 }
 
 // Foundation Academy: Term 1 2027 collecting coach availability (Sydney midnight 1 Feb = 31 Jan 13:00 UTC)

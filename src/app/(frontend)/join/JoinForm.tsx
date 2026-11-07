@@ -2,19 +2,23 @@
 
 import { useActionState, useMemo, useState } from 'react'
 import { useFormStatus } from 'react-dom'
-import { ageGroupFor } from '@/lib/age'
+import { fullLabel, groupFor, type AgeRules } from '@/lib/age-groups'
 import { Field, Fieldset, Input, inputCls } from '@/components/forms/Field'
 import { joinUs, type JoinState } from './actions'
 
-export type TrialOption = { id: number; label: string; ageGroups: string[]; remaining: Record<string, number> }
+/** `remaining` is keyed by year of birth */
+export type TrialOption = { id: number; label: string; birthYears: number[]; remaining: Record<string, number> }
 
-export function JoinForm({ season, trials }: { season: number; trials: TrialOption[] }) {
+export function JoinForm({ rules, trials }: { rules: AgeRules; trials: TrialOption[] }) {
+  const season = rules.season
   const [state, action] = useActionState<JoinState, FormData>(joinUs, {})
   const v = state.values ?? {}
   const [dob, setDob] = useState(v.playerDob ?? '')
-  const ageGroup = useMemo(() => (dob ? ageGroupFor(dob, season) : null), [dob, season])
-  const options = ageGroup ? trials.filter((t) => t.ageGroups.includes(ageGroup)) : []
-  const open = options.filter((t) => (t.remaining[ageGroup!] ?? 0) > 0)
+  const group = useMemo(() => (dob ? groupFor(dob, rules) : null), [dob, rules])
+  const ageGroup = group ? fullLabel(group) : null
+  const key = group ? String(group.birthYear) : ''
+  const options = group ? trials.filter((t) => t.birthYears.includes(group.birthYear)) : []
+  const open = options.filter((t) => (t.remaining[key] ?? 0) > 0)
 
   return (
     <form action={action} className="space-y-6">
@@ -36,6 +40,7 @@ export function JoinForm({ season, trials }: { season: number; trials: TrialOpti
           {ageGroup && (
             <p className="w-full rounded-lg border border-line bg-surface px-4 py-2.5 text-sm" aria-live="polite">
               {season} age group: <strong>{ageGroup}</strong>
+              {group?.kind === 'too-young' && <span className="mt-1 block text-xs text-muted">Younger than our MiniRoos {rules.miniMin}s — register interest and the club will be in touch.</span>}
             </p>
           )}
         </div>
@@ -59,7 +64,7 @@ export function JoinForm({ season, trials }: { season: number; trials: TrialOpti
           {open.length > 0 ? (
             <div className="grid gap-2 sm:grid-cols-2">
               {options.map((t) => {
-                const left = t.remaining[ageGroup] ?? 0
+                const left = t.remaining[key] ?? 0
                 return (
                   <label
                     key={t.id}

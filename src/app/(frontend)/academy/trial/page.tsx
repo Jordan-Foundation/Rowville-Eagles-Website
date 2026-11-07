@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { payload, formatAUD, formatDate } from '@/lib/payload'
-import { currentSeason } from '@/lib/age'
+import { getAgeRules } from '@/lib/age-rules'
 import { currentAcademyTerm, trialNights } from '@/lib/rfa-trials'
 import { AcademyBackdrop } from '@/components/AcademyBackdrop'
 import { RfaLogo } from '@/components/Logos'
@@ -37,7 +37,7 @@ export default async function RfaTrialPage({ searchParams }: { searchParams: Pro
       <div className="container-x max-w-3xl py-14">
         {cancelled && <p className="panel mb-6 border border-line bg-surface-2 px-4 py-3 text-sm">Payment was cancelled — nothing was charged.</p>}
         {term && nights.length > 0 ? (
-          <RfaTrialForm season={currentSeason(settings.season)} nights={nights} priceLabel={formatAUD(term.trialPrice ?? 0)} />
+          <RfaTrialForm rules={await getAgeRules(p)} nights={nights} priceLabel={formatAUD(term.trialPrice ?? 0)} />
         ) : (
           <p className="panel border border-line bg-surface-2 p-6 text-muted">Trial nights for the next Academy term will open soon.</p>
         )}

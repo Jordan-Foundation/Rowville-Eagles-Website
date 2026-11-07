@@ -3,7 +3,8 @@ import type { Program } from '@/payload-types'
 import { datesOnWeekday, localToUtc, localYmd } from './time'
 import { formatDate } from './format'
 
-export type TrialNight = { start: string; label: string; ageGroups: string[]; remaining: Record<string, number> }
+/** `remaining` is keyed by year of birth (as a string) */
+export type TrialNight = { start: string; label: string; birthYears: number[]; remaining: Record<string, number> }
 
 /** The Academy term currently running (or the next one to start) that has weekly nights set. */
 export async function currentAcademyTerm(payload: Payload): Promise<Program | undefined> {
@@ -36,22 +37,22 @@ export async function trialNights(payload: Payload, term: Program): Promise<Tria
     limit: 2000,
     depth: 0,
     overrideAccess: true,
-    select: { sessionStart: true, ageGroup: true },
+    select: { sessionStart: true, birthYear: true },
   })
-  const key = (start: string, g: string) => `${new Date(start).toISOString()}|${g}`
+  const key = (start: string, by: number) => `${new Date(start).toISOString()}|${by}`
   const counts = new Map<string, number>()
-  for (const b of taken) if (b.sessionStart && b.ageGroup) counts.set(key(b.sessionStart, b.ageGroup), (counts.get(key(b.sessionStart, b.ageGroup)) ?? 0) + 1)
+  for (const b of taken) if (b.sessionStart && b.birthYear) counts.set(key(b.sessionStart, b.birthYear), (counts.get(key(b.sessionStart, b.birthYear)) ?? 0) + 1)
 
   const nights: TrialNight[] = []
   for (const ws of term.weeklySessions ?? []) {
     for (const ymd of datesOnWeekday(from, to, ws.day)) {
       const start = localToUtc(ymd, ws.startTime).toISOString()
-      const groups = (ws.ageGroups ?? []) as string[]
+      const years = (ws.birthYears ?? []) as number[]
       nights.push({
         start,
         label: formatDate(start, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }),
-        ageGroups: groups,
-        remaining: Object.fromEntries(groups.map((g) => [g, Math.max(0, (ws.trialSpots ?? 3) - (counts.get(key(start, g)) ?? 0))])),
+        birthYears: years,
+        remaining: Object.fromEntries(years.map((by) => [String(by), Math.max(0, (ws.trialSpots ?? 3) - (counts.get(key(start, by)) ?? 0))])),
       })
     }
   }

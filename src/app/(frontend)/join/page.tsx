@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { payload } from '@/lib/payload'
-import { currentSeason } from '@/lib/age'
+import { getAgeRules } from '@/lib/age-rules'
 import { clubTrialOptions } from '@/lib/trial-options'
 import { JoinForm } from './JoinForm'
 
@@ -18,8 +18,8 @@ const steps = [
 
 export default async function JoinPage() {
   const p = await payload()
-  const settings = await p.findGlobal({ slug: 'site-settings', depth: 0 })
-  const season = currentSeason(settings.season)
+  const rules = await getAgeRules(p)
+  const season = rules.season
   const trials = await clubTrialOptions(p)
 
   return (
@@ -43,7 +43,7 @@ export default async function JoinPage() {
         </div>
       </section>
       <div className="container-x max-w-3xl py-14">
-        <JoinForm season={season} trials={trials} />
+        <JoinForm rules={rules} trials={trials} />
       </div>
     </>
   )

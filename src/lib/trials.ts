@@ -6,31 +6,34 @@ import { sendEmail } from './email'
 import { emailLayout, esc, rfaPromoBlock } from './email-templates'
 import { formatAUD, formatDate } from './format'
 import { siteUrl } from './payments'
+import { groupLabel } from './age-groups'
+
+const grp = (by?: number | null) => (by ? groupLabel(by) : 'their age group')
 
 export const newToken = () => randomBytes(18).toString('base64url')
 
 const when = (iso: string) => formatDate(iso, { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' })
 
-/** Places used in a club trial session for one age group. */
-export async function trialPlacesTaken(payload: Payload, sessionId: number, ageGroup: string) {
+/** Places used in a club trial session for one age group (year of birth). */
+export async function trialPlacesTaken(payload: Payload, sessionId: number, birthYear: number) {
   const { totalDocs } = await payload.count({
     collection: 'trial-registrations',
-    where: { trialSession: { equals: sessionId }, ageGroup: { equals: ageGroup }, status: { in: ['trial-booked', 'attended', 'offered', 'registered'] } },
+    where: { trialSession: { equals: sessionId }, birthYear: { equals: birthYear }, status: { in: ['trial-booked', 'attended', 'offered', 'registered'] } },
     overrideAccess: true,
   })
   return totalDocs
 }
 
 /** Upcoming published club trial sessions for an age group, with places left. */
-export async function openTrialSessions(payload: Payload, ageGroup: string) {
+export async function openTrialSessions(payload: Payload, birthYear: number) {
   const { docs } = await payload.find({
     collection: 'trial-sessions',
-    where: { status: { equals: 'published' }, start: { greater_than: new Date().toISOString() }, ageGroups: { contains: ageGroup } },
+    where: { status: { equals: 'published' }, start: { greater_than: new Date().toISOString() }, birthYears: { contains: birthYear } },
     sort: 'start',
     limit: 20,
     depth: 0,
   })
-  return Promise.all(docs.map(async (s) => ({ session: s, remaining: Math.max(0, (s.capacityPerAgeGroup ?? 20) - (await trialPlacesTaken(payload, s.id, ageGroup))) })))
+  return Promise.all(docs.map(async (s) => ({ session: s, remaining: Math.max(0, (s.capacityPerAgeGroup ?? 20) - (await trialPlacesTaken(payload, s.id, birthYear))) })))
 }
 
 export async function emailTrialConfirmation(payload: Payload, reg: TrialRegistration, session: TrialSession) {
@@ -41,7 +44,7 @@ export async function emailTrialConfirmation(payload: Payload, reg: TrialRegistr
       rows: [
         ['When', when(session.start)],
         ['Where', session.location || '208 Dandelion Drive, Rowville'],
-        ['Age group', reg.ageGroup || ''],
+        ['Age group', grp(reg.birthYear)],
         ['Reference', reg.reference ?? ''],
       ],
       after: session.whatToBring ? `<strong>What to bring:</strong> ${esc(session.whatToBring)}` : undefined,
@@ -55,10 +58,10 @@ export async function emailInterestConfirmation(payload: Payload, reg: TrialRegi
   const html = emailLayout('club', [
     {
       heading: 'You’re on the list!',
-      intro: `Thanks ${esc(reg.contact.firstName)} — we’ve registered ${esc(reg.player.firstName)}’s interest in playing for Rowville Eagles in ${reg.season}. Trial dates for ${esc(reg.ageGroup || 'their age group')} haven’t been set yet — we’ll email you the moment they are, with a link to choose a night.`,
+      intro: `Thanks ${esc(reg.contact.firstName)} — we’ve registered ${esc(reg.player.firstName)}’s interest in playing for Rowville Eagles in ${reg.season}. Trial dates for ${esc(grp(reg.birthYear))} haven’t been set yet — we’ll email you the moment they are, with a link to choose a night.`,
       rows: [
         ['Player', `${reg.player.firstName} ${reg.player.lastName}`],
-        ['Age group', reg.ageGroup || ''],
+        ['Age group', grp(reg.birthYear)],
         ['Reference', reg.reference ?? ''],
       ],
     },
@@ -72,7 +75,7 @@ export async function notifyInterestsOfTrial(payload: Payload, session: TrialSes
   if (new Date(session.start) < new Date()) return
   const { docs } = await payload.find({
     collection: 'trial-registrations',
-    where: { status: { equals: 'interested' }, ageGroup: { in: session.ageGroups } },
+    where: { status: { equals: 'interested' }, birthYear: { in: session.birthYears } },
     limit: 1000,
     depth: 0,
     overrideAccess: true,
@@ -84,8 +87,8 @@ export async function notifyInterestsOfTrial(payload: Payload, session: TrialSes
     const { token } = await payload.findByID({ collection: 'trial-registrations', id: reg.id, depth: 0, overrideAccess: true, showHiddenFields: true, req })
     const html = emailLayout('club', [
       {
-        heading: `Trial dates are here for ${reg.ageGroup}`,
-        intro: `Good news ${esc(reg.contact.firstName)} — ${reg.ageGroup} trials have been scheduled. Choose a night for ${esc(reg.player.firstName)} using the button below.`,
+        heading: `Trial dates are here for ${grp(reg.birthYear)}`,
+        intro: `Good news ${esc(reg.contact.firstName)} — ${grp(reg.birthYear)} trials have been scheduled. Choose a night for ${esc(reg.player.firstName)} using the button below.`,
         rows: [
           ['First date', when(session.start)],
           ['Where', session.location || '208 Dandelion Drive, Rowville'],
@@ -94,7 +97,7 @@ export async function notifyInterestsOfTrial(payload: Payload, session: TrialSes
       },
       rfaPromoBlock(),
     ])
-    await sendEmail(payload, { to: reg.contact.email, subject: `${reg.ageGroup} trial dates announced — Rowville Eagles`, html, sender: 'club', replyTo: await replyTo(payload, req), req })
+    await sendEmail(payload, { to: reg.contact.email, subject: `${grp(reg.birthYear)} trial dates announced — Rowville Eagles`, html, sender: 'club', replyTo: await replyTo(payload, req), req })
     await payload.update({
       collection: 'trial-registrations',
       id: reg.id,

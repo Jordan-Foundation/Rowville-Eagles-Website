@@ -1,3 +1,4 @@
+import { groupLabel } from './age-groups'
 import type { Payload } from 'payload'
 import type { Booking, Order, Program } from '@/payload-types'
 import { accountLink, addMembership, ensureAccount, findOrCreateParticipant } from './accounts'
@@ -29,7 +30,7 @@ export async function onBookingPaid(payload: Payload, booking: Booking) {
         rows: [
           ['When', booking.sessionStart ? when(booking.sessionStart) : ''],
           ['Program', program.title],
-          ['Age group', booking.ageGroup || ''],
+          ['Age group', booking.birthYear ? groupLabel(booking.birthYear) : ''],
           ['Where', program.location || settings.ground?.address || 'Rowville'],
           ['Reference', booking.reference ?? ''],
         ],

@@ -1,7 +1,7 @@
 import type { CollectionConfig } from 'payload'
 import { APIError } from 'payload'
 import { isStaff } from '../access'
-import { ageGroupFor, ageGroupOptions, currentSeason } from '../lib/age'
+import { birthYearOf, currentSeason, groupLabel } from '../lib/age-groups'
 import { makeReference } from '../lib/reference'
 import { newToken, sendOffer } from '../lib/trials'
 
@@ -14,7 +14,7 @@ export const TrialRegistrations: CollectionConfig = {
   labels: { singular: 'Trial / interest', plural: 'Trials & interest' },
   admin: {
     useAsTitle: 'displayName',
-    defaultColumns: ['reference', 'player.firstName', 'player.lastName', 'ageGroup', 'status', 'trialSession', 'createdAt'],
+    defaultColumns: ['reference', 'player.firstName', 'player.lastName', 'birthYear', 'status', 'trialSession', 'createdAt'],
     group: 'Trials & Registration',
     listSearchableFields: ['reference', 'player.firstName', 'player.lastName', 'contact.email'],
   },
@@ -32,12 +32,11 @@ export const TrialRegistrations: CollectionConfig = {
           next.season = currentSeason(settings.season)
         }
         const dob = next.player?.dateOfBirth ?? originalDoc?.player?.dateOfBirth
-        const season = next.season ?? originalDoc?.season
-        if (dob && season) next.ageGroup = ageGroupFor(dob, season) ?? next.ageGroup
+        if (dob) next.birthYear = birthYearOf(dob) ?? next.birthYear
         const first = next.player?.firstName ?? originalDoc?.player?.firstName ?? ''
         const last = next.player?.lastName ?? originalDoc?.player?.lastName ?? ''
-        const group = next.ageGroup ?? originalDoc?.ageGroup
-        next.displayName = `${first} ${last}`.trim() + (group ? ` (${group})` : '')
+        const by = next.birthYear ?? originalDoc?.birthYear
+        next.displayName = `${first} ${last}`.trim() + (by ? ` (${groupLabel(by)})` : '')
         return next
       },
     ],
@@ -80,10 +79,10 @@ export const TrialRegistrations: CollectionConfig = {
       admin: { position: 'sidebar' },
     },
     {
-      name: 'ageGroup',
-      type: 'select',
-      options: ageGroupOptions,
-      admin: { position: 'sidebar', readOnly: true, description: 'Worked out from the date of birth' },
+      name: 'birthYear',
+      label: 'Age group (year of birth)',
+      type: 'number',
+      admin: { position: 'sidebar', readOnly: true, description: 'From the date of birth — the age group is shown as e.g. “2017s”' },
     },
     { name: 'season', type: 'number', admin: { position: 'sidebar', readOnly: true, description: 'Set automatically' } },
     { name: 'trialSession', type: 'relationship', relationTo: 'trial-sessions', admin: { position: 'sidebar' } },

@@ -4,7 +4,7 @@ import { ProgramCard } from '@/components/ProgramCard'
 import { Crest, RfaLogo } from '@/components/Logos'
 import { AcademyBackdrop } from '@/components/AcademyBackdrop'
 import { SponsorCard } from '@/components/SponsorLogo'
-import { currentSeason } from '@/lib/age'
+import { currentSeason } from '@/lib/age-groups'
 
 export const revalidate = 60
 

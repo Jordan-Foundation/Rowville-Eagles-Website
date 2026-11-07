@@ -1,13 +1,12 @@
 import type { CollectionConfig } from 'payload'
 import { anyone, isStaff } from '../access'
-import { ageGroupOptions } from '../lib/age'
 import { notifyInterestsOfTrial } from '../lib/trials'
 
 /** Club trial dates. Publishing one emails everyone who registered interest in a matching age group. */
 export const TrialSessions: CollectionConfig = {
   slug: 'trial-sessions',
   labels: { singular: 'Club trial date', plural: 'Club trial dates' },
-  admin: { useAsTitle: 'title', defaultColumns: ['title', 'start', 'ageGroups', 'status'], group: 'Trials & Registration' },
+  admin: { useAsTitle: 'title', defaultColumns: ['title', 'start', 'birthYears', 'status'], group: 'Trials & Registration' },
   access: { read: anyone, create: isStaff, update: isStaff, delete: isStaff },
   defaultSort: 'start',
   hooks: {
@@ -29,7 +28,7 @@ export const TrialSessions: CollectionConfig = {
         { name: 'capacityPerAgeGroup', type: 'number', defaultValue: 20, min: 1 },
       ],
     },
-    { name: 'ageGroups', type: 'select', hasMany: true, required: true, options: ageGroupOptions },
+    { name: 'birthYears', label: 'Years of birth', type: 'number', hasMany: true, required: true, admin: { description: 'Which age groups trial on this night, by year of birth — e.g. 2017, 2018' } },
     { name: 'location', type: 'text', defaultValue: '208 Dandelion Drive, Rowville' },
     { name: 'whatToBring', type: 'textarea', defaultValue: 'Boots, shin pads, water bottle and a ball if you have one. Please arrive 10 minutes early.' },
     {
