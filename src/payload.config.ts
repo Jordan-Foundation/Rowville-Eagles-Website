@@ -36,6 +36,12 @@ import { AcademyBookings } from './academy/collections/AcademyBookings'
 import { AcademySessions } from './academy/collections/AcademySessions'
 import { AcademyTermSlots } from './academy/terms/collections/AcademyTermSlots'
 import { AcademyRegistrations } from './academy/terms/collections/AcademyRegistrations'
+import { PdrAreas } from './academy/pdr/collections/PdrAreas'
+import { PdrLevels } from './academy/pdr/collections/PdrLevels'
+import { PdrStages } from './academy/pdr/collections/PdrStages'
+import { PdrVideos } from './academy/pdr/collections/PdrVideos'
+import { PdrBadges } from './academy/pdr/collections/PdrBadges'
+import { PdrSettings } from './academy/pdr/PdrSettings'
 import { AcademyCredits } from './academy/collections/AcademyCredits'
 import { SiteSettings } from './globals/SiteSettings'
 import { About } from './globals/About'
@@ -53,15 +59,16 @@ export default buildConfig({
     meta: { titleSuffix: ' · Rowville Eagles Admin' },
     importMap: { baseDir: path.resolve(dirname) },
     components: {
-      afterNavLinks: ['/components/admin/PricesNavLink#PricesNavLink'],
+      afterNavLinks: ['/components/admin/PricesNavLink#PricesNavLink', '/components/admin/PricesNavLink#PdrNavLink'],
       beforeDashboard: ['/components/admin/PricesNavLink#PricesDashboardCard'],
       views: {
         prices: { Component: '/components/admin/PricesView#PricesView', path: '/prices', meta: { title: 'Prices' } },
+        pdr: { Component: '/components/admin/PdrMapView#PdrMapView', path: '/pdr', meta: { title: 'PDR content map' } },
       },
     },
   },
-  collections: [AcademyBookings, AcademySessions, AcademyTerms, AcademyTermSlots, AcademyRegistrations, AcademyCoaches, AcademyAvailability, AcademyReminderLog, AcademyCredits, Posts, SelectionRounds, Squads, SelectionEntries, TrialSessions, Programs, Bookings, Products, Orders, Teams, TeamMembers, TeamPosts, ForumThreads, ForumReplies, Sponsors, Participants, Users, ConsentRecords, MessageLog, InviteTokens, Media],
-  globals: [SiteSettings, About, AcademySettings],
+  collections: [AcademyBookings, AcademySessions, AcademyTerms, AcademyTermSlots, AcademyRegistrations, PdrAreas, PdrLevels, PdrStages, PdrVideos, PdrBadges, AcademyCoaches, AcademyAvailability, AcademyReminderLog, AcademyCredits, Posts, SelectionRounds, Squads, SelectionEntries, TrialSessions, Programs, Bookings, Products, Orders, Teams, TeamMembers, TeamPosts, ForumThreads, ForumReplies, Sponsors, Participants, Users, ConsentRecords, MessageLog, InviteTokens, Media],
+  globals: [SiteSettings, About, AcademySettings, PdrSettings],
   editor: lexicalEditor(),
   ...(process.env.RESEND_API_KEY
     ? {

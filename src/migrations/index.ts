@@ -25,6 +25,7 @@ import * as migration_20261107_025525_team_pages from './20261107_025525_team_pa
 import * as migration_20261107_032141_twilio_sms_voice from './20261107_032141_twilio_sms_voice';
 import * as migration_20261107_042144_academy_term_slots from './20261107_042144_academy_term_slots';
 import * as migration_20261107_043914_program_price_per_session from './20261107_043914_program_price_per_session';
+import * as migration_20261107_065357_pdr_content from './20261107_065357_pdr_content';
 
 export const migrations = [
   {
@@ -160,6 +161,11 @@ export const migrations = [
   {
     up: migration_20261107_043914_program_price_per_session.up,
     down: migration_20261107_043914_program_price_per_session.down,
-    name: '20261107_043914_program_price_per_session'
+    name: '20261107_043914_program_price_per_session',
+  },
+  {
+    up: migration_20261107_065357_pdr_content.up,
+    down: migration_20261107_065357_pdr_content.down,
+    name: '20261107_065357_pdr_content'
   },
 ];

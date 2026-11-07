@@ -216,5 +216,9 @@ for (const [i, sp] of SPONSORS.entries()) {
   await payload.create({ collection: 'sponsors', data: { ...sp, tier: 'community', order: i } })
 }
 
+// Player Development Report content (only adds what's missing)
+const { seedPdr } = await import('../src/academy/pdr/seed')
+payload.logger.info(`PDR content: ${JSON.stringify(await seedPdr(payload))}`)
+
 payload.logger.info(`Seed complete.${adminEmail ? ` Admin login: ${adminEmail}` : ''}`)
 process.exit(0)

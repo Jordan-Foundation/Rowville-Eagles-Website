@@ -72,6 +72,11 @@ export interface Config {
     'academy-terms': AcademyTerm;
     'academy-term-slots': AcademyTermSlot;
     'academy-registrations': AcademyRegistration;
+    'pdr-areas': PdrArea;
+    'pdr-levels': PdrLevel;
+    'pdr-stages': PdrStage;
+    'pdr-videos': PdrVideo;
+    'pdr-badges': PdrBadge;
     'academy-coaches': AcademyCoach;
     'academy-availability': AcademyAvailability;
     'academy-reminder-log': AcademyReminderLog;
@@ -109,6 +114,11 @@ export interface Config {
     'academy-terms': AcademyTermsSelect<false> | AcademyTermsSelect<true>;
     'academy-term-slots': AcademyTermSlotsSelect<false> | AcademyTermSlotsSelect<true>;
     'academy-registrations': AcademyRegistrationsSelect<false> | AcademyRegistrationsSelect<true>;
+    'pdr-areas': PdrAreasSelect<false> | PdrAreasSelect<true>;
+    'pdr-levels': PdrLevelsSelect<false> | PdrLevelsSelect<true>;
+    'pdr-stages': PdrStagesSelect<false> | PdrStagesSelect<true>;
+    'pdr-videos': PdrVideosSelect<false> | PdrVideosSelect<true>;
+    'pdr-badges': PdrBadgesSelect<false> | PdrBadgesSelect<true>;
     'academy-coaches': AcademyCoachesSelect<false> | AcademyCoachesSelect<true>;
     'academy-availability': AcademyAvailabilitySelect<false> | AcademyAvailabilitySelect<true>;
     'academy-reminder-log': AcademyReminderLogSelect<false> | AcademyReminderLogSelect<true>;
@@ -147,11 +157,13 @@ export interface Config {
     'site-settings': SiteSetting;
     about: About;
     'academy-settings': AcademySetting;
+    'pdr-settings': PdrSetting;
   };
   globalsSelect: {
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
     about: AboutSelect<false> | AboutSelect<true>;
     'academy-settings': AcademySettingsSelect<false> | AcademySettingsSelect<true>;
+    'pdr-settings': PdrSettingsSelect<false> | PdrSettingsSelect<true>;
   };
   locale: null;
   widgets: {
@@ -481,6 +493,20 @@ export interface Participant {
     emergencyPhone?: string | null;
   };
   photoConsent?: boolean | null;
+  /**
+   * Plan, leaderboard privacy and parental consent for the PDR.
+   */
+  pdr?: {
+    tier?: ('free' | 'standard' | 'premium') | null;
+    subscriptionId?: string | null;
+    subscriptionStatus?: string | null;
+    leaderboardOptOut?: boolean | null;
+    /**
+     * Default: first name + last initial, e.g. Mia T.
+     */
+    leaderboardName?: string | null;
+    consentAt?: string | null;
+  };
   /**
    * Added automatically when registration / Academy term is paid. Edit by hand for players registered outside the website.
    */
@@ -1113,6 +1139,140 @@ export interface TrialSession {
   createdAt: string;
 }
 /**
+ * The footballing areas, e.g. Passing. Each has levels, and each level has stages.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pdr-areas".
+ */
+export interface PdrArea {
+  id: number;
+  name: string;
+  slug: string;
+  order?: number | null;
+  hasLeaderboard?: boolean | null;
+  /**
+   * e.g. #3b82f6
+   */
+  colour?: string | null;
+  description?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pdr-levels".
+ */
+export interface PdrLevel {
+  id: number;
+  displayName?: string | null;
+  area: number | PdrArea;
+  number: number;
+  /**
+   * Optional, e.g. “Foundations”
+   */
+  title?: string | null;
+  description?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pdr-stages".
+ */
+export interface PdrStage {
+  id: number;
+  title?: string | null;
+  sortKey?: string | null;
+  level: number | PdrLevel;
+  /**
+   * 1–4
+   */
+  stageNumber: number;
+  /**
+   * Set automatically, e.g. Passing 1.1
+   */
+  code?: string | null;
+  area?: (number | null) | PdrArea;
+  levelNumber?: number | null;
+  /**
+   * e.g. Inside-foot pass – preferred foot
+   */
+  skillName: string;
+  /**
+   * How to perform the skill correctly
+   */
+  technique?: string | null;
+  /**
+   * What the player must do to pass this stage
+   */
+  challenge?: string | null;
+  scoring?: ('scored' | 'judged') | null;
+  criteria?: {
+    target?: number | null;
+    /**
+     * e.g. passes, seconds, metres, touches
+     */
+    unit?: string | null;
+    direction?: ('higher' | 'lower') | null;
+    timeLimitSec?: number | null;
+    distanceM?: number | null;
+  };
+  tutorialVideo?: (number | null) | PdrVideo;
+  demoVideo?: (number | null) | PdrVideo;
+  coachingPoints?:
+    | {
+        point: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Content still to be written
+   */
+  placeholder?: boolean | null;
+  published?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pdr-videos".
+ */
+export interface PdrVideo {
+  id: number;
+  title: string;
+  kind?: ('tutorial' | 'demo' | 'challenge') | null;
+  durationSec?: number | null;
+  /**
+   * The 32-character ID from Cloudflare Stream. Leave empty until the clip is uploaded.
+   */
+  streamUid?: string | null;
+  notes?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pdr-badges".
+ */
+export interface PdrBadge {
+  id: number;
+  name: string;
+  type: 'level' | 'monthly';
+  area?: (number | null) | PdrArea;
+  /**
+   * Earned by passing every stage of this level
+   */
+  level?: (number | null) | PdrLevel;
+  artwork?: (number | null) | Media;
+  howToEarn?: string | null;
+  /**
+   * Name/artwork still to be decided
+   */
+  placeholder?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "academy-availability".
  */
@@ -1507,6 +1667,26 @@ export interface PayloadLockedDocument {
         value: number | AcademyRegistration;
       } | null)
     | ({
+        relationTo: 'pdr-areas';
+        value: number | PdrArea;
+      } | null)
+    | ({
+        relationTo: 'pdr-levels';
+        value: number | PdrLevel;
+      } | null)
+    | ({
+        relationTo: 'pdr-stages';
+        value: number | PdrStage;
+      } | null)
+    | ({
+        relationTo: 'pdr-videos';
+        value: number | PdrVideo;
+      } | null)
+    | ({
+        relationTo: 'pdr-badges';
+        value: number | PdrBadge;
+      } | null)
+    | ({
         relationTo: 'academy-coaches';
         value: number | AcademyCoach;
       } | null)
@@ -1888,6 +2068,99 @@ export interface AcademyRegistrationsSelect<T extends boolean = true> {
   paidAt?: T;
   notes?: T;
   token?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pdr-areas_select".
+ */
+export interface PdrAreasSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  order?: T;
+  hasLeaderboard?: T;
+  colour?: T;
+  description?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pdr-levels_select".
+ */
+export interface PdrLevelsSelect<T extends boolean = true> {
+  displayName?: T;
+  area?: T;
+  number?: T;
+  title?: T;
+  description?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pdr-stages_select".
+ */
+export interface PdrStagesSelect<T extends boolean = true> {
+  title?: T;
+  sortKey?: T;
+  level?: T;
+  stageNumber?: T;
+  code?: T;
+  area?: T;
+  levelNumber?: T;
+  skillName?: T;
+  technique?: T;
+  challenge?: T;
+  scoring?: T;
+  criteria?:
+    | T
+    | {
+        target?: T;
+        unit?: T;
+        direction?: T;
+        timeLimitSec?: T;
+        distanceM?: T;
+      };
+  tutorialVideo?: T;
+  demoVideo?: T;
+  coachingPoints?:
+    | T
+    | {
+        point?: T;
+        id?: T;
+      };
+  placeholder?: T;
+  published?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pdr-videos_select".
+ */
+export interface PdrVideosSelect<T extends boolean = true> {
+  title?: T;
+  kind?: T;
+  durationSec?: T;
+  streamUid?: T;
+  notes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pdr-badges_select".
+ */
+export interface PdrBadgesSelect<T extends boolean = true> {
+  name?: T;
+  type?: T;
+  area?: T;
+  level?: T;
+  artwork?: T;
+  howToEarn?: T;
+  placeholder?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -2435,6 +2708,16 @@ export interface ParticipantsSelect<T extends boolean = true> {
         emergencyPhone?: T;
       };
   photoConsent?: T;
+  pdr?:
+    | T
+    | {
+        tier?: T;
+        subscriptionId?: T;
+        subscriptionStatus?: T;
+        leaderboardOptOut?: T;
+        leaderboardName?: T;
+        consentAt?: T;
+      };
   memberships?: T;
   registrationOffer?:
     | T
@@ -2697,6 +2980,20 @@ export interface AcademySetting {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pdr-settings".
+ */
+export interface PdrSetting {
+  id: number;
+  maxClipSeconds?: number | null;
+  maxFileMB?: number | null;
+  retentionMonths?: number | null;
+  feedbackPerMonth?: number | null;
+  minPlayersForRanking?: number | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "site-settings_select".
  */
 export interface SiteSettingsSelect<T extends boolean = true> {
@@ -2776,6 +3073,20 @@ export interface AcademySettingsSelect<T extends boolean = true> {
   googleReviewUrl?: T;
   reviewAfterSessions?: T;
   reviewRequestsOn?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pdr-settings_select".
+ */
+export interface PdrSettingsSelect<T extends boolean = true> {
+  maxClipSeconds?: T;
+  maxFileMB?: T;
+  retentionMonths?: T;
+  feedbackPerMonth?: T;
+  minPlayersForRanking?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

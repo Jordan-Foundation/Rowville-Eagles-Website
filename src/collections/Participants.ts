@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import { staffOrOwner } from '../access'
+import { isAdminField, staffOrOwner } from '../access'
 
 /** A player (often a child) managed by an account holder. Foundation for the player development portal. */
 export const Participants: CollectionConfig = {
@@ -58,6 +58,41 @@ export const Participants: CollectionConfig = {
       ],
     },
     { name: 'photoConsent', type: 'checkbox', defaultValue: false },
+    {
+      name: 'pdr',
+      label: 'Player Development Report',
+      type: 'group',
+      admin: { description: 'Plan, leaderboard privacy and parental consent for the PDR.' },
+      fields: [
+        {
+          type: 'row',
+          fields: [
+            {
+              name: 'tier',
+              label: 'Plan',
+              type: 'select',
+              defaultValue: 'free',
+              options: [
+                { label: 'Free', value: 'free' },
+                { label: 'Standard', value: 'standard' },
+                { label: 'Premium', value: 'premium' },
+              ],
+              access: { update: isAdminField },
+            },
+            { name: 'subscriptionId', label: 'Stripe subscription', type: 'text', admin: { readOnly: true } },
+            { name: 'subscriptionStatus', label: 'Subscription status', type: 'text', admin: { readOnly: true } },
+          ],
+        },
+        {
+          type: 'row',
+          fields: [
+            { name: 'leaderboardOptOut', label: 'Hide from leaderboards', type: 'checkbox', defaultValue: false },
+            { name: 'leaderboardName', label: 'Leaderboard name', type: 'text', admin: { description: 'Default: first name + last initial, e.g. Mia T.' } },
+            { name: 'consentAt', label: 'Parent/guardian consent given', type: 'date', admin: { readOnly: true } },
+          ],
+        },
+      ],
+    },
     {
       name: 'memberships',
       type: 'select',

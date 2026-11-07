@@ -9,6 +9,14 @@ export function PricesNavLink() {
   )
 }
 
+export function PdrNavLink() {
+  return (
+    <Link href="/admin/pdr" className="nav__link" style={{ display: 'block', padding: '6px 0', fontWeight: 600 }}>
+      🎯 PDR content map
+    </Link>
+  )
+}
+
 export function PricesDashboardCard() {
   return (
     <div style={{ marginBottom: 24, padding: '14px 18px', border: '1px solid var(--theme-elevation-150)', borderRadius: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
