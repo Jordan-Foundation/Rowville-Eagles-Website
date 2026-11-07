@@ -66,11 +66,12 @@ export default buildConfig({
     meta: { titleSuffix: ' · Rowville Eagles Admin' },
     importMap: { baseDir: path.resolve(dirname) },
     components: {
-      afterNavLinks: ['/components/admin/PricesNavLink#SetupNavLink', '/components/admin/PricesNavLink#PricesNavLink', '/components/admin/PricesNavLink#PdrNavLink'],
+      afterNavLinks: ['/components/admin/PricesNavLink#SetupNavLink', '/components/admin/PricesNavLink#PricesNavLink', '/components/admin/PricesNavLink#PdrNavLink', '/components/admin/PricesNavLink#FoundationPlusNavLink'],
       beforeDashboard: ['/components/admin/SetupCard#SetupCard', '/components/admin/PricesNavLink#PricesDashboardCard'],
       views: {
         prices: { Component: '/components/admin/PricesView#PricesView', path: '/prices', meta: { title: 'Prices' } },
         setup: { Component: '/components/admin/SetupView#SetupView', path: '/setup', meta: { title: 'Setup checklist' } },
+        foundationPlus: { Component: '/components/admin/FoundationPlusView#FoundationPlusView', path: '/foundation-plus', meta: { title: 'Foundation+ dashboard' } },
         pdr: { Component: '/components/admin/PdrMapView#PdrMapView', path: '/pdr', meta: { title: 'Foundation+ content map' } },
       },
     },

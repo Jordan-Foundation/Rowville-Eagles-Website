@@ -25,6 +25,10 @@ export async function setupChecklist(payload: Payload, ticked: Record<string, bo
   const q = { overrideAccess: true } as const
   const diff = await payload.findGlobal({ slug: 'difference-page', depth: 0, overrideAccess: true }).catch(() => null)
   const diffPhotos = [diff?.hero?.image, diff?.coaches?.image, diff?.pathways?.image].filter(Boolean).length + ((diff?.community?.photos as unknown[] | null)?.length ? 1 : 0)
+  const [fplusShop, waitlistUnsent] = await Promise.all([
+    payload.count({ collection: 'products', where: { audiences: { contains: 'foundation-plus' } }, ...q }).catch(() => ({ totalDocs: 0 })),
+    payload.count({ collection: 'fplus-waitlist', where: { notifiedAt: { exists: false } }, ...q }).catch(() => ({ totalDocs: 0 })),
+  ])
   const [academy, fplus, programs, slots, placeholders, badges, noArt, stagesLive] = await Promise.all([
     payload.findGlobal({ slug: 'academy-settings', depth: 0, ...q }).catch(() => null),
     payload.findGlobal({ slug: 'pdr-settings', depth: 0, ...q }).catch(() => null),
@@ -106,6 +110,8 @@ export async function setupChecklist(payload: Payload, ticked: Record<string, bo
         manual('retention', 'Video retention decided', `Foundation+ settings → “Delete videos after review (months)” — currently ${fplus?.retentionMonths ?? 6} months.`, { href: '/admin/globals/pdr-settings' }),
         manual('fplus-plans', 'Foundation+ prices confirmed', 'Admin → Prices → Foundation+ plans (Standard $9.95/mo or $89/yr, Premium $24.95/mo or $229/yr, 25% off 2nd+ player).', { href: '/admin/prices' }),
         manual('fplus-screens', 'Foundation+ page screenshots (optional)', 'The page uses real screenshots with made-up players. To use your own, send desktop shots (2560×1600) and phone shots (1170×2532) of: player page, a drill page, a leaderboard, the Trophy Cabinet.', { status: 'later', href: '/foundation-plus' }),
+        auto('fplus-shop', 'Foundation+ members-only shop items added', 'Admin → Shop → Products → Create new → “Who can buy this” → Groups: Foundation+ members (merch, kit, hoodie, top). They stay out of the shop until Foundation+ is switched on.', fplusShop.totalDocs > 0, { status: 'later', note: fplusShop.totalDocs ? `${fplusShop.totalDocs} item${fplusShop.totalDocs === 1 ? '' : 's'}` : undefined, href: '/admin/collections/products' }),
+        auto('fplus-launch', 'Waitlist launch emails sent', 'Sent automatically when you switch Foundation+ on (the first 100 straight away, the rest each morning). Progress is on the Foundation+ dashboard.', Boolean(fplus?.enabled) && waitlistUnsent.totalDocs === 0, { status: 'later', note: waitlistUnsent.totalDocs ? `${waitlistUnsent.totalDocs} on the waitlist waiting` : undefined, href: '/admin/foundation-plus' }),
         auto('fplus-on', 'Foundation+ switched on for families', 'Foundation+ settings → “Show Foundation+ on the website”.', Boolean(fplus?.enabled), { status: 'later', href: '/admin/globals/pdr-settings' }),
       ],
     },

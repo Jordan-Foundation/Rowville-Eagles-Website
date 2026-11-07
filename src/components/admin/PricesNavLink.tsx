@@ -37,3 +37,11 @@ export function SetupNavLink() {
     </Link>
   )
 }
+
+export function FoundationPlusNavLink() {
+  return (
+    <Link href="/admin/foundation-plus" className="nav__link" style={{ display: 'block', padding: '6px 0', fontWeight: 600 }}>
+      📈 Foundation+ dashboard
+    </Link>
+  )
+}
