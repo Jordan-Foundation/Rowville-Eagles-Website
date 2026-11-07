@@ -198,18 +198,19 @@ for (const p of posts) {
 
 const kitSizes = ['YS', 'YM', 'YL', 'S', 'M', 'L', 'XL', '2XL'].map((size) => ({ size, stock: 15 }))
 const products = [
-  { name: 'Home Playing Shirt', slug: 'home-playing-shirt', category: 'kit', brand: 'club', audience: 'rowville', price: 55, description: 'Official Rowville Eagles home shirt in royal blue.', variants: kitSizes },
-  { name: 'Playing Shorts', slug: 'playing-shorts', category: 'kit', brand: 'club', audience: 'rowville', price: 30, variants: kitSizes },
-  { name: 'Playing Socks', slug: 'playing-socks', category: 'kit', brand: 'club', audience: 'rowville', price: 15, variants: ['Junior', 'Senior'].map((size) => ({ size, stock: 30 })) },
-  { name: 'Training Top', slug: 'training-top', category: 'training', brand: 'club', audience: 'rowville', price: 45, variants: kitSizes },
-  { name: 'RFA Training Shirt', slug: 'rfa-training-shirt', category: 'training', brand: 'academy', audience: 'rfa', price: 50, description: 'Rowville Foundation Academy training shirt — black.', variants: kitSizes },
-  { name: 'RFA Hoodie', slug: 'rfa-hoodie', category: 'apparel', brand: 'academy', audience: 'rfa', price: 75, variants: kitSizes.map((v) => ({ ...v, stock: v.size === 'XL' ? 0 : 8 })) },
-  { name: 'Eagles Supporter Tee', slug: 'supporter-tee', category: 'apparel', brand: 'club', audience: 'everyone', price: 35, variants: kitSizes },
-  { name: 'Eagles Supporter Scarf', slug: 'supporter-scarf', category: 'accessories', brand: 'club', audience: 'everyone', price: 25, variants: [] },
-  { name: 'Drink Bottle', slug: 'drink-bottle', category: 'accessories', brand: 'club', audience: 'everyone', price: 12, variants: [] },
+  { name: 'Home Playing Shirt', slug: 'home-playing-shirt', category: 'kit', brand: 'club', audiences: ['rowville'], price: 55, description: 'Official Rowville Eagles home shirt in royal blue.', variants: kitSizes },
+  { name: 'Playing Shorts', slug: 'playing-shorts', category: 'kit', brand: 'club', audiences: ['rowville'], price: 30, variants: kitSizes },
+  { name: 'Playing Socks', slug: 'playing-socks', category: 'kit', brand: 'club', audiences: ['rowville'], price: 15, variants: ['Junior', 'Senior'].map((size) => ({ size, stock: 30 })) },
+  { name: 'Training Top', slug: 'training-top', category: 'training', brand: 'club', audiences: ['rowville'], price: 45, variants: kitSizes },
+  { name: 'RFA Training Shirt', slug: 'rfa-training-shirt', category: 'training', brand: 'academy', audiences: ['rfa'], price: 50, description: 'Rowville Foundation Academy training shirt — black.', variants: kitSizes },
+  { name: 'RFA Hoodie', slug: 'rfa-hoodie', category: 'apparel', brand: 'academy', audiences: ['rfa'], price: 75, variants: kitSizes.map((v) => ({ ...v, stock: v.size === 'XL' ? 0 : 8 })) },
+  { name: 'Eagles Supporter Tee', slug: 'supporter-tee', category: 'apparel', brand: 'club', audiences: ['everyone'], price: 35, variants: kitSizes },
+  { name: 'Eagles Supporter Scarf', slug: 'supporter-scarf', category: 'accessories', brand: 'club', audiences: ['everyone'], price: 25, variants: [] },
+  { name: 'Drink Bottle', slug: 'drink-bottle', category: 'accessories', brand: 'club', audiences: ['everyone'], price: 12, variants: [] },
+  { name: 'Foundation+ Training Top', slug: 'foundation-plus-training-top', category: 'training', brand: 'academy', audiences: ['foundation-plus'], price: 49, description: 'Members-only Foundation+ training top.', variants: kitSizes },
 ] as const
 for (const [i, pr] of products.entries()) {
-  await payload.create({ collection: 'products', data: { ...pr, variants: [...pr.variants], status: 'active', order: i } })
+  await payload.create({ collection: 'products', data: { ...pr, audiences: [...pr.audiences], variants: [...pr.variants], status: 'active', order: i } })
 }
 
 for (const [i, sp] of SPONSORS.entries()) {

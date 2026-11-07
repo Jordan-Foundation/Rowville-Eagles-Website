@@ -10,7 +10,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [posts, programs, products] = await Promise.all([
     p.find({ collection: 'posts', where: { status: { equals: 'published' } }, limit: 500, depth: 0, select: { slug: true, updatedAt: true } }),
     p.find({ collection: 'programs', where: { status: { in: ['open', 'full'] }, type: { not_in: ['registration', 'academy-trial', 'private-session'] } }, limit: 200, depth: 0, select: { slug: true, updatedAt: true } }),
-    p.find({ collection: 'products', where: { status: { equals: 'active' }, audience: { equals: 'everyone' } }, limit: 200, depth: 0, select: { slug: true, updatedAt: true } }),
+    p.find({ collection: 'products', where: { status: { equals: 'active' }, audiences: { contains: 'everyone' } }, limit: 200, depth: 0, select: { slug: true, updatedAt: true } }),
   ])
   const pages = ['', '/join', '/about', '/what-makes-us-different', '/foundation-plus', '/programs', '/academy', '/academy/trial', '/academy/1-on-1', '/shop', '/news', '/sponsors']
   return [

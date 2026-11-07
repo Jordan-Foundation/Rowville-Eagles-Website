@@ -1596,11 +1596,26 @@ export interface Post {
 export interface Product {
   id: number;
   name: string;
-  slug: string;
+  /**
+   * Fills itself in from the name — /shop/<this>. Only change it if you need to.
+   */
+  slug?: string | null;
   category: 'kit' | 'training' | 'apparel' | 'accessories';
   brand?: ('club' | 'academy') | null;
   status?: ('active' | 'hidden') | null;
-  audience: 'everyone' | 'rowville' | 'rfa';
+  audiences?: ('everyone' | 'rowville' | 'rfa' | 'foundation-plus')[] | null;
+  /**
+   * Players on these teams (and their coaches), e.g. a team hoodie.
+   */
+  teams?: (number | Team)[] | null;
+  /**
+   * Hand-picked families (search by name or email).
+   */
+  accounts?: (number | User)[] | null;
+  /**
+   * Ignored for “Everyone” items.
+   */
+  othersSee?: ('locked' | 'hidden') | null;
   /**
    * AUD incl. GST
    */
@@ -2843,7 +2858,10 @@ export interface ProductsSelect<T extends boolean = true> {
   category?: T;
   brand?: T;
   status?: T;
-  audience?: T;
+  audiences?: T;
+  teams?: T;
+  accounts?: T;
+  othersSee?: T;
   price?: T;
   description?: T;
   images?: T;

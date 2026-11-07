@@ -59,3 +59,10 @@ node_modules/
 
 # dev email previews
 /.outbox
+
+# Screenshots written by local test runs
+/account-offer.png
+/account-shop.png
+/join-form.png
+/join-thanks.png
+/rfa-trial.png

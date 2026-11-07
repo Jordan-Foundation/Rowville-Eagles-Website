@@ -35,6 +35,7 @@ import * as migration_20261107_113740_foundation_plus_waitlist from './20261107_
 import * as migration_20261107_115147_trial_places_per_night from './20261107_115147_trial_places_per_night';
 import * as migration_20261107_120146_foundation_plus_billing from './20261107_120146_foundation_plus_billing';
 import * as migration_20261107_121722_foundation_plus_trial from './20261107_121722_foundation_plus_trial';
+import * as migration_20261107_205754_shop_item_access from './20261107_205754_shop_item_access';
 
 export const migrations = [
   {
@@ -220,6 +221,11 @@ export const migrations = [
   {
     up: migration_20261107_121722_foundation_plus_trial.up,
     down: migration_20261107_121722_foundation_plus_trial.down,
-    name: '20261107_121722_foundation_plus_trial'
+    name: '20261107_121722_foundation_plus_trial',
+  },
+  {
+    up: migration_20261107_205754_shop_item_access.up,
+    down: migration_20261107_205754_shop_item_access.down,
+    name: '20261107_205754_shop_item_access'
   },
 ];

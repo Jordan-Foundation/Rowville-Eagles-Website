@@ -2,7 +2,7 @@ import type { Access, FieldAccess } from 'payload'
 
 export type Role = 'admin' | 'committee' | 'coach' | 'parent' | 'player'
 
-type WithRoles = { roles?: Role[] | null } | null | undefined
+export type WithRoles = { roles?: Role[] | null } | null | undefined
 
 export const hasRole = (user: WithRoles, ...roles: Role[]) =>
   Boolean(user?.roles?.some((r) => roles.includes(r)))

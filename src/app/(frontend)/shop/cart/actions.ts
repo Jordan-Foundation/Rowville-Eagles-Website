@@ -4,7 +4,7 @@ import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { payload } from '@/lib/payload'
 import { newReference, startCheckout } from '@/lib/payments'
-import { allowedAudiences } from '@/lib/shop-access'
+import { canBuy, shopViewer } from '@/lib/shop-access'
 
 export type CartState = { error?: string }
 
@@ -33,16 +33,16 @@ export async function checkoutCart(_prev: CartState, fd: FormData): Promise<Cart
   const settings = await p.findGlobal({ slug: 'site-settings' })
   const { user } = await p.auth({ headers: await headers() })
   const userId = user?.collection === 'users' ? user.id : undefined
-  const audiences = await allowedAudiences(p, userId)
+  const viewer = await shopViewer(p, userId)
 
   // Re-price every line from the database — never trust client prices.
   const items = []
   for (const ci of clientItems) {
     const qty = Math.floor(Number(ci.quantity))
     if (!Number.isFinite(qty) || qty < 1 || qty > 20) return { error: 'Please check the quantities in your cart.' }
-    const product = await p.findByID({ collection: 'products', id: ci.productId, depth: 0, disableErrors: true })
+    const product = await p.findByID({ collection: 'products', id: ci.productId, depth: 0, disableErrors: true, overrideAccess: true })
     if (!product || product.status !== 'active') return { error: 'An item in your cart is no longer available.' }
-    if (!audiences.includes(product.audience)) return { error: `${product.name} is for registered players only — please log in, or remove it from your cart.` }
+    if (!canBuy(product, viewer)) return { error: `${product.name} is for members only — please log in with the right account, or remove it from your cart.` }
     const variants = product.variants ?? []
     const variant = variants.find((v) => v.size === ci.size)
     if (variants.length && !variant) return { error: `Please re-select a size for ${product.name}.` }

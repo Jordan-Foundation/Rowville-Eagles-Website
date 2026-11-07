@@ -4,18 +4,22 @@ import { payload, formatAUD } from '@/lib/payload'
 import { ProductImage } from '@/components/ProductImage'
 import { AddToCart } from './AddToCart'
 import { currentUser } from '@/lib/auth'
-import { allowedAudiences } from '@/lib/shop-access'
+import { itemAccess, shopViewer } from '@/lib/shop-access'
+import { foundationSettings } from '@/academy/pdr/load'
 
 export const dynamic = 'force-dynamic'
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const p = await payload()
-  const { docs } = await p.find({ collection: 'products', where: { slug: { equals: slug }, status: { equals: 'active' } }, limit: 1, depth: 1 })
+  const { docs } = await p.find({ collection: 'products', where: { slug: { equals: slug }, status: { equals: 'active' } }, limit: 1, depth: 1, overrideAccess: true })
   const product = docs[0]
   if (!product) notFound()
   const user = await currentUser()
-  const allowed = (await allowedAudiences(p, user?.id)).includes(product.audience)
+  const [viewer, fplus] = await Promise.all([shopViewer(p, user?.id), foundationSettings(p)])
+  const access = itemAccess(product, viewer, fplus.enabled)
+  if (!access) notFound()
+  const allowed = access.canBuy
   const sizes = (product.variants ?? []).map((v) => ({ size: v.size, soldOut: typeof v.stock === 'number' && v.stock <= 0 }))
 
   return (
@@ -31,12 +35,26 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           {product.description && <p className="mt-6 max-w-prose text-muted">{product.description}</p>}
           <div className="mt-10 max-w-md">
             {allowed ? (
-              <AddToCart productId={product.id} slug={product.slug} name={product.name} price={product.price} sizes={sizes} />
+              <AddToCart productId={product.id} slug={product.slug ?? slug} name={product.name} price={product.price} sizes={sizes} />
             ) : (
-              <div className="rounded-2xl border border-line bg-surface-2 p-6">
-                <p className="font-semibold">{product.audience === 'rfa' ? 'For RFA players' : 'For registered Rowville players'}</p>
-                <p className="mt-1 text-sm text-muted">Log in with the account your registration is under to buy this item.</p>
-                <Link href={`/login?next=/shop/${product.slug}`} className="mt-4 inline-block rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white">Log in</Link>
+              <div className={`rounded-2xl border p-6 ${access.foundationPlus ? 'border-[#0B0B0C] bg-[#0B0B0C] text-white' : 'border-line bg-surface-2'}`}>
+                <p className="font-semibold"><span aria-hidden>🔒</span> {access.label}</p>
+                {access.foundationPlus ? (
+                  <>
+                    <p className="mt-1 text-sm text-white/70">{user ? `Available to ${fplus.name} members — start a free month or choose a plan to unlock it.` : `Log in if your player is on ${fplus.name}, or join to unlock it.`}</p>
+                    <div className="mt-4 flex flex-wrap gap-3">
+                      <Link href="/foundation-plus" className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-[#0B0B0C]">Join {fplus.name}</Link>
+                      {!user && <Link href={`/login?next=/shop/${product.slug}`} className="rounded-full border border-white/40 px-5 py-2.5 text-sm font-semibold">Log in</Link>}
+                    </div>
+                  </>
+                ) : user ? (
+                  <p className="mt-1 text-sm text-muted">This item is only available to the players or families it’s been set up for. If you think that’s you, contact the club.</p>
+                ) : (
+                  <>
+                    <p className="mt-1 text-sm text-muted">Log in with the account your registration is under to buy this item.</p>
+                    <Link href={`/login?next=/shop/${product.slug}`} className="mt-4 inline-block rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white">Log in</Link>
+                  </>
+                )}
               </div>
             )}
           </div>

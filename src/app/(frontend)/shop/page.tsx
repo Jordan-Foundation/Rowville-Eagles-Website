@@ -3,7 +3,8 @@ import type { Metadata } from 'next'
 import { payload, formatAUD } from '@/lib/payload'
 import { ProductImage } from '@/components/ProductImage'
 import { currentUser } from '@/lib/auth'
-import { allowedAudiences } from '@/lib/shop-access'
+import { itemAccess, shopViewer } from '@/lib/shop-access'
+import { foundationSettings } from '@/academy/pdr/load'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Club Shop', description: 'Official Rowville Eagles and RFA playing kit, training wear and apparel.' }
@@ -13,13 +14,19 @@ const categories = { kit: 'Playing kit', training: 'Training wear', apparel: 'Su
 export default async function ShopPage() {
   const p = await payload()
   const user = await currentUser()
-  const audiences = await allowedAudiences(p, user?.id)
-  const { docs } = await p.find({ collection: 'products', where: { status: { equals: 'active' }, audience: { in: audiences } }, depth: 1, limit: 100 })
-  const notice = !user
-    ? { text: 'Registered Rowville and RFA players: log in to see team kit and training wear.', href: '/login?next=/shop', cta: 'Log in' }
-    : audiences.length === 1
-      ? { text: 'Team kit appears here once your player’s registration is confirmed.', href: '/account', cta: 'My account' }
-      : null
+  const [viewer, fplus, found] = await Promise.all([
+    shopViewer(p, user?.id),
+    foundationSettings(p),
+    p.find({ collection: 'products', where: { status: { equals: 'active' } }, depth: 1, limit: 200, overrideAccess: true }),
+  ])
+  const docs = found.docs.flatMap((d) => {
+    const access = itemAccess(d, viewer, fplus.enabled)
+    return access ? [{ ...d, access }] : []
+  })
+  const anyLocked = docs.some((d) => !d.access.canBuy)
+  const notice = !user && anyLocked
+    ? { text: 'Registered players and members: log in to buy team kit and members-only items.', href: '/login?next=/shop', cta: 'Log in' }
+    : null
   const groups = (Object.keys(categories) as (keyof typeof categories)[])
     .map((c) => ({ c, items: docs.filter((d) => d.category === c) }))
     .filter((g) => g.items.length)
@@ -54,6 +61,11 @@ export default async function ShopPage() {
                   </div>
                   <h3 className="mt-3 font-semibold group-hover:text-brand">{p.name}</h3>
                   <p className="text-sm text-muted">{formatAUD(p.price)}</p>
+                  {!p.access.canBuy && (
+                    <p className={`mt-1.5 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold ${p.access.foundationPlus ? 'bg-[#0B0B0C] text-white' : 'bg-surface-2 text-muted'}`}>
+                      <span aria-hidden>🔒</span> {p.access.label}
+                    </p>
+                  )}
                 </Link>
               ))}
             </div>
