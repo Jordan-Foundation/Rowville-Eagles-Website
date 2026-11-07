@@ -38,7 +38,7 @@ export default async function FoundationHome() {
           {kids.map((k) => (
             <Link key={k.id} href={`/foundation-plus/${k.id}`} className="panel gloss-sheen block border border-line p-6 transition hover:border-white/40">
               <p className="font-display text-2xl font-semibold uppercase">{k.firstName}</p>
-              <p className="mt-1 text-sm text-muted">Open {k.firstName}’s report →</p>
+              <p className="mt-1 text-sm text-muted">Open {k.firstName}’s {settings.name} player page →</p>
             </Link>
           ))}
         </div>

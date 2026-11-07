@@ -9,7 +9,7 @@ import { TIER_LABEL } from '@/academy/pdr/report'
 import { Bar, Crumbs } from '../ui'
 
 export const dynamic = 'force-dynamic'
-export const metadata: Metadata = { title: 'Player report', robots: { index: false } }
+export const metadata: Metadata = { title: 'Player page', robots: { index: false } }
 
 export default async function PlayerReport({ params }: { params: Promise<{ player: string }> }) {
   const { player } = await params

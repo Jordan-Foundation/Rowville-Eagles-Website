@@ -58,7 +58,7 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
             <div><dt className="text-muted">Best so far</dt><dd>{best ? (best.score != null ? `${best.score} (verified)` : best.method === 'promoted' ? 'Passed (coach-promoted)' : 'Passed') : 'Not passed yet'}</dd></div>
             {sub.playerNote && <div className="sm:col-span-2"><dt className="text-muted">Player’s note</dt><dd className="whitespace-pre-line">{sub.playerNote}</dd></div>}
           </dl>
-          <Link href={`/foundation-plus/${kid.id}/${area.slug}/${stageSlug({ levelNumber: stage.levelNumber ?? 0, stageNumber: stage.stageNumber })}`} className="text-sm underline">Open {kid.firstName}’s report for this stage</Link>
+          <Link href={`/foundation-plus/${kid.id}/${area.slug}/${stageSlug({ levelNumber: stage.levelNumber ?? 0, stageNumber: stage.stageNumber })}`} className="text-sm underline">Open this stage on {kid.firstName}’s Foundation+ player page</Link>
         </div>
         <aside className="panel h-fit border border-line p-5">
           {sub.status === 'pending' ? (

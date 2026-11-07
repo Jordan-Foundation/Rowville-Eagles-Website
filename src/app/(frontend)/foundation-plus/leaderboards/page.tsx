@@ -15,7 +15,7 @@ export default async function Leaderboards() {
     <div>
       <Crumbs items={[{ href: '/foundation-plus', label: settings.name }, { label: 'Leaderboards' }]} />
       <h1 className="font-display text-5xl font-bold uppercase tracking-tight">Leaderboards</h1>
-      <p className="mt-2 max-w-2xl text-muted">Scores checked by Academy coaches only. Players show as first name and last initial — parents can hide their child from the report page.</p>
+      <p className="mt-2 max-w-2xl text-muted">Scores checked by Academy coaches only. Players show as first name and last initial — parents can hide their child on the {settings.name} player page.</p>
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {areas.map((a) => (
           <Link key={a.id} href={`/foundation-plus/leaderboards/${a.slug}`} className="panel gloss-sheen block border border-line p-6 transition hover:border-white/40" style={{ borderTop: `3px solid ${a.colour || '#fff'}` }}>

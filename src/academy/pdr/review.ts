@@ -81,7 +81,7 @@ async function tellFamily(p: Payload, kid: Participant, o: { subject: string; he
   const accountId = rel(kid.account)
   const parent = accountId ? ((await p.findByID({ collection: 'users', id: accountId, depth: 0, overrideAccess: true, disableErrors: true })) as User | null) : null
   if (!parent) return
-  const html = emailLayout('academy', [{ heading: o.heading, intro: o.intro, rows: o.rows, cta: { label: 'See it in the report', href: o.href } }])
+  const html = emailLayout('academy', [{ heading: o.heading, intro: o.intro, rows: o.rows, cta: { label: 'Open the Foundation+ player page', href: o.href } }])
   await sendEmail(p, { to: parent.email, subject: o.subject, html, sender: 'academy', userId: parent.id })
   await sendSms(p, { to: parent.phone, kind: 'service', optedOut: parent.smsOptOut, userId: parent.id, body: `${o.sms} ${o.href} – Foundation Academy` })
 }

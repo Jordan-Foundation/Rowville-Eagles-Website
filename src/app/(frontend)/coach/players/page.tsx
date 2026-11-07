@@ -7,7 +7,7 @@ import { birthYearOf, groupLabel } from '@/lib/age-groups'
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Players', robots: { index: false } }
 
-/** Find any player and open their Foundation+ report (to view progress or mark stages as passed). */
+/** Find any player and open their Foundation+ player page (to view progress or mark stages as passed). */
 export default async function CoachPlayers({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   await requireCoach('/coach/players')
   const { q } = await searchParams
@@ -20,7 +20,7 @@ export default async function CoachPlayers({ searchParams }: { searchParams: Pro
     <div className="space-y-8">
       <div>
         <h1 className="font-display text-4xl font-semibold uppercase tracking-tight sm:text-5xl">Players</h1>
-        <p className="mt-3 text-muted">Search for a player to open their Foundation+ report and mark stages you’ve seen them complete.</p>
+        <p className="mt-3 text-muted">Search for a player to open their Foundation+ player page and mark stages you’ve seen them complete.</p>
       </div>
       <form className="flex gap-2">
         <input name="q" defaultValue={term} placeholder="First or last name" className="w-72 border border-line bg-black/40 px-3 py-2 text-sm" />
