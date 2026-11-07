@@ -29,7 +29,7 @@ export default async function RfaTrialPage({ searchParams }: { searchParams: Pro
           {term && (
             <p className="mt-5 max-w-2xl text-lg text-muted">
               Join a session of <span className="text-ink">{term.title}</span>
-              {term.startDate && ` (from ${formatDate(term.startDate)})`}. Trial spots are limited to a few players per age group each night.
+              {term.startDate && ` (from ${formatDate(term.startDate)})`}. Trial spots are limited to {term.trialPlacesPerNight ?? 2} players per age group each night, and each player can book one trial.
             </p>
           )}
         </div>

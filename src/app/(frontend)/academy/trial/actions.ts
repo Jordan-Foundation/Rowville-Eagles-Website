@@ -34,6 +34,24 @@ export async function bookRfaTrial(_prev: RfaTrialState, fd: FormData): Promise<
   const birthYear = birthYearOf(player.dateOfBirth)
   if (!birthYear) return fail('Please check the date of birth.')
 
+  // One trial per player, ever (matched on name + date of birth)
+  const { docs: prior } = await p.find({
+    collection: 'bookings',
+    where: {
+      bookingType: { equals: 'trial' },
+      'player.firstName': { like: player.firstName },
+      'player.lastName': { like: player.lastName },
+      or: [{ status: { equals: 'paid' } }, { and: [{ status: { equals: 'pending' } }, { createdAt: { greater_than: new Date(Date.now() - 35 * 60_000).toISOString() } }] }],
+    },
+    limit: 50,
+    depth: 0,
+    overrideAccess: true,
+    select: { player: true, sessionStart: true },
+  })
+  const norm = (x: string | null | undefined) => (x ?? '').trim().toLowerCase()
+  const already = prior.find((b) => norm(b.player?.firstName) === norm(player.firstName) && norm(b.player?.lastName) === norm(player.lastName) && (b.player?.dateOfBirth ?? '').slice(0, 10) === player.dateOfBirth.slice(0, 10))
+  if (already) return fail(`${player.firstName} has already booked a trial session${already.sessionStart ? ` (${new Date(already.sessionStart).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Australia/Sydney' })})` : ''}. Each player can have one trial — to join the academy, choose a training time on the Academy page.`)
+
   const night = (await trialNights(p, term)).find((n) => n.start === s('night'))
   if (!night || !night.birthYears.includes(birthYear)) return fail(`Please choose a night that runs for ${groupLabel(birthYear)}.`)
   if ((night.remaining[String(birthYear)] ?? 0) <= 0) return fail('Sorry — that night’s trial spots for this age group were just taken. Please choose another.')

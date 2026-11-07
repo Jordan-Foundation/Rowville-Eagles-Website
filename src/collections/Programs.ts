@@ -217,6 +217,15 @@ export const Programs: CollectionConfig = {
       ],
     },
     {
+      name: 'trialPlacesPerNight',
+      label: 'Trial places per age group, per night',
+      type: 'number',
+      defaultValue: 2,
+      min: 0,
+      max: 20,
+      admin: { condition: (d) => d?.type === 'academy-term', description: 'Trials are offered on every night the academy runs (its training times). Each player can only book one trial.' },
+    },
+    {
       name: 'trialPrice',
       label: 'Trial session price (AUD)',
       type: 'number',

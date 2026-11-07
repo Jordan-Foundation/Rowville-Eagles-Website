@@ -746,6 +746,10 @@ export interface Program {
       }[]
     | null;
   /**
+   * Trials are offered on every night the academy runs (its training times). Each player can only book one trial.
+   */
+  trialPlacesPerNight?: number | null;
+  /**
    * 0 = free trial
    */
   trialPrice?: number | null;
@@ -2691,6 +2695,7 @@ export interface ProgramsSelect<T extends boolean = true> {
         trialSpots?: T;
         id?: T;
       };
+  trialPlacesPerNight?: T;
   trialPrice?: T;
   heroImage?: T;
   updatedAt?: T;
