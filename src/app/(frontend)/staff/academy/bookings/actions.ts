@@ -8,6 +8,8 @@ import { hasRole } from '@/access'
 import { localToUtc } from '@/lib/time'
 import { cancelAcademy, goodwillCredit, loadForCancellation, quoteFor, retryRefund } from '@/academy/cancellations'
 import type { CancelBy, Outcome, Quote } from '@/academy/cancellation'
+import { applyReschedule, planReschedule, type RescheduleRequest } from '@/academy/reschedule-service'
+import { WEEKDAYS, type Weekday } from '@/academy/constants'
 
 async function staff() {
   const user = await currentUser()
@@ -77,4 +79,43 @@ export async function submitGoodwill(_prev: StaffActionState, fd: FormData): Pro
   const res = await goodwillCredit(await payload(), { bookingId, sessions: Number(fd.get('sessions')), reason: String(fd.get('reason') ?? ''), actorId: user.id })
   revalidatePath(`/staff/academy/bookings/${bookingId}`)
   return res.ok ? { done: 'Session credits added.' } : { error: res.error }
+}
+
+// ── Rescheduling ─────────────────────────────────────────────────────────────
+
+export type ReschedulePreview = { moves: { sessionId: number; from: string; to: string; coach: string }[]; errors: string[]; warnings: string[] } | { error: string }
+
+function rescheduleRequest(bookingId: number, f: Record<string, string>): RescheduleRequest | { error: string } {
+  const coachId = Number(f.coach)
+  if (!coachId) return { error: 'Choose a coach.' }
+  if (f.kind === 'term') {
+    if (!WEEKDAYS.includes(f.weekday as Weekday)) return { error: 'Choose the new day.' }
+    return { bookingId, kind: 'term', fromSessionId: Number(f.fromSession), weekday: f.weekday as Weekday, time: f.time, coachId }
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(f.date ?? '') || !/^\d{2}:\d{2}$/.test(f.time ?? '')) return { error: 'Choose the new date and time.' }
+  return { bookingId, kind: 'session', sessionId: Number(f.session), startsAt: localToUtc(f.date, f.time).toISOString(), coachId }
+}
+
+export async function previewReschedule(bookingId: number, f: Record<string, string>): Promise<ReschedulePreview> {
+  if (!(await staff())) return { error: 'Staff only.' }
+  const req = rescheduleRequest(bookingId, f)
+  if ('error' in req) return req
+  const p = await payload()
+  const plan = await planReschedule(p, req)
+  if ('error' in plan) return { error: plan.error as string }
+  const { docs: coaches } = await p.find({ collection: 'academy-coaches', where: { id: { in: [...new Set(plan.moves.map((m) => m.coachId))] } }, depth: 0, limit: 20, overrideAccess: true })
+  return { moves: plan.moves.map((m) => ({ sessionId: m.sessionId, from: m.from, to: m.to, coach: coaches.find((c) => c.id === m.coachId)?.displayName ?? '' })), errors: plan.errors, warnings: plan.warnings }
+}
+
+export async function submitReschedule(_prev: StaffActionState, fd: FormData): Promise<StaffActionState> {
+  const user = await staff()
+  if (!user) return { error: 'Staff only.' }
+  const bookingId = Number(fd.get('bookingId'))
+  const f = Object.fromEntries([...fd.entries()].map(([k, v]) => [k, String(v)]))
+  const req = rescheduleRequest(bookingId, f)
+  if ('error' in req) return { error: req.error }
+  const res = await applyReschedule(await payload(), { ...req, reason: f.reason ?? '', actorId: user.id, notify: fd.get('notify') === 'on' })
+  if (!res.ok) return { error: res.error }
+  const qs = new URLSearchParams({ done: `Moved ${res.moved} session${res.moved === 1 ? '' : 's'}.${fd.get('notify') === 'on' ? ' The family and coach have been emailed.' : ''}`, ...(res.warnings.length ? { warn: res.warnings.join('\n') } : {}) })
+  redirect(`/staff/academy/bookings/${bookingId}?${qs}`)
 }

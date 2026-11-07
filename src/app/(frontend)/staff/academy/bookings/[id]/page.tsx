@@ -9,6 +9,7 @@ import { creditStateFor } from '@/academy/credits'
 import { sessionPayment } from '@/academy/session-view'
 import type { AcademyCoach, AcademyTerm, User } from '@/payload-types'
 import { CancelPanel, Goodwill, RetryRefund } from './CancelPanel'
+import { ReschedulePanel } from './ReschedulePanel'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Booking', robots: { index: false } }
@@ -93,6 +94,26 @@ export default async function StaffBookingPage({ params, searchParams }: { param
             </tbody>
           </table>
         </section>
+
+        {['confirmed', 'payment_failed'].includes(b.status) && (
+          <section className="panel border border-line p-6">
+            <h2 className="font-display text-2xl font-semibold uppercase">Reschedule</h2>
+            <p className="mt-1 text-sm text-muted">Move one session, or the rest of the term, to a new day or time (or coach). Price and payments don’t change.</p>
+            <div className="mt-6">
+              <ReschedulePanel
+                bookingId={b.id}
+                type={b.type}
+                coachId={coach.id}
+                weekday={b.weekday}
+                time={b.startTime}
+                coaches={coaches.map((c) => ({ id: c.id, name: c.displayName }))}
+                sessions={sessions
+                  .filter((s) => s.status === 'scheduled' && new Date(s.startsAt).getTime() > now)
+                  .map((s) => ({ id: s.id, label: formatDate(s.startsAt, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) }))}
+              />
+            </div>
+          </section>
+        )}
 
         {['confirmed', 'payment_failed', 'completed'].includes(b.status) && (
           <section className="panel border border-line p-6">

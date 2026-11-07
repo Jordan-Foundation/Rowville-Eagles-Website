@@ -236,7 +236,7 @@ export interface AcademyBooking {
   adjustments?:
     | {
         key: string;
-        action: 'cancel_booking' | 'cancel_sessions' | 'makeup' | 'goodwill';
+        action: 'cancel_booking' | 'cancel_sessions' | 'makeup' | 'goodwill' | 'reschedule';
         by?: ('family' | 'coach' | 'admin') | null;
         outcome?: ('refund' | 'credit' | 'makeup' | 'none') | null;
         sessions?: string | null;

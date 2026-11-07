@@ -124,7 +124,7 @@ export const AcademyBookings: CollectionConfig = {
           fields: [
             { type: 'row', fields: [
               { name: 'key', type: 'text', required: true },
-              { name: 'action', type: 'select', required: true, options: ['cancel_booking', 'cancel_sessions', 'makeup', 'goodwill'] },
+              { name: 'action', type: 'select', required: true, options: ['cancel_booking', 'cancel_sessions', 'makeup', 'goodwill', 'reschedule'] },
               { name: 'by', type: 'select', options: ['family', 'coach', 'admin'] },
               { name: 'outcome', type: 'select', options: ['refund', 'credit', 'makeup', 'none'] },
             ] },
