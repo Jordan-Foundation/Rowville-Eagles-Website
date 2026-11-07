@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { foundationGate, loadReport, reportPlayer } from '@/academy/pdr/load'
+import { foundationGate, loadCabinet, loadReport, reportPlayer } from '@/academy/pdr/load'
+import { BadgeArt } from '../Badge'
+import { Celebrate } from '../Celebrate'
 import { TIER_LABEL } from '@/academy/pdr/report'
 import { Bar, Crumbs } from '../ui'
 
@@ -13,6 +15,8 @@ export default async function PlayerReport({ params }: { params: Promise<{ playe
   const kid = await reportPlayer(p, user, player, `/foundation-plus/${player}`)
   const { report, tier } = await loadReport(p, kid)
   const passed = report.reduce((n, a) => n + a.passed, 0)
+  const { earned, total, toCelebrate } = await loadCabinet(p, kid)
+  const owner = (typeof kid.account === 'object' ? kid.account?.id : kid.account) === user?.id
 
   return (
     <div>
@@ -37,6 +41,29 @@ export default async function PlayerReport({ params }: { params: Promise<{ playe
           </Link>
         ))}
       </div>
+      <section className="panel mt-8 border border-line p-6">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="font-display text-2xl font-semibold uppercase">Trophy Cabinet</h2>
+          <Link href={`/foundation-plus/${kid.id}/trophies`} className="text-sm font-semibold uppercase tracking-[0.15em]">{earned.length}/{total} badges →</Link>
+        </div>
+        {earned.length ? (
+          <ul className="mt-4 flex flex-wrap gap-5">
+            {earned.slice(0, 4).map((b) => (
+              <li key={b.id} className="w-24 text-center">
+                <div className="mx-auto w-fit"><BadgeArt badge={b} size={72} /></div>
+                <p className="mt-2 text-xs font-semibold">{b.name}</p>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-2 text-sm text-muted">No badges yet — pass all the stages of a level to earn your first one.</p>
+        )}
+      </section>
+
+      {owner && toCelebrate.length > 0 && (
+        <Celebrate player={kid.id} badges={toCelebrate.map((b) => ({ awardId: b.awardId!, name: b.name, area: b.area.name, level: b.level, art: <BadgeArt badge={b} size={140} /> }))} />
+      )}
+
       {tier === 'free' && (
         <div className="panel mt-8 border border-line p-6">
           <p className="font-semibold">On the Free plan, Level 1 of every area is open.</p>

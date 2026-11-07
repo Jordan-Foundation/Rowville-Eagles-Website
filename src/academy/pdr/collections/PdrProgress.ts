@@ -15,6 +15,19 @@ export const PdrProgress: CollectionConfig = {
   },
   defaultSort: '-passedAt',
   hooks: {
+    afterChange: [
+      // Completing a level earns its badge (whether verified, promoted or added in the admin)
+      async ({ doc, operation, req }) => {
+        if (operation !== 'create') return doc
+        try {
+          const { awardLevelBadge } = await import('../badges')
+          await awardLevelBadge(req.payload, typeof doc.player === 'object' ? doc.player.id : doc.player, typeof doc.area === 'object' ? doc.area.id : doc.area, doc.levelNumber, req)
+        } catch (e) {
+          req.payload.logger.error({ err: e, msg: 'Awarding a badge failed' })
+        }
+        return doc
+      },
+    ],
     beforeValidate: [
       async ({ data, originalDoc, req }) => {
         if (!data) return data

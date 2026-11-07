@@ -80,6 +80,7 @@ export interface Config {
     'pdr-progress': PdrProgress;
     'pdr-submissions': PdrSubmission;
     'pdr-audit': PdrAudit;
+    'pdr-awards': PdrAward;
     'academy-coaches': AcademyCoach;
     'academy-availability': AcademyAvailability;
     'academy-reminder-log': AcademyReminderLog;
@@ -125,6 +126,7 @@ export interface Config {
     'pdr-progress': PdrProgressSelect<false> | PdrProgressSelect<true>;
     'pdr-submissions': PdrSubmissionsSelect<false> | PdrSubmissionsSelect<true>;
     'pdr-audit': PdrAuditSelect<false> | PdrAuditSelect<true>;
+    'pdr-awards': PdrAwardsSelect<false> | PdrAwardsSelect<true>;
     'academy-coaches': AcademyCoachesSelect<false> | AcademyCoachesSelect<true>;
     'academy-availability': AcademyAvailabilitySelect<false> | AcademyAvailabilitySelect<true>;
     'academy-reminder-log': AcademyReminderLogSelect<false> | AcademyReminderLogSelect<true>;
@@ -164,12 +166,14 @@ export interface Config {
     about: About;
     'academy-settings': AcademySetting;
     'pdr-settings': PdrSetting;
+    'setup-progress': SetupProgress;
   };
   globalsSelect: {
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
     about: AboutSelect<false> | AboutSelect<true>;
     'academy-settings': AcademySettingsSelect<false> | AcademySettingsSelect<true>;
     'pdr-settings': PdrSettingsSelect<false> | PdrSettingsSelect<true>;
+    'setup-progress': SetupProgressSelect<false> | SetupProgressSelect<true>;
   };
   locale: null;
   widgets: {
@@ -1351,6 +1355,19 @@ export interface PdrAudit {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pdr-awards".
+ */
+export interface PdrAward {
+  id: number;
+  player: number | Participant;
+  badge: number | PdrBadge;
+  awardedAt?: string | null;
+  celebratedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "academy-availability".
  */
 export interface AcademyAvailability {
@@ -1774,6 +1791,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'pdr-audit';
         value: number | PdrAudit;
+      } | null)
+    | ({
+        relationTo: 'pdr-awards';
+        value: number | PdrAward;
       } | null)
     | ({
         relationTo: 'academy-coaches';
@@ -2312,6 +2333,18 @@ export interface PdrAuditSelect<T extends boolean = true> {
   before?: T;
   after?: T;
   note?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pdr-awards_select".
+ */
+export interface PdrAwardsSelect<T extends boolean = true> {
+  player?: T;
+  badge?: T;
+  awardedAt?: T;
+  celebratedAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -3146,9 +3179,30 @@ export interface PdrSetting {
   tagline?: string | null;
   maxClipSeconds?: number | null;
   maxFileMB?: number | null;
+  /**
+   * Submitted videos are deleted this long after a coach reviews them. Scores and feedback are kept.
+   */
   retentionMonths?: number | null;
   feedbackPerMonth?: number | null;
   minPlayersForRanking?: number | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "setup-progress".
+ */
+export interface SetupProgress {
+  id: number;
+  ticked?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -3250,6 +3304,16 @@ export interface PdrSettingsSelect<T extends boolean = true> {
   retentionMonths?: T;
   feedbackPerMonth?: T;
   minPlayersForRanking?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "setup-progress_select".
+ */
+export interface SetupProgressSelect<T extends boolean = true> {
+  ticked?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

@@ -56,3 +56,23 @@ export const streamEmbed = (uid: string | null | undefined) => {
   const code = process.env.CLOUDFLARE_STREAM_CUSTOMER_CODE
   return uid && code ? `https://customer-${code}.cloudflarestream.com/${uid}/iframe` : null
 }
+
+export async function loadCabinet(p: Payload, kid: Participant) {
+  const { buildCabinet, artworkUrl } = await import('./badges')
+  const q = { overrideAccess: true, limit: 1000 } as const
+  const [areas, levels, badges, awards] = await Promise.all([
+    p.find({ collection: 'pdr-areas', sort: 'order', depth: 0, ...q }),
+    p.find({ collection: 'pdr-levels', depth: 0, ...q }),
+    p.find({ collection: 'pdr-badges', where: { type: { equals: 'level' } }, depth: 1, ...q }),
+    p.find({ collection: 'pdr-awards', where: { player: { equals: kid.id } }, depth: 0, ...q }),
+  ])
+  const cabinet = buildCabinet({
+    areas: areas.docs.map((a) => ({ id: a.id, name: a.name, slug: a.slug, colour: a.colour, order: a.order })),
+    levels: levels.docs.map((l) => ({ id: l.id, area: rel(l.area), number: l.number })),
+    badges: badges.docs.map((b) => ({ id: b.id, name: b.name, placeholder: b.placeholder, howToEarn: b.howToEarn, type: b.type, level: b.level ? rel(b.level) : null, artworkUrl: artworkUrl(b.artwork) })),
+    awards: awards.docs.map((a) => ({ id: a.id, badge: rel(a.badge), awardedAt: a.awardedAt, celebratedAt: a.celebratedAt })),
+  })
+  const all = cabinet.flatMap((c) => c.badges)
+  const earned = all.filter((b) => b.earnedAt).sort((a, b) => b.earnedAt!.localeCompare(a.earnedAt!))
+  return { cabinet, earned, total: all.length, toCelebrate: earned.filter((b) => !b.celebrated) }
+}

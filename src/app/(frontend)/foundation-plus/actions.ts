@@ -70,3 +70,13 @@ export async function promoteAction(_prev: PromoteState, fd: FormData): Promise<
   revalidatePath(String(fd.get('path') ?? '/foundation-plus'))
   return { done: 'Marked as passed — the family has been told.' }
 }
+
+/** The family has seen the celebration for these badges (only their own child; staff previews don't count). */
+export async function celebratedAction(playerId: number, awardIds: number[]) {
+  const user = await currentUser()
+  if (!user) return
+  const p = await payload()
+  const kid = await p.findByID({ collection: 'participants', id: playerId, depth: 0, overrideAccess: true, disableErrors: true })
+  if (!kid || (typeof kid.account === 'object' ? kid.account?.id : kid.account) !== user.id) return
+  await p.update({ collection: 'pdr-awards', where: { id: { in: awardIds.slice(0, 50) }, player: { equals: playerId } }, overrideAccess: true, data: { celebratedAt: new Date().toISOString() } })
+}

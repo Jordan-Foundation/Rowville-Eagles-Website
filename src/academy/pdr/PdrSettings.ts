@@ -30,7 +30,15 @@ export const PdrSettings: GlobalConfig = {
           fields: [
             { name: 'maxClipSeconds', label: 'Longest clip (seconds)', type: 'number', defaultValue: 90, min: 10, max: 600 },
             { name: 'maxFileMB', label: 'Largest file (MB)', type: 'number', defaultValue: 200, min: 10, max: 2000 },
-            { name: 'retentionMonths', label: 'Delete videos after review (months)', type: 'number', defaultValue: 6, min: 1, max: 36 },
+            {
+              name: 'retentionMonths',
+              label: 'Delete videos after review (months)',
+              type: 'number',
+              defaultValue: 6,
+              min: 1,
+              max: 36,
+              admin: { description: 'Submitted videos are deleted this long after a coach reviews them. Scores and feedback are kept.' },
+            },
           ],
         },
         { name: 'feedbackPerMonth', label: 'Premium feedback-only videos per month', type: 'number', defaultValue: 2, min: 0 },

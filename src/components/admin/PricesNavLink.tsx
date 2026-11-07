@@ -29,3 +29,11 @@ export function PricesDashboardCard() {
     </div>
   )
 }
+
+export function SetupNavLink() {
+  return (
+    <Link href="/admin/setup" className="nav__link" style={{ display: 'block', padding: '6px 0', fontWeight: 600 }}>
+      ✅ Setup checklist
+    </Link>
+  )
+}
