@@ -125,7 +125,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
               <div key={x.id} className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border-2 border-accent p-6">
                 <div>
                   <p className="font-semibold">Accept {x.firstName}’s place{team ? ` in ${team.name}` : ''}</p>
-                  <p className="text-sm text-muted">{prog.title} · {formatAUD(prog.price)}</p>
+                  <p className="text-sm text-muted">{prog.title} · {formatAUD(prog.price ?? 0)}</p>
                 </div>
                 <Link href={`/programs/${prog.slug}/book?participant=${x.id}`} className="rounded-full bg-accent px-6 py-3 font-semibold text-accent-ink hover:brightness-110">
                   Pay registration →

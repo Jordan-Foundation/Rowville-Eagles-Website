@@ -99,7 +99,7 @@ export async function bookProgram(_prev: BookingState, fd: FormData): Promise<Bo
       program: program.id,
       status: 'pending',
       payee,
-      amount: program.price,
+      amount: program.price ?? 0,
       sessionStart,
       account: accountId,
       participant: offeredParticipant?.id,
@@ -120,7 +120,7 @@ export async function bookProgram(_prev: BookingState, fd: FormData): Promise<Bo
         kind: 'booking',
         reference,
         email: contact.email,
-        items: [{ name: program.title, description: who, unitAmount: program.price, quantity: 1 }],
+        items: [{ name: program.title, description: who, unitAmount: program.price ?? 0, quantity: 1 }],
         cancelPath: `/programs/${program.slug}/book?cancelled=1`,
       })
       if (checkout.sessionId) await p.update({ collection: 'bookings', id: booking.id, data: { stripeCheckoutId: checkout.sessionId } })

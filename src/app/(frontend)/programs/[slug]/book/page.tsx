@@ -136,7 +136,7 @@ export default async function BookPage({
                 offeredPlayers={offered}
                 defaultPlayer={participantParam}
                 slots={slots}
-                priceLabel={formatAUD(program.price)}
+                priceLabel={formatAUD(program.price ?? 0)}
                 payeeLabel={stripeAccounts[payee].label}
               />
             )}
@@ -148,7 +148,7 @@ export default async function BookPage({
           <p className="mt-1 text-sm text-muted">{[program.ageRange, program.scheduleNote].filter(Boolean).join(' · ')}</p>
           <div className="mt-6 flex items-baseline justify-between border-t border-line pt-5">
             <span className="text-muted">Total</span>
-            <span className="text-3xl font-bold">{termSlots ? programPriceLabel(program) : formatAUD(program.price)}</span>
+            <span className="text-3xl font-bold">{termSlots ? programPriceLabel(program) : formatAUD(program.price ?? 0)}</span>
           </div>
           {program.priceNote && <p className="mt-3 text-xs text-muted">{program.priceNote}</p>}
         </aside>

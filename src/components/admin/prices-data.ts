@@ -69,7 +69,7 @@ export async function loadPrices(payload: Payload): Promise<PriceSection[]> {
         fields: [
           { key: `programs.${p.id}.pricePerSession`, label: 'Per session', value: p.pricePerSession ?? null, unit: 'aud', placeholder: 'flat price' },
           { key: `programs.${p.id}.trialPrice`, label: 'Trial session', value: p.trialPrice ?? 0, unit: 'aud' },
-          ...(p.pricePerSession == null ? [{ key: `programs.${p.id}.price`, label: 'Flat term price', value: p.price, unit: 'aud' as const }] : []),
+          ...(p.pricePerSession == null ? [{ key: `programs.${p.id}.price`, label: 'Flat term price', value: p.price ?? 0, unit: 'aud' as const }] : []),
         ],
       })),
     },
@@ -81,7 +81,7 @@ export async function loadPrices(payload: Payload): Promise<PriceSection[]> {
         note: [typeLabel[p.type] ?? p.type, p.status].filter(Boolean).join(' · '),
         href: `/admin/collections/programs/${p.id}`,
         muted: done(p.status),
-        fields: [{ key: `programs.${p.id}.price`, label: p.type === 'tournament' ? 'Default fee' : 'Price', value: p.price, unit: 'aud' }],
+        fields: [{ key: `programs.${p.id}.price`, label: p.type === 'tournament' ? 'Default fee' : 'Price', value: p.price ?? 0, unit: 'aud' }],
       })),
     },
     {

@@ -48,6 +48,8 @@ export const Programs: CollectionConfig = {
         }
         // Academy group terms are priced per session (default $25)
         if (type === 'academy-term' && data.pricePerSession == null && !originalDoc?.id) data.pricePerSession = 25
+        // The flat price isn't used for per-session terms; keep the column filled
+        if (data.price == null || (data.price as unknown) === '') data.price = originalDoc?.price ?? 0
         return {
           ...data,
           payee: data.payee || originalDoc?.payee || defaultPayee(type),
@@ -131,7 +133,9 @@ export const Programs: CollectionConfig = {
           min: 0,
           defaultValue: 0,
           admin: {
-            description: 'AUD incl. GST. Academy terms with training times charge the price per session instead.',
+            // Academy terms priced per session don't need a flat price
+            condition: (d) => !(d?.type === 'academy-term' && d?.pricePerSession != null),
+            description: 'AUD incl. GST.',
           },
         },
         {

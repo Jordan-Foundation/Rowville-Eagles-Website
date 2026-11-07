@@ -151,7 +151,7 @@ export async function sendOffer(
       rows: [
         ['Player', `${reg.player.firstName} ${reg.player.lastName}`],
         ['Team', team.name],
-        ['Club registration', formatAUD(program.price)],
+        ['Club registration', formatAUD(program.price ?? 0)],
       ],
       cta: custom?.cta ?? link,
       after:
