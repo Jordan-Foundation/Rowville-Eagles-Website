@@ -22,6 +22,7 @@ import * as migration_20261107_015825_selection_rounds_entries from './20261107_
 import * as migration_20261107_021548_squads_outcomes from './20261107_021548_squads_outcomes';
 import * as migration_20261107_023646_selection_payments from './20261107_023646_selection_payments';
 import * as migration_20261107_025525_team_pages from './20261107_025525_team_pages';
+import * as migration_20261107_032141_twilio_sms_voice from './20261107_032141_twilio_sms_voice';
 
 export const migrations = [
   {
@@ -142,6 +143,11 @@ export const migrations = [
   {
     up: migration_20261107_025525_team_pages.up,
     down: migration_20261107_025525_team_pages.down,
-    name: '20261107_025525_team_pages'
+    name: '20261107_025525_team_pages',
+  },
+  {
+    up: migration_20261107_032141_twilio_sms_voice.up,
+    down: migration_20261107_032141_twilio_sms_voice.down,
+    name: '20261107_032141_twilio_sms_voice'
   },
 ];

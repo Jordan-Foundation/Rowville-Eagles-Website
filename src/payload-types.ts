@@ -313,6 +313,7 @@ export interface User {
   firstName?: string | null;
   lastName?: string | null;
   phone?: string | null;
+  phoneE164?: string | null;
   serviceConsentAt?: string | null;
   marketingEmail?: boolean | null;
   marketingSms?: boolean | null;
@@ -1291,12 +1292,16 @@ export interface ConsentRecord {
  */
 export interface MessageLog {
   id: number;
+  channel?: ('email' | 'sms' | 'sms_in' | 'call') | null;
   to: string;
   subject: string;
   kind: 'service' | 'marketing';
   sender?: ('club' | 'academy') | null;
   userId?: number | null;
-  status?: ('sent' | 'failed' | 'not-configured' | 'skipped-opted-out') | null;
+  status?:
+    | ('sent' | 'failed' | 'not-configured' | 'skipped-opted-out' | 'received' | 'answered' | 'missed' | 'voicemail')
+    | null;
+  providerId?: string | null;
   error?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -2207,6 +2212,7 @@ export interface UsersSelect<T extends boolean = true> {
   firstName?: T;
   lastName?: T;
   phone?: T;
+  phoneE164?: T;
   serviceConsentAt?: T;
   marketingEmail?: T;
   marketingSms?: T;
@@ -2263,12 +2269,14 @@ export interface ConsentRecordsSelect<T extends boolean = true> {
  * via the `definition` "message-log_select".
  */
 export interface MessageLogSelect<T extends boolean = true> {
+  channel?: T;
   to?: T;
   subject?: T;
   kind?: T;
   sender?: T;
   userId?: T;
   status?: T;
+  providerId?: T;
   error?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -2433,6 +2441,11 @@ export interface About {
 export interface AcademySetting {
   id: number;
   /**
+   * Calls to the Twilio number ring this mobile (e.g. 0451 525 684). If nobody answers within 20 seconds the caller hears the Foundation Academy voicemail, and the message is emailed to the academy inbox. Leave empty to use the CALL_FORWARD_TO setting in Vercel.
+   */
+  callForwardTo?: string | null;
+  voicemailGreeting?: string | null;
+  /**
    * From your Google Business Profile: “Ask for reviews” → copy the link (looks like https://g.page/r/…/review). Nothing is sent until this is filled in.
    */
   googleReviewUrl?: string | null;
@@ -2517,6 +2530,8 @@ export interface AboutSelect<T extends boolean = true> {
  * via the `definition` "academy-settings_select".
  */
 export interface AcademySettingsSelect<T extends boolean = true> {
+  callForwardTo?: T;
+  voicemailGreeting?: T;
   googleReviewUrl?: T;
   reviewAfterSessions?: T;
   reviewRequestsOn?: T;

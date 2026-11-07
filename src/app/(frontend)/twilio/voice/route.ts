@@ -1,0 +1,24 @@
+import { payload } from '@/lib/payload'
+import { toE164 } from '@/lib/sms'
+import { dialTwiml, twiml, voicemailTwiml } from '@/lib/twilio'
+import { readTwilioRequest, usersByPhone } from '@/lib/twilio-inbound'
+import { logCall, voiceSettings } from './settings'
+
+/**
+ * Calls to the Twilio number ("A call comes in" → POST https://<site>/twilio/voice).
+ * Rings the forwarding mobile for 20 seconds, showing the caller's own number; /twilio/voice/after
+ * handles no answer (voicemail). With no forwarding number set, callers go straight to voicemail.
+ */
+export async function POST(req: Request) {
+  const params = await readTwilioRequest(req)
+  if (!params) return new Response('Forbidden', { status: 403 })
+  const p = await payload()
+  const { forwardTo, greeting } = await voiceSettings(p)
+  const from = toE164(params.From)
+  if (forwardTo && forwardTo !== from) {
+    return twiml(dialTwiml({ to: forwardTo, callerId: from ?? undefined, action: '/twilio/voice/after' }))
+  }
+  const users = await usersByPhone(p, params.From)
+  await logCall(p, { from: from ?? params.From ?? 'unknown', callSid: params.CallSid, status: 'missed', note: 'Missed call (no forwarding number set)', userId: users[0]?.id })
+  return twiml(voicemailTwiml({ greeting, action: '/twilio/voice/done', transcribeCallback: '/twilio/voice/transcription' }))
+}

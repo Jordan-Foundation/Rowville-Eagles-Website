@@ -1,0 +1,36 @@
+import type { Payload } from 'payload'
+import { toE164 } from '@/lib/sms'
+
+export const DEFAULT_GREETING =
+  'Thanks for calling Foundation Academy. We can’t take your call right now. Please leave your name, your child’s name and a message after the tone, and we’ll call you back as soon as we can.'
+
+export async function voiceSettings(payload: Payload) {
+  const s = await payload.findGlobal({ slug: 'academy-settings', depth: 0, overrideAccess: true }).catch(() => null)
+  return {
+    forwardTo: toE164(s?.callForwardTo) ?? toE164(process.env.CALL_FORWARD_TO),
+    greeting: s?.voicemailGreeting?.trim() || DEFAULT_GREETING,
+  }
+}
+
+export async function logCall(payload: Payload, o: { from: string; callSid?: string; status: 'answered' | 'missed' | 'voicemail'; note: string; userId?: number }) {
+  try {
+    await payload.create({
+      collection: 'message-log',
+      overrideAccess: true,
+      data: { channel: 'call', to: o.from, subject: o.note, kind: 'service', sender: 'academy', status: o.status, providerId: o.callSid, userId: o.userId },
+    })
+  } catch (e) {
+    payload.logger.error({ err: e, msg: 'Could not log call' })
+  }
+}
+
+export async function findCallLog(payload: Payload, callSid: string | undefined) {
+  if (!callSid) return null
+  const { docs } = await payload.find({ collection: 'message-log', where: { providerId: { equals: callSid }, channel: { equals: 'call' } }, limit: 1, sort: '-createdAt', overrideAccess: true })
+  return docs[0] ?? null
+}
+
+export const minutes = (secs: string | number | undefined) => {
+  const n = Number(secs ?? 0)
+  return n < 60 ? `${n} sec` : `${Math.round(n / 60)} min`
+}

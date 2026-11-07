@@ -1,0 +1,51 @@
+import type { Payload } from 'payload'
+import type { User } from '@/payload-types'
+import { academyBrand } from '../academy/brand'
+import { sendEmail } from './email'
+import { emailLayout, esc } from './email-templates'
+import { siteUrl } from './payments'
+import { toE164 } from './sms'
+import { validTwilioSignature } from './twilio'
+
+/**
+ * Webhooks from Twilio: check the signature and return the posted fields, or null if it isn't genuinely
+ * from Twilio. Twilio signs the exact URL configured on the number, so we accept the public site URL
+ * as well as the URL the request arrived on (they differ behind proxies).
+ */
+export async function readTwilioRequest(req: Request): Promise<Record<string, string> | null> {
+  const token = process.env.TWILIO_AUTH_TOKEN
+  if (!token) return null
+  const form = await req.formData().catch(() => null)
+  if (!form) return null
+  const params: Record<string, string> = {}
+  form.forEach((v, k) => {
+    if (typeof v === 'string') params[k] = v
+  })
+  const u = new URL(req.url)
+  const urls = [`${siteUrl()}${u.pathname}${u.search}`, req.url]
+  const host = req.headers.get('x-forwarded-host')
+  if (host) urls.push(`https://${host}${u.pathname}${u.search}`)
+  return validTwilioSignature(token, req.headers.get('x-twilio-signature'), [...new Set(urls)], params) ? params : null
+}
+
+/** Accounts whose mobile matches the number (a number can belong to two parents' accounts). */
+export async function usersByPhone(payload: Payload, phone: string | undefined) {
+  const e164 = toE164(phone)
+  if (!e164) return []
+  const { docs } = await payload.find({ collection: 'users', where: { phoneE164: { equals: e164 } }, limit: 5, depth: 0, overrideAccess: true })
+  return docs as User[]
+}
+
+export const who = (users: User[], phone: string) =>
+  users.length ? `${users.map((u) => [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email).join(' / ')} (${phone})` : phone
+
+/** Prettier AU display: +61451525684 → 0451 525 684 */
+export const localNumber = (e164: string) => (/^\+614\d{8}$/.test(e164) ? `0${e164.slice(3, 6)} ${e164.slice(6, 9)} ${e164.slice(9)}` : e164)
+
+export async function emailAcademyInbox(payload: Payload, o: { subject: string; heading: string; intro: string; rows: [string, string][]; cta?: { label: string; href: string }; after?: string }) {
+  const html = emailLayout('academy', [{ heading: o.heading, intro: o.intro, rows: o.rows, cta: o.cta, after: o.after }])
+  await sendEmail(payload, { to: academyBrand.email, subject: o.subject, html, sender: 'academy' })
+}
+
+export const accountLinks = (users: User[]) => users.map((u) => `${siteUrl()}/admin/collections/users/${u.id}`).join(' ')
+export { esc }

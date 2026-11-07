@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 import { APIError } from 'payload'
 import { hasRole, isAdminField } from '../access'
+import { toE164 } from '../lib/sms'
 
 /**
  * One account type for everyone: committee, coaches, parents and adult players.
@@ -66,6 +67,15 @@ export const Users: CollectionConfig = {
       ],
     },
     { name: 'phone', label: 'Mobile', type: 'text' },
+    {
+      // Normalised copy of the mobile (+614…) so replies and calls from Twilio can be matched to the account
+      name: 'phoneE164',
+      type: 'text',
+      index: true,
+      admin: { hidden: true },
+      access: { create: () => false, update: () => false },
+      hooks: { beforeChange: [({ siblingData, value }) => ('phone' in siblingData ? toE164(siblingData.phone) : value)] },
+    },
     {
       type: 'collapsible',
       label: 'Communication preferences',
