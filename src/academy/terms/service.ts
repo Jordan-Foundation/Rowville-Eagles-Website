@@ -195,33 +195,63 @@ export async function emailInterest(payload: Payload, reg: AcademyRegistration, 
 
 export const termPayUrl = (reg: Pick<AcademyRegistration, 'reference' | 'token'>) => `${siteUrl()}/academy/terms/pay/${reg.reference}${reg.token ? `?t=${reg.token}` : ''}`
 
-/** Staff offer a place in a slot (from interest, or a different slot): email + SMS with the pay link. */
-export async function offerSlot(payload: Payload, regId: number, slotId: number, o: { actorId: number; holdDays?: number }) {
+/**
+ * Staff offer a place (from interest, or a different time): one night, or two nights a week at the 2-night
+ * rate (the second night becomes a paired registration paid with the first). Email + SMS with the pay link.
+ */
+export async function offerSlot(payload: Payload, regId: number, slotIds: number | number[], o: { actorId: number; holdDays?: number }) {
+  const ids = (Array.isArray(slotIds) ? slotIds : [slotIds]).filter(Boolean)
+  if (ids.length < 1 || ids.length > 2 || new Set(ids).size !== ids.length) throw new Error('Choose one training time, or two different ones for 2 nights a week.')
   const reg = await payload.findByID({ collection: 'academy-registrations', id: regId, depth: 0, overrideAccess: true, showHiddenFields: true })
   if (reg.status === 'paid' || reg.status === 'cancelled') throw new Error('This registration is already paid or cancelled.')
-  const [slot, program] = await Promise.all([
-    payload.findByID({ collection: 'academy-term-slots', id: slotId, depth: 0, overrideAccess: true }),
-    payload.findByID({ collection: 'programs', id: rel(reg.program)!, depth: 0, overrideAccess: true }),
-  ])
-  if (rel(slot.program) !== program.id) throw new Error('That slot belongs to another program.')
+  const program = await payload.findByID({ collection: 'programs', id: rel(reg.program)!, depth: 0, overrideAccess: true })
+  const nights = ids.length as 1 | 2
+  if (nights === 2 && program.twoNightPricePerSession == null) throw new Error('This program doesn’t offer 2 nights a week (set a 2-night price first).')
+  const slots = await Promise.all(ids.map((id) => payload.findByID({ collection: 'academy-term-slots', id, depth: 0, overrideAccess: true })))
+  if (slots.some((s) => rel(s.program) !== program.id)) throw new Error('That training time belongs to another program.')
+  const rate = nightRate(program, nights)
+  slots.sort((a, b) => (termQuote(a, program, rate).sessions[0]?.startsAt ?? 'z').localeCompare(termQuote(b, program, rate).sessions[0]?.startsAt ?? 'z'))
   const now = new Date()
   const until = new Date(now.getTime() + (o.holdDays ?? OFFER_HOLD_DAYS) * DAY)
+  const offer = { status: 'offered' as const, offeredAt: now.toISOString(), offerExpiresAt: until.toISOString(), nights: String(nights) as '1' | '2' }
+  const pairId = rel(reg.pairedWith as never)
+  const pair = pairId ? await payload.findByID({ collection: 'academy-registrations', id: pairId, depth: 0, overrideAccess: true, disableErrors: true }) : null
+
+  let second: AcademyRegistration | null = null
+  if (nights === 2) {
+    const data = { ...offer, program: program.id, slot: slots[1].id, pairedWith: reg.id, amount: termQuote(slots[1], program, rate, until).total, contact: reg.contact, player: reg.player, account: rel(reg.account), participant: rel(reg.participant), playingBirthYear: reg.playingBirthYear }
+    second = pair && pair.status !== 'paid' && pair.status !== 'cancelled'
+      ? await payload.update({ collection: 'academy-registrations', id: pair.id, overrideAccess: true, data })
+      : await payload.create({ collection: 'academy-registrations', overrideAccess: true, data })
+  } else if (pair && pair.status !== 'paid' && pair.status !== 'cancelled') {
+    // Back to one night: the other night's offer is withdrawn
+    await payload.update({ collection: 'academy-registrations', id: pair.id, overrideAccess: true, data: { status: 'cancelled', pairedWith: null, notes: 'Offer changed to 1 night a week' } })
+  }
   const updated = await payload.update({
     collection: 'academy-registrations',
     id: reg.id,
     overrideAccess: true,
     showHiddenFields: true,
-    data: { status: 'offered', slot: slot.id, offeredAt: now.toISOString(), offerExpiresAt: until.toISOString(), amount: termQuote(slot, program, program, until).total },
+    data: { ...offer, slot: slots[0].id, pairedWith: second?.id ?? null, amount: termQuote(slots[0], program, rate, until).total },
   })
+
   const url = termPayUrl(updated)
   const due = formatDate(until.toISOString(), { weekday: 'long', day: 'numeric', month: 'long' })
+  const quotes = slots.map((sl) => termQuote(sl, program, rate))
+  const total = quotes.reduce((n, q) => n + q.total, 0)
+  const nightRows = slots.flatMap((sl, i) => slotRows(sl, program).map(([k, v]) => [nights === 2 && k === 'Training' ? `Night ${i + 1}` : k, v] as [string, string]).filter(([k]) => i === 0 || k !== 'Age groups'))
   const html = emailLayout('academy', [
     {
       heading: 'A place is ready',
-      intro: `Hi ${esc(reg.contact.firstName)}, we have a place for ${esc(reg.player.firstName)} in <strong>${esc(program.title)}</strong>. Please confirm and pay by <strong>${esc(due)}</strong> to secure it.`,
-      rows: [['Player', `${reg.player.firstName} ${reg.player.lastName}`], ...slotRows(slot, program), ['Price', `${quoteLabel(termQuote(slot, program, program))} if you pay today`], ['Confirm by', due]],
+      intro: `Hi ${esc(reg.contact.firstName)}, we have a place for ${esc(reg.player.firstName)} in <strong>${esc(program.title)}</strong>${nights === 2 ? ' — <strong>2 nights a week</strong>' : ''}. Please confirm and pay by <strong>${esc(due)}</strong> to secure it.`,
+      rows: [
+        ['Player', `${reg.player.firstName} ${reg.player.lastName}`],
+        ...nightRows,
+        ['Price', `${nights === 2 ? `${quotes.map(quoteLabel).join(' + ')} = ${formatAUD(total)}` : quoteLabel(quotes[0])} if you pay today`],
+        ['Confirm by', due],
+      ],
       cta: { label: 'Confirm and pay', href: url },
-      after: 'If this time doesn’t suit, just reply to this email and we’ll see what else we can do.',
+      after: 'If this doesn’t suit, just reply to this email and we’ll see what else we can do.',
     },
   ])
   const user = reg.account ? ((await payload.findByID({ collection: 'users', id: rel(reg.account)!, depth: 0, overrideAccess: true, disableErrors: true })) as User | null) : null
@@ -231,7 +261,7 @@ export async function offerSlot(payload: Payload, regId: number, slotId: number,
     kind: 'service',
     optedOut: user?.smsOptOut,
     userId: user?.id,
-    body: `A place is ready for ${reg.player.firstName} in ${program.title} (${slotLabel(slot)}). Confirm and pay by ${due}: ${url} – Foundation Academy`,
+    body: `A place is ready for ${reg.player.firstName} in ${program.title} (${slots.map(slotLabel).join(' + ')}). Confirm and pay by ${due}: ${url} – Foundation Academy`,
   })
   return updated
 }

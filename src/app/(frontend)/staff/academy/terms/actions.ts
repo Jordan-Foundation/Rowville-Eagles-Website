@@ -18,10 +18,12 @@ export async function offerPlace(_prev: TermStaffState, fd: FormData): Promise<T
   if (!user) return { error: 'Only admins can offer places.' }
   const reg = Number(fd.get('reg'))
   const slot = Number(fd.get('slot'))
+  const slot2 = fd.get('two') === 'on' ? Number(fd.get('slot2')) : 0
   const days = Math.min(30, Math.max(1, Number(fd.get('days') || 7)))
   if (!reg || !slot) return { error: 'Choose a training time.' }
+  if (fd.get('two') === 'on' && !slot2) return { error: 'Choose the second night.' }
   try {
-    const r = await offerSlot(await payload(), reg, slot, { actorId: user.id, holdDays: days })
+    const r = await offerSlot(await payload(), reg, slot2 ? [slot, slot2] : slot, { actorId: user.id, holdDays: days })
     revalidatePath('/staff/academy/terms')
     return { done: `Offer sent to ${r.contact.email}.` }
   } catch (e) {

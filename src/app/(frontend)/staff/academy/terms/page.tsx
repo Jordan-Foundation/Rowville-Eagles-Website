@@ -75,7 +75,7 @@ export default async function StaffTermsPage({ searchParams }: { searchParams: P
                     <p className="text-sm text-muted">{r.contact.firstName} {r.contact.lastName} · {r.contact.email} · {r.contact.phone} · registered {formatDate(r.createdAt, { day: 'numeric', month: 'short' })}</p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
-                    {slots.length ? <OfferForm reg={r.id} options={options(by)} /> : <span className="text-xs text-muted">Add a training time first</span>}
+                    {slots.length ? <OfferForm reg={r.id} options={options(by)} twoNights={program.twoNightPricePerSession != null} /> : <span className="text-xs text-muted">Add a training time first</span>}
                     <CancelForm reg={r.id} />
                   </div>
                 </li>

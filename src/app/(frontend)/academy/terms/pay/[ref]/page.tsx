@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { formatAUD, formatDate } from '@/lib/payload'
 import { groupLabel } from '@/lib/age-groups'
 import { slotLabel, termQuote, yearsLabel } from '@/academy/terms/slots'
+import { nightRate } from '@/academy/terms/service'
 import { AcademyBackdrop } from '@/components/AcademyBackdrop'
 import { loadTermRegistration } from './load'
 import { PayButton } from './PayButton'
@@ -27,11 +28,15 @@ export default async function TermPayPage({ params, searchParams }: { params: Pr
       </>,
     )
   }
-  const { reg, program, slot } = data
-  const quote = slot ? termQuote(slot, program, program) : null
+  const { reg, program, slot, pairSlot } = data
+  const nights = pairSlot ? 2 : 1
+  const rate = nightRate(program, nights)
+  const quote = slot ? termQuote(slot, program, rate) : null
+  const quote2 = pairSlot ? termQuote(pairSlot, program, rate) : null
   const sessions = quote?.sessions ?? []
+  const total = Math.round(((quote?.total ?? 0) + (quote2?.total ?? 0)) * 100) / 100
   const by = reg.playingBirthYear ?? reg.birthYear
-  const payable = slot && quote?.bookable && (reg.status === 'offered' || reg.status === 'pending_payment')
+  const payable = slot && quote?.bookable && (!quote2 || quote2.bookable) && (reg.status === 'offered' || reg.status === 'pending_payment')
 
   return shell(
     <div className="grid gap-10 lg:grid-cols-[1fr_20rem]">
@@ -48,15 +53,16 @@ export default async function TermPayPage({ params, searchParams }: { params: Pr
         ) : (
           <div className="mt-8 space-y-6">
             <dl className="panel grid gap-3 rounded-sm border border-line bg-surface-2 p-6 text-sm sm:grid-cols-2">
-              <div><dt className="text-muted">Training</dt><dd className="font-semibold">{slotLabel(slot!)}</dd></div>
+              <div><dt className="text-muted">{pairSlot ? 'Night 1' : 'Training'}</dt><dd className="font-semibold">{slotLabel(slot!)}</dd></div>
+              {pairSlot && <div><dt className="text-muted">Night 2</dt><dd className="font-semibold">{slotLabel(pairSlot)}</dd></div>}
               <div><dt className="text-muted">Age group</dt><dd className="font-semibold">{by ? groupLabel(by) : ''} · slot for {yearsLabel(slot!.birthYears)}</dd></div>
               {reg.status === 'offered' && reg.offerExpiresAt && <div><dt className="text-muted">Place held until</dt><dd className="font-semibold">{formatDate(reg.offerExpiresAt, { weekday: 'long', day: 'numeric', month: 'long' })}</dd></div>}
             </dl>
             <div>
-              <h2 className="font-display text-xl font-semibold uppercase">{sessions.length} sessions left</h2>
+              <h2 className="font-display text-xl font-semibold uppercase">{sessions.length + (quote2?.sessions.length ?? 0)} sessions left{pairSlot ? ' · 2 nights a week' : ''}</h2>
               <ul className="mt-3 grid gap-1 text-sm sm:grid-cols-2">
-                {sessions.map((s) => (
-                  <li key={s.date}>{formatDate(s.startsAt, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}{s.moved ? ' (changed time)' : ''}</li>
+                {[...sessions, ...(quote2?.sessions ?? [])].sort((a, b) => a.startsAt.localeCompare(b.startsAt)).map((s) => (
+                  <li key={s.startsAt}>{formatDate(s.startsAt, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}{s.moved ? ' (changed time)' : ''}</li>
                 ))}
               </ul>
             </div>
@@ -65,10 +71,10 @@ export default async function TermPayPage({ params, searchParams }: { params: Pr
       </div>
       {payable && (
         <aside className="panel gloss-sheen h-fit rounded-sm border border-line bg-surface-2 p-7">
-          {quote!.perSession !== null && <p className="text-sm text-muted">{quote!.count} sessions × {formatAUD(quote!.perSession)}</p>}
+          {quote!.perSession !== null && <p className="text-sm text-muted">{quote!.count + (quote2?.count ?? 0)} sessions × {formatAUD(quote!.perSession)}</p>}
           <p className="text-sm text-muted">Total</p>
-          <p className="mt-1 text-3xl font-bold">{formatAUD(quote!.total)}</p>
-          <div className="mt-6"><PayButton refCode={reg.reference ?? ref} token={t} label={`Confirm and pay · ${formatAUD(quote!.total)}`} /></div>
+          <p className="mt-1 text-3xl font-bold">{formatAUD(total)}</p>
+          <div className="mt-6"><PayButton refCode={reg.reference ?? ref} token={t} label={`Confirm and pay · ${formatAUD(total)}`} /></div>
           <p className="mt-3 text-center text-xs text-muted">Secure payment by Stripe</p>
         </aside>
       )}
