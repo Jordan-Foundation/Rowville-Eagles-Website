@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { slotChoice, slotLabel, slotSessions, upcomingSessions, yearsLabel, type SlotShape } from '@/academy/terms/slots'
+import { slotChoice, slotLabel, slotSessions, termQuote, upcomingSessions, yearsLabel, type SlotShape } from '@/academy/terms/slots'
 
 const term = { startDate: '2027-01-27T00:00:00.000Z', endDate: '2027-04-01T00:00:00.000Z' } // Wed 27 Jan → Thu 1 Apr (Sydney)
 const slot = (o: Partial<SlotShape> = {}): SlotShape => ({ id: 1, weekday: 'Tuesday', startTime: '17:00', endTime: '18:00', venue: 'Rowville Reserve', birthYears: [2017, 2018], ...o })
@@ -29,5 +29,14 @@ describe('academy term slots', () => {
   it('labels slots for families', () => {
     expect(slotLabel(slot({ startTime: '17:30', endTime: '18:45' }))).toBe('Tuesday 5:30pm–6:45pm · Rowville Reserve')
     expect(yearsLabel([2018, 2016, 2017])).toBe('2018s, 2017s & 2016s')
+  })
+  it('prices per session for the sessions left, like 1-on-1 terms', () => {
+    const tue = slot({ exceptions: [{ date: '2027-02-09', cancelled: true }] }) // 8 sessions, 2 Feb … 30 Mar
+    expect(termQuote(tue, term, { pricePerSession: 25 }, new Date('2027-01-01'))).toMatchObject({ count: 8, total: 200, bookable: true })
+    // Mon 1 Feb 6pm: Tue 2 Feb 5pm is inside the 24h cut-off
+    expect(termQuote(tue, term, { pricePerSession: 25 }, new Date('2027-02-01T07:00:00Z'))).toMatchObject({ count: 7, total: 175 })
+    expect(termQuote(tue, term, { pricePerSession: 25 }, new Date('2027-03-24T00:00:00Z'))).toMatchObject({ count: 1, bookable: false })
+    expect(termQuote(tue, term, { price: 440 }, new Date('2027-01-01'))).toMatchObject({ perSession: null, total: 440 })
+    expect(slotChoice([tue], 2017, new Map(), (s) => termQuote(s, term, { pricePerSession: 25 }, new Date('2027-03-24')).bookable).mode).toBe('interest')
   })
 })

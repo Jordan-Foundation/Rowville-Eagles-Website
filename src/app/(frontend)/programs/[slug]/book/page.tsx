@@ -11,7 +11,8 @@ import { currentUser } from '@/lib/auth'
 import { AcademyBackdrop } from '@/components/AcademyBackdrop'
 import { TermBookingForm, type TermSlotOption } from './TermBookingForm'
 import { programSlots, slotTaken } from '@/academy/terms/service'
-import { slotLabel as termSlotLabel, spotsLeft, upcomingSessions, yearsLabel } from '@/academy/terms/slots'
+import { slotLabel as termSlotLabel, spotsLeft, termQuote, yearsLabel } from '@/academy/terms/slots'
+import { programPriceLabel } from '@/lib/format'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Book', robots: { index: false } }
@@ -69,14 +70,17 @@ export default async function BookPage({
     if (slots.length) {
       const taken = await slotTaken(p, program.id)
       termSlots = slots.map((s) => {
-        const sessions = upcomingSessions(s, program)
+        const q = termQuote(s, program, program)
         return {
           id: s.id,
           label: termSlotLabel(s),
           years: yearsLabel(s.birthYears),
           birthYears: (s.birthYears ?? []) as number[],
           remaining: spotsLeft(s, taken.get(s.id) ?? 0),
-          sessions: sessions.length ? `${sessions.length} sessions from ${formatDate(sessions[0].startsAt, { day: 'numeric', month: 'short' })}` : 'Term finished',
+          sessions: q.count ? `${q.count} sessions left, from ${formatDate(q.sessions[0].startsAt, { day: 'numeric', month: 'short' })}` : 'Term finished',
+          bookable: q.bookable,
+          total: q.total,
+          priceLabel: q.perSession !== null ? `${q.count} × ${formatAUD(q.perSession)} = ${formatAUD(q.total)}` : formatAUD(q.total),
         }
       })
       const user = await currentUser()
@@ -92,7 +96,7 @@ export default async function BookPage({
         remaining: Math.max(0, (s.capacity ?? 1) - (await placesTaken(p, program.id, s.start))),
       })),
   )
-  let paymentsReady = program.price === 0
+  let paymentsReady = program.price === 0 && !(program.type === 'academy-term' && program.pricePerSession)
   try {
     paymentsReady ||= Boolean(paymentsMode(payee))
   } catch {
@@ -124,7 +128,7 @@ export default async function BookPage({
                 This program is fully booked. Please check back later or contact the club about the waitlist.
               </p>
             ) : termSlots ? (
-              <TermBookingForm slug={program.slug} slots={termSlots} priceLabel={formatAUD(program.price)} payeeLabel={stripeAccounts[payee].label} prefill={prefill} />
+              <TermBookingForm slug={program.slug} slots={termSlots} payeeLabel={stripeAccounts[payee].label} prefill={prefill} />
             ) : (
               <BookingForm
                 slug={program.slug}
@@ -144,7 +148,7 @@ export default async function BookPage({
           <p className="mt-1 text-sm text-muted">{[program.ageRange, program.scheduleNote].filter(Boolean).join(' · ')}</p>
           <div className="mt-6 flex items-baseline justify-between border-t border-line pt-5">
             <span className="text-muted">Total</span>
-            <span className="text-3xl font-bold">{formatAUD(program.price)}</span>
+            <span className="text-3xl font-bold">{termSlots ? programPriceLabel(program) : formatAUD(program.price)}</span>
           </div>
           {program.priceNote && <p className="mt-3 text-xs text-muted">{program.priceNote}</p>}
         </aside>

@@ -33,21 +33,25 @@ export const Programs: CollectionConfig = {
   defaultSort: 'startDate',
   hooks: {
     beforeValidate: [
-      async ({ data, req }) => {
+      async ({ data, req, originalDoc }) => {
         if (!data) return data
         // Academy group programs follow their shared term's dates
+        // Partial updates (e.g. from the Prices page) only carry the changed fields
+        const type = data.type ?? originalDoc?.type
         const termId = typeof data.academyTerm === 'object' ? data.academyTerm?.id : data.academyTerm
-        if (data.type === 'academy-term' && termId) {
+        if (type === 'academy-term' && termId) {
           const term = await req.payload.findByID({ collection: 'academy-terms', id: termId, depth: 0, req, disableErrors: true })
           if (term) {
             data.startDate = term.startDate
             data.endDate = term.endDate
           }
         }
+        // Academy group terms are priced per session (default $25)
+        if (type === 'academy-term' && data.pricePerSession == null && !originalDoc?.id) data.pricePerSession = 25
         return {
           ...data,
-          payee: data.payee || defaultPayee(data.type),
-          visibility: data.visibility || (data.type === 'registration' ? 'offer-only' : 'public'),
+          payee: data.payee || originalDoc?.payee || defaultPayee(type),
+          visibility: data.visibility || originalDoc?.visibility || (type === 'registration' ? 'offer-only' : 'public'),
         }
       },
     ],
@@ -120,7 +124,26 @@ export const Programs: CollectionConfig = {
     {
       type: 'row',
       fields: [
-        { name: 'price', type: 'number', required: true, min: 0, admin: { description: 'AUD incl. GST' } },
+        {
+          name: 'price',
+          type: 'number',
+          required: true,
+          min: 0,
+          defaultValue: 0,
+          admin: {
+            description: 'AUD incl. GST. Academy terms with training times charge the price per session instead.',
+          },
+        },
+        {
+          name: 'pricePerSession',
+          label: 'Price per session (AUD)',
+          type: 'number',
+          min: 0,
+          admin: {
+            condition: (d) => d?.type === 'academy-term',
+            description: 'Families pay this × the sessions left in their training time (like 1-on-1 terms), e.g. $25.',
+          },
+        },
         { name: 'capacity', type: 'number', min: 0 },
       ],
     },

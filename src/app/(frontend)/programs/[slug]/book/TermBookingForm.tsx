@@ -5,16 +5,18 @@ import { useFormStatus } from 'react-dom'
 import { bookTerm, type TermState } from './term-actions'
 import { Field, Fieldset, Input, inputCls } from '@/components/forms/Field'
 
-export type TermSlotOption = { id: number; label: string; years: string; birthYears: number[]; remaining: number | null; sessions: string }
+export type TermSlotOption = { id: number; label: string; years: string; birthYears: number[]; remaining: number | null; sessions: string; bookable: boolean; total: number; priceLabel: string }
 
-export function TermBookingForm(props: { slug: string; slots: TermSlotOption[]; priceLabel: string; payeeLabel: string; prefill?: Record<string, string> }) {
+export function TermBookingForm(props: { slug: string; slots: TermSlotOption[]; payeeLabel: string; prefill?: Record<string, string> }) {
   const [state, action] = useActionState<TermState, FormData>(bookTerm, {})
   const v = { ...props.prefill, ...state.values }
   const [dob, setDob] = useState(v.playerDob ?? '')
   const [picked, setPicked] = useState(v.slot ?? '')
   const year = /^\d{4}-\d{2}-\d{2}$/.test(dob) ? Number(dob.slice(0, 4)) : null
-  const fits = year ? props.slots.filter((s) => s.birthYears.includes(year)) : []
+  const fits = year ? props.slots.filter((s) => s.birthYears.includes(year) && s.bookable) : []
   const open = fits.filter((s) => s.remaining !== 0)
+  const chosen = open.length === 1 ? open[0] : open.find((s) => String(s.id) === picked)
+  const aud = (n: number) => n.toLocaleString('en-AU', { style: 'currency', currency: 'AUD', minimumFractionDigits: n % 1 ? 2 : 0 })
   const interest = year !== null && open.length === 0
 
   if (state.interest) {
@@ -59,6 +61,7 @@ export function TermBookingForm(props: { slug: string; slots: TermSlotOption[]; 
                     <span>
                       <span className="block font-semibold">{s.label}</span>
                       <span className="block text-xs text-muted">{s.years} · {s.sessions}</span>
+                      <span className="block text-xs font-semibold">{s.priceLabel}</span>
                     </span>
                   </span>
                   {s.remaining !== null && <span className="shrink-0 text-xs text-muted">{s.remaining} left</span>}
@@ -100,7 +103,7 @@ export function TermBookingForm(props: { slug: string; slots: TermSlotOption[]; 
           {state.error}
         </p>
       )}
-      <Submit label={interest ? 'Register interest · no charge' : `Continue to payment · ${props.priceLabel}`} />
+      <Submit label={interest ? 'Register interest · no charge' : chosen ? `Continue to payment · ${aud(chosen.total)}` : 'Continue to payment'} />
       {!interest && <p className="text-center text-xs text-muted">Secure payment by Stripe · Paid to {props.payeeLabel}</p>}
     </form>
   )

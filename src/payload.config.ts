@@ -52,6 +52,13 @@ export default buildConfig({
     user: Users.slug,
     meta: { titleSuffix: ' · Rowville Eagles Admin' },
     importMap: { baseDir: path.resolve(dirname) },
+    components: {
+      afterNavLinks: ['/components/admin/PricesNavLink#PricesNavLink'],
+      beforeDashboard: ['/components/admin/PricesNavLink#PricesDashboardCard'],
+      views: {
+        prices: { Component: '/components/admin/PricesView#PricesView', path: '/prices', meta: { title: 'Prices' } },
+      },
+    },
   },
   collections: [AcademyBookings, AcademySessions, AcademyTerms, AcademyTermSlots, AcademyRegistrations, AcademyCoaches, AcademyAvailability, AcademyReminderLog, AcademyCredits, Posts, SelectionRounds, Squads, SelectionEntries, TrialSessions, Programs, Bookings, Products, Orders, Teams, TeamMembers, TeamPosts, ForumThreads, ForumReplies, Sponsors, Participants, Users, ConsentRecords, MessageLog, InviteTokens, Media],
   globals: [SiteSettings, About, AcademySettings],

@@ -2,7 +2,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { formatAUD, formatDate } from '@/lib/payload'
 import { groupLabel } from '@/lib/age-groups'
-import { slotLabel, upcomingSessions, yearsLabel } from '@/academy/terms/slots'
+import { slotLabel, termQuote, yearsLabel } from '@/academy/terms/slots'
 import { AcademyBackdrop } from '@/components/AcademyBackdrop'
 import { loadTermRegistration } from './load'
 import { PayButton } from './PayButton'
@@ -28,9 +28,10 @@ export default async function TermPayPage({ params, searchParams }: { params: Pr
     )
   }
   const { reg, program, slot } = data
-  const sessions = slot ? upcomingSessions(slot, program) : []
+  const quote = slot ? termQuote(slot, program, program) : null
+  const sessions = quote?.sessions ?? []
   const by = reg.playingBirthYear ?? reg.birthYear
-  const payable = slot && (reg.status === 'offered' || reg.status === 'pending_payment')
+  const payable = slot && quote?.bookable && (reg.status === 'offered' || reg.status === 'pending_payment')
 
   return shell(
     <div className="grid gap-10 lg:grid-cols-[1fr_20rem]">
@@ -42,7 +43,7 @@ export default async function TermPayPage({ params, searchParams }: { params: Pr
           <p className="mt-6 rounded-sm border border-line bg-surface-2 p-6">All done — {reg.player.firstName}’s place is paid. <Link href="/account" className="font-semibold underline">Go to your account</Link></p>
         ) : !payable ? (
           <p className="mt-6 rounded-sm border border-line bg-surface-2 p-6 text-muted">
-            {reg.status === 'interest' ? 'We have your interest — we’ll email you as soon as a place is available.' : 'This place is no longer available. Please contact us if you have any questions.'}
+            {slot && quote && !quote.bookable && reg.status !== 'interest' ? 'This term is nearly over, so this place can’t be booked now. Please contact us about next term.' : reg.status === 'interest' ? 'We have your interest — we’ll email you as soon as a place is available.' : 'This place is no longer available. Please contact us if you have any questions.'}
           </p>
         ) : (
           <div className="mt-8 space-y-6">
@@ -52,7 +53,7 @@ export default async function TermPayPage({ params, searchParams }: { params: Pr
               {reg.status === 'offered' && reg.offerExpiresAt && <div><dt className="text-muted">Place held until</dt><dd className="font-semibold">{formatDate(reg.offerExpiresAt, { weekday: 'long', day: 'numeric', month: 'long' })}</dd></div>}
             </dl>
             <div>
-              <h2 className="font-display text-xl font-semibold uppercase">{sessions.length} sessions</h2>
+              <h2 className="font-display text-xl font-semibold uppercase">{sessions.length} sessions left</h2>
               <ul className="mt-3 grid gap-1 text-sm sm:grid-cols-2">
                 {sessions.map((s) => (
                   <li key={s.date}>{formatDate(s.startsAt, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}{s.moved ? ' (changed time)' : ''}</li>
@@ -64,9 +65,10 @@ export default async function TermPayPage({ params, searchParams }: { params: Pr
       </div>
       {payable && (
         <aside className="panel gloss-sheen h-fit rounded-sm border border-line bg-surface-2 p-7">
+          {quote!.perSession !== null && <p className="text-sm text-muted">{quote!.count} sessions × {formatAUD(quote!.perSession)}</p>}
           <p className="text-sm text-muted">Total</p>
-          <p className="mt-1 text-3xl font-bold">{formatAUD(program.price)}</p>
-          <div className="mt-6"><PayButton refCode={reg.reference ?? ref} token={t} label={`Confirm and pay · ${formatAUD(program.price)}`} /></div>
+          <p className="mt-1 text-3xl font-bold">{formatAUD(quote!.total)}</p>
+          <div className="mt-6"><PayButton refCode={reg.reference ?? ref} token={t} label={`Confirm and pay · ${formatAUD(quote!.total)}`} /></div>
           <p className="mt-3 text-center text-xs text-muted">Secure payment by Stripe</p>
         </aside>
       )}

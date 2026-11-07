@@ -70,11 +70,32 @@ export const spotsLeft = (s: Pick<SlotShape, 'capacity'>, taken: number) => (s.c
  * What the booking form should offer: one slot fits → that one; several → choose;
  * none (or all full) → register interest.
  */
-export function slotChoice<S extends SlotShape>(slots: S[], birthYear: number, taken: Map<number, number>) {
-  const fits = slotsForYear(slots, birthYear)
+export function slotChoice<S extends SlotShape>(slots: S[], birthYear: number, taken: Map<number, number>, bookable: (s: S) => boolean = () => true) {
+  const fits = slotsForYear(slots, birthYear).filter(bookable)
   const open = fits.filter((s) => spotsLeft(s, taken.get(s.id) ?? 0) !== 0)
   if (open.length === 0) return { mode: 'interest' as const, reason: fits.length ? ('full' as const) : ('no_slot' as const), slots: [] as S[] }
   return { mode: open.length === 1 ? ('auto' as const) : ('choose' as const), reason: null, slots: open }
 }
 
 export const todayYmd = () => localYmd(new Date())
+
+// ── Price: like 1-on-1 terms, families pay per session for the sessions still to come ──
+
+/** Sessions starting within this many hours can't be booked (same as 1-on-1s). */
+export const TERM_CUTOFF_HOURS = 24
+/** A term needs at least this many sessions left to be bookable. */
+export const TERM_MIN_SESSIONS = 2
+
+export type TermPricing = { pricePerSession?: number | null; price?: number | null }
+
+/**
+ * What a family pays to join this slot now: price per session × sessions left (not cancelled, starting
+ * more than 24h from now). Programs without a per-session price charge their flat price.
+ */
+export function termQuote(slot: SlotShape, term: TermDates, pricing: TermPricing, now = new Date()) {
+  const cutoff = now.getTime() + TERM_CUTOFF_HOURS * 3_600_000
+  const sessions = slotSessions(slot, term).filter((s) => !s.cancelled && new Date(s.startsAt).getTime() > cutoff)
+  const perSession = pricing.pricePerSession ?? null
+  const total = perSession !== null ? Math.round(perSession * sessions.length * 100) / 100 : (pricing.price ?? 0)
+  return { sessions, count: sessions.length, perSession, total, bookable: sessions.length >= TERM_MIN_SESSIONS }
+}

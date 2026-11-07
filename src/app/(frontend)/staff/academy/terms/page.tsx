@@ -6,7 +6,8 @@ import { currentUser } from '@/lib/auth'
 import { hasRole } from '@/access'
 import { groupLabel } from '@/lib/age-groups'
 import { programSlots, slotTaken } from '@/academy/terms/service'
-import { slotLabel, spotsLeft, upcomingSessions, yearsLabel } from '@/academy/terms/slots'
+import { slotLabel, spotsLeft, termQuote, upcomingSessions, yearsLabel } from '@/academy/terms/slots'
+import { programPriceLabel } from '@/lib/format'
 import type { AcademyRegistration } from '@/payload-types'
 import { CancelForm, OfferForm } from './Forms'
 
@@ -48,7 +49,7 @@ export default async function StaffTermsPage({ searchParams }: { searchParams: P
       </nav>
       <p className="mt-4 text-sm text-muted">
         {program.startDate && program.endDate ? `${formatDate(program.startDate, { day: 'numeric', month: 'short' })} – ${formatDate(program.endDate, { day: 'numeric', month: 'short', year: 'numeric' })} · ` : ''}
-        {formatAUD(program.price)} · {regs.filter((r) => r.status === 'paid').length} paid · {unplaced.length} waiting for a place ·{' '}
+        {programPriceLabel(program)} · {regs.filter((r) => r.status === 'paid').length} paid · {unplaced.length} waiting for a place ·{' '}
         <Link href="/admin/collections/academy-term-slots/create" className="underline">Add a training time</Link>
       </p>
 
@@ -84,7 +85,7 @@ export default async function StaffTermsPage({ searchParams }: { searchParams: P
               <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-line p-4">
                 <div>
                   <p className="font-semibold">{slotLabel(s)} <span className="font-normal text-muted">· {yearsLabel(s.birthYears)}{s.active === false ? ' · not taking registrations' : ''}</span></p>
-                  <p className="text-sm text-muted">{list.filter((r) => r.status === 'paid').length} paid{s.capacity ? ` of ${s.capacity} · ${left} left` : ''} · {sessions.length} sessions to come</p>
+                  <p className="text-sm text-muted">{list.filter((r) => r.status === 'paid').length} paid{s.capacity ? ` of ${s.capacity} · ${left} left` : ''} · {sessions.length} sessions to come · joining now: {(() => { const q = termQuote(s, program, program); return q.bookable ? formatAUD(q.total) : 'closed' })()}</p>
                 </div>
                 <Link href={`/admin/collections/academy-term-slots/${s.id}`} className="text-sm underline">Edit time / weeks</Link>
               </div>

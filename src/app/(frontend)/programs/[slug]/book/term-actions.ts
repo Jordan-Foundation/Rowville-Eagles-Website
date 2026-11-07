@@ -4,8 +4,8 @@ import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { payload } from '@/lib/payload'
 import { birthYearOf } from '@/lib/age-groups'
-import { checkoutRegistration, emailInterest, existingRegistration, programSlots, slotTaken } from '@/academy/terms/service'
-import { slotChoice } from '@/academy/terms/slots'
+import { checkoutRegistration, emailInterest, existingRegistration, programSlots, slotTaken, TermClosedError } from '@/academy/terms/service'
+import { slotChoice, termQuote } from '@/academy/terms/slots'
 
 export type TermState = { error?: string; interest?: { reference: string; reason: 'no_slot' | 'full'; email: string }; values?: Record<string, string> }
 
@@ -45,7 +45,7 @@ export async function bookTerm(_prev: TermState, fd: FormData): Promise<TermStat
   const accountId = user?.collection === 'users' ? user.id : undefined
 
   const [slots, taken] = await Promise.all([programSlots(p, program.id), slotTaken(p, program.id)])
-  const choice = slotChoice(slots, birthYear, taken)
+  const choice = slotChoice(slots, birthYear, taken, (s) => termQuote(s, program, program).bookable)
   const existing = await existingRegistration(p, program.id, player)
   if (existing && existing.status === 'paid') return fail(`${player.firstName} is already registered for this term. Check your account for the details.`)
   if (existing && (existing.status === 'interest' || existing.status === 'offered')) {
@@ -75,6 +75,7 @@ export async function bookTerm(_prev: TermState, fd: FormData): Promise<TermStat
   try {
     url = await checkoutRegistration(p, reg, program, slot, `/programs/${program.slug}/book?cancelled=1`)
   } catch (e) {
+    if (e instanceof TermClosedError) return fail(e.message)
     p.logger.error(e)
     return fail('We couldn’t start the payment. Please try again, or contact us if this keeps happening.')
   }

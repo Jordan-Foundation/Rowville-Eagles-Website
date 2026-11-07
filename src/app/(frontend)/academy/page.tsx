@@ -1,3 +1,4 @@
+import { programPriceLabel } from '@/lib/format'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { payload, formatAUD, formatDate } from '@/lib/payload'
@@ -109,7 +110,7 @@ export default async function AcademyPage() {
                   {[p.ageRange, p.scheduleNote, p.startDate && formatDate(p.startDate)].filter(Boolean).join('  ·  ')}
                 </p>
                 <div className="mt-6 flex items-center justify-between border-t border-line pt-5">
-                  <span className="font-display text-2xl font-semibold">{formatAUD(p.price)}</span>
+                  <span className="font-display text-2xl font-semibold">{programPriceLabel(p)}</span>
                   <span className="text-xs font-semibold uppercase tracking-[0.2em] transition group-hover:translate-x-1">
                     {p.status === 'full' ? 'Waitlist →' : 'Book →'}
                   </span>

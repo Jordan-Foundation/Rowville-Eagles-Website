@@ -1,7 +1,7 @@
 'use server'
 
 import { redirect } from 'next/navigation'
-import { checkoutRegistration, slotTaken } from '@/academy/terms/service'
+import { checkoutRegistration, slotTaken, TermClosedError } from '@/academy/terms/service'
 import { spotsLeft } from '@/academy/terms/slots'
 import { loadTermRegistration } from './load'
 
@@ -24,6 +24,7 @@ export async function payTerm(_prev: { error?: string }, fd: FormData): Promise<
   try {
     url = await checkoutRegistration(p, reg, program, slot, `/academy/terms/pay/${reg.reference}${token ? `?t=${token}&cancelled=1` : '?cancelled=1'}`)
   } catch (e) {
+    if (e instanceof TermClosedError) return { error: `${e.message} Please contact us.` }
     p.logger.error(e)
     return { error: 'We couldn’t start the payment. Please try again, or contact us if this keeps happening.' }
   }

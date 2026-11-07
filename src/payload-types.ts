@@ -653,9 +653,13 @@ export interface Program {
    */
   ageRange?: string | null;
   /**
-   * AUD incl. GST
+   * AUD incl. GST. Academy terms with training times charge the price per session instead.
    */
   price: number;
+  /**
+   * Families pay this × the sessions left in their training time (like 1-on-1 terms), e.g. $25.
+   */
+  pricePerSession?: number | null;
   capacity?: number | null;
   /**
    * e.g. "Club fee only — FV fees paid in PlayFootball"
@@ -2127,6 +2131,7 @@ export interface ProgramsSelect<T extends boolean = true> {
   location?: T;
   ageRange?: T;
   price?: T;
+  pricePerSession?: T;
   capacity?: T;
   priceNote?: T;
   slots?:

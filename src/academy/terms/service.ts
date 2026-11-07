@@ -9,7 +9,7 @@ import { formatAUD, formatDate } from '../../lib/format'
 import { confirmPayment, newReference, siteUrl, startCheckout } from '../../lib/payments'
 import { sendSms } from '../../lib/sms'
 import { isPayee } from '../../lib/stripe-accounts'
-import { slotLabel, upcomingSessions, yearsLabel } from './slots'
+import { slotLabel, termQuote, upcomingSessions, yearsLabel } from './slots'
 
 const rel = (v: number | { id: number } | null | undefined) => (v && typeof v === 'object' ? v.id : (v ?? null))
 const HOLD_MS = 35 * 60 * 1000
@@ -63,8 +63,20 @@ export async function existingRegistration(payload: Payload, programId: number, 
 
 export const payeeOf = (program: Pick<Program, 'payee' | 'type'>) => (isPayee(program.payee) ? program.payee : defaultPayee(program.type))
 
+export class TermClosedError extends Error {
+  constructor() {
+    super('There aren’t enough sessions left this term to join this training time.')
+  }
+}
+
+/** "8 sessions × $25 = $200" */
+export const quoteLabel = (q: ReturnType<typeof termQuote>) => (q.perSession !== null ? `${q.count} sessions × ${formatAUD(q.perSession)} = ${formatAUD(q.total)}` : formatAUD(q.total))
+
 /** Create the payment for a registration and return where to send the family (Stripe, or success when free). */
 export async function checkoutRegistration(payload: Payload, reg: AcademyRegistration, program: Program, slot: AcademyTermSlot, cancelPath: string) {
+  const quote = termQuote(slot, program, program)
+  if (!quote.bookable) throw new TermClosedError()
+  const amount = quote.total
   const payee = payeeOf(program)
   const reference = newReference(payee)
   const booking = await payload.create({
@@ -75,7 +87,7 @@ export async function checkoutRegistration(payload: Payload, reg: AcademyRegistr
       program: program.id,
       status: 'pending',
       payee,
-      amount: program.price,
+      amount,
       birthYear: reg.playingBirthYear ?? reg.birthYear ?? undefined,
       account: rel(reg.account) ?? undefined,
       participant: rel(reg.participant) ?? undefined,
@@ -84,8 +96,8 @@ export async function checkoutRegistration(payload: Payload, reg: AcademyRegistr
       player: { ...reg.player, teamName: undefined },
     },
   })
-  await payload.update({ collection: 'academy-registrations', id: reg.id, overrideAccess: true, data: { status: 'pending_payment', slot: slot.id, booking: booking.id, amount: program.price } })
-  if (!program.price) {
+  await payload.update({ collection: 'academy-registrations', id: reg.id, overrideAccess: true, data: { status: 'pending_payment', slot: slot.id, booking: booking.id, amount } })
+  if (!amount) {
     await confirmPayment(payload, 'booking', reference)
     return `/checkout/success?kind=booking&ref=${reference}`
   }
@@ -95,7 +107,10 @@ export async function checkoutRegistration(payload: Payload, reg: AcademyRegistr
       kind: 'booking',
       reference,
       email: reg.contact.email,
-      items: [{ name: program.title, description: `${reg.player.firstName} ${reg.player.lastName} · ${slotLabel(slot)}`, unitAmount: program.price, quantity: 1 }],
+      items:
+        quote.perSession !== null
+          ? [{ name: `${program.title} — ${quote.count} sessions`, description: `${reg.player.firstName} ${reg.player.lastName} · ${slotLabel(slot)}`, unitAmount: quote.perSession, quantity: quote.count }]
+          : [{ name: program.title, description: `${reg.player.firstName} ${reg.player.lastName} · ${slotLabel(slot)}`, unitAmount: amount, quantity: 1 }],
       cancelPath,
     })
     if (checkout.sessionId) await payload.update({ collection: 'bookings', id: booking.id, overrideAccess: true, data: { stripeCheckoutId: checkout.sessionId } })
@@ -172,7 +187,7 @@ export async function offerSlot(payload: Payload, regId: number, slotId: number,
     id: reg.id,
     overrideAccess: true,
     showHiddenFields: true,
-    data: { status: 'offered', slot: slot.id, offeredAt: now.toISOString(), offerExpiresAt: until.toISOString(), amount: program.price },
+    data: { status: 'offered', slot: slot.id, offeredAt: now.toISOString(), offerExpiresAt: until.toISOString(), amount: termQuote(slot, program, program, until).total },
   })
   const url = termPayUrl(updated)
   const due = formatDate(until.toISOString(), { weekday: 'long', day: 'numeric', month: 'long' })
@@ -180,7 +195,7 @@ export async function offerSlot(payload: Payload, regId: number, slotId: number,
     {
       heading: 'A place is ready',
       intro: `Hi ${esc(reg.contact.firstName)}, we have a place for ${esc(reg.player.firstName)} in <strong>${esc(program.title)}</strong>. Please confirm and pay by <strong>${esc(due)}</strong> to secure it.`,
-      rows: [['Player', `${reg.player.firstName} ${reg.player.lastName}`], ...slotRows(slot, program), ['Price', formatAUD(program.price)], ['Confirm by', due]],
+      rows: [['Player', `${reg.player.firstName} ${reg.player.lastName}`], ...slotRows(slot, program), ['Price', `${quoteLabel(termQuote(slot, program, program))} if you pay today`], ['Confirm by', due]],
       cta: { label: 'Confirm and pay', href: url },
       after: 'If this time doesn’t suit, just reply to this email and we’ll see what else we can do.',
     },
