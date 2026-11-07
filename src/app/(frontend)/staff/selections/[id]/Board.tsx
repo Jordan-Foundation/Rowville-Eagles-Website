@@ -16,6 +16,8 @@ export type Row = {
   contact: string
   notes: string | null
   lastMove: string | null
+  payment: { due: string; overdue: boolean; reminders: string } | null
+  paid: string | null
 }
 
 type Props = {
@@ -30,7 +32,7 @@ const field = 'rounded-lg border border-line bg-surface px-3 py-2 text-sm'
 
 export function Board({ roundId, kind, groups, squads, years }: Props) {
   const [picked, setPicked] = useState<number[]>([])
-  const [op, setOp] = useState<'squad' | 'move' | 'pick' | 'unsuccessful' | 'clear'>('squad')
+  const [op, setOp] = useState<'squad' | 'move' | 'pick' | 'unsuccessful' | 'clear' | 'release' | 'remind'>('squad')
   // Controlled, so a "please confirm" round-trip keeps what staff typed (React resets uncontrolled fields after an action)
   const [moveTo, setMoveTo] = useState('')
   const [reason, setReason] = useState('')
@@ -65,6 +67,8 @@ export function Board({ roundId, kind, groups, squads, years }: Props) {
           <option value="pick">{kind === 'tournament' ? 'Select' : 'Successful'}</option>
           <option value="unsuccessful">Unsuccessful</option>
           <option value="clear">Clear outcome</option>
+          <option value="remind">Send payment reminder now</option>
+          <option value="release">Release spot (unpaid)</option>
         </select>
         {op === 'squad' && (
           <select name="squad" className={field} aria-label="Squad" defaultValue="">
@@ -83,6 +87,9 @@ export function Board({ roundId, kind, groups, squads, years }: Props) {
               <label className="flex items-center gap-2 text-sm text-amber-700"><input type="checkbox" name="confirm" checked={confirm} onChange={(e) => setConfirm(e.target.checked)} /> Confirm moving down 2 groups (only if they can’t take part in their own age group)</label>
             )}
           </>
+        )}
+        {op === 'release' && (
+          <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="email" value="on" defaultChecked /> Email the family</label>
         )}
         {op === 'unsuccessful' && (
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="email" value="on" defaultChecked /> Email the family</label>
@@ -118,6 +125,12 @@ export function Board({ roundId, kind, groups, squads, years }: Props) {
                       {r.squad && <span className="rounded-full bg-brand px-2.5 py-1 text-xs font-semibold text-white">{r.squad}</span>}
                       <span className="rounded-full bg-surface-2 px-2.5 py-1 text-xs font-semibold">{r.status}</span>
                       {r.queued && <span className="rounded-full bg-accent px-2.5 py-1 text-xs font-semibold text-accent-ink">To send: {r.queued}</span>}
+                      {r.payment && (
+                        <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${r.payment.overdue ? 'bg-red-600 text-white' : 'bg-amber-100 text-amber-800'}`}>
+                          {r.payment.overdue ? 'Overdue — was due' : 'Pay by'} {r.payment.due}{r.payment.reminders ? ` · reminded ${r.payment.reminders}` : ''}
+                        </span>
+                      )}
+                      {r.paid && <span className="rounded-full bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white">Paid {r.paid}</span>}
                     </span>
                   </label>
                 </li>

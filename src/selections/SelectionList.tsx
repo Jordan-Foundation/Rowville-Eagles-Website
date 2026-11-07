@@ -3,6 +3,7 @@ import type { SelectionEntry } from '@/payload-types'
 import { fullLabel, groupInfo, type AgeRules } from '@/lib/age-groups'
 import { formatDate } from '@/lib/format'
 import { entryStatusLabel } from './entries'
+import { awaitingPayment, isOverdue } from './payment'
 
 const tone = {
   info: 'bg-brand/10 text-brand',
@@ -29,10 +30,17 @@ export function SelectionList({ entries, rules, showPlayer = true }: { entries: 
                 {program && e.kind === 'tournament' ? <Link href={`/programs/${program.slug}`} className="hover:underline">{program.title}</Link> : round?.title ?? 'Trials'}
               </p>
               <p className="text-sm text-muted">
-                {[showPlayer && `${e.player.firstName} ${e.player.lastName}`, by && fullLabel(groupInfo(by, rules)), trial && formatDate(trial.start, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }), e.reference].filter(Boolean).join(' · ')}
+                {[showPlayer && `${e.player.firstName} ${e.player.lastName}`, by && fullLabel(groupInfo(by, rules)), e.squad && typeof e.squad === 'object' && e.squad.name, trial && formatDate(trial.start, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }), e.reference].filter(Boolean).join(' · ')}
               </p>
             </div>
-            <span className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ${tone[status.tone]}`}>{status.label}</span>
+            {awaitingPayment(e) ? (
+              <span className="flex flex-col items-end gap-1">
+                <Link href={`/selections/pay/${e.reference}`} className="rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-accent-ink hover:brightness-110">Complete registration →</Link>
+                {e.paymentDueAt && <span className={`text-xs ${isOverdue(e) ? 'font-semibold text-red-600' : 'text-muted'}`}>{isOverdue(e) ? 'Overdue — was due' : 'Pay by'} {formatDate(e.paymentDueAt, { weekday: 'short', day: 'numeric', month: 'short' })}</span>}
+              </span>
+            ) : (
+              <span className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ${tone[status.tone]}`}>{status.label}</span>
+            )}
           </li>
         )
       })}

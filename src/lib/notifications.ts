@@ -1,4 +1,5 @@
 import { groupLabel } from './age-groups'
+import { markSelectionPaid } from '../selections/payment'
 import type { Payload } from 'payload'
 import type { Booking, Order, Program } from '@/payload-types'
 import { accountLink, addMembership, ensureAccount, findOrCreateParticipant } from './accounts'
@@ -67,6 +68,8 @@ export async function onBookingPaid(payload: Payload, booking: Booking) {
     }
   }
   await payload.update({ collection: 'bookings', id: booking.id, data: { account: user.id, participant: participantId || undefined }, overrideAccess: true })
+  // Paid after selection (tournament / Rowville trials): the player is now registered
+  await markSelectionPaid(payload, { ...booking, account: user.id, participant: participantId || null })
 
   const link = await accountLink(payload, user)
   const who = booking.player?.teamName || [booking.player?.firstName, booking.player?.lastName].filter(Boolean).join(' ')

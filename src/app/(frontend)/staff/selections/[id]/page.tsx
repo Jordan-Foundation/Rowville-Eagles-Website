@@ -10,6 +10,7 @@ import { loadRound, renderOutcome } from '@/selections/service'
 import type { Squad, TrialSession } from '@/payload-types'
 import { formatDate } from '@/lib/format'
 import { requireSelector } from '../access'
+import { awaitingPayment, isOverdue } from '@/selections/payment'
 import { Board, type Row } from './Board'
 import { SendForm, SquadForm } from './Forms'
 
@@ -47,6 +48,8 @@ export default async function RoundPage({ params, searchParams }: { params: Prom
         flags: (e.flags ?? []) as string[],
         contact: `${e.contact.firstName} ${e.contact.lastName} · ${e.contact.phone}`,
         notes: e.player.notes ?? null,
+        payment: awaitingPayment(e) && e.paymentDueAt ? { due: formatDate(e.paymentDueAt, { weekday: 'short', day: 'numeric', month: 'short' }), overdue: isOverdue(e), reminders: (e.remindersSent ?? []).map((d) => `${d}d`).join(', ') } : null,
+        paid: e.paidAt ? formatDate(e.paidAt, { day: 'numeric', month: 'short' }) : null,
         lastMove: e.moves?.length ? `${groupLabel(e.moves.at(-1)!.from)} → ${groupLabel(e.moves.at(-1)!.to)} — “${e.moves.at(-1)!.reason}”` : null,
       }),
     ),

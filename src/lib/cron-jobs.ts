@@ -3,6 +3,7 @@ import { purgeOldInvites } from './invites'
 import { sendAvailabilityReminders } from '../academy/reminders'
 import { sendAccountReminders } from './account-reminders'
 import { sendReviewRequests } from '../academy/review-requests'
+import { runSelectionReminders } from '../selections/payment'
 
 type Job = (payload: Payload) => Promise<Record<string, unknown>>
 
@@ -16,5 +17,6 @@ export const cronJobs: Record<string, Record<string, Job>> = {
     availabilityReminders: (payload) => sendAvailabilityReminders(payload),
     accountReminders: (payload) => sendAccountReminders(payload),
     reviewRequests: (payload) => sendReviewRequests(payload),
+    selectionPaymentReminders: (payload) => runSelectionReminders(payload),
   },
 }

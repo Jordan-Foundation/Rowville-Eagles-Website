@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { payload } from '@/lib/payload'
 import { getAgeRules } from '@/lib/age-rules'
 import { assignSquad, moveEntries, queueOutcome, sendQueued } from '@/selections/service'
+import { awaitingPayment, releaseEntries, sendPaymentReminder } from '@/selections/payment'
 import { selectorOrNull } from './access'
 
 export type BoardState = { error?: string; done?: string; needsConfirm?: boolean }
@@ -44,6 +45,17 @@ export async function boardAction(_prev: BoardState, fd: FormData): Promise<Boar
     const word = op === 'clear' ? 'Cleared' : op === 'pick' ? (round.kind === 'tournament' ? 'Selected' : 'Marked successful') : 'Marked unsuccessful'
     return { done: `${word}: ${chosen.length - res.skipped}${op === 'clear' ? '' : ' — waiting in Review & send (nothing sent yet).'}${res.skipped ? ` ${res.skipped} already registered/withdrawn — skipped.` : ''}` }
   }
+  if (op === 'release') {
+    const n = await releaseEntries(p, chosen, { email: fd.get('email') === 'on', actorId: user.id })
+    revalidatePath(path(fd))
+    return { done: `Released ${n} spot${n === 1 ? '' : 's'}.${n < chosen.length ? ' (Only unpaid selected players can be released.)' : ''}` }
+  }
+  if (op === 'remind') {
+    const { docs } = await p.find({ collection: 'selection-entries', where: { id: { in: chosen } }, limit: chosen.length, depth: 1, overrideAccess: true, showHiddenFields: true })
+    const due = docs.filter(awaitingPayment)
+    for (const e of due) await sendPaymentReminder(p, e, 'now')
+    return { done: `Reminder sent to ${due.length} famil${due.length === 1 ? 'y' : 'ies'}.${due.length < chosen.length ? ' (Only unpaid selected players get reminders.)' : ''}` }
+  }
   return { error: 'Unknown action.' }
 }
 
@@ -67,6 +79,6 @@ export async function sendOutcomes(_prev: BoardState, fd: FormData): Promise<Boa
   const res = await sendQueued(p, Number(fd.get('roundId')), user, await getAgeRules(p))
   if (!res.ok) return { error: res.error }
   const parts = [res.selected && `${res.selected} selected`, res.successful && `${res.successful} successful`, res.unsuccessful && `${res.unsuccessful} unsuccessful`].filter(Boolean).join(', ')
-  const qs = new URLSearchParams({ tab: 'picked', done: `Sent: ${parts || 'nothing'} · ${res.emailed} emails.${res.failed.length ? ` Failed: ${res.failed.join(', ')}` : ''}` })
+  const qs = new URLSearchParams({ tab: 'unpaid', done: `Sent: ${parts || 'nothing'} · ${res.emailed} emails.${res.failed.length ? ` Failed: ${res.failed.join(', ')}` : ''}` })
   redirect(`${path(fd)}?${qs}`)
 }

@@ -57,7 +57,7 @@ export function entryStatusLabel(e: Pick<SelectionEntry, 'status' | 'kind'>): { 
     case 'attended':
       return { label: 'Trial attended — awaiting outcome', tone: 'info' }
     case 'selected':
-      return { label: 'Selected — registration details coming soon', tone: 'action' }
+      return { label: 'Selected — complete registration', tone: 'action' }
     case 'offered':
       return { label: 'Successful — complete registration', tone: 'action' }
     case 'unsuccessful':

@@ -3,11 +3,12 @@ import { groupLabel } from '../lib/age-groups'
 
 /** Selection dashboard helpers (pure). */
 
-export type Tab = 'interest' | 'picked' | 'unsuccessful' | 'moved' | 'queued' | 'all'
+export type Tab = 'interest' | 'unpaid' | 'paid' | 'unsuccessful' | 'moved' | 'queued' | 'all'
 
 export const TABS: { key: Tab; label: string }[] = [
   { key: 'interest', label: 'Interest' },
-  { key: 'picked', label: 'Selected' },
+  { key: 'unpaid', label: 'Selected — unpaid' },
+  { key: 'paid', label: 'Paid' },
   { key: 'unsuccessful', label: 'Unsuccessful' },
   { key: 'moved', label: 'Moved age group' },
   { key: 'queued', label: 'Review & send' },
@@ -23,8 +24,10 @@ export function inTab(e: E, tab: Tab) {
   switch (tab) {
     case 'interest':
       return ['interested', 'trial-booked', 'attended'].includes(e.status)
-    case 'picked':
-      return ['selected', 'offered', 'registered'].includes(e.status)
+    case 'unpaid':
+      return e.status === 'selected' || e.status === 'offered'
+    case 'paid':
+      return e.status === 'registered'
     case 'unsuccessful':
       return e.status === 'unsuccessful'
     case 'moved':

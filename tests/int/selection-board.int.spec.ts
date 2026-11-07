@@ -7,7 +7,9 @@ const e = (o: Record<string, unknown>) => ({ status: 'interested', birthYear: 20
 describe('selection board', () => {
   it('sorts entries into tabs', () => {
     expect(inTab(e({}), 'interest')).toBe(true)
-    expect(inTab(e({ status: 'offered' }), 'picked')).toBe(true)
+    expect(inTab(e({ status: 'offered' }), 'unpaid')).toBe(true)
+    expect(inTab(e({ status: 'registered' }), 'paid')).toBe(true)
+    expect(inTab(e({ status: 'registered' }), 'unpaid')).toBe(false)
     expect(inTab(e({ status: 'unsuccessful' }), 'unsuccessful')).toBe(true)
     expect(inTab(e({ playingBirthYear: 2016 }), 'moved')).toBe(true)
     expect(inTab(e({ outcomeQueued: 'selected' }), 'queued')).toBe(true)

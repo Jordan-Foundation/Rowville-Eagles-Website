@@ -889,6 +889,14 @@ export interface SelectionEntry {
    */
   outcomeQueued?: ('selected' | 'successful' | 'unsuccessful') | null;
   outcomeEmail?: boolean | null;
+  /**
+   * Set when the outcome is sent; staff can extend it
+   */
+  paymentDueAt?: string | null;
+  remindersSent?: number[] | null;
+  paidAt?: string | null;
+  releasedAt?: string | null;
+  booking?: (number | null) | Booking;
   selectedAt?: string | null;
   outcomeSentAt?: string | null;
   outcomeSentBy?: (number | null) | User;
@@ -922,32 +930,6 @@ export interface SelectionEntry {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "trial-sessions".
- */
-export interface TrialSession {
-  id: number;
-  /**
-   * e.g. "MiniRoos trials — night 1"
-   */
-  title: string;
-  start: string;
-  durationMinutes?: number | null;
-  capacityPerAgeGroup?: number | null;
-  /**
-   * Which age groups trial on this night, by year of birth — e.g. 2017, 2018
-   */
-  birthYears: number[];
-  location?: string | null;
-  whatToBring?: string | null;
-  /**
-   * Publishing emails everyone on the interest list for these age groups.
-   */
-  status?: ('draft' | 'published' | 'closed') | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "bookings".
  */
 export interface Booking {
@@ -971,6 +953,7 @@ export interface Booking {
   sessionStart?: string | null;
   account?: (number | null) | User;
   participant?: (number | null) | Participant;
+  selectionEntry?: (number | null) | SelectionEntry;
   contact: {
     firstName: string;
     lastName: string;
@@ -995,6 +978,32 @@ export interface Booking {
    * Season registrations: FV section completed in PlayFootball
    */
   playFootballComplete?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "trial-sessions".
+ */
+export interface TrialSession {
+  id: number;
+  /**
+   * e.g. "MiniRoos trials — night 1"
+   */
+  title: string;
+  start: string;
+  durationMinutes?: number | null;
+  capacityPerAgeGroup?: number | null;
+  /**
+   * Which age groups trial on this night, by year of birth — e.g. 2017, 2018
+   */
+  birthYears: number[];
+  location?: string | null;
+  whatToBring?: string | null;
+  /**
+   * Publishing emails everyone on the interest list for these age groups.
+   */
+  status?: ('draft' | 'published' | 'closed') | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1642,6 +1651,11 @@ export interface SelectionEntriesSelect<T extends boolean = true> {
   squad?: T;
   outcomeQueued?: T;
   outcomeEmail?: T;
+  paymentDueAt?: T;
+  remindersSent?: T;
+  paidAt?: T;
+  releasedAt?: T;
+  booking?: T;
   selectedAt?: T;
   outcomeSentAt?: T;
   outcomeSentBy?: T;
@@ -1751,6 +1765,7 @@ export interface BookingsSelect<T extends boolean = true> {
   sessionStart?: T;
   account?: T;
   participant?: T;
+  selectionEntry?: T;
   contact?:
     | T
     | {

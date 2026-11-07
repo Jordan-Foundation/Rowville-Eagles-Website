@@ -20,6 +20,7 @@ import * as migration_20261107_004109_booking_reschedule from './20261107_004109
 import * as migration_20261107_013526_birth_year_age_groups from './20261107_013526_birth_year_age_groups';
 import * as migration_20261107_015825_selection_rounds_entries from './20261107_015825_selection_rounds_entries';
 import * as migration_20261107_021548_squads_outcomes from './20261107_021548_squads_outcomes';
+import * as migration_20261107_023646_selection_payments from './20261107_023646_selection_payments';
 
 export const migrations = [
   {
@@ -130,6 +131,11 @@ export const migrations = [
   {
     up: migration_20261107_021548_squads_outcomes.up,
     down: migration_20261107_021548_squads_outcomes.down,
-    name: '20261107_021548_squads_outcomes'
+    name: '20261107_021548_squads_outcomes',
+  },
+  {
+    up: migration_20261107_023646_selection_payments.up,
+    down: migration_20261107_023646_selection_payments.down,
+    name: '20261107_023646_selection_payments'
   },
 ];

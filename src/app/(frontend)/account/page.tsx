@@ -35,7 +35,9 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
     getAgeRules(p),
   ])
   const credit = credits.available
-  const pendingOffers = participants.docs.filter((x) => x.registrationOffer?.status === 'offered' && x.registrationOffer.program)
+  // Rowville offers that came through selections show in "Trials & selections" with their own button
+  const offeredBySelection = new Set(selections.filter((e) => e.status === 'offered').map((e) => (typeof e.participant === 'object' ? e.participant?.id : e.participant)))
+  const pendingOffers = participants.docs.filter((x) => x.registrationOffer?.status === 'offered' && x.registrationOffer.program && !offeredBySelection.has(x.id))
   const now = Date.now()
   type Item = { key: string; date: string | null; title: string; detail: string; badge: 'RFA' | 'Club'; status?: string; href?: string }
   const clubItems: Item[] = bookings.docs

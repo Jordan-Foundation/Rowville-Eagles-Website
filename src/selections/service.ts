@@ -9,6 +9,7 @@ import { sendSms } from '../lib/sms'
 import { sendOffer } from '../lib/trials'
 import { pickOutcome, playingYear } from './board'
 import { DEFAULT_TEMPLATES, fill, leftovers, toHtml, type OutcomeKind } from './templates'
+import { dueDate, payUrl } from './payment'
 
 /** Selection dashboard actions (server). Nothing reaches a family until staff press "Send" in Review & send. */
 
@@ -19,7 +20,7 @@ export async function loadRound(payload: Payload, roundId: number) {
   if (!round) return null
   const [{ docs: squads }, { docs: entries }] = await Promise.all([
     payload.find({ collection: 'squads', where: { round: { equals: roundId } }, sort: 'name', limit: 200, depth: 1, overrideAccess: true }),
-    payload.find({ collection: 'selection-entries', where: { round: { equals: roundId } }, sort: 'player.lastName', limit: 5000, depth: 1, overrideAccess: true }),
+    payload.find({ collection: 'selection-entries', where: { round: { equals: roundId } }, sort: 'player.lastName', limit: 5000, depth: 1, overrideAccess: true, showHiddenFields: true }),
   ])
   return { round, squads, entries }
 }
@@ -103,7 +104,7 @@ export function renderOutcome(e: SelectionEntry, round: SelectionRound, rules: A
   const squad = e.squad && typeof e.squad === 'object' ? (e.squad as Squad) : null
   const program = round.program && typeof round.program === 'object' ? (round.program as Program) : null
   const by = playingYear(e)
-  const deadline = new Date(Date.now() + (round.paymentDeadlineDays ?? 7) * 86_400_000).toISOString()
+  const deadline = e.paymentDueAt ?? dueDate(new Date(), round.paymentDeadlineDays)
   const vars = {
     parent: e.contact.firstName,
     player: e.player.firstName,
@@ -111,7 +112,7 @@ export function renderOutcome(e: SelectionEntry, round: SelectionRound, rules: A
     team: squad?.name ?? '',
     ageGroup: by ? groupLabel(by) : '',
     event: round.kind === 'tournament' ? (program?.title ?? round.title) : `Rowville Eagles ${round.season}`,
-    link: `${siteUrl()}/account`,
+    link: payUrl(e),
     deadline: formatDate(deadline, { weekday: 'long', day: 'numeric', month: 'long' }),
   }
   const t = templateFor(round, kind)
@@ -130,9 +131,12 @@ export async function sendQueued(payload: Payload, roundId: number, actor: User,
   const queued = data.entries.filter((e) => e.outcomeQueued)
   const brand = round.kind === 'tournament' && round.program && typeof round.program === 'object' && (round.program as Program).brand === 'academy' ? 'academy' : 'club'
   const result = { selected: 0, successful: 0, unsuccessful: 0, emailed: 0, failed: [] as string[] }
-  for (const e of queued) {
-    const r = renderOutcome(e, round, rules)
+  for (const queuedEntry of queued) {
     const now = new Date().toISOString()
+    const due = dueDate(new Date(), round.paymentDeadlineDays)
+    // The deadline in the message must match the one we store
+    const e = { ...queuedEntry, paymentDueAt: queuedEntry.outcomeQueued === 'unsuccessful' ? queuedEntry.paymentDueAt : due }
+    const r = renderOutcome(e, round, rules)
     try {
       const user = e.account ? ((await payload.findByID({ collection: 'users', id: rel(e.account)!, depth: 0, overrideAccess: true, disableErrors: true })) as User | null) : null
       if (r.kind === 'successful') {
@@ -142,10 +146,10 @@ export async function sendQueued(payload: Payload, roundId: number, actor: User,
           id: e.id,
           overrideAccess: true,
           context: { skipOffer: true },
-          data: { status: 'offered', offeredTeam: rel(squad.team), registrationProgram: rel(round.program), outcomeQueued: null, outcomeSentAt: now, outcomeSentBy: actor.id, selectedAt: now },
+          data: { status: 'offered', offeredTeam: rel(squad.team), registrationProgram: rel(round.program), outcomeQueued: null, outcomeSentAt: now, outcomeSentBy: actor.id, selectedAt: now, paymentDueAt: due, remindersSent: [] },
         })
         const fresh = await payload.findByID({ collection: 'selection-entries', id: e.id, depth: 0, overrideAccess: true })
-        await sendOffer(payload, fresh, undefined, { subject: r.subject, heading: r.heading, bodyHtml: r.bodyHtml })
+        await sendOffer(payload, fresh, undefined, { subject: r.subject, heading: r.heading, bodyHtml: r.bodyHtml, cta: { label: 'Complete registration', href: payUrl(e) } })
         result.successful++
         result.emailed++
       } else {
@@ -154,10 +158,10 @@ export async function sendQueued(payload: Payload, roundId: number, actor: User,
           id: e.id,
           overrideAccess: true,
           context: { skipOffer: true },
-          data: { status: r.kind === 'selected' ? 'selected' : 'unsuccessful', outcomeQueued: null, outcomeSentAt: now, outcomeSentBy: actor.id, ...(r.kind === 'selected' ? { selectedAt: now } : {}) },
+          data: { status: r.kind === 'selected' ? 'selected' : 'unsuccessful', outcomeQueued: null, outcomeSentAt: now, outcomeSentBy: actor.id, ...(r.kind === 'selected' ? { selectedAt: now, paymentDueAt: due, remindersSent: [] } : {}) },
         })
         if (r.kind === 'selected' || e.outcomeEmail !== false) {
-          const html = emailLayout(brand, [{ heading: r.heading, intro: r.bodyHtml, ...(r.kind === 'selected' ? { cta: { label: 'Go to my account', href: `${siteUrl()}/account` } } : {}) }])
+          const html = emailLayout(brand, [{ heading: r.heading, intro: r.bodyHtml, ...(r.kind === 'selected' ? { cta: { label: 'Complete registration', href: payUrl(e) } } : {}) }])
           await sendEmail(payload, { to: e.contact.email, subject: r.subject, html, sender: brand, userId: user?.id })
           result.emailed++
         }

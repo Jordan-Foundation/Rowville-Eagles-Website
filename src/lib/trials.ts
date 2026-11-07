@@ -115,7 +115,7 @@ export async function sendOffer(
   reg: SelectionEntry,
   req?: PayloadRequest,
   /** From the selection dashboard: the reviewed template message (heading + paragraphs) instead of the default text */
-  custom?: { subject: string; heading: string; bodyHtml: string },
+  custom?: { subject: string; heading: string; bodyHtml: string; cta?: { label: string; href: string } },
 ) {
   const programId = typeof reg.registrationProgram === 'object' ? reg.registrationProgram?.id : reg.registrationProgram
   const teamId = typeof reg.offeredTeam === 'object' ? reg.offeredTeam?.id : reg.offeredTeam
@@ -153,7 +153,7 @@ export async function sendOffer(
         ['Team', team.name],
         ['Club registration', formatAUD(program.price)],
       ],
-      cta: link,
+      cta: custom?.cta ?? link,
       after:
         'After paying the club fee you’ll complete the Football Victoria section in PlayFootball. This link is personal — please don’t forward it.',
     },
