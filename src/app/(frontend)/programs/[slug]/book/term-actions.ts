@@ -4,7 +4,7 @@ import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { payload } from '@/lib/payload'
 import { birthYearOf } from '@/lib/age-groups'
-import { checkoutRegistration, emailInterest, existingRegistration, programSlots, slotTaken, TermClosedError } from '@/academy/terms/service'
+import { checkoutRegistrations, emailInterest, existingRegistration, nightRate, programSlots, slotTaken, TermClosedError } from '@/academy/terms/service'
 import { slotChoice, termQuote } from '@/academy/terms/slots'
 
 export type TermState = { error?: string; interest?: { reference: string; reason: 'no_slot' | 'full'; email: string }; values?: Record<string, string> }
@@ -62,18 +62,36 @@ export async function bookTerm(_prev: TermState, fd: FormData): Promise<TermStat
     return { interest: { reference: reg.reference ?? '', reason: choice.reason, email: contact.email } }
   }
 
-  const slot = choice.mode === 'auto' ? choice.slots[0] : choice.slots.find((s) => s.id === Number(str(fd, 'slot')))
-  if (!slot) {
-    // Their pick filled up while they were on the page, or none was chosen
-    return fail(Number(str(fd, 'slot')) ? 'Sorry, that training time just filled up — please choose another.' : 'Please choose a training time.')
+  // 1 night: one time (picked for them if only one fits). 2 nights: two times at the 2-night rate.
+  const twoNights = str(fd, 'nights') === '2' && program.twoNightPricePerSession != null
+  const open = slotChoice(slots, birthYear, taken, (s) => termQuote(s, program, nightRate(program, twoNights ? 2 : 1)).bookable).slots
+  let picked: typeof open
+  if (twoNights) {
+    const want = fd.getAll('slots').map(Number)
+    picked = open.length === 2 ? open : open.filter((s) => want.includes(s.id))
+    if (open.length < 2) return fail('There aren’t two training times with space for this age group — please choose 1 night a week.')
+    if (picked.length !== 2) return fail('Choose two training times.')
+  } else {
+    const one = choice.mode === 'auto' ? choice.slots[0] : choice.slots.find((s) => s.id === Number(str(fd, 'slot')))
+    if (!one) return fail(Number(str(fd, 'slot')) ? 'Sorry, that training time just filled up — please choose another.' : 'Please choose a training time.')
+    picked = [one]
   }
 
-  const reg = existing
-    ? await p.update({ collection: 'academy-registrations', id: existing.id, overrideAccess: true, showHiddenFields: true, data: { contact, player, account: accountId ?? existing.account } })
-    : await p.create({ collection: 'academy-registrations', overrideAccess: true, showHiddenFields: true, data: { program: program.id, status: 'pending_payment', slot: slot.id, contact, player, account: accountId } })
+  // Nights in week order (first session first)
+  picked = [...picked].sort((a, b) => (termQuote(a, program, program).sessions[0]?.startsAt ?? '').localeCompare(termQuote(b, program, program).sessions[0]?.startsAt ?? ''))
+  // A checkout that was started but not finished is replaced by this one
+  if (existing?.status === 'pending_payment') {
+    for (const id of [existing.id, typeof existing.pairedWith === 'object' ? existing.pairedWith?.id : existing.pairedWith].filter(Boolean) as number[]) {
+      await p.update({ collection: 'academy-registrations', id, overrideAccess: true, data: { status: 'cancelled', notes: 'Replaced by a new booking' } })
+    }
+  }
+  const regs = []
+  for (const s of picked) {
+    regs.push(await p.create({ collection: 'academy-registrations', overrideAccess: true, showHiddenFields: true, data: { program: program.id, status: 'pending_payment', slot: s.id, contact, player, account: accountId, nights: twoNights ? '2' : '1' } }))
+  }
   let url: string
   try {
-    url = await checkoutRegistration(p, reg, program, slot, `/programs/${program.slug}/book?cancelled=1`)
+    url = await checkoutRegistrations(p, regs.map((reg, i) => ({ reg, slot: picked[i] })), program, `/programs/${program.slug}/book?cancelled=1`)
   } catch (e) {
     if (e instanceof TermClosedError) return fail(e.message)
     p.logger.error(e)

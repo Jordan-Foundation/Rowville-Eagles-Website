@@ -72,11 +72,21 @@ export class TermClosedError extends Error {
 /** "8 sessions × $25 = $200" */
 export const quoteLabel = (q: ReturnType<typeof termQuote>) => (q.perSession !== null ? `${q.count} sessions × ${formatAUD(q.perSession)} = ${formatAUD(q.total)}` : formatAUD(q.total))
 
-/** Create the payment for a registration and return where to send the family (Stripe, or success when free). */
-export async function checkoutRegistration(payload: Payload, reg: AcademyRegistration, program: Program, slot: AcademyTermSlot, cancelPath: string) {
-  const quote = termQuote(slot, program, program)
-  if (!quote.bookable) throw new TermClosedError()
-  const amount = quote.total
+/** Rate for one or two nights a week. */
+export const nightRate = (program: Pick<Program, 'pricePerSession' | 'twoNightPricePerSession' | 'price'>, nights: 1 | 2) =>
+  nights === 2 && program.twoNightPricePerSession != null ? { pricePerSession: program.twoNightPricePerSession, price: program.price } : { pricePerSession: program.pricePerSession, price: program.price }
+
+/**
+ * Create one payment for a registration — or both nights of a 2-nights-a-week place — and return where
+ * to send the family (Stripe, or the success page when free).
+ */
+export async function checkoutRegistrations(payload: Payload, items: { reg: AcademyRegistration; slot: AcademyTermSlot }[], program: Program, cancelPath: string) {
+  const nights = items.length === 2 ? 2 : 1
+  const rate = nightRate(program, nights)
+  const quotes = items.map((i) => ({ ...i, quote: termQuote(i.slot, program, rate) }))
+  if (quotes.some((q) => !q.quote.bookable)) throw new TermClosedError()
+  const amount = Math.round(quotes.reduce((n, q) => n + q.quote.total, 0) * 100) / 100
+  const primary = quotes[0].reg
   const payee = payeeOf(program)
   const reference = newReference(payee)
   const booking = await payload.create({
@@ -88,29 +98,39 @@ export async function checkoutRegistration(payload: Payload, reg: AcademyRegistr
       status: 'pending',
       payee,
       amount,
-      birthYear: reg.playingBirthYear ?? reg.birthYear ?? undefined,
-      account: rel(reg.account) ?? undefined,
-      participant: rel(reg.participant) ?? undefined,
-      academyRegistration: reg.id,
-      contact: reg.contact,
-      player: { ...reg.player, teamName: undefined },
+      birthYear: primary.playingBirthYear ?? primary.birthYear ?? undefined,
+      account: rel(primary.account) ?? undefined,
+      participant: rel(primary.participant) ?? undefined,
+      academyRegistration: primary.id,
+      contact: primary.contact,
+      player: { ...primary.player, teamName: undefined },
     },
   })
-  await payload.update({ collection: 'academy-registrations', id: reg.id, overrideAccess: true, data: { status: 'pending_payment', slot: slot.id, booking: booking.id, amount } })
+  for (const [n, q] of quotes.entries()) {
+    const other = quotes[1 - n]
+    await payload.update({
+      collection: 'academy-registrations',
+      id: q.reg.id,
+      overrideAccess: true,
+      data: { status: 'pending_payment', slot: q.slot.id, booking: booking.id, amount: q.quote.total, nights: String(nights) as '1' | '2', pairedWith: nights === 2 ? other.reg.id : null },
+    })
+  }
   if (!amount) {
     await confirmPayment(payload, 'booking', reference)
     return `/checkout/success?kind=booking&ref=${reference}`
   }
+  const who = `${primary.player.firstName} ${primary.player.lastName}`
   try {
     const checkout = await startCheckout({
       payee,
       kind: 'booking',
       reference,
-      email: reg.contact.email,
-      items:
-        quote.perSession !== null
-          ? [{ name: `${program.title} — ${quote.count} sessions`, description: `${reg.player.firstName} ${reg.player.lastName} · ${slotLabel(slot)}`, unitAmount: quote.perSession, quantity: quote.count }]
-          : [{ name: program.title, description: `${reg.player.firstName} ${reg.player.lastName} · ${slotLabel(slot)}`, unitAmount: amount, quantity: 1 }],
+      email: primary.contact.email,
+      items: quotes.map((q) =>
+        q.quote.perSession !== null
+          ? { name: `${program.title} — ${slotLabel(q.slot)}`, description: `${who} · ${q.quote.count} sessions${nights === 2 ? ' (2 nights a week)' : ''}`, unitAmount: q.quote.perSession, quantity: q.quote.count }
+          : { name: program.title, description: `${who} · ${slotLabel(q.slot)}`, unitAmount: q.quote.total, quantity: 1 },
+      ),
       cancelPath,
     })
     if (checkout.sessionId) await payload.update({ collection: 'bookings', id: booking.id, overrideAccess: true, data: { stripeCheckoutId: checkout.sessionId } })
@@ -120,6 +140,10 @@ export async function checkoutRegistration(payload: Payload, reg: AcademyRegistr
     throw e
   }
 }
+
+/** One night (offers and single bookings). */
+export const checkoutRegistration = (payload: Payload, reg: AcademyRegistration, program: Program, slot: AcademyTermSlot, cancelPath: string) =>
+  checkoutRegistrations(payload, [{ reg, slot }], program, cancelPath)
 
 // ── Emails ───────────────────────────────────────────────────────────────────
 
@@ -216,10 +240,10 @@ export async function offerSlot(payload: Payload, regId: number, slotId: number,
 export async function markTermRegistrationPaid(payload: Payload, booking: Booking) {
   const id = rel(booking.academyRegistration)
   if (!id) return null
-  return payload.update({
-    collection: 'academy-registrations',
-    id,
-    overrideAccess: true,
-    data: { status: 'paid', paidAt: new Date().toISOString(), booking: booking.id, account: rel(booking.account), participant: rel(booking.participant) },
-  })
+  const data = { status: 'paid' as const, paidAt: new Date().toISOString(), booking: booking.id, account: rel(booking.account), participant: rel(booking.participant) }
+  const primary = await payload.update({ collection: 'academy-registrations', id, overrideAccess: true, data })
+  // 2 nights a week: the other night is paid by the same booking
+  const other = rel(primary.pairedWith as never)
+  const second = other ? await payload.update({ collection: 'academy-registrations', id: other, overrideAccess: true, data }) : null
+  return { ...primary, second }
 }

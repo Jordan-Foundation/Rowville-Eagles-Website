@@ -693,6 +693,10 @@ export interface Program {
    */
   price?: number | null;
   /**
+   * Offer 2 nights a week at this price per session (e.g. $20), for age groups with two training times. Leave empty for 1 night only.
+   */
+  twoNightPricePerSession?: number | null;
+  /**
    * Families pay this × the sessions left in their training time (like 1-on-1 terms), e.g. $25.
    */
   pricePerSession?: number | null;
@@ -867,6 +871,11 @@ export interface AcademyRegistration {
    * Group within the slot (set on the staff dashboard)
    */
   groupId?: string | null;
+  nights?: ('1' | '2') | null;
+  /**
+   * 2 nights a week: the registration for the other night (paid together)
+   */
+  pairedWith?: (number | null) | AcademyRegistration;
   birthYear?: number | null;
   /**
    * Only when placed outside their own age group
@@ -2138,6 +2147,8 @@ export interface AcademyRegistrationsSelect<T extends boolean = true> {
   program?: T;
   slot?: T;
   groupId?: T;
+  nights?: T;
+  pairedWith?: T;
   birthYear?: T;
   playingBirthYear?: T;
   amount?: T;
@@ -2595,6 +2606,7 @@ export interface ProgramsSelect<T extends boolean = true> {
   location?: T;
   ageRange?: T;
   price?: T;
+  twoNightPricePerSession?: T;
   pricePerSession?: T;
   capacity?: T;
   priceNote?: T;

@@ -30,6 +30,7 @@ export function TermList({ regs, showPlayer = true }: { regs: AcademyRegistratio
                 <p className="font-semibold">
                   {showPlayer ? `${r.player.firstName} · ` : ''}
                   {program.title}
+                  {r.nights === '2' && <span className="ml-2 text-xs font-normal text-muted">2 nights a week</span>}
                 </p>
                 <p className="text-sm text-muted">{slot ? slotLabel(slot) : by ? `${groupLabel(by)} — training time to be confirmed` : 'Training time to be confirmed'}</p>
                 {r.status === 'paid' && (group || coachList.length > 0) && (

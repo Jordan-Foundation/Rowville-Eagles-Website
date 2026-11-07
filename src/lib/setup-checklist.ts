@@ -81,7 +81,7 @@ export async function setupChecklist(payload: Payload, ticked: Record<string, bo
       items: [
         auto('google-review', 'Google review link', 'Admin → Academy settings → Google review link (from your Google Business Profile → “Ask for reviews”).', Boolean(academy?.googleReviewUrl), { href: '/admin/globals/academy-settings' }),
         auto('term-slots', 'Training times added to open Academy term programs', 'Staff → Academy terms → Add a training time.', termsWithout.length === 0, { note: termsWithout.length ? `Missing: ${termsWithout.map((p) => p.title).join(', ')}` : undefined, href: '/staff/academy/terms' }),
-        manual('prices-reviewed', 'Prices checked', 'Admin → Prices: 1-on-1 ($80/$85/$70), group terms ($25 per session), camps, registrations, tournaments, shop.', { href: '/admin/prices' }),
+        manual('prices-reviewed', 'Prices checked', 'Admin → Prices: 1-on-1 ($80/$85/$70), group terms ($25 per session, $20 on 2 nights a week), camps, registrations, tournaments, shop.', { href: '/admin/prices' }),
         manual('trial-years', 'Trial-night years of birth checked', 'Admin → Programs → each Academy term → Weekly training nights. For the 2027 season MiniRoos are born 2016–2021.'),
       ],
     },

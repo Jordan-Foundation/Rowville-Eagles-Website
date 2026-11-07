@@ -5,17 +5,25 @@ import { useFormStatus } from 'react-dom'
 import { bookTerm, type TermState } from './term-actions'
 import { Field, Fieldset, Input, inputCls } from '@/components/forms/Field'
 
-export type TermSlotOption = { id: number; label: string; years: string; birthYears: number[]; remaining: number | null; sessions: string; bookable: boolean; total: number; priceLabel: string }
+export type TermSlotOption = { id: number; label: string; years: string; birthYears: number[]; remaining: number | null; sessions: string; bookable: boolean; total: number; priceLabel: string; twoTotal: number; twoLabel: string }
 
-export function TermBookingForm(props: { slug: string; slots: TermSlotOption[]; payeeLabel: string; prefill?: Record<string, string> }) {
+export function TermBookingForm(props: { slug: string; slots: TermSlotOption[]; rates: { one: number | null; two: number | null }; payeeLabel: string; prefill?: Record<string, string> }) {
   const [state, action] = useActionState<TermState, FormData>(bookTerm, {})
   const v = { ...props.prefill, ...state.values }
   const [dob, setDob] = useState(v.playerDob ?? '')
   const [picked, setPicked] = useState(v.slot ?? '')
   const year = /^\d{4}-\d{2}-\d{2}$/.test(dob) ? Number(dob.slice(0, 4)) : null
   const fits = year ? props.slots.filter((s) => s.birthYears.includes(year) && s.bookable) : []
+  // (2-night totals add both nights' sessions at the 2-night rate)
   const open = fits.filter((s) => s.remaining !== 0)
+  const [nights, setNights] = useState<'1' | '2'>(v.nights === '2' ? '2' : '1')
+  const [pair, setPair] = useState<number[]>([])
+  const canTwo = props.rates.two != null && open.length >= 2
+  const two = canTwo && nights === '2'
+  const twoPicked = open.length === 2 ? open : open.filter((s) => pair.includes(s.id))
   const chosen = open.length === 1 ? open[0] : open.find((s) => String(s.id) === picked)
+  const total = two ? (twoPicked.length === 2 ? twoPicked.reduce((n, s) => n + s.twoTotal, 0) : null) : (chosen?.total ?? null)
+  const togglePair = (id: number) => setPair((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id].slice(-2)))
   const aud = (n: number) => n.toLocaleString('en-AU', { style: 'currency', currency: 'AUD', minimumFractionDigits: n % 1 ? 2 : 0 })
   const interest = year !== null && open.length === 0
 
@@ -52,21 +60,57 @@ export function TermBookingForm(props: { slug: string; slots: TermSlotOption[]; 
               interest below — <strong>nothing is charged</strong>, and we’ll email you when a place is available.
             </p>
           ) : (
-            <div className="grid gap-2">
-              {open.length > 1 && <p className="mb-1 text-sm text-muted">Choose the time that suits you best:</p>}
-              {open.map((s) => (
-                <label key={s.id} className="flex cursor-pointer items-start justify-between gap-3 rounded-lg border border-line bg-surface px-4 py-3 text-sm has-[:checked]:border-ink has-[:checked]:ring-1 has-[:checked]:ring-ink">
-                  <span className="flex items-start gap-3">
-                    <input type="radio" name="slot" value={s.id} required checked={open.length === 1 || picked === String(s.id)} onChange={() => setPicked(String(s.id))} className="mt-1 accent-current" />
-                    <span>
-                      <span className="block font-semibold">{s.label}</span>
-                      <span className="block text-xs text-muted">{s.years} · {s.sessions}</span>
-                      <span className="block text-xs font-semibold">{s.priceLabel}</span>
-                    </span>
-                  </span>
-                  {s.remaining !== null && <span className="shrink-0 text-xs text-muted">{s.remaining} left</span>}
-                </label>
-              ))}
+            <div className="grid gap-3">
+              {canTwo && (
+                <div className="grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Nights a week">
+                  {(['1', '2'] as const).map((n) => (
+                    <label key={n} className="flex cursor-pointer items-center gap-3 rounded-lg border border-line bg-surface px-4 py-3 text-sm has-[:checked]:border-ink has-[:checked]:ring-1 has-[:checked]:ring-ink">
+                      <input type="radio" name="nights" value={n} checked={nights === n} onChange={() => setNights(n)} className="accent-current" />
+                      <span>
+                        <span className="block font-semibold">{n === '1' ? '1 night a week' : '2 nights a week'}</span>
+                        <span className="block text-xs text-muted">{aud((n === '1' ? props.rates.one : props.rates.two) ?? 0)} per session</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              )}
+              {!two && <input type="hidden" name="nights" value="1" />}
+              {two ? (
+                <>
+                  <p className="text-sm text-muted">{open.length === 2 ? 'Your two training times:' : 'Choose two training times:'}</p>
+                  {open.map((s) => (
+                    <label key={s.id} className="flex cursor-pointer items-start justify-between gap-3 rounded-lg border border-line bg-surface px-4 py-3 text-sm has-[:checked]:border-ink has-[:checked]:ring-1 has-[:checked]:ring-ink">
+                      <span className="flex items-start gap-3">
+                        <input type="checkbox" name="slots" value={s.id} checked={open.length === 2 || pair.includes(s.id)} disabled={open.length === 2} onChange={() => togglePair(s.id)} className="mt-1 accent-current" />
+                        {open.length === 2 && <input type="hidden" name="slots" value={s.id} />}
+                        <span>
+                          <span className="block font-semibold">{s.label}</span>
+                          <span className="block text-xs text-muted">{s.years} · {s.sessions}</span>
+                          <span className="block text-xs font-semibold">{s.twoLabel}</span>
+                        </span>
+                      </span>
+                      {s.remaining !== null && <span className="shrink-0 text-xs text-muted">{s.remaining} left</span>}
+                    </label>
+                  ))}
+                </>
+              ) : (
+                <>
+                  {open.length > 1 && <p className="text-sm text-muted">Choose the night that suits you best:</p>}
+                  {open.map((s) => (
+                    <label key={s.id} className="flex cursor-pointer items-start justify-between gap-3 rounded-lg border border-line bg-surface px-4 py-3 text-sm has-[:checked]:border-ink has-[:checked]:ring-1 has-[:checked]:ring-ink">
+                      <span className="flex items-start gap-3">
+                        <input type="radio" name="slot" value={s.id} required checked={open.length === 1 || picked === String(s.id)} onChange={() => setPicked(String(s.id))} className="mt-1 accent-current" />
+                        <span>
+                          <span className="block font-semibold">{s.label}</span>
+                          <span className="block text-xs text-muted">{s.years} · {s.sessions}</span>
+                          <span className="block text-xs font-semibold">{s.priceLabel}</span>
+                        </span>
+                      </span>
+                      {s.remaining !== null && <span className="shrink-0 text-xs text-muted">{s.remaining} left</span>}
+                    </label>
+                  ))}
+                </>
+              )}
             </div>
           )}
         </fieldset>
@@ -103,7 +147,7 @@ export function TermBookingForm(props: { slug: string; slots: TermSlotOption[]; 
           {state.error}
         </p>
       )}
-      <Submit label={interest ? 'Register interest · no charge' : chosen ? `Continue to payment · ${aud(chosen.total)}` : 'Continue to payment'} />
+      <Submit label={interest ? 'Register interest · no charge' : total != null ? `Continue to payment · ${aud(total)}` : 'Continue to payment'} />
       {!interest && <p className="text-center text-xs text-muted">Secure payment by Stripe · Paid to {props.payeeLabel}</p>}
     </form>
   )

@@ -61,6 +61,13 @@ export const AcademyRegistrations: CollectionConfig = {
     {
       type: 'row',
       fields: [
+        { name: 'nights', label: 'Nights a week', type: 'select', defaultValue: '1', options: [{ label: '1 night', value: '1' }, { label: '2 nights', value: '2' }] },
+        { name: 'pairedWith', label: 'Other night', type: 'relationship', relationTo: 'academy-registrations', admin: { description: '2 nights a week: the registration for the other night (paid together)' } },
+      ],
+    },
+    {
+      type: 'row',
+      fields: [
         { name: 'birthYear', label: 'Year of birth', type: 'number', index: true, admin: { readOnly: true } },
         { name: 'playingBirthYear', label: 'Playing in (year of birth)', type: 'number', admin: { description: 'Only when placed outside their own age group' } },
         { name: 'amount', label: 'Price (AUD)', type: 'number' },

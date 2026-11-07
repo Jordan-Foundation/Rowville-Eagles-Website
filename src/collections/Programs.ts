@@ -48,6 +48,7 @@ export const Programs: CollectionConfig = {
         }
         // Academy group terms are priced per session (default $25)
         if (type === 'academy-term' && data.pricePerSession == null && !originalDoc?.id) data.pricePerSession = 25
+        if (type === 'academy-term' && data.twoNightPricePerSession === undefined && !originalDoc?.id) data.twoNightPricePerSession = 20
         // The flat price isn't used for per-session terms; keep the column filled
         if (data.price == null || (data.price as unknown) === '') data.price = originalDoc?.price ?? 0
         return {
@@ -139,8 +140,18 @@ export const Programs: CollectionConfig = {
           },
         },
         {
+          name: 'twoNightPricePerSession',
+          label: '2 nights a week — price per session (AUD)',
+          type: 'number',
+          min: 0,
+          admin: {
+            condition: (d) => d?.type === 'academy-term',
+            description: 'Offer 2 nights a week at this price per session (e.g. $20), for age groups with two training times. Leave empty for 1 night only.',
+          },
+        },
+        {
           name: 'pricePerSession',
-          label: 'Price per session (AUD)',
+          label: '1 night a week — price per session (AUD)',
           type: 'number',
           min: 0,
           admin: {

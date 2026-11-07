@@ -11,7 +11,7 @@ export type PriceSection = { title: string; intro: string; rows: PriceRow[] }
 /** Which fields may be edited from the Prices page (anything else is rejected). */
 export const EDITABLE: Record<string, { fields: string[]; nullable?: string[] }> = {
   'academy-terms': { fields: ['pricePerSession', 'casualPrice', 'termMemberPrice', 'termMemberWindowDays'], nullable: ['termMemberPrice'] },
-  programs: { fields: ['price', 'pricePerSession', 'trialPrice'], nullable: ['pricePerSession'] },
+  programs: { fields: ['price', 'pricePerSession', 'twoNightPricePerSession', 'trialPrice'], nullable: ['pricePerSession', 'twoNightPricePerSession'] },
   'selection-rounds': { fields: ['fee'], nullable: ['fee'] },
   squads: { fields: ['fee'], nullable: ['fee'] },
   products: { fields: ['price'] },
@@ -60,14 +60,15 @@ export async function loadPrices(payload: Payload): Promise<PriceSection[]> {
     },
     {
       title: 'Academy group training (terms)',
-      intro: 'Families pay the price per session × the sessions left in their training time (at least 2, booked 24h ahead). Trial sessions use the trial price (0 = free).',
+      intro: 'Families pay the price per session × the sessions left in their training time(s) (at least 2, booked 24h ahead). 2 nights a week uses its own per-session price on both nights; leave it empty to offer 1 night only. Trial sessions use the trial price (0 = free).',
       rows: groupPrograms.docs.map((p) => ({
         title: p.title,
         note: p.status ?? '',
         href: `/admin/collections/programs/${p.id}`,
         muted: done(p.status),
         fields: [
-          { key: `programs.${p.id}.pricePerSession`, label: 'Per session', value: p.pricePerSession ?? null, unit: 'aud', placeholder: 'flat price' },
+          { key: `programs.${p.id}.pricePerSession`, label: '1 night/wk, per session', value: p.pricePerSession ?? null, unit: 'aud', placeholder: 'flat price' },
+          { key: `programs.${p.id}.twoNightPricePerSession`, label: '2 nights/wk, per session', value: p.twoNightPricePerSession ?? null, unit: 'aud', placeholder: 'off' },
           { key: `programs.${p.id}.trialPrice`, label: 'Trial session', value: p.trialPrice ?? 0, unit: 'aud' },
           ...(p.pricePerSession == null ? [{ key: `programs.${p.id}.price`, label: 'Flat term price', value: p.price ?? 0, unit: 'aud' as const }] : []),
         ],

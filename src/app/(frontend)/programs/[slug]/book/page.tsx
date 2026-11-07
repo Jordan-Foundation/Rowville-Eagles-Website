@@ -10,7 +10,7 @@ import { redirect } from 'next/navigation'
 import { currentUser } from '@/lib/auth'
 import { AcademyBackdrop } from '@/components/AcademyBackdrop'
 import { TermBookingForm, type TermSlotOption } from './TermBookingForm'
-import { programSlots, slotTaken } from '@/academy/terms/service'
+import { nightRate, programSlots, slotTaken } from '@/academy/terms/service'
 import { slotLabel as termSlotLabel, spotsLeft, termQuote, yearsLabel } from '@/academy/terms/slots'
 import { programPriceLabel } from '@/lib/format'
 
@@ -69,8 +69,12 @@ export default async function BookPage({
     const slots = (await programSlots(p, program.id)).filter((s) => s.active !== false)
     if (slots.length) {
       const taken = await slotTaken(p, program.id)
+      // Week order: the time with the earliest first session first
+      const first = (s: (typeof slots)[number]) => termQuote(s, program, nightRate(program, 1)).sessions[0]?.startsAt ?? 'z'
+      slots.sort((a, b) => first(a).localeCompare(first(b)))
       termSlots = slots.map((s) => {
-        const q = termQuote(s, program, program)
+        const q = termQuote(s, program, nightRate(program, 1))
+        const q2 = termQuote(s, program, nightRate(program, 2))
         return {
           id: s.id,
           label: termSlotLabel(s),
@@ -81,6 +85,8 @@ export default async function BookPage({
           bookable: q.bookable,
           total: q.total,
           priceLabel: q.perSession !== null ? `${q.count} × ${formatAUD(q.perSession)} = ${formatAUD(q.total)}` : formatAUD(q.total),
+          twoTotal: q2.total,
+          twoLabel: q2.perSession !== null ? `${q2.count} × ${formatAUD(q2.perSession)} = ${formatAUD(q2.total)}` : formatAUD(q2.total),
         }
       })
       const user = await currentUser()
@@ -128,7 +134,7 @@ export default async function BookPage({
                 This program is fully booked. Please check back later or contact the club about the waitlist.
               </p>
             ) : termSlots ? (
-              <TermBookingForm slug={program.slug} slots={termSlots} payeeLabel={stripeAccounts[payee].label} prefill={prefill} />
+              <TermBookingForm slug={program.slug} slots={termSlots} rates={{ one: program.pricePerSession ?? null, two: program.twoNightPricePerSession ?? null }} payeeLabel={stripeAccounts[payee].label} prefill={prefill} />
             ) : (
               <BookingForm
                 slug={program.slug}

@@ -77,9 +77,13 @@ export async function onBookingPaid(payload: Payload, booking: Booking) {
   // Academy term: the registration is paid and the training time goes in the email
   let termRows: [string, string][] = []
   const termReg = await markTermRegistrationPaid(payload, { ...booking, account: user.id, participant: participantId || null })
-  if (termReg?.slot) {
-    const slot = await payload.findByID({ collection: 'academy-term-slots', id: typeof termReg.slot === 'object' ? termReg.slot.id : termReg.slot, depth: 0, overrideAccess: true, disableErrors: true })
-    if (slot) termRows = slotRows(slot, program)
+  for (const reg of [termReg, termReg?.second]) {
+    if (!reg?.slot) continue
+    const slot = await payload.findByID({ collection: 'academy-term-slots', id: typeof reg.slot === 'object' ? reg.slot.id : reg.slot, depth: 0, overrideAccess: true, disableErrors: true })
+    if (!slot) continue
+    const rows = slotRows(slot, program)
+    // 2 nights a week: label each night
+    termRows.push(...(termReg?.second ? rows.map(([k, v]) => [k === 'Training' ? (reg === termReg ? 'Night 1' : 'Night 2') : k, v] as [string, string]).filter(([k]) => reg === termReg || k !== 'Age groups') : rows))
   }
 
   const link = await accountLink(payload, user)
