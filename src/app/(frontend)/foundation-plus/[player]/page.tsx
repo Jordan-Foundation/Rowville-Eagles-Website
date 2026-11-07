@@ -3,6 +3,8 @@ import type { Metadata } from 'next'
 import { foundationGate, loadCabinet, loadReport, reportPlayer } from '@/academy/pdr/load'
 import { BadgeArt } from '../Badge'
 import { Celebrate } from '../Celebrate'
+import { PrivacyForm } from './PrivacyForm'
+import { displayName } from '@/academy/pdr/leaderboard'
 import { TIER_LABEL } from '@/academy/pdr/report'
 import { Bar, Crumbs } from '../ui'
 
@@ -26,7 +28,10 @@ export default async function PlayerReport({ params }: { params: Promise<{ playe
           <p className="eyebrow">{settings.name} · {TIER_LABEL[tier]} plan</p>
           <h1 className="mt-2 font-display text-5xl font-bold uppercase tracking-tight">{kid.firstName} {kid.lastName.charAt(0)}.</h1>
         </div>
-        <p className="text-sm text-muted">{passed} stage{passed === 1 ? '' : 's'} passed</p>
+        <div className="text-right text-sm">
+          <p className="text-muted">{passed} stage{passed === 1 ? '' : 's'} passed</p>
+          <Link href="/foundation-plus/leaderboards" className="mt-1 inline-block font-semibold uppercase tracking-[0.15em]">🏆 Leaderboards →</Link>
+        </div>
       </div>
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {report.map((a) => (
@@ -62,6 +67,16 @@ export default async function PlayerReport({ params }: { params: Promise<{ playe
 
       {owner && toCelebrate.length > 0 && (
         <Celebrate player={kid.id} badges={toCelebrate.map((b) => ({ awardId: b.awardId!, name: b.name, area: b.area.name, level: b.level, art: <BadgeArt badge={b} size={140} /> }))} />
+      )}
+
+      {owner && (
+        <section className="panel mt-8 border border-line p-6">
+          <h2 className="font-display text-xl font-semibold uppercase">Leaderboard privacy</h2>
+          <p className="mt-1 mb-4 text-sm text-muted">
+            {kid.pdr?.leaderboardOptOut ? `${kid.firstName} is hidden from leaderboards.` : `${kid.firstName} shows as “${displayName(kid)}” with their age group — no surname, school or photo.`}
+          </p>
+          <PrivacyForm player={kid.id} show={!kid.pdr?.leaderboardOptOut} name={kid.pdr?.leaderboardName ?? ''} fallback={displayName({ ...kid, pdr: null })} />
+        </section>
       )}
 
       {tier === 'free' && (

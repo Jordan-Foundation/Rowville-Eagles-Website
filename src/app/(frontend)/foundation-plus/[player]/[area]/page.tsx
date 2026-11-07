@@ -21,7 +21,10 @@ export default async function AreaPage({ params }: { params: Promise<{ player: s
       <Crumbs items={[{ href: '/foundation-plus', label: settings.name }, { href: `/foundation-plus/${kid.id}`, label: kid.firstName }, { label: a.area.name }]} />
       <h1 className="font-display text-5xl font-bold uppercase tracking-tight">{a.area.name}</h1>
       <div className="mt-4 max-w-md"><Bar percent={a.percent} colour={a.area.colour} /></div>
-      <p className="mt-2 text-sm text-muted">{a.passed} of {a.total} stages · {a.area.hasLeaderboard ? 'Has a leaderboard' : 'No leaderboard — judged by coaches'}</p>
+      <p className="mt-2 text-sm text-muted">
+        {a.passed} of {a.total} stages ·{' '}
+        {a.area.hasLeaderboard ? <Link href={`/foundation-plus/leaderboards/${a.area.slug}`} className="underline">🏆 {a.area.name} leaderboard</Link> : 'No leaderboard — judged by coaches'}
+      </p>
 
       <div className="mt-10 space-y-6">
         {a.levels.map((l) => (

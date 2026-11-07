@@ -6,6 +6,9 @@ import { canSubmit, monthStart } from '@/academy/pdr/rules'
 import { playbackUrl, streamConfigured } from '@/academy/pdr/stream'
 import { SubmitForm } from './SubmitForm'
 import { PromoteForm } from './PromoteForm'
+import { stageStanding } from '@/academy/pdr/leaderboard-data'
+import { standingText } from '@/academy/pdr/leaderboard'
+import Link from 'next/link'
 import { criteriaSummary } from '@/academy/pdr/content'
 import { STATUS_LABEL, stageSlug } from '@/academy/pdr/report'
 import type { PdrVideo } from '@/payload-types'
@@ -57,6 +60,8 @@ export default async function StagePage({ params }: { params: Promise<{ player: 
   if (streamConfigured()) {
     await Promise.all(subs.filter((x) => x.streamUid && !x.videoDeletedAt).map(async (x) => videos.set(x.id, await playbackUrl(x.streamUid!).catch(() => null))))
   }
+  const ranked = a.area.hasLeaderboard && doc.scoring === 'scored'
+  const mySpot = ranked && row.progress?.method === 'verified' && row.progress.score != null ? await stageStanding(p, doc, kid.id) : null
   const statusText: Record<string, string> = { pending: 'Waiting for a coach', verified: 'Verified', rejected: 'Needs another attempt', feedback_given: 'Feedback' }
 
   return (
@@ -83,6 +88,8 @@ export default async function StagePage({ params }: { params: Promise<{ player: 
               {STATUS_LABEL[row.status]}
               {row.progress.score != null ? ` · best score ${row.progress.score}` : row.progress.promotedScore != null ? ` · ${row.progress.promotedScore} seen by the coach` : ''}
               {row.progress.passedAt ? ` · ${formatDate(row.progress.passedAt, { day: 'numeric', month: 'long', year: 'numeric' })}` : ''}
+              {mySpot && <span className="mt-1 block font-display text-2xl font-semibold">🏆 {standingText(mySpot, doc.criteria)}</span>}
+              {ranked && <Link href={`/foundation-plus/leaderboards/${a.area.slug}/${code}`} className="mt-1 block text-sm underline">See the leaderboard</Link>}
             </p>
           )}
           <div className="grid gap-6 md:grid-cols-2">

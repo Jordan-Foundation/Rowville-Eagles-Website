@@ -80,3 +80,20 @@ export async function celebratedAction(playerId: number, awardIds: number[]) {
   if (!kid || (typeof kid.account === 'object' ? kid.account?.id : kid.account) !== user.id) return
   await p.update({ collection: 'pdr-awards', where: { id: { in: awardIds.slice(0, 50) }, player: { equals: playerId } }, overrideAccess: true, data: { celebratedAt: new Date().toISOString() } })
 }
+
+export type PrivacyState = { error?: string; done?: string }
+
+/** Parents choose whether their child appears on leaderboards, and under what name. */
+export async function privacyAction(_prev: PrivacyState, fd: FormData): Promise<PrivacyState> {
+  const user = await currentUser()
+  if (!user) return { error: 'Please log in again.' }
+  const p = await payload()
+  const kid = (await p.findByID({ collection: 'participants', id: Number(fd.get('player')), depth: 0, overrideAccess: true, disableErrors: true })) as Participant | null
+  if (!kid || (typeof kid.account === 'object' ? kid.account?.id : kid.account) !== user.id) return { error: 'Only a parent can change this.' }
+  const { validDisplayName } = await import('@/academy/pdr/leaderboard')
+  const name = String(fd.get('name') ?? '').trim()
+  if (name && !validDisplayName(name)) return { error: 'Use 2–20 letters (no numbers or contact details).' }
+  await p.update({ collection: 'participants', id: kid.id, overrideAccess: true, data: { pdr: { ...kid.pdr, leaderboardOptOut: fd.get('show') !== 'on', leaderboardName: name || null } } })
+  revalidatePath(`/foundation-plus/${kid.id}`)
+  return { done: 'Saved.' }
+}
