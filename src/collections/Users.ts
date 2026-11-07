@@ -67,6 +67,7 @@ export const Users: CollectionConfig = {
       ],
     },
     { name: 'phone', label: 'Mobile', type: 'text' },
+    { name: 'stripeCustomerAcademy', type: 'text', index: true, admin: { hidden: true }, access: { create: () => false, update: () => false } },
     {
       // Normalised copy of the mobile (+614…) so replies and calls from Twilio can be matched to the account
       name: 'phoneE164',

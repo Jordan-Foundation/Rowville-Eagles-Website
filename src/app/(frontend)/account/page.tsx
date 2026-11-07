@@ -16,7 +16,7 @@ import { TeamCards } from '@/teams/TeamCards'
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'My account', robots: { index: false } }
 
-const tagLabel = { rowville: 'Rowville player', rfa: 'RFA' } as const
+const tagLabel = { rowville: 'Rowville player', rfa: 'RFA', 'foundation-plus': 'Foundation+ player' } as const
 
 export default async function AccountPage({ searchParams }: { searchParams: Promise<{ welcome?: string }> }) {
   const user = await currentUser()
@@ -181,7 +181,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
                   <Link href={`/account/players/${x.id}`} className="font-medium hover:text-brand hover:underline">{x.firstName} {x.lastName} →</Link>
                   <div className="mt-1 flex flex-wrap gap-1.5">
                     {(x.memberships ?? []).map((m) => (
-                      <span key={m} className={`rounded-full px-2 py-0.5 text-xs font-semibold ${m === 'rfa' ? 'bg-black text-white' : 'bg-brand text-white'}`}>{tagLabel[m]}</span>
+                      <span key={m} className={`rounded-full px-2 py-0.5 text-xs font-semibold ${m === 'rfa' || m === 'foundation-plus' ? 'bg-black text-white' : 'bg-brand text-white'}`}>{tagLabel[m]}</span>
                     ))}
                     {(x.memberships ?? []).length === 0 && <span className="text-xs text-muted">No registrations yet</span>}
                   </div>

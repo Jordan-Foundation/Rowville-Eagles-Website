@@ -29,8 +29,8 @@ export function Pricing({ plans, sibling, trialDays, live }: { plans: Plan[]; si
               <ul className="mt-6 flex-1 space-y-2 text-sm">
                 {pl.points.map((x) => <li key={x} className="flex gap-2"><span aria-hidden>+</span>{x}</li>)}
               </ul>
-              <a href="#free-month" className={`fp-label mt-8 block px-5 py-3.5 text-center text-xs transition ${premium ? 'bg-white text-[#0b0b0c] hover:bg-white/85' : 'bg-[#0b0b0c] text-white hover:bg-[#0b0b0c]/85'}`}>
-                {!live ? 'Join the waitlist' : pl.key === 'premium' ? `Start your free month` : pl.key === 'free' ? 'Create a free account' : 'Choose Standard'}
+              <a href={!live ? '#free-month' : pl.key === 'free' ? '#free-month' : `/foundation-plus/subscribe?plan=${pl.key}_${period === 'monthly' ? 'month' : 'year'}`} className={`fp-label mt-8 block px-5 py-3.5 text-center text-xs transition ${premium ? 'bg-white text-[#0b0b0c] hover:bg-white/85' : 'bg-[#0b0b0c] text-white hover:bg-[#0b0b0c]/85'}`}>
+                {!live ? 'Join the waitlist' : pl.key === 'premium' ? 'Choose Premium' : pl.key === 'free' ? 'Start free' : 'Choose Standard'}
               </a>
             </div>
           )

@@ -35,7 +35,12 @@ export default async function AreaPage({ params }: { params: Promise<{ player: s
               </h2>
               <span className="text-sm text-muted">{l.complete ? 'Complete ✓' : `${l.passed}/${l.total} passed`}</span>
             </div>
-            {l.lockMessage && <p className="border-b border-line px-5 py-3 text-sm">{l.lockMessage}</p>}
+            {l.lockMessage && (
+              <p className="border-b border-line px-5 py-3 text-sm">
+                {l.lockMessage}{' '}
+                {l.tierLocked && <Link href={`/foundation-plus/subscribe?player=${kid.id}&plan=standard_month`} className="font-semibold underline">See plans</Link>}
+              </p>
+            )}
             <ul className="divide-y divide-line">
               {l.stages.map(({ stage, status }) => (
                 <li key={stage.id}>

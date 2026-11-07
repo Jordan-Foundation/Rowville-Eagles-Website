@@ -82,6 +82,7 @@ export interface Config {
     'pdr-audit': PdrAudit;
     'pdr-awards': PdrAward;
     'fplus-waitlist': FplusWaitlist;
+    'fplus-events': FplusEvent;
     'form-throttle': FormThrottle;
     'academy-coaches': AcademyCoach;
     'academy-availability': AcademyAvailability;
@@ -130,6 +131,7 @@ export interface Config {
     'pdr-audit': PdrAuditSelect<false> | PdrAuditSelect<true>;
     'pdr-awards': PdrAwardsSelect<false> | PdrAwardsSelect<true>;
     'fplus-waitlist': FplusWaitlistSelect<false> | FplusWaitlistSelect<true>;
+    'fplus-events': FplusEventsSelect<false> | FplusEventsSelect<true>;
     'form-throttle': FormThrottleSelect<false> | FormThrottleSelect<true>;
     'academy-coaches': AcademyCoachesSelect<false> | AcademyCoachesSelect<true>;
     'academy-availability': AcademyAvailabilitySelect<false> | AcademyAvailabilitySelect<true>;
@@ -345,6 +347,7 @@ export interface User {
   firstName?: string | null;
   lastName?: string | null;
   phone?: string | null;
+  stripeCustomerAcademy?: string | null;
   phoneE164?: string | null;
   serviceConsentAt?: string | null;
   marketingEmail?: boolean | null;
@@ -516,6 +519,15 @@ export interface Participant {
     tier?: ('free' | 'standard' | 'premium') | null;
     subscriptionId?: string | null;
     subscriptionStatus?: string | null;
+    /**
+     * e.g. premium_month
+     */
+    plan?: string | null;
+    trialEndsAt?: string | null;
+    currentPeriodEnd?: string | null;
+    cancelAtPeriodEnd?: boolean | null;
+    pastDueSince?: string | null;
+    trialUsedAt?: string | null;
     leaderboardOptOut?: boolean | null;
     /**
      * Default: first name + last initial, e.g. Mia T.
@@ -526,7 +538,7 @@ export interface Participant {
   /**
    * Added automatically when registration / Academy term is paid. Edit by hand for players registered outside the website.
    */
-  memberships?: ('rowville' | 'rfa')[] | null;
+  memberships?: ('rowville' | 'rfa' | 'foundation-plus')[] | null;
   /**
    * Set automatically when the committee offers a place after trials.
    */
@@ -1401,6 +1413,33 @@ export interface FplusWaitlist {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "fplus-events".
+ */
+export interface FplusEvent {
+  id: number;
+  summary?: string | null;
+  type:
+    | 'trial_started'
+    | 'trial_converted'
+    | 'trial_cancelled'
+    | 'subscribed'
+    | 'reactivated'
+    | 'plan_changed'
+    | 'payment_failed'
+    | 'payment_recovered'
+    | 'cancelled'
+    | 'grace_expired'
+    | 'trial_blocked';
+  plan?: string | null;
+  amount?: number | null;
+  player?: (number | null) | Participant;
+  account?: (number | null) | User;
+  subscriptionId?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "form-throttle".
  */
 export interface FormThrottle {
@@ -1843,6 +1882,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'fplus-waitlist';
         value: number | FplusWaitlist;
+      } | null)
+    | ({
+        relationTo: 'fplus-events';
+        value: number | FplusEvent;
       } | null)
     | ({
         relationTo: 'form-throttle';
@@ -2417,6 +2460,21 @@ export interface FplusWaitlistSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "fplus-events_select".
+ */
+export interface FplusEventsSelect<T extends boolean = true> {
+  summary?: T;
+  type?: T;
+  plan?: T;
+  amount?: T;
+  player?: T;
+  account?: T;
+  subscriptionId?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "form-throttle_select".
  */
 export interface FormThrottleSelect<T extends boolean = true> {
@@ -2977,6 +3035,12 @@ export interface ParticipantsSelect<T extends boolean = true> {
         tier?: T;
         subscriptionId?: T;
         subscriptionStatus?: T;
+        plan?: T;
+        trialEndsAt?: T;
+        currentPeriodEnd?: T;
+        cancelAtPeriodEnd?: T;
+        pastDueSince?: T;
+        trialUsedAt?: T;
         leaderboardOptOut?: T;
         leaderboardName?: T;
         consentAt?: T;
@@ -2999,6 +3063,7 @@ export interface UsersSelect<T extends boolean = true> {
   firstName?: T;
   lastName?: T;
   phone?: T;
+  stripeCustomerAcademy?: T;
   phoneE164?: T;
   serviceConsentAt?: T;
   marketingEmail?: T;

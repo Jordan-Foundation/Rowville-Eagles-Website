@@ -79,8 +79,24 @@ export const Participants: CollectionConfig = {
               ],
               access: { update: isAdminField },
             },
-            { name: 'subscriptionId', label: 'Stripe subscription', type: 'text', admin: { readOnly: true } },
+            { name: 'subscriptionId', label: 'Stripe subscription', type: 'text', index: true, admin: { readOnly: true } },
             { name: 'subscriptionStatus', label: 'Subscription status', type: 'text', admin: { readOnly: true } },
+          ],
+        },
+        {
+          type: 'row',
+          fields: [
+            { name: 'plan', type: 'text', admin: { readOnly: true, description: 'e.g. premium_month' } },
+            { name: 'trialEndsAt', label: 'Free trial ends', type: 'date', admin: { readOnly: true } },
+            { name: 'currentPeriodEnd', label: 'Paid until', type: 'date', admin: { readOnly: true } },
+          ],
+        },
+        {
+          type: 'row',
+          fields: [
+            { name: 'cancelAtPeriodEnd', label: 'Cancels at period end', type: 'checkbox', admin: { readOnly: true } },
+            { name: 'pastDueSince', label: 'Payment failing since', type: 'date', admin: { readOnly: true } },
+            { name: 'trialUsedAt', label: 'Free month used', type: 'date', admin: { readOnly: true } },
           ],
         },
         {
@@ -100,6 +116,7 @@ export const Participants: CollectionConfig = {
       options: [
         { label: 'Rowville player (team registration paid)', value: 'rowville' },
         { label: 'RFA (Academy term enrolled)', value: 'rfa' },
+        { label: 'Foundation+ player (paid or trialling)', value: 'foundation-plus' },
       ],
       admin: {
         position: 'sidebar',

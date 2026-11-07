@@ -6,6 +6,22 @@ export const PdrSettings: GlobalConfig = {
   label: 'Foundation+ settings',
   admin: { group: 'Foundation+' },
   access: { read: () => true, update: isStaff },
+  hooks: {
+    afterChange: [
+      async ({ doc, previousDoc, req }) => {
+        // New plan prices → new Stripe prices (the lookup keys move to them)
+        if (JSON.stringify(doc.plans ?? {}) === JSON.stringify(previousDoc?.plans ?? {})) return doc
+        try {
+          const { syncPlanPrices, clearPriceCache } = await import('./billing/stripe')
+          await syncPlanPrices(req.payload)
+          clearPriceCache()
+        } catch (e) {
+          req.payload.logger.error({ err: e, msg: 'Updating Foundation+ prices in Stripe failed — they will sync at the next checkout' })
+        }
+        return doc
+      },
+    ],
+  },
   fields: [
     {
       name: 'enabled',

@@ -4,7 +4,7 @@ import type { Participant, User } from '@/payload-types'
 import { siteUrl } from './payments'
 import { createInvite } from './invites'
 
-export type Membership = 'rowville' | 'rfa'
+export type Membership = 'rowville' | 'rfa' | 'foundation-plus'
 
 /** Find the account for an email, or create one (random password — the family sets their own via the invite link). */
 export async function ensureAccount(

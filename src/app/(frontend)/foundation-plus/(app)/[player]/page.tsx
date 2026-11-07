@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { formatDate } from '@/lib/payload'
 import type { Metadata } from 'next'
 import { foundationGate, loadCabinet, loadReport, reportPlayer } from '@/academy/pdr/load'
 import { BadgeArt } from '../Badge'
@@ -11,8 +12,9 @@ import { Bar, Crumbs } from '../ui'
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Player page', robots: { index: false } }
 
-export default async function PlayerReport({ params }: { params: Promise<{ player: string }> }) {
+export default async function PlayerReport({ params, searchParams }: { params: Promise<{ player: string }>; searchParams: Promise<{ billing?: string }> }) {
   const { player } = await params
+  const { billing } = await searchParams
   const { p, settings, user } = await foundationGate()
   const kid = await reportPlayer(p, user, player, `/foundation-plus/${player}`)
   const { report, tier } = await loadReport(p, kid)
@@ -79,12 +81,37 @@ export default async function PlayerReport({ params }: { params: Promise<{ playe
         </section>
       )}
 
-      {tier === 'free' && (
-        <div className="panel mt-8 border border-line p-6">
-          <p className="font-semibold">On the Free plan, Level 1 of every area is open.</p>
-          <p className="mt-1 text-sm text-muted">Standard and Premium unlock Levels 2 and up. Plans are coming soon.</p>
+      <section className="panel mt-8 border border-line p-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h2 className="font-display text-xl font-semibold uppercase">Plan: {TIER_LABEL[tier]}</h2>
+            <p className="mt-1 text-sm text-muted">
+              {(() => {
+                const d = kid.pdr
+                const day = (v?: string | null) => (v ? formatDate(v, { day: 'numeric', month: 'long', year: 'numeric' }) : '')
+                if (!d?.subscriptionStatus || tier === 'free') return 'Level 1 of every area is open. Standard and Premium unlock Levels 2 and up.'
+                if (d.subscriptionStatus === 'trialing') return `Free month — ends ${day(d.trialEndsAt)}, then Premium monthly unless you cancel.`
+                if (d.subscriptionStatus === 'past_due') return 'Payment didn’t go through — please update your card to keep access.'
+                if (d.cancelAtPeriodEnd) return `Cancelled — access until ${day(d.currentPeriodEnd)}.`
+                return `Renews ${day(d.currentPeriodEnd)}.`
+              })()}
+            </p>
+          </div>
+          {owner && (
+            <div className="flex flex-wrap gap-2">
+              {kid.pdr?.subscriptionId && !kid.pdr.subscriptionId.startsWith('sim_') && tier !== 'free' ? (
+                <a href={`/foundation-plus/billing?player=${kid.id}`} className="border border-line px-4 py-2 text-xs font-semibold uppercase tracking-[0.15em] hover:border-white">Manage plan</a>
+              ) : null}
+              {tier !== 'premium' && (
+                <Link href={`/foundation-plus/subscribe?player=${kid.id}&plan=${tier === 'standard' ? 'premium_month' : 'standard_month'}`} className="bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.15em] text-black hover:bg-white/85">
+                  {tier === 'free' ? 'Upgrade' : 'Go Premium'}
+                </Link>
+              )}
+            </div>
+          )}
         </div>
-      )}
+        {billing === 'unavailable' && <p className="mt-3 text-sm text-amber-300">Plan management isn’t available yet — please contact us.</p>}
+      </section>
     </div>
   )
 }

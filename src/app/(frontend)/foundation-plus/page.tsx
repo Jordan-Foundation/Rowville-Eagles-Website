@@ -6,6 +6,7 @@ import { foundationSettings, isStaffOrCoach } from '@/academy/pdr/load'
 import { FoundationPlusLogo } from '@/components/FoundationPlusLogo'
 import { formStamp } from '@/lib/form-guard'
 import { FPLUS } from '@/content/foundation-plus'
+import { displayPrices } from '@/academy/pdr/billing/stripe'
 import { WaitlistForm } from './_parts/WaitlistForm'
 import { Pricing } from './_parts/Pricing'
 import { Screens, type Slide } from './_parts/Screens'
@@ -46,6 +47,7 @@ export default async function FoundationPlusPage() {
   const live = settings.enabled
   const kids = user && (live || isStaffOrCoach(user)) ? (await p.find({ collection: 'participants', where: { account: { equals: user.id } }, sort: 'firstName', depth: 0, limit: 20, overrideAccess: true })).docs : []
   const plan = s.plans ?? {}
+  const prices = await displayPrices(p)
   const trialDays = plan.trialDays ?? 30
   const stamp = formStamp()
   const primary = live ? 'Start your free month' : 'Join the waitlist'
@@ -151,8 +153,8 @@ export default async function FoundationPlusPage() {
               trialDays={trialDays}
               plans={[
                 { key: 'free', name: 'Free', monthly: 0, yearly: 0, blurb: 'Level 1 of every area.', points: ['24 drills', 'Video challenges + leaderboards', 'Coaching points and feedback', 'Badges'] },
-                { key: 'standard', name: 'Standard', monthly: plan.standardMonthly ?? 9.95, yearly: plan.standardYearly ?? 89, blurb: 'Everything in Free, plus:', points: ['Levels 2 and 3 unlocked', '3× the coaching', 'More levels on the way'] },
-                { key: 'premium', name: 'Premium', monthly: plan.premiumMonthly ?? 24.95, yearly: plan.premiumYearly ?? 229, blurb: 'Everything in Standard, plus:', points: ['2 feedback videos a month', 'Members-only monthly challenges', 'Prizes for challenge winners'] },
+                { key: 'standard', name: 'Standard', monthly: prices.standard_month, yearly: prices.standard_year, blurb: 'Everything in Free, plus:', points: ['Levels 2 and 3 unlocked', '3× the coaching', 'More levels on the way'] },
+                { key: 'premium', name: 'Premium', monthly: prices.premium_month, yearly: prices.premium_year, blurb: 'Everything in Standard, plus:', points: ['2 feedback videos a month', 'Members-only monthly challenges', 'Prizes for challenge winners'] },
               ]}
             />
           </div>

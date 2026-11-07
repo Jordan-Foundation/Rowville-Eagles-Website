@@ -7,6 +7,7 @@ import { runSelectionReminders } from '../selections/payment'
 import { syncTeamMembers } from '../teams/service'
 import { purgeSubmissionVideos } from '../academy/pdr/review'
 import { purgeThrottle } from './form-guard'
+import { graceSweep } from '../academy/pdr/billing/sync'
 
 type Job = (payload: Payload) => Promise<Record<string, unknown>>
 
@@ -24,5 +25,6 @@ export const cronJobs: Record<string, Record<string, Job>> = {
     teamMembers: (payload) => syncTeamMembers(payload),
     foundationVideos: (payload) => purgeSubmissionVideos(payload),
     formThrottle: (payload) => purgeThrottle(payload),
+    foundationGrace: (payload) => graceSweep(payload),
   },
 }

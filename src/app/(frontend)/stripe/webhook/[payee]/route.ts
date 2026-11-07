@@ -3,6 +3,7 @@ import { payload } from '@/lib/payload'
 import { cancelPending, confirmPayment } from '@/lib/payments'
 import { isPayee, stripeFor, webhookSecretFor } from '@/lib/stripe-accounts'
 import { activateWeeklyPlan, recordWeeklyFailed, recordWeeklyPaid, weeklyPlanEnded } from '@/academy/weekly-payments'
+import { applySubscription } from '@/academy/pdr/billing/sync'
 
 /**
  * One endpoint per Stripe account:
@@ -38,6 +39,19 @@ export async function POST(req: Request, { params }: { params: Promise<{ payee: 
         await cancelPending(p, kind, reference)
       }
     }
+  }
+
+  // Foundation+ subscriptions (metadata.kind = 'fplus'): keep the player's plan and tag in sync
+  if (payee === 'academy' && event.type === 'checkout.session.completed') {
+    const session = event.data.object as Stripe.Checkout.Session
+    if (session.mode === 'subscription' && session.metadata?.kind === 'fplus' && session.subscription) {
+      const sub = await stripeFor('academy').subscriptions.retrieve(idOf(session.subscription)!, { expand: ['items.data.price'] })
+      await applySubscription(p, sub as never)
+    }
+  }
+  if (payee === 'academy' && (event.type === 'customer.subscription.created' || event.type === 'customer.subscription.updated' || event.type === 'customer.subscription.deleted')) {
+    const sub = event.data.object as Stripe.Subscription
+    if (sub.metadata?.kind === 'fplus') await applySubscription(p, sub as never)
   }
 
   if (payee === 'academy' && (event.type === 'invoice.paid' || event.type === 'invoice.payment_failed')) {

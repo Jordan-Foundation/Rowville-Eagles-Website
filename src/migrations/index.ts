@@ -33,6 +33,7 @@ import * as migration_20261107_090239_two_nights_a_week from './20261107_090239_
 import * as migration_20261107_094545_difference_page from './20261107_094545_difference_page';
 import * as migration_20261107_113740_foundation_plus_waitlist from './20261107_113740_foundation_plus_waitlist';
 import * as migration_20261107_115147_trial_places_per_night from './20261107_115147_trial_places_per_night';
+import * as migration_20261107_120146_foundation_plus_billing from './20261107_120146_foundation_plus_billing';
 
 export const migrations = [
   {
@@ -208,6 +209,11 @@ export const migrations = [
   {
     up: migration_20261107_115147_trial_places_per_night.up,
     down: migration_20261107_115147_trial_places_per_night.down,
-    name: '20261107_115147_trial_places_per_night'
+    name: '20261107_115147_trial_places_per_night',
+  },
+  {
+    up: migration_20261107_120146_foundation_plus_billing.up,
+    down: migration_20261107_120146_foundation_plus_billing.down,
+    name: '20261107_120146_foundation_plus_billing'
   },
 ];

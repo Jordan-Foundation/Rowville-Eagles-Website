@@ -25,3 +25,24 @@ export const FormThrottle: CollectionConfig = {
     { name: 'form', type: 'text', index: true },
   ],
 }
+
+/** Foundation+ subscription activity — trials, conversions, cancellations, failed payments (for the dashboard). */
+export const FplusEvents: CollectionConfig = {
+  slug: 'fplus-events',
+  labels: { singular: 'Foundation+ event', plural: 'Foundation+ activity' },
+  admin: { group: 'Foundation+', useAsTitle: 'summary', defaultColumns: ['summary', 'type', 'plan', 'createdAt'] },
+  access: { read: isStaff, create: () => false, update: () => false, delete: () => false },
+  defaultSort: '-createdAt',
+  fields: [
+    { name: 'summary', type: 'text' },
+    {
+      type: 'row',
+      fields: [
+        { name: 'type', type: 'select', required: true, index: true, options: ['trial_started', 'trial_converted', 'trial_cancelled', 'subscribed', 'reactivated', 'plan_changed', 'payment_failed', 'payment_recovered', 'cancelled', 'grace_expired', 'trial_blocked'] },
+        { name: 'plan', type: 'text' },
+        { name: 'amount', type: 'number' },
+      ],
+    },
+    { type: 'row', fields: [{ name: 'player', type: 'relationship', relationTo: 'participants', index: true }, { name: 'account', type: 'relationship', relationTo: 'users' }, { name: 'subscriptionId', type: 'text', index: true }] },
+  ],
+}

@@ -16,7 +16,7 @@ import { foundationSettings, isStaffOrCoach } from '@/academy/pdr/load'
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Player', robots: { index: false } }
 
-const tagLabel = { rowville: 'Rowville player', rfa: 'RFA' } as const
+const tagLabel = { rowville: 'Rowville player', rfa: 'RFA', 'foundation-plus': 'Foundation+ player' } as const
 const toneCls = { ok: 'text-muted', pending: 'text-muted', bad: 'font-semibold text-red-600' }
 
 export default async function PlayerPage({ params }: { params: Promise<{ id: string }> }) {
@@ -97,7 +97,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
           </p>
           <div className="mt-3 flex flex-wrap gap-1.5">
             {(kid.memberships ?? []).map((m) => (
-              <span key={m} className={`rounded-full px-2.5 py-1 text-xs font-semibold ${m === 'rfa' ? 'bg-black text-white' : 'bg-brand text-white'}`}>{tagLabel[m]}</span>
+              <span key={m} className={`rounded-full px-2.5 py-1 text-xs font-semibold ${m === 'rfa' || m === 'foundation-plus' ? 'bg-black text-white' : 'bg-brand text-white'}`}>{tagLabel[m]}</span>
             ))}
           </div>
         </div>
