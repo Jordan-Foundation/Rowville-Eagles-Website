@@ -1,5 +1,17 @@
 import type { CollectionConfig } from 'payload'
 import { isStaff } from '../../access'
+import { DEFAULT_TEMPLATES } from '../templates'
+
+const template = (kind: keyof typeof DEFAULT_TEMPLATES, label: string, condition?: (d: Record<string, unknown>) => boolean) => ({
+  type: 'collapsible' as const,
+  label,
+  admin: { initCollapsed: true, ...(condition ? { condition } : {}) },
+  fields: [
+    { name: `${kind}Subject`, label: 'Email subject', type: 'text' as const, defaultValue: DEFAULT_TEMPLATES[kind].subject },
+    { name: `${kind}Body`, label: 'Email message', type: 'textarea' as const, defaultValue: DEFAULT_TEMPLATES[kind].body, admin: { rows: 6 } },
+    { name: `${kind}Sms`, label: 'Text message (SMS)', type: 'textarea' as const, defaultValue: DEFAULT_TEMPLATES[kind].sms, admin: { rows: 2, description: 'Leave blank to send no text' } },
+  ],
+})
 
 /**
  * A selection round: one per tournament, or one per Rowville season intake (trials).
@@ -33,6 +45,17 @@ export const SelectionRounds: CollectionConfig = {
           { name: 'paymentDeadlineDays', label: 'Days to pay', type: 'number', defaultValue: 7, min: 1, max: 60 },
         ] },
         { name: 'reminderDays', label: 'Send reminders this many days before the deadline', type: 'number', hasMany: true, defaultValue: [3, 1] },
+      ],
+    },
+    {
+      name: 'templates',
+      label: 'Outcome messages',
+      type: 'group',
+      admin: { description: 'Placeholders: {parent} {player} {playerFull} {team} {ageGroup} {event} {link} {deadline}. Staff review every message before it is sent.' },
+      fields: [
+        template('selected', 'Selected (tournament)', (d) => d?.kind !== 'rowville'),
+        template('successful', 'Successful (Rowville trials)', (d) => d?.kind !== 'tournament'),
+        template('unsuccessful', 'Unsuccessful'),
       ],
     },
   ],

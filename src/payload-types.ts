@@ -76,6 +76,7 @@ export interface Config {
     'academy-credits': AcademyCredit;
     posts: Post;
     'selection-rounds': SelectionRound;
+    squads: Squad;
     'selection-entries': SelectionEntry;
     'trial-sessions': TrialSession;
     programs: Program;
@@ -106,6 +107,7 @@ export interface Config {
     'academy-credits': AcademyCreditsSelect<false> | AcademyCreditsSelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
     'selection-rounds': SelectionRoundsSelect<false> | SelectionRoundsSelect<true>;
+    squads: SquadsSelect<false> | SquadsSelect<true>;
     'selection-entries': SelectionEntriesSelect<false> | SelectionEntriesSelect<true>;
     'trial-sessions': TrialSessionsSelect<false> | TrialSessionsSelect<true>;
     programs: ProgramsSelect<false> | ProgramsSelect<true>;
@@ -787,6 +789,51 @@ export interface SelectionRound {
   fee?: number | null;
   paymentDeadlineDays?: number | null;
   reminderDays?: number[] | null;
+  /**
+   * Placeholders: {parent} {player} {playerFull} {team} {ageGroup} {event} {link} {deadline}. Staff review every message before it is sent.
+   */
+  templates?: {
+    selectedSubject?: string | null;
+    selectedBody?: string | null;
+    /**
+     * Leave blank to send no text
+     */
+    selectedSms?: string | null;
+    successfulSubject?: string | null;
+    successfulBody?: string | null;
+    /**
+     * Leave blank to send no text
+     */
+    successfulSms?: string | null;
+    unsuccessfulSubject?: string | null;
+    unsuccessfulBody?: string | null;
+    /**
+     * Leave blank to send no text
+     */
+    unsuccessfulSms?: string | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "squads".
+ */
+export interface Squad {
+  id: number;
+  round: number | SelectionRound;
+  name: string;
+  birthYears?: number[] | null;
+  capacity?: number | null;
+  /**
+   * Leave blank to use the round’s fee
+   */
+  fee?: number | null;
+  coaches?: (number | User)[] | null;
+  /**
+   * The club team / tournament team page players join once paid
+   */
+  team?: (number | null) | Team;
   updatedAt: string;
   createdAt: string;
 }
@@ -836,6 +883,15 @@ export interface SelectionEntry {
         id?: string | null;
       }[]
     | null;
+  squad?: (number | null) | Squad;
+  /**
+   * Sent from the selection dashboard’s “Review & send”
+   */
+  outcomeQueued?: ('selected' | 'successful' | 'unsuccessful') | null;
+  outcomeEmail?: boolean | null;
+  selectedAt?: string | null;
+  outcomeSentAt?: string | null;
+  outcomeSentBy?: (number | null) | User;
   trialSession?: (number | null) | TrialSession;
   offeredTeam?: (number | null) | Team;
   registrationProgram?: (number | null) | Program;
@@ -1156,6 +1212,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'selection-rounds';
         value: number | SelectionRound;
+      } | null)
+    | ({
+        relationTo: 'squads';
+        value: number | Squad;
       } | null)
     | ({
         relationTo: 'selection-entries';
@@ -1522,6 +1582,34 @@ export interface SelectionRoundsSelect<T extends boolean = true> {
   fee?: T;
   paymentDeadlineDays?: T;
   reminderDays?: T;
+  templates?:
+    | T
+    | {
+        selectedSubject?: T;
+        selectedBody?: T;
+        selectedSms?: T;
+        successfulSubject?: T;
+        successfulBody?: T;
+        successfulSms?: T;
+        unsuccessfulSubject?: T;
+        unsuccessfulBody?: T;
+        unsuccessfulSms?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "squads_select".
+ */
+export interface SquadsSelect<T extends boolean = true> {
+  round?: T;
+  name?: T;
+  birthYears?: T;
+  capacity?: T;
+  fee?: T;
+  coaches?: T;
+  team?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1551,6 +1639,12 @@ export interface SelectionEntriesSelect<T extends boolean = true> {
         at?: T;
         id?: T;
       };
+  squad?: T;
+  outcomeQueued?: T;
+  outcomeEmail?: T;
+  selectedAt?: T;
+  outcomeSentAt?: T;
+  outcomeSentBy?: T;
   trialSession?: T;
   offeredTeam?: T;
   registrationProgram?: T;

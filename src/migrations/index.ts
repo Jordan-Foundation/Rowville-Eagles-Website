@@ -19,6 +19,7 @@ import * as migration_20261106_211833_stage14_session_credits_member_price from 
 import * as migration_20261107_004109_booking_reschedule from './20261107_004109_booking_reschedule';
 import * as migration_20261107_013526_birth_year_age_groups from './20261107_013526_birth_year_age_groups';
 import * as migration_20261107_015825_selection_rounds_entries from './20261107_015825_selection_rounds_entries';
+import * as migration_20261107_021548_squads_outcomes from './20261107_021548_squads_outcomes';
 
 export const migrations = [
   {
@@ -124,6 +125,11 @@ export const migrations = [
   {
     up: migration_20261107_015825_selection_rounds_entries.up,
     down: migration_20261107_015825_selection_rounds_entries.down,
-    name: '20261107_015825_selection_rounds_entries'
+    name: '20261107_015825_selection_rounds_entries',
+  },
+  {
+    up: migration_20261107_021548_squads_outcomes.up,
+    down: migration_20261107_021548_squads_outcomes.down,
+    name: '20261107_021548_squads_outcomes'
   },
 ];

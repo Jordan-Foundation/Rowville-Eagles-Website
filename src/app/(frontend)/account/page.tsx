@@ -187,6 +187,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
               <p className="font-semibold">Staff tools</p>
               <ul className="mt-2 space-y-1 text-sm">
                 <li><Link href="/admin" className="text-brand underline">Admin</Link></li>
+                <li><Link href="/staff/selections" className="text-brand underline">Selections (tournaments & trials)</Link></li>
                 <li><Link href="/staff/academy/dashboard" className="text-brand underline">Academy dashboard</Link></li>
                 <li><Link href="/staff/academy/bookings" className="text-brand underline">1-on-1 bookings & cancellations</Link></li>
                 <li><Link href="/staff/academy" className="text-brand underline">Academy coach availability</Link></li>

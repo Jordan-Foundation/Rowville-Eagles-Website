@@ -122,6 +122,33 @@ export const SelectionEntries: CollectionConfig = {
         ] },
       ],
     },
+    {
+      type: 'collapsible',
+      label: 'Selection',
+      admin: { initCollapsed: false },
+      fields: [
+        { type: 'row', fields: [
+          { name: 'squad', type: 'relationship', relationTo: 'squads' },
+          {
+            name: 'outcomeQueued',
+            label: 'Outcome waiting to send',
+            type: 'select',
+            options: [
+              { label: 'Selected', value: 'selected' },
+              { label: 'Successful', value: 'successful' },
+              { label: 'Unsuccessful', value: 'unsuccessful' },
+            ],
+            admin: { description: 'Sent from the selection dashboard’s “Review & send”' },
+          },
+          { name: 'outcomeEmail', label: 'Email the family (unsuccessful)', type: 'checkbox', defaultValue: true },
+        ] },
+        { type: 'row', fields: [
+          { name: 'selectedAt', type: 'date', admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } } },
+          { name: 'outcomeSentAt', type: 'date', admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } } },
+          { name: 'outcomeSentBy', type: 'relationship', relationTo: 'users', admin: { readOnly: true } },
+        ] },
+      ],
+    },
     { name: 'trialSession', type: 'relationship', relationTo: 'trial-sessions', admin: { position: 'sidebar', condition: (d) => d?.kind !== 'tournament' } },
     {
       type: 'collapsible',

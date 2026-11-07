@@ -110,10 +110,16 @@ export async function notifyInterestsOfTrial(payload: Payload, session: TrialSes
 }
 
 /** Committee marked a registrant "Offer a place": create account + player, unlock registration, email the family. */
-export async function sendOffer(payload: Payload, reg: SelectionEntry, req?: PayloadRequest) {
+export async function sendOffer(
+  payload: Payload,
+  reg: SelectionEntry,
+  req?: PayloadRequest,
+  /** From the selection dashboard: the reviewed template message (heading + paragraphs) instead of the default text */
+  custom?: { subject: string; heading: string; bodyHtml: string },
+) {
   const programId = typeof reg.registrationProgram === 'object' ? reg.registrationProgram?.id : reg.registrationProgram
   const teamId = typeof reg.offeredTeam === 'object' ? reg.offeredTeam?.id : reg.offeredTeam
-  if (!programId || !teamId) return
+  if (!programId || !teamId) return null
   const [program, team] = (await Promise.all([
     payload.findByID({ collection: 'programs', id: programId, depth: 0, req }),
     payload.findByID({ collection: 'teams', id: teamId, depth: 0, req }),
@@ -140,8 +146,8 @@ export async function sendOffer(payload: Payload, reg: SelectionEntry, req?: Pay
   const link = await accountLink(payload, user, req)
   const html = emailLayout('club', [
     {
-      heading: `Welcome to the Eagles, ${reg.player.firstName}!`,
-      intro: `Congratulations ${esc(reg.contact.firstName)} — after trials we’d love ${esc(reg.player.firstName)} to join <strong>${esc(team.name)}</strong> for the ${reg.season} season. ${user.activated ? 'Log in' : 'Create your account'} to accept the place and pay the club registration fee.`,
+      heading: custom?.heading ?? `Welcome to the Eagles, ${reg.player.firstName}!`,
+      intro: custom ? custom.bodyHtml : `Congratulations ${esc(reg.contact.firstName)} — after trials we’d love ${esc(reg.player.firstName)} to join <strong>${esc(team.name)}</strong> for the ${reg.season} season. ${user.activated ? 'Log in' : 'Create your account'} to accept the place and pay the club registration fee.`,
       rows: [
         ['Player', `${reg.player.firstName} ${reg.player.lastName}`],
         ['Team', team.name],
@@ -152,7 +158,8 @@ export async function sendOffer(payload: Payload, reg: SelectionEntry, req?: Pay
         'After paying the club fee you’ll complete the Football Victoria section in PlayFootball. This link is personal — please don’t forward it.',
     },
   ])
-  await sendEmail(payload, { to: reg.contact.email, subject: `Your place in ${team.name} — Rowville Eagles ${reg.season}`, html, sender: 'club', replyTo: await replyTo(payload, req), userId: user.id, req })
+  await sendEmail(payload, { to: reg.contact.email, subject: custom?.subject ?? `Your place in ${team.name} — Rowville Eagles ${reg.season}`, html, sender: 'club', replyTo: await replyTo(payload, req), userId: user.id, req })
+  return { user, link }
 }
 
 async function replyTo(payload: Payload, req?: PayloadRequest) {
