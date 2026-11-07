@@ -6,7 +6,7 @@ import { finishUploadAction, startUploadAction } from '../../../actions'
 
 const field = 'w-full border border-line bg-black/40 px-3 py-2.5 text-sm'
 
-export function SubmitForm(props: { player: number; stage: number; path: string; scored: boolean; unit: string; premium: boolean; feedbackLeft: number; canAttempt: string | null }) {
+export function SubmitForm(props: { player: number; stage?: number; challenge?: number; path: string; scored: boolean; unit: string; premium: boolean; feedbackLeft: number; canAttempt: string | null }) {
   const router = useRouter()
   const [type, setType] = useState<'verification' | 'feedback'>('verification')
   const [file, setFile] = useState<File | null>(null)
@@ -53,10 +53,16 @@ export function SubmitForm(props: { player: number; stage: number; path: string;
     router.refresh()
   }
 
-  if (props.canAttempt) return <p className="text-sm text-muted">{props.canAttempt}</p>
+  if (props.canAttempt)
+    return (
+      <form onSubmit={(e) => e.preventDefault()} className="space-y-2">
+        {msg.done && <p role="status" className="text-sm text-emerald-300">{msg.done}</p>}
+        <p className="text-sm text-muted">{props.canAttempt}</p>
+      </form>
+    )
   return (
     <form onSubmit={submit} className="space-y-4">
-      {props.premium && (
+      {props.premium && !props.challenge && (
         <div className="flex flex-wrap gap-2 text-sm" role="radiogroup" aria-label="Type of video">
           {(['verification', 'feedback'] as const).map((t) => (
             <button key={t} type="button" role="radio" aria-checked={type === t} onClick={() => setType(t)} className={`border px-3 py-1.5 ${type === t ? 'border-white bg-white text-black' : 'border-line'}`}>
@@ -66,7 +72,8 @@ export function SubmitForm(props: { player: number; stage: number; path: string;
         </div>
       )}
       <input type="hidden" name="player" value={props.player} />
-      <input type="hidden" name="stage" value={props.stage} />
+      {props.stage != null && <input type="hidden" name="stage" value={props.stage} />}
+      {props.challenge != null && <input type="hidden" name="challenge" value={props.challenge} />}
       {type === 'verification' && props.scored && (
         <label className="block text-sm">
           Your score ({props.unit})
@@ -89,7 +96,7 @@ export function SubmitForm(props: { player: number; stage: number; path: string;
         </div>
       )}
       <button disabled={busy} className="bg-white px-6 py-3 text-sm font-semibold uppercase tracking-[0.15em] text-black disabled:opacity-50">
-        {busy ? 'Uploading…' : type === 'feedback' ? 'Send for feedback' : 'Send my attempt'}
+        {busy ? 'Uploading…' : type === 'feedback' ? 'Send for feedback' : props.challenge ? 'Send my entry' : 'Send my attempt'}
       </button>
       {msg.error && <p role="alert" className="text-sm text-red-300">{msg.error}</p>}
       {msg.done && <p role="status" className="text-sm text-emerald-300">{msg.done}</p>}

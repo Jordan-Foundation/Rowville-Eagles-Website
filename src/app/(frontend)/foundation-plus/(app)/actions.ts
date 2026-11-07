@@ -30,6 +30,10 @@ export async function startUploadAction(fd: FormData): Promise<StartResult> {
   const score = raw === '' ? null : Number(raw)
   if (score !== null && (!Number.isFinite(score) || score < 0 || score > 100000)) return { error: 'Enter your score as a number.' }
   try {
+    if (fd.get('challenge')) {
+      const { startChallengeSubmission } = await import('@/academy/pdr/challenges')
+      return await startChallengeSubmission(ctx.p, { kid: ctx.kid, user: ctx.user, challengeId: Number(fd.get('challenge')), claimedScore: score, note: String(fd.get('note') ?? '').slice(0, 500) })
+    }
     return await startSubmission(ctx.p, {
       kid: ctx.kid,
       user: ctx.user,

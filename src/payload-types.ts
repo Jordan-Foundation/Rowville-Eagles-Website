@@ -78,6 +78,7 @@ export interface Config {
     'pdr-videos': PdrVideo;
     'pdr-badges': PdrBadge;
     'pdr-progress': PdrProgress;
+    'pdr-challenges': PdrChallenge;
     'pdr-submissions': PdrSubmission;
     'pdr-audit': PdrAudit;
     'pdr-awards': PdrAward;
@@ -128,6 +129,7 @@ export interface Config {
     'pdr-videos': PdrVideosSelect<false> | PdrVideosSelect<true>;
     'pdr-badges': PdrBadgesSelect<false> | PdrBadgesSelect<true>;
     'pdr-progress': PdrProgressSelect<false> | PdrProgressSelect<true>;
+    'pdr-challenges': PdrChallengesSelect<false> | PdrChallengesSelect<true>;
     'pdr-submissions': PdrSubmissionsSelect<false> | PdrSubmissionsSelect<true>;
     'pdr-audit': PdrAuditSelect<false> | PdrAuditSelect<true>;
     'pdr-awards': PdrAwardsSelect<false> | PdrAwardsSelect<true>;
@@ -1343,6 +1345,59 @@ export interface PdrProgress {
   createdAt: string;
 }
 /**
+ * One challenge per month for Premium players. Set it up before the month starts; results and winner emails are sent automatically once the month ends and every attempt has been checked.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pdr-challenges".
+ */
+export interface PdrChallenge {
+  id: number;
+  title: string;
+  /**
+   * YYYY-MM, e.g. 2026-12. Runs for that whole calendar month.
+   */
+  month: string;
+  published?: boolean | null;
+  /**
+   * What to do, in one or two sentences.
+   */
+  description: string;
+  /**
+   * Set-up, camera angle, what counts. Shown above the upload form.
+   */
+  rules?: string | null;
+  demoVideo?: (number | null) | PdrVideo;
+  /**
+   * e.g. touches, seconds, goals
+   */
+  unit: string;
+  direction: 'higher' | 'lower';
+  groupBy: 'birthYear' | 'all';
+  winnersPerGroup: number;
+  /**
+   * Shown to players, e.g. “Foundation+ hoodie + a free 1-on-1 session”.
+   */
+  prize?: string | null;
+  announcedAt?: string | null;
+  closedAt?: string | null;
+  results?:
+    | {
+        player?: (number | null) | Participant;
+        group?: string | null;
+        rank?: number | null;
+        value?: number | null;
+        winner?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Tick once you’ve sent the prizes (for your records).
+   */
+  prizesSent?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "pdr-submissions".
  */
@@ -1350,10 +1405,11 @@ export interface PdrSubmission {
   id: number;
   label?: string | null;
   player: number | Participant;
-  stage: number | PdrStage;
+  stage?: (number | null) | PdrStage;
+  challenge?: (number | null) | PdrChallenge;
   area?: (number | null) | PdrArea;
   levelNumber?: number | null;
-  type: 'verification' | 'feedback';
+  type: 'verification' | 'feedback' | 'challenge';
   status: 'uploading' | 'pending' | 'verified' | 'rejected' | 'feedback_given';
   claimedScore?: number | null;
   verifiedScore?: number | null;
@@ -1899,6 +1955,10 @@ export interface PayloadLockedDocument {
         value: number | PdrProgress;
       } | null)
     | ({
+        relationTo: 'pdr-challenges';
+        value: number | PdrChallenge;
+      } | null)
+    | ({
         relationTo: 'pdr-submissions';
         value: number | PdrSubmission;
       } | null)
@@ -2427,12 +2487,45 @@ export interface PdrProgressSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pdr-challenges_select".
+ */
+export interface PdrChallengesSelect<T extends boolean = true> {
+  title?: T;
+  month?: T;
+  published?: T;
+  description?: T;
+  rules?: T;
+  demoVideo?: T;
+  unit?: T;
+  direction?: T;
+  groupBy?: T;
+  winnersPerGroup?: T;
+  prize?: T;
+  announcedAt?: T;
+  closedAt?: T;
+  results?:
+    | T
+    | {
+        player?: T;
+        group?: T;
+        rank?: T;
+        value?: T;
+        winner?: T;
+        id?: T;
+      };
+  prizesSent?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "pdr-submissions_select".
  */
 export interface PdrSubmissionsSelect<T extends boolean = true> {
   label?: T;
   player?: T;
   stage?: T;
+  challenge?: T;
   area?: T;
   levelNumber?: T;
   type?: T;

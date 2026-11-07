@@ -3,7 +3,7 @@
 import { useActionState, useState } from 'react'
 import { reviewAction, type ReviewState } from './actions'
 
-export function ReviewForm({ id, type, scored, claimed, unit, target }: { id: number; type: string; scored: boolean; claimed: number | null; unit: string; target: string }) {
+export function ReviewForm({ id, type, scored, claimed, unit, target, rejectLabel = 'Needs another attempt' }: { id: number; type: string; scored: boolean; claimed: number | null; unit: string; target: string; rejectLabel?: string }) {
   const [state, action, pending] = useActionState<ReviewState, FormData>(reviewAction, {})
   const [score, setScore] = useState(claimed != null ? String(claimed) : '')
   const [feedback, setFeedback] = useState('')
@@ -27,7 +27,7 @@ export function ReviewForm({ id, type, scored, claimed, unit, target }: { id: nu
         ) : (
           <>
             <button name="decision" value="verify" disabled={pending} className={`${btn} bg-emerald-400 text-black`}>✓ Verify</button>
-            <button name="decision" value="reject" disabled={pending} className={`${btn} border border-line`}>Needs another attempt</button>
+            <button name="decision" value="reject" disabled={pending} className={`${btn} border border-line`}>{rejectLabel}</button>
           </>
         )}
       </div>

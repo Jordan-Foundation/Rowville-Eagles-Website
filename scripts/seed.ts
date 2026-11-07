@@ -220,6 +220,24 @@ for (const [i, sp] of SPONSORS.entries()) {
 // Player Development Report content (only adds what's missing)
 const { seedPdr } = await import('../src/academy/pdr/seed')
 payload.logger.info(`PDR content: ${JSON.stringify(await seedPdr(payload))}`)
+{
+  const { monthKey } = await import('../src/academy/pdr/challenge-rules')
+  await payload.create({
+    collection: 'pdr-challenges',
+    data: {
+      title: '60-second juggling',
+      month: monthKey(new Date()),
+      published: true,
+      description: 'How many juggles can you do in 60 seconds? Feet, thighs and head all count. If the ball drops, pick it up and keep going.',
+      rules: 'Film from the side so your whole body and the ball are in view. Start the timer on camera, or have someone count down out loud.',
+      unit: 'juggles',
+      direction: 'higher',
+      groupBy: 'birthYear',
+      winnersPerGroup: 1,
+      prize: 'Foundation+ hoodie',
+    },
+  })
+}
 
 payload.logger.info(`Seed complete.${adminEmail ? ` Admin login: ${adminEmail}` : ''}`)
 process.exit(0)

@@ -36,6 +36,7 @@ import * as migration_20261107_115147_trial_places_per_night from './20261107_11
 import * as migration_20261107_120146_foundation_plus_billing from './20261107_120146_foundation_plus_billing';
 import * as migration_20261107_121722_foundation_plus_trial from './20261107_121722_foundation_plus_trial';
 import * as migration_20261107_205754_shop_item_access from './20261107_205754_shop_item_access';
+import * as migration_20261107_215132_monthly_challenges from './20261107_215132_monthly_challenges';
 
 export const migrations = [
   {
@@ -226,6 +227,11 @@ export const migrations = [
   {
     up: migration_20261107_205754_shop_item_access.up,
     down: migration_20261107_205754_shop_item_access.down,
-    name: '20261107_205754_shop_item_access'
+    name: '20261107_205754_shop_item_access',
+  },
+  {
+    up: migration_20261107_215132_monthly_challenges.up,
+    down: migration_20261107_215132_monthly_challenges.down,
+    name: '20261107_215132_monthly_challenges'
   },
 ];

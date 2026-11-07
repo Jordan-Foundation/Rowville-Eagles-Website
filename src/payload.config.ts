@@ -43,6 +43,7 @@ import { PdrVideos } from './academy/pdr/collections/PdrVideos'
 import { PdrBadges } from './academy/pdr/collections/PdrBadges'
 import { PdrProgress } from './academy/pdr/collections/PdrProgress'
 import { PdrSubmissions } from './academy/pdr/collections/PdrSubmissions'
+import { PdrChallenges } from './academy/pdr/collections/PdrChallenges'
 import { PdrAudit } from './academy/pdr/collections/PdrAudit'
 import { PdrAwards } from './academy/pdr/collections/PdrAwards'
 import { FplusEvents, FplusTrialCards, FplusWaitlist, FormThrottle } from './academy/pdr/marketing/collections'
@@ -76,7 +77,7 @@ export default buildConfig({
       },
     },
   },
-  collections: [AcademyBookings, AcademySessions, AcademyTerms, AcademyTermSlots, AcademyRegistrations, PdrAreas, PdrLevels, PdrStages, PdrVideos, PdrBadges, PdrProgress, PdrSubmissions, PdrAudit, PdrAwards, FplusWaitlist, FplusEvents, FplusTrialCards, FormThrottle, AcademyCoaches, AcademyAvailability, AcademyReminderLog, AcademyCredits, Posts, SelectionRounds, Squads, SelectionEntries, TrialSessions, Programs, Bookings, Products, Orders, Teams, TeamMembers, TeamPosts, ForumThreads, ForumReplies, Sponsors, Participants, Users, ConsentRecords, MessageLog, InviteTokens, Media],
+  collections: [AcademyBookings, AcademySessions, AcademyTerms, AcademyTermSlots, AcademyRegistrations, PdrAreas, PdrLevels, PdrStages, PdrVideos, PdrBadges, PdrProgress, PdrChallenges, PdrSubmissions, PdrAudit, PdrAwards, FplusWaitlist, FplusEvents, FplusTrialCards, FormThrottle, AcademyCoaches, AcademyAvailability, AcademyReminderLog, AcademyCredits, Posts, SelectionRounds, Squads, SelectionEntries, TrialSessions, Programs, Bookings, Products, Orders, Teams, TeamMembers, TeamPosts, ForumThreads, ForumReplies, Sponsors, Participants, Users, ConsentRecords, MessageLog, InviteTokens, Media],
   globals: [SiteSettings, About, DifferencePage, AcademySettings, PdrSettings, SetupProgress],
   editor: lexicalEditor(),
   ...(process.env.RESEND_API_KEY

@@ -77,7 +77,7 @@ async function audit(p: Payload, data: { action: 'verify' | 'reject' | 'feedback
   await p.create({ collection: 'pdr-audit', overrideAccess: true, data })
 }
 
-async function tellFamily(p: Payload, kid: Participant, o: { subject: string; heading: string; intro: string; rows: [string, string][]; href: string; sms: string }) {
+export async function tellFamily(p: Payload, kid: Participant, o: { subject: string; heading: string; intro: string; rows: [string, string][]; href: string; sms: string }) {
   const accountId = rel(kid.account)
   const parent = accountId ? ((await p.findByID({ collection: 'users', id: accountId, depth: 0, overrideAccess: true, disableErrors: true })) as User | null) : null
   if (!parent) return
@@ -92,6 +92,14 @@ export type Decision = 'verify' | 'reject' | 'feedback'
 export async function reviewSubmission(p: Payload, coach: User, id: number, o: { decision: Decision; score: number | null; feedback: string }) {
   const sub = await p.findByID({ collection: 'pdr-submissions', id, depth: 0, overrideAccess: true })
   if (sub.status !== 'pending') throw new FoundationError('This video has already been reviewed.')
+  if (sub.type === 'challenge') {
+    if (o.decision === 'feedback') throw new FoundationError('This is a challenge entry — count the score or ask for another go.')
+    const s = await settings(p)
+    const now = new Date()
+    const reviewed = { reviewedBy: coach.id, reviewedAt: now.toISOString(), deleteVideoAfter: new Date(now.getTime() + (s.retentionMonths ?? 6) * MONTH).toISOString(), feedback: o.feedback || undefined }
+    const { reviewChallengeEntry } = await import('./challenges')
+    return reviewChallengeEntry(p, coach, sub, { decision: o.decision, score: o.score, feedback: o.feedback }, reviewed)
+  }
   const [stage, kid, s, fs] = await Promise.all([
     p.findByID({ collection: 'pdr-stages', id: rel(sub.stage), depth: 1, overrideAccess: true }),
     p.findByID({ collection: 'participants', id: rel(sub.player), depth: 0, overrideAccess: true }) as Promise<Participant>,

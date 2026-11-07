@@ -8,6 +8,8 @@ import { PrivacyForm } from './PrivacyForm'
 import { displayName } from '@/academy/pdr/leaderboard'
 import { TIER_LABEL } from '@/academy/pdr/report'
 import { Bar, Crumbs } from '../ui'
+import { currentChallenge, myEntries } from '@/academy/pdr/challenges'
+import { daysLeft, monthLabel } from '@/academy/pdr/challenge-rules'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Player page', robots: { index: false } }
@@ -21,6 +23,8 @@ export default async function PlayerReport({ params, searchParams }: { params: P
   const passed = report.reduce((n, a) => n + a.passed, 0)
   const { earned, total, toCelebrate } = await loadCabinet(p, kid)
   const owner = (typeof kid.account === 'object' ? kid.account?.id : kid.account) === user?.id
+  const challenge = await currentChallenge(p)
+  const myChallenge = challenge ? await myEntries(p, challenge, kid.id) : null
 
   return (
     <div>
@@ -48,6 +52,19 @@ export default async function PlayerReport({ params, searchParams }: { params: P
           </Link>
         ))}
       </div>
+      {challenge && (
+        <Link href={`/foundation-plus/challenges/${challenge.id}`} className="panel gloss-sheen mt-8 flex flex-wrap items-center justify-between gap-4 border border-amber-300/40 p-6 transition hover:border-amber-200">
+          <span>
+            <span className="eyebrow">{monthLabel(challenge.month)} challenge · {daysLeft(challenge.month)} day{daysLeft(challenge.month) === 1 ? '' : 's'} left</span>
+            <span className="mt-1 block font-display text-2xl font-semibold uppercase">🏆 {challenge.title}</span>
+            <span className="mt-1 block text-sm text-muted">
+              {tier !== 'premium' ? 'Premium players can enter — prizes for the winners.' : myChallenge?.best != null ? `${kid.firstName}’s best: ${myChallenge.best} ${challenge.unit} — beat it!` : myChallenge?.pending ? 'Entry waiting for a coach.' : `${kid.firstName} hasn’t entered yet.`}
+            </span>
+          </span>
+          <span className="text-xs font-semibold uppercase tracking-[0.2em]">{tier === 'premium' ? 'Take the challenge →' : 'See the challenge →'}</span>
+        </Link>
+      )}
+
       <section className="panel mt-8 border border-line p-6">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="font-display text-2xl font-semibold uppercase">Trophy Cabinet</h2>
