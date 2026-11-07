@@ -37,7 +37,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   const [{ docs: selections }, rules, { docs: termRegs }] = await Promise.all([
     p.find({ collection: 'selection-entries', where: { account: { equals: user.id }, status: { not_in: ['withdrawn', 'closed', 'released'] } }, sort: '-createdAt', depth: 2, limit: 50, overrideAccess: true }),
     getAgeRules(p),
-    p.find({ collection: 'academy-registrations', where: { account: { equals: user.id }, status: { not_equals: 'cancelled' } }, sort: '-createdAt', depth: 1, limit: 50, overrideAccess: true }),
+    p.find({ collection: 'academy-registrations', where: { account: { equals: user.id }, status: { not_equals: 'cancelled' } }, sort: '-createdAt', depth: 2, limit: 50, overrideAccess: true }),
   ])
   const credit = credits.available
   // Rowville offers that came through selections show in "Trials & selections" with their own button

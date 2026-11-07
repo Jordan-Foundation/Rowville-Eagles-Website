@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { payload, formatDate } from '@/lib/payload'
 import { requireCoach } from '@/academy/portal'
 import { attendanceDue, coachSessions } from '@/academy/coach-sessions'
+import { coachGroups, nextSession } from '@/academy/terms/coach-groups'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,7 +14,8 @@ export default async function CoachHome() {
     p.find({ collection: 'academy-availability', where: { coach: { equals: coach.id } }, depth: 0, limit: 50, overrideAccess: true }),
   ])
   const now = new Date()
-  const [next, due] = await Promise.all([coachSessions(p, coach.id, { from: now, to: new Date(now.getTime() + 7 * 86_400_000) }), attendanceDue(p, coach.id, now)])
+  const [next, due, groups] = await Promise.all([coachSessions(p, coach.id, { from: now, to: new Date(now.getTime() + 7 * 86_400_000) }), attendanceDue(p, coach.id, now), coachGroups(p, coach.id)])
+  const nextGroup = groups.map((g) => ({ g, s: nextSession(g, now) })).filter((x) => x.s).sort((a, b) => a.s!.startsAt.localeCompare(b.s!.startsAt))[0]
   const byTerm = new Map(mine.map((a) => [typeof a.term === 'object' ? a.term.id : a.term, a]))
   const profileGaps = [!coach.photo && 'a photo', !coach.bio && 'a short bio', !(coach.specialties?.length) && 'your specialties'].filter(Boolean) as string[]
 
@@ -36,6 +38,17 @@ export default async function CoachHome() {
         </div>
         <p className="mt-4 text-xs font-semibold uppercase tracking-[0.2em] transition group-hover:translate-x-1">Open my sessions →</p>
       </Link>
+
+      {groups.length > 0 && (
+        <Link href="/coach/groups" className="panel gloss-sheen group block border border-line p-6 transition hover:border-white/40">
+          <p className="font-display text-xl font-semibold uppercase">My groups</p>
+          <p className="mt-1 text-sm text-muted">
+            {groups.length} group{groups.length === 1 ? '' : 's'} · {groups.reduce((n, g) => n + g.players.length, 0)} players
+            {nextGroup ? ` · next ${formatDate(nextGroup.s!.startsAt, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })} (${nextGroup.g.groupName ?? nextGroup.g.title})` : ''}
+          </p>
+          <p className="mt-4 text-xs font-semibold uppercase tracking-[0.2em] transition group-hover:translate-x-1">Open my groups →</p>
+        </Link>
+      )}
 
       {(profileGaps.length > 0 || !coach.active) && (
         <div className="panel gloss-sheen border border-line p-6">

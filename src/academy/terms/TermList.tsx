@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import type { AcademyRegistration, AcademyTermSlot, Program } from '@/payload-types'
+import type { AcademyCoach, AcademyRegistration, AcademyTermSlot, Program } from '@/payload-types'
 import { formatDate } from '@/lib/format'
 import { groupLabel } from '@/lib/age-groups'
 import { slotLabel, slotSessions } from './slots'
@@ -20,6 +20,9 @@ export function TermList({ regs, showPlayer = true }: { regs: AcademyRegistratio
         const next = ahead.find((s) => !s.cancelled)
         const by = r.playingBirthYear ?? r.birthYear
         const changes = ahead.filter((s) => s.cancelled || s.moved)
+        const group = slot?.groups?.find((g) => g.id === r.groupId)
+        const names = (v: unknown) => ((v ?? []) as (number | AcademyCoach)[]).filter((c): c is AcademyCoach => typeof c === 'object').map((c) => c.displayName)
+        const coachList = slot ? [...new Set([...names(slot.coaches), ...names(group?.coaches)])] : []
         return (
           <li key={r.id} className="rounded-2xl border border-line p-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -29,6 +32,9 @@ export function TermList({ regs, showPlayer = true }: { regs: AcademyRegistratio
                   {program.title}
                 </p>
                 <p className="text-sm text-muted">{slot ? slotLabel(slot) : by ? `${groupLabel(by)} — training time to be confirmed` : 'Training time to be confirmed'}</p>
+                {r.status === 'paid' && (group || coachList.length > 0) && (
+                  <p className="text-sm text-muted">{[group?.name, coachList.length ? `Coach${coachList.length > 1 ? 'es' : ''} ${coachList.join(' & ')}` : null].filter(Boolean).join(' · ')}</p>
+                )}
               </div>
               <span className="w-fit rounded-full bg-black px-2.5 py-1 text-xs font-semibold text-white">RFA</span>
             </div>

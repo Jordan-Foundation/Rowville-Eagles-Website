@@ -774,6 +774,11 @@ export interface AcademyTermSlot {
   capacity?: number | null;
   active?: boolean | null;
   /**
+   * Or set coaches per group below. Easier from Staff → Academy terms.
+   */
+  coaches?: (number | AcademyCoach)[] | null;
+  notifyFamilies?: boolean | null;
+  /**
    * Optional: split the slot into groups, each with its own coaches.
    */
   groups?:
@@ -1810,6 +1815,8 @@ export interface AcademyTermSlotsSelect<T extends boolean = true> {
   birthYears?: T;
   capacity?: T;
   active?: T;
+  coaches?: T;
+  notifyFamilies?: T;
   groups?:
     | T
     | {

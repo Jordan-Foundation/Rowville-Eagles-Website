@@ -19,6 +19,19 @@ export const AcademyTermSlots: CollectionConfig = {
   access: { read: () => true, create: isStaff, update: isStaff, delete: isStaff },
   defaultSort: 'program',
   hooks: {
+    afterChange: [
+      async ({ doc, previousDoc, operation, req, context }) => {
+        // Changed day/time/venue or a single week → email + text paid families once
+        if (operation !== 'update' || context?.skipNotify || req.data?.notifyFamilies === false) return doc
+        try {
+          const { notifySlotChange } = await import('../manage') // lazy: keeps the config import light
+          await notifySlotChange(req.payload, previousDoc, doc)
+        } catch (e) {
+          req.payload.logger.error({ err: e, msg: `Telling families about the change to slot ${doc.id} failed` })
+        }
+        return doc
+      },
+    ],
     beforeValidate: [
       ({ data, originalDoc }) => {
         if (!data) return data
@@ -56,6 +69,15 @@ export const AcademyTermSlots: CollectionConfig = {
       ],
     },
     { name: 'active', label: 'Taking registrations', type: 'checkbox', defaultValue: true },
+    { name: 'coaches', label: 'Coaches (whole time)', type: 'relationship', relationTo: 'academy-coaches', hasMany: true, admin: { description: 'Or set coaches per group below. Easier from Staff → Academy terms.' } },
+    {
+      name: 'notifyFamilies',
+      label: 'Tell paid families about time/venue/week changes when I save',
+      type: 'checkbox',
+      defaultValue: true,
+      virtual: true,
+      admin: { position: 'sidebar' },
+    },
     {
       name: 'groups',
       type: 'array',
