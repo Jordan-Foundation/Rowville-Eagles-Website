@@ -5,6 +5,9 @@ import { createHmac, timingSafeEqual } from 'crypto'
  * Credentials come from env: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM (+614…).
  */
 
+/** Twilio's Australian region (AU1) signs its webhooks with its own Auth Token. Optional. */
+export const auRegionToken = () => process.env.TWILIO_AUTH_TOKEN_AU1?.trim() || null
+
 export const twilioConfig = () => {
   const sid = process.env.TWILIO_ACCOUNT_SID
   const token = process.env.TWILIO_AUTH_TOKEN
@@ -68,11 +71,19 @@ export async function confirmCallWithTwilio(p: { CallSid?: string; From?: string
   if (!p.CallSid || !/^CA[0-9a-f]{32}$/i.test(p.CallSid)) return { ok: false, why: `no valid CallSid (${p.CallSid ? p.CallSid.length + ' chars' : 'missing'})` }
   if (p.AccountSid && p.AccountSid !== cfg.sid) return { ok: false, why: 'different account' }
   try {
-    const res = await fetch(`${apiBase()}/2010-04-01/Accounts/${cfg.sid}/Calls/${p.CallSid}.json`, {
-      headers: { authorization: `Basic ${Buffer.from(`${cfg.sid}:${cfg.token}`).toString('base64')}` },
-      signal: AbortSignal.timeout(5000),
-    })
-    if (!res.ok) return { ok: false, why: `Twilio API answered ${res.status}` }
+    // The default (US) region first, then Australia (AU1) if its token is set — each region keeps its own calls
+    const regions: [string, string][] = [[apiBase(), cfg.token], ...(auRegionToken() ? ([[process.env.NODE_ENV !== 'production' && process.env.TWILIO_API_BASE_AU1 ? process.env.TWILIO_API_BASE_AU1 : 'https://api.sydney.au1.twilio.com', auRegionToken()!]] as [string, string][]) : [])]
+    let res: Response | null = null
+    const tried: string[] = []
+    for (const [base, token] of regions) {
+      res = await fetch(`${base}/2010-04-01/Accounts/${cfg.sid}/Calls/${p.CallSid}.json`, {
+        headers: { authorization: `Basic ${Buffer.from(`${cfg.sid}:${token}`).toString('base64')}` },
+        signal: AbortSignal.timeout(5000),
+      })
+      tried.push(`${base.includes('au1') ? 'AU1' : 'US1'} ${res.status}`)
+      if (res.ok) break
+    }
+    if (!res?.ok) return { ok: false, why: `Twilio API answered ${tried.join(', ')}${regions.length === 1 && res?.status === 404 ? ' — the call is probably handled in Twilio’s Australian region (AU1): add TWILIO_AUTH_TOKEN_AU1 in Vercel, or set the number to process calls in the US region' : ''}` }
     const call = (await res.json()) as { from?: string; to?: string; date_created?: string }
     const age = Date.now() - new Date(call.date_created ?? 0).getTime()
     if (!(age < 2 * 3_600_000)) return { ok: false, why: `call too old or no date (${call.date_created ?? 'none'})` }

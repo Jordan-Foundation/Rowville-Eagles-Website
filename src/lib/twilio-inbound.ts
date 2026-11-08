@@ -5,7 +5,7 @@ import { sendEmail } from './email'
 import { emailLayout, esc } from './email-templates'
 import { siteUrl } from './payments'
 import { toE164 } from './sms'
-import { confirmCallWithTwilio, validTwilioSignature } from './twilio'
+import { auRegionToken, confirmCallWithTwilio, validTwilioSignature } from './twilio'
 
 /**
  * Webhooks from Twilio: check the signature and return the posted fields, or null if it isn't genuinely
@@ -29,7 +29,8 @@ export async function readTwilioRequest(req: Request): Promise<Record<string, st
   const pairs: [string, string][] = isGet ? [...new URL(req.url).searchParams.entries()] : [...new URLSearchParams(await rawBody(req)).entries()]
   const params: Record<string, string> = Object.fromEntries(pairs)
   const urls = signatureUrls(req.url, siteUrl(), req.headers.get('x-forwarded-host'))
-  if (validTwilioSignature(token, req.headers.get('x-twilio-signature'), urls, isGet ? [] : pairs)) return params
+  // Requests handled in Twilio's Australian region are signed with that region's own Auth Token
+  for (const t of [token, auRegionToken()]) if (t && validTwilioSignature(t, req.headers.get('x-twilio-signature'), urls, isGet ? [] : pairs)) return params
   // Calls: if the signature doesn't match, confirm the call with Twilio directly
   if (params.CallSid && req.headers.has('x-twilio-signature')) {
     const check = await confirmCallWithTwilio(params)
