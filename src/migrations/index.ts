@@ -52,6 +52,7 @@ import * as migration_20261108_110430_fplus_reminder from './20261108_110430_fpl
 import * as migration_20261108_112644_promotions from './20261108_112644_promotions';
 import * as migration_20261108_114556_promotion_sending from './20261108_114556_promotion_sending';
 import * as migration_20261108_201445_policies from './20261108_201445_policies';
+import * as migration_20261108_204924_resumable_sends from './20261108_204924_resumable_sends';
 
 export const migrations = [
   {
@@ -322,6 +323,11 @@ export const migrations = [
   {
     up: migration_20261108_201445_policies.up,
     down: migration_20261108_201445_policies.down,
-    name: '20261108_201445_policies'
+    name: '20261108_201445_policies',
+  },
+  {
+    up: migration_20261108_204924_resumable_sends.up,
+    down: migration_20261108_204924_resumable_sends.down,
+    name: '20261108_204924_resumable_sends'
   },
 ];

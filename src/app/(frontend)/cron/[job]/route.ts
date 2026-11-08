@@ -23,7 +23,13 @@ export async function GET(req: Request, { params }: { params: Promise<{ job: str
 
   const p = await payload()
   const results: Record<string, unknown> = {}
+  const started = Date.now()
   for (const [name, run] of Object.entries(group)) {
+    // Leave room before the 300s limit: anything not started now runs on the next call
+    if (Date.now() - started > 240_000) {
+      results[name] = { skipped: 'out of time — runs next time' }
+      continue
+    }
     try {
       results[name] = await run(p)
     } catch (e) {

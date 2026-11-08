@@ -403,6 +403,16 @@ export interface Promotion {
     | number
     | boolean
     | null;
+  sendState?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  sendCompletedAt?: string | null;
   approvedBy?: (number | null) | User;
   updatedAt: string;
   createdAt: string;
@@ -2108,6 +2118,7 @@ export interface PlayerReport {
   submittedAt?: string | null;
   approvedAt?: string | null;
   releasedAt?: string | null;
+  familyNotifiedAt?: string | null;
   history?:
     | {
         action?: string | null;
@@ -3766,6 +3777,7 @@ export interface PlayerReportsSelect<T extends boolean = true> {
   submittedAt?: T;
   approvedAt?: T;
   releasedAt?: T;
+  familyNotifiedAt?: T;
   history?:
     | T
     | {
@@ -3823,6 +3835,8 @@ export interface PromotionsSelect<T extends boolean = true> {
   scheduledFor?: T;
   sentAt?: T;
   sentCounts?: T;
+  sendState?: T;
+  sendCompletedAt?: T;
   approvedBy?: T;
   updatedAt?: T;
   createdAt?: T;

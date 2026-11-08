@@ -68,19 +68,22 @@ export async function emailLink(payload: Payload, email: string, mode: LinkMode,
             after: 'This link works for 2 days. Didn’t ask for this? You can ignore this email.',
           },
         ])
-  await sendEmail(payload, { to: email, subject: mode === 'trial' ? (o.launch ? `${name} is live — claim your free month` : `Your free month of ${name} Premium`) : `Your free ${name} account`, html, sender: 'academy', userId: user.id })
+  const ok = await sendEmail(payload, { to: email, subject: mode === 'trial' ? (o.launch ? `${name} is live — claim your free month` : `Your free month of ${name} Premium`) : `Your free ${name} account`, html, sender: 'academy', userId: user.id })
+  if (!ok) throw new Error(`Email to ${email} didn’t go through`)
   return 'sent' as const
 }
 
 /** When Foundation+ is switched on: one "claim your free month" email to everyone on the waitlist (in batches). */
-export async function sendLaunchEmails(payload: Payload, limit = 100, o: { justEnabled?: boolean } = {}) {
+export async function sendLaunchEmails(payload: Payload, limit = 100, o: { justEnabled?: boolean; deadline?: number } = {}) {
   // (Called from the settings hook before the change is committed, so it says so instead of re-reading)
   const enabled = o.justEnabled || (await foundationSettings(payload)).enabled
   if (!enabled) return { sent: 0, remaining: 0, skipped: 'switched off' }
   const { docs, totalDocs } = await payload.find({ collection: 'fplus-waitlist', where: { notifiedAt: { exists: false } }, limit, sort: 'createdAt', depth: 0, overrideAccess: true })
   let sent = 0
   for (const w of docs) {
+    if (o.deadline && Date.now() > o.deadline) break
     try {
+      // Marked as sent only once the email actually went (a failure is retried next time)
       await emailLink(payload, w.email, 'trial', { ttlDays: 14, launch: true })
       await payload.update({ collection: 'fplus-waitlist', id: w.id, overrideAccess: true, data: { notifiedAt: new Date().toISOString() } })
       sent++

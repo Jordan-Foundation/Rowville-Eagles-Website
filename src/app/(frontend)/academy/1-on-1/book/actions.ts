@@ -1,5 +1,6 @@
 'use server'
 
+import { rateLimit } from '@/lib/form-guard'
 import { redirect } from 'next/navigation'
 import { payload } from '@/lib/payload'
 import { currentUser } from '@/lib/auth'
@@ -23,12 +24,14 @@ const MOBILE = /^(\+?61|0)4\d{8}$/
 
 /** Casual one-off or whole-term booking. Price and session dates are always worked out here, on the server. */
 export async function bookSession(_prev: BookState, fd: FormData): Promise<BookState> {
-  const values = Object.fromEntries([...fd.entries()].filter(([k]) => !k.startsWith('$')).map(([k, v]) => [k, String(v)]))
+  const values = Object.fromEntries([...fd.entries()].filter(([k]) => !k.startsWith('$')).map(([k, v]) => [k, String(v).slice(0, 2000)]))
   const fail = (error: string): BookState => ({ error, values })
   const s = (k: string) => (values[k] ?? '').trim()
   const mode = s('mode') === 'term' ? 'term' : 'casual'
 
   const p = await payload()
+  const limited = await rateLimit(p, 'one-on-one', { perIp: 20 })
+  if (limited) return fail(limited)
   const user = await currentUser()
   await releaseExpiredHolds(p)
 

@@ -77,7 +77,7 @@ export async function releaseAction(_prev: CycleState, fd: FormData): Promise<Cy
   const cycle = Number(fd.get('cycle'))
   const r = await releaseCycle(await payload(), cycle, user.id)
   revalidatePath(`/management/reports/${cycle}`)
-  return { message: `${r.released} report${r.released === 1 ? '' : 's'} released to ${r.families} famil${r.families === 1 ? 'y' : 'ies'} (email + text).${r.unreachable ? ` ${r.unreachable} had no contact details — they’ll see it when they log in.` : ''}` }
+  return { message: `${r.released} report${r.released === 1 ? '' : 's'} released to ${r.families} famil${r.families === 1 ? 'y' : 'ies'} (email + text).${r.remaining ? ` ${r.remaining} families are still to be messaged — that finishes automatically (or press Release again).` : ''}${r.unreachable ? ` ${r.unreachable} had no contact details — they’ll see it when they log in.` : ''}` }
 }
 
 const reportInput = (fd: FormData) => ({

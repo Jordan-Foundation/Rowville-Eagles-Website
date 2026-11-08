@@ -1,5 +1,6 @@
 'use server'
 
+import { rateLimit } from '@/lib/form-guard'
 import { redirect } from 'next/navigation'
 import { payload } from '@/lib/payload'
 import { currentUser } from '@/lib/auth'
@@ -15,11 +16,13 @@ const PHONE = /^(\+?61|0)[2-478]\d{8}$/
 
 /** Tournament expression of interest — no payment; the year of birth decides the age group. */
 export async function registerTournamentInterest(_prev: InterestState, fd: FormData): Promise<InterestState> {
-  const values = Object.fromEntries([...fd.entries()].filter(([k]) => !k.startsWith('$')).map(([k, v]) => [k, String(v)]))
+  const values = Object.fromEntries([...fd.entries()].filter(([k]) => !k.startsWith('$')).map(([k, v]) => [k, String(v).slice(0, 2000)]))
   const fail = (error: string): InterestState => ({ error, values })
   const s = (k: string) => (values[k] ?? '').trim()
 
   const p = await payload()
+  const limited = await rateLimit(p, 'interest', { perIp: 20 })
+  if (limited) return fail(limited)
   const program = (await p.find({ collection: 'programs', where: { slug: { equals: s('slug') }, type: { equals: 'tournament' } }, limit: 1, depth: 0 })).docs[0]
   if (!program || program.status !== 'open') return fail('Registrations of interest for this tournament are closed.')
   const user = await currentUser()

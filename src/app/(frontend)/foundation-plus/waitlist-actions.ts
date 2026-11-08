@@ -30,7 +30,11 @@ export async function joinWaitlist(_prev: WaitlistState, fd: FormData): Promise<
   const { foundationSettings } = await import('@/academy/pdr/load')
   if ((await foundationSettings(p)).enabled) {
     const { emailLink } = await import('@/academy/pdr/billing/trial')
-    await emailLink(p, email, fd.get('mode') === 'join' ? 'join' : 'trial')
+    try {
+      await emailLink(p, email, fd.get('mode') === 'join' ? 'join' : 'trial')
+    } catch {
+      return { error: 'We couldn’t send the email just now — please try again in a minute.' }
+    }
     return { done: true }
   }
   const { totalDocs } = await p.count({ collection: 'fplus-waitlist', where: { email: { equals: email } }, overrideAccess: true })

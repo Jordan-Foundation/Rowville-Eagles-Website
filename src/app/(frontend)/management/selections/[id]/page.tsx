@@ -15,6 +15,8 @@ import { Board, type Row } from './Board'
 import { SendForm, SquadForm } from './Forms'
 
 export const dynamic = 'force-dynamic'
+// Releasing reports / sending selection emails can take a while
+export const maxDuration = 300
 export const metadata: Metadata = { title: 'Selection round', robots: { index: false } }
 
 const outcomeName = { selected: 'Selected', successful: 'Successful', unsuccessful: 'Unsuccessful' } as Record<string, string>

@@ -7,7 +7,7 @@ import { payload } from '@/lib/payload'
 import { DATE_FIELDS, parseDateInput } from '@/lib/dates-edit'
 import { localYmd } from '@/lib/time'
 import { SMS_MAX, type Audience } from '@/promotions/audience'
-import { audiencePreview, sendPromotion } from '@/promotions/send'
+import { audiencePreview, continuePromotionSend, sendPromotion } from '@/promotions/send'
 import { scopeEmpty } from '@/promotions/rules'
 import { toLive } from '@/promotions/service'
 
@@ -69,7 +69,7 @@ export async function approveSendAction(_prev: SendState, fd: FormData): Promise
   try {
     const c = await sendPromotion(p, id, user.id)
     revalidatePath('/management/promotions')
-    return { ok: `Sent — ${c.audience} famil${c.audience === 1 ? 'y gets' : 'ies get'} the discount · ${c.email.sent} emailed · ${c.sms.sent} texted · ${c.email.skipped + c.sms.skipped} skipped (no marketing consent).` }
+    return { ok: `${c.finished ? 'Sent' : 'Sending'} — ${c.audience} famil${c.audience === 1 ? 'y gets' : 'ies get'} the discount · ${c.email.sent} emailed · ${c.sms.sent} texted · ${c.email.skipped + c.sms.skipped} skipped (no marketing consent)${c.finished ? '' : ` · ${c.remaining} still to go`}.` }
   } catch (e) {
     return { error: e instanceof Error ? e.message : 'Could not send.' }
   }
@@ -99,4 +99,13 @@ export async function scheduleAction(_prev: SendState, fd: FormData): Promise<Se
   revalidatePath(`/management/promotions/${id}/send`)
   revalidatePath('/management/promotions')
   return { ok: 'Scheduled — it goes out at about 6am that day.' }
+}
+
+/** Carry on a send that ran out of time (it also carries on by itself each morning). */
+export async function continueSendAction(fd: FormData) {
+  const user = await managementOrNull()
+  if (!user) return
+  const id = Number(fd.get('id'))
+  await continuePromotionSend(await payload(), id)
+  revalidatePath(`/management/promotions/${id}/send`)
 }

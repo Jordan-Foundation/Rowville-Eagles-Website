@@ -12,7 +12,7 @@ export type PayState = { error?: string; values?: Record<string, string> }
 const PHONE = /^(\+?61|0)[2-478]\d{8}$/
 
 export async function payForSelection(_prev: PayState, fd: FormData): Promise<PayState> {
-  const values = Object.fromEntries([...fd.entries()].filter(([k]) => !k.startsWith('$')).map(([k, v]) => [k, String(v)]))
+  const values = Object.fromEntries([...fd.entries()].filter(([k]) => !k.startsWith('$')).map(([k, v]) => [k, String(v).slice(0, 2000)]))
   const fail = (error: string): PayState => ({ error, values })
   const s = (k: string) => (values[k] ?? '').trim()
   const data = await loadPayable(s('ref'), s('t'))

@@ -1,5 +1,6 @@
 'use server'
 
+import { rateLimit } from '@/lib/form-guard'
 import { dobProblem, phoneOk } from '@/lib/validate'
 import { redirect } from 'next/navigation'
 import { payload } from '@/lib/payload'
@@ -17,7 +18,7 @@ export type JoinState = { error?: string; values?: Record<string, string> }
 const GENDERS = ['female', 'male', 'non-binary', 'prefer-not-to-say'] as const
 
 export async function joinUs(_prev: JoinState, fd: FormData): Promise<JoinState> {
-  const values = Object.fromEntries([...fd.entries()].filter(([k]) => !k.startsWith('$')).map(([k, v]) => [k, String(v)]))
+  const values = Object.fromEntries([...fd.entries()].filter(([k]) => !k.startsWith('$')).map(([k, v]) => [k, String(v).slice(0, 2000)]))
   const fail = (error: string): JoinState => ({ error, values })
   const s = (k: string) => (values[k] ?? '').trim()
 
@@ -39,6 +40,8 @@ export async function joinUs(_prev: JoinState, fd: FormData): Promise<JoinState>
   if (fd.get('consent') !== 'on') return fail('Please agree to be contacted about trials.')
 
   const p = await payload()
+  const limited = await rateLimit(p, 'join', { email: contact.email })
+  if (limited) return fail(limited)
   const rules = await getAgeRules(p)
   const season = rules.season
   const birthYear = birthYearOf(player.dateOfBirth)
@@ -112,6 +115,8 @@ export async function chooseTrial(_prev: JoinState, fd: FormData): Promise<JoinS
   const ref = String(fd.get('ref') ?? '')
   const token = String(fd.get('token') ?? '')
   const p = await payload()
+  const limited = await rateLimit(p, 'join-choose', { perIp: 20 })
+  if (limited) return { error: limited }
   const { docs } = await p.find({ collection: 'selection-entries', where: { reference: { equals: ref } }, limit: 1, overrideAccess: true, showHiddenFields: true })
   const reg = docs[0]
   if (!reg || !token || reg.token !== token) return { error: 'This link is no longer valid. Please contact the club.' }

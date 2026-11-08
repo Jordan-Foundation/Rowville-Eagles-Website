@@ -52,6 +52,7 @@ export const PlayerReports: CollectionConfig = {
       { name: 'submittedAt', type: 'date', admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } } },
       { name: 'approvedAt', type: 'date', admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } } },
       { name: 'releasedAt', label: 'Released to family', type: 'date', index: true, admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } } },
+      { name: 'familyNotifiedAt', label: 'Family emailed/texted', type: 'date', admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } } },
     ] },
     {
       name: 'history',

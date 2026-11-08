@@ -8,6 +8,7 @@ import { smsBody, type Audience } from '@/promotions/audience'
 import { audienceOptions, audiencePreview, defaultCta, emailBlocks, scopeSummary, senderName } from '@/promotions/send'
 import { discountLabel } from '@/promotions/rules'
 import { AudienceMessageForm, SendButtons } from './Forms'
+import { continueSendAction } from './actions'
 
 export const dynamic = 'force-dynamic'
 // Sending to a large audience can take a while (one email/text at a time, consent re-checked for each)
@@ -26,7 +27,7 @@ export default async function SendPromotionPage({ params }: { params: Promise<{ 
   const sample = { firstName: 'Sam', email: 'sam@example.com' }
   const html = channels.includes('email') && d.subject ? emailLayout(d.brand === 'club' ? 'club' : 'academy', emailBlocks(d, summary, sample), { unsubscribeUrl: '#' }) : null
   const sms = channels.includes('sms') && d.smsText ? smsBody(d.smsText, senderName(d)) : null
-  const counts = d.sentCounts as { families: number; audience: number; email: { sent: number; skipped: number }; sms: { sent: number; skipped: number } } | null
+  const counts = d.sentCounts as { families: number; audience: number; email: { sent: number; skipped: number; failed?: number }; sms: { sent: number; skipped: number; failed?: number }; remaining?: number } | null
   const h2 = 'font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase'
 
   return (
@@ -39,6 +40,14 @@ export default async function SendPromotionPage({ params }: { params: Promise<{ 
         <section className="mt-8 rounded-2xl border border-emerald-300 bg-emerald-50 p-5 text-emerald-950" aria-label="Sent">
           <h2 className="font-semibold">Sent {formatDate(d.sentAt, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}</h2>
           {counts && <p className="mt-1 text-sm">{counts.audience} families got the discount · {counts.email.sent} emailed · {counts.sms.sent} texted · {counts.email.skipped} not emailed and {counts.sms.skipped} not texted (no marketing consent or no mobile).</p>}
+          {(counts?.email.failed || counts?.sms.failed) ? <p className="mt-1 text-sm font-semibold text-red-700">{(counts.email.failed ?? 0) + (counts.sms.failed ?? 0)} couldn’t be delivered — see Admin → Message log.</p> : null}
+          {!d.sendCompletedAt && (
+            <form action={continueSendAction} className="mt-3 flex flex-wrap items-center gap-3 rounded-xl border border-amber-400 bg-amber-50 p-3 text-sm text-amber-950">
+              <input type="hidden" name="id" value={d.id} />
+              <span>Still sending{counts?.remaining ? ` — ${counts.remaining} to go` : ''}. It carries on by itself each morning, or:</span>
+              <button className="rounded-full bg-amber-500 px-4 py-1.5 font-semibold text-black">Continue now</button>
+            </form>
+          )}
           <p className="mt-2 text-sm">Results (uses and revenue) are on the <Link href={`/management/promotions/${d.id}`} className="underline">promotion page</Link>.</p>
         </section>
       ) : (

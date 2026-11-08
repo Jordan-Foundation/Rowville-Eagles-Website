@@ -1,5 +1,6 @@
 'use server'
 
+import { rateLimit } from '@/lib/form-guard'
 import { dobProblem, phoneOk } from '@/lib/validate'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
@@ -11,14 +12,16 @@ import { findDiscount, recordUse } from '@/promotions/service'
 
 export type BookingState = { error?: string; values?: Record<string, string> }
 
-const str = (fd: FormData, k: string) => String(fd.get(k) ?? '').trim()
+const str = (fd: FormData, k: string) => String(fd.get(k) ?? '').trim().slice(0, 2000)
 const emailOk = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)
 
 export async function bookProgram(_prev: BookingState, fd: FormData): Promise<BookingState> {
-  const values = Object.fromEntries([...fd.entries()].filter(([k]) => !k.startsWith('$')).map(([k, v]) => [k, String(v)]))
+  const values = Object.fromEntries([...fd.entries()].filter(([k]) => !k.startsWith('$')).map(([k, v]) => [k, String(v).slice(0, 2000)]))
   const fail = (error: string): BookingState => ({ error, values })
 
   const p = await payload()
+  const limited = await rateLimit(p, 'program-booking', { perIp: 20 })
+  if (limited) return fail(limited)
   const { docs } = await p.find({
     collection: 'programs',
     where: { slug: { equals: str(fd, 'program') }, status: { equals: 'open' }, type: { not_in: ['academy-trial', 'community'] } },

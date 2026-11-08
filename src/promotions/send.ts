@@ -112,26 +112,65 @@ export async function audiencePreview(p: Payload, a: Audience) {
   }
 }
 
+type Tally = { sent: number; skipped: number; failed: number }
+type SendState = { ids: number[]; emailDone: number[]; smsDone: number[]; email: Tally; sms: Tally }
+export type SendCounts = { families: number; audience: number; email: Tally; sms: Tally; finished: boolean; remaining: number }
+const zero = (): Tally => ({ sent: 0, skipped: 0, failed: 0 })
+/** Time one request may spend sending before it stops and leaves the rest for "Continue" / the daily job. */
+const BUDGET_MS = 240_000
+
 /**
- * Send (now or from the scheduler): the audience gets the discount, and those who agreed to marketing get the
- * email and/or text. Claims the promotion first so it's never sent twice.
+ * Send (now or from the scheduler): the audience gets the discount straight away, and those who agreed to
+ * marketing get the email and/or text. Claims the promotion first so it's never started twice; who has been
+ * reached is saved as it goes, so a send that runs out of time carries on later without repeats.
  */
-export async function sendPromotion(p: Payload, id: number, by: number | null, now = new Date()) {
-  const claimed = await p.update({ collection: 'promotions', where: { id: { equals: id }, sentAt: { exists: false } }, data: { sentAt: now.toISOString() }, overrideAccess: true })
+export async function sendPromotion(p: Payload, id: number, by: number | null, now = new Date()): Promise<SendCounts> {
+  const claimed = await p.update({ collection: 'promotions', where: { id: { equals: id }, sentAt: { exists: false } }, data: { sentAt: now.toISOString() }, overrideAccess: true, depth: 0 })
   if (!claimed.docs.length) throw new Error('This promotion has already been sent.')
   const d = await p.findByID({ collection: 'promotions', id, ...q })
   const audience = (d.audience ?? { mode: 'picked' }) as Audience
   const { ids } = await audiencePreview(p, audience)
   const recipients = [...new Set([...(d.recipients ?? []).map(idOf).filter((x): x is number => !!x), ...ids])]
-  await p.update({ collection: 'promotions', id, overrideAccess: true, data: { recipients, status: d.status === 'ended' ? 'ended' : 'live', approvedBy: by ?? d.approvedBy ?? undefined } })
-  const summary = await scopeSummary(p, d)
+  const state: SendState = { ids, emailDone: [], smsDone: [], email: zero(), sms: zero() }
+  await p.update({ collection: 'promotions', id, overrideAccess: true, depth: 0, data: { recipients, status: d.status === 'ended' ? 'ended' : 'live', approvedBy: by ?? d.approvedBy ?? undefined, sendState: state } })
+  return continuePromotionSend(p, id)
+}
+
+/** Carry on sending a promotion's messages from where it stopped. */
+export async function continuePromotionSend(p: Payload, id: number, budgetMs = BUDGET_MS): Promise<SendCounts> {
+  const deadline = Date.now() + budgetMs
+  const d = await p.findByID({ collection: 'promotions', id, ...q })
+  const state = { email: zero(), sms: zero(), emailDone: [], smsDone: [], ids: [], ...((d.sendState ?? {}) as Partial<SendState>) } as SendState
   const channels = d.channels ?? []
-  const email = channels.includes('email') && d.subject
-    ? await sendMarketingEmail(p, { userIds: ids, subject: d.subject, brand: d.brand === 'club' ? 'club' : 'academy', blocks: (u) => emailBlocks(d, summary, u) })
-    : { sent: 0, skipped: 0 }
-  const sms = channels.includes('sms') && d.smsText ? await sendMarketingSms(p, { userIds: ids, body: smsBody(d.smsText, senderName(d)) }) : { sent: 0, skipped: 0 }
-  const counts = { families: recipients.length, audience: ids.length, email, sms }
-  await p.update({ collection: 'promotions', id, overrideAccess: true, data: { sentCounts: counts } })
+  const summary = await scopeSummary(p, d)
+  const add = (t: Tally, r: { sent: number; skipped: number; failed: number }) => ({ sent: t.sent + r.sent, skipped: t.skipped + r.skipped, failed: t.failed + r.failed })
+  const save = () => p.update({ collection: 'promotions', id, overrideAccess: true, depth: 0, data: { sendState: state } })
+
+  let finished = true
+  if (channels.includes('email') && d.subject) {
+    const left = state.ids.filter((x) => !state.emailDone.includes(x))
+    if (left.length) {
+      const r = await sendMarketingEmail(p, { userIds: left, subject: d.subject, brand: d.brand === 'club' ? 'club' : 'academy', blocks: (u) => emailBlocks(d, summary, u), deadline })
+      state.emailDone.push(...r.done)
+      state.email = add(state.email, r)
+      finished &&= r.finished
+      await save()
+    }
+  }
+  if (finished && channels.includes('sms') && d.smsText) {
+    const left = state.ids.filter((x) => !state.smsDone.includes(x))
+    if (left.length) {
+      const r = await sendMarketingSms(p, { userIds: left, body: smsBody(d.smsText, senderName(d)), deadline })
+      state.smsDone.push(...r.done)
+      state.sms = add(state.sms, r)
+      finished &&= r.finished
+      await save()
+    }
+  }
+  const total = state.ids.length * ((channels.includes('email') && d.subject ? 1 : 0) + (channels.includes('sms') && d.smsText ? 1 : 0))
+  const handled = (channels.includes('email') && d.subject ? state.emailDone.length : 0) + (channels.includes('sms') && d.smsText ? state.smsDone.length : 0)
+  const counts: SendCounts = { families: (d.recipients ?? []).length, audience: state.ids.length, email: state.email, sms: state.sms, finished, remaining: Math.max(0, total - handled) }
+  await p.update({ collection: 'promotions', id, overrideAccess: true, depth: 0, data: { sentCounts: counts, ...(finished ? { sendCompletedAt: new Date().toISOString() } : {}) } })
   return counts
 }
 
@@ -147,5 +186,16 @@ export async function runScheduledPromotions(p: Payload, now = new Date()) {
       p.logger.error({ err: e, msg: `Scheduled promotion ${d.id} failed to send` })
     }
   }
-  return { sent }
+  // Sends that ran out of time earlier carry on here
+  const { docs: unfinished } = await p.find({ collection: 'promotions', where: { sentAt: { exists: true }, sendCompletedAt: { exists: false } }, limit: 10, ...q, select: { name: true } })
+  let continued = 0
+  for (const d of unfinished) {
+    try {
+      await continuePromotionSend(p, d.id, 120_000)
+      continued++
+    } catch (e) {
+      p.logger.error({ err: e, msg: `Promotion ${d.id} could not continue sending` })
+    }
+  }
+  return { sent, continued }
 }

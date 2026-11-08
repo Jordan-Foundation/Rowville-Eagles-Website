@@ -1,5 +1,6 @@
 'use server'
 
+import { rateLimit } from '@/lib/form-guard'
 import { dobProblem, phoneOk } from '@/lib/validate'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
@@ -12,7 +13,7 @@ import { currentAcademyTerm, trialNights } from '@/lib/rfa-trials'
 export type RfaTrialState = { error?: string; values?: Record<string, string> }
 
 export async function bookRfaTrial(_prev: RfaTrialState, fd: FormData): Promise<RfaTrialState> {
-  const values = Object.fromEntries([...fd.entries()].filter(([k]) => !k.startsWith('$')).map(([k, v]) => [k, String(v)]))
+  const values = Object.fromEntries([...fd.entries()].filter(([k]) => !k.startsWith('$')).map(([k, v]) => [k, String(v).slice(0, 2000)]))
   const fail = (error: string): RfaTrialState => ({ error, values })
   const s = (k: string) => (values[k] ?? '').trim()
 
@@ -34,6 +35,8 @@ export async function bookRfaTrial(_prev: RfaTrialState, fd: FormData): Promise<
   if (fd.get('terms') !== 'on') return fail('Please accept the terms to continue.')
 
   const p = await payload()
+  const limited = await rateLimit(p, 'rfa-trial', { email: contact.email })
+  if (limited) return fail(limited)
   const term = await currentAcademyTerm(p)
   if (!term) return fail('There are no Academy trials available right now.')
   const birthYear = birthYearOf(player.dateOfBirth)

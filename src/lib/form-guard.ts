@@ -48,3 +48,16 @@ export async function purgeThrottle(payload: Payload) {
   const r = await payload.delete({ collection: 'form-throttle', where: { createdAt: { less_than: new Date(Date.now() - 86_400_000).toISOString() } }, overrideAccess: true })
   return { deleted: r.docs.length }
 }
+
+/**
+ * One-line guard for public forms: at most `perIp` submissions per hour from one connection and `perEmail` per
+ * email address. Returns an error message to show, or null when the submission may go ahead.
+ */
+export async function rateLimit(payload: Payload, form: string, o: { email?: string | null; perIp?: number; perEmail?: number } = {}) {
+  const { headers } = await import('next/headers')
+  const ip = clientIp(await headers())
+  const keys = [{ key: hashKey('ip', ip), limit: o.perIp ?? 10 }]
+  if (o.email) keys.push({ key: hashKey('email', normaliseEmail(o.email)), limit: o.perEmail ?? 5 })
+  const ok = await throttle(payload, form, keys)
+  return ok ? null : 'Too many attempts from here in the last hour — please wait a little and try again, or call us.'
+}

@@ -1,5 +1,6 @@
 'use server'
 
+import { rateLimit } from '@/lib/form-guard'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { payload } from '@/lib/payload'
@@ -40,6 +41,8 @@ export async function requestReset(_prev: FormState, fd: FormData): Promise<Form
   const email = String(fd.get('email') ?? '').trim().toLowerCase()
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: 'Please enter a valid email.' }
   const p = await payload()
+  const limited = await rateLimit(p, 'password-reset', { email: email })
+  if (limited) return { error: limited }
   const { docs } = await p.find({ collection: 'users', where: { email: { equals: email } }, limit: 1, overrideAccess: true })
   if (docs[0]) {
     const token = await p.forgotPassword({ collection: 'users', data: { email }, disableEmail: true })

@@ -73,17 +73,26 @@ async function logEmail(payload: Payload, opts: SendOptions, status: 'sent' | 'f
  * Sends via Resend when RESEND_API_KEY is set. Otherwise (local dev / not yet configured) the email is
  * written to ./.outbox as an HTML file so it can be previewed, and nothing is sent.
  */
-export async function sendEmail(payload: Payload, opts: SendOptions) {
+export async function sendEmail(payload: Payload, opts: SendOptions): Promise<boolean> {
   const text = htmlToText(opts.html)
   if (process.env.RESEND_API_KEY) {
+    const attempt = () => payload.sendEmail({ to: opts.to, from: from(opts.sender), subject: opts.subject, html: opts.html, text, replyTo: opts.replyTo, headers: opts.headers })
     try {
-      await payload.sendEmail({ to: opts.to, from: from(opts.sender), subject: opts.subject, html: opts.html, text, replyTo: opts.replyTo, headers: opts.headers })
+      try {
+        await attempt()
+      } catch (e) {
+        // Resend allows a few emails a second — wait and try once more when it says "too many requests"
+        if (!/429|rate|too many/i.test(e instanceof Error ? e.message : String(e))) throw e
+        await new Promise((r) => setTimeout(r, 1200))
+        await attempt()
+      }
       await logEmail(payload, opts, 'sent')
+      return true
     } catch (e) {
       payload.logger.error({ err: e, msg: `Email to ${opts.to} failed: ${opts.subject}` })
       await logEmail(payload, opts, 'failed', e instanceof Error ? e.message : String(e))
+      return false
     }
-    return
   }
   payload.logger.info(`[email not sent — no RESEND_API_KEY] to=${opts.to} subject="${opts.subject}"`)
   await logEmail(payload, opts, 'not-configured')
@@ -95,4 +104,5 @@ export async function sendEmail(payload: Payload, opts: SendOptions) {
     await writeFile(path.join(dir, name), `<!-- ${head.join(' | ')} -->\n${opts.html}`)
     await writeFile(path.join(dir, name.replace(/\.html$/, '.txt')), text)
   }
+  return true
 }

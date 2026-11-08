@@ -10,6 +10,8 @@ import { ConfirmButton } from '@/components/ConfirmButton'
 import { approveSelectedAction, reassignAction, setCycleStatusAction } from '../actions'
 
 export const dynamic = 'force-dynamic'
+// Releasing reports / sending selection emails can take a while
+export const maxDuration = 300
 export const metadata: Metadata = { title: 'Report round', robots: { index: false } }
 
 const idOf = (v: unknown) => (v && typeof v === 'object' ? (v as { id: number }).id : (v as number | null))

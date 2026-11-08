@@ -1,5 +1,6 @@
 'use server'
 
+import { rateLimit } from '@/lib/form-guard'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { payload } from '@/lib/payload'
@@ -15,7 +16,7 @@ type ClientItem = { productId: number; size: string; quantity: number }
 const SHOP_PAYEE = 'academy' as const
 
 export async function checkoutCart(_prev: CartState, fd: FormData): Promise<CartState> {
-  const s = (k: string) => String(fd.get(k) ?? '').trim()
+  const s = (k: string) => String(fd.get(k) ?? '').trim().slice(0, 1000)
   let clientItems: ClientItem[]
   try {
     clientItems = JSON.parse(s('items'))
@@ -31,6 +32,8 @@ export async function checkoutCart(_prev: CartState, fd: FormData): Promise<Cart
   if (fulfilment === 'post' && shippingAddress.length < 10) return { error: 'Please enter a full postal address.' }
 
   const p = await payload()
+  const limited = await rateLimit(p, 'shop', { email: contact.email })
+  if (limited) return { error: limited }
   const settings = await p.findGlobal({ slug: 'site-settings' })
   const { user } = await p.auth({ headers: await headers() })
   const userId = user?.collection === 'users' ? user.id : undefined

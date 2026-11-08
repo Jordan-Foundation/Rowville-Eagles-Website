@@ -11,6 +11,7 @@ import { graceSweep } from '../academy/pdr/billing/sync'
 import { sendLaunchEmails, trialReminders } from '../academy/pdr/billing/trial'
 import { announceChallenges, finaliseChallenges } from '../academy/pdr/challenges'
 import { sendReportReminders } from '../academy/reports/service'
+import { notifyReleasedJob } from '../academy/reports/review'
 import { runScheduledPromotions } from '../promotions/send'
 
 type Job = (payload: Payload) => Promise<Record<string, unknown>>
@@ -20,21 +21,29 @@ type Job = (payload: Payload) => Promise<Record<string, unknown>>
  * Each job must be safe to run twice — logs/flags prevent duplicate emails.
  */
 export const cronJobs: Record<string, Record<string, Job>> = {
+  // ~6am Melbourne: quick, important jobs first (payments, access, reminders)
   daily: {
-    purgeOldInvites,
-    availabilityReminders: (payload) => sendAvailabilityReminders(payload),
-    accountReminders: (payload) => sendAccountReminders(payload),
-    reviewRequests: (payload) => sendReviewRequests(payload),
-    selectionPaymentReminders: (payload) => runSelectionReminders(payload),
-    teamMembers: (payload) => syncTeamMembers(payload),
-    foundationVideos: (payload) => purgeSubmissionVideos(payload),
-    formThrottle: (payload) => purgeThrottle(payload),
     foundationGrace: (payload) => graceSweep(payload),
+    teamMembers: (payload) => syncTeamMembers(payload),
+    selectionPaymentReminders: (payload) => runSelectionReminders(payload),
+    availabilityReminders: (payload) => sendAvailabilityReminders(payload),
+    reportReminders: (payload) => sendReportReminders(payload),
+    accountReminders: (payload) => sendAccountReminders(payload),
     foundationTrialReminders: (payload) => trialReminders(payload),
-    foundationLaunchEmails: (payload) => sendLaunchEmails(payload, 500),
     foundationChallengeStart: (payload) => announceChallenges(payload),
     foundationChallengeResults: (payload) => finaliseChallenges(payload),
-    reportReminders: (payload) => sendReportReminders(payload),
+  },
+  // ~8am Melbourne: bulk messages, each with its own time limit and able to carry on the next day
+  messages: {
     scheduledPromotions: (payload) => runScheduledPromotions(payload),
+    reportNotifications: (payload) => notifyReleasedJob(payload),
+    foundationLaunchEmails: (payload) => sendLaunchEmails(payload, 100, { deadline: Date.now() + 60_000 }),
+    reviewRequests: (payload) => sendReviewRequests(payload),
+  },
+  // ~3:30am Melbourne: housekeeping
+  cleanup: {
+    purgeOldInvites,
+    foundationVideos: (payload) => purgeSubmissionVideos(payload),
+    formThrottle: (payload) => purgeThrottle(payload),
   },
 }

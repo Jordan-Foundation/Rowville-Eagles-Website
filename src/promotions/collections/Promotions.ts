@@ -67,6 +67,8 @@ export const Promotions: CollectionConfig = {
         { name: 'scheduledFor', type: 'date', admin: { date: { pickerAppearance: 'dayAndTime' } } },
         { name: 'sentAt', type: 'date', admin: { readOnly: true } },
         { name: 'sentCounts', type: 'json', admin: { readOnly: true } },
+        { name: 'sendState', type: 'json', admin: { hidden: true } },
+        { name: 'sendCompletedAt', label: 'Finished sending', type: 'date', admin: { readOnly: true } },
         { name: 'approvedBy', type: 'relationship', relationTo: 'users', admin: { readOnly: true } },
       ],
     },

@@ -1,5 +1,6 @@
 'use server'
 
+import { rateLimit } from '@/lib/form-guard'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { payload } from '@/lib/payload'
@@ -10,7 +11,7 @@ import { toddlerAgeOk } from '@/academy/terms/toddler'
 
 export type TermState = { error?: string; interest?: { reference: string; reason: 'no_slot' | 'full'; email: string }; values?: Record<string, string> }
 
-const str = (fd: FormData, k: string) => String(fd.get(k) ?? '').trim()
+const str = (fd: FormData, k: string) => String(fd.get(k) ?? '').trim().slice(0, 2000)
 const emailOk = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)
 
 /**
@@ -18,9 +19,11 @@ const emailOk = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)
  * several → the parent's choice; none (or all full) → interest only, nothing charged.
  */
 export async function bookTerm(_prev: TermState, fd: FormData): Promise<TermState> {
-  const values = Object.fromEntries([...fd.entries()].filter(([k]) => !k.startsWith('$')).map(([k, v]) => [k, String(v)]))
+  const values = Object.fromEntries([...fd.entries()].filter(([k]) => !k.startsWith('$')).map(([k, v]) => [k, String(v).slice(0, 2000)]))
   const fail = (error: string): TermState => ({ error, values })
   const p = await payload()
+  const limited = await rateLimit(p, 'term-booking', { perIp: 20 })
+  if (limited) return fail(limited)
   const { docs } = await p.find({ collection: 'programs', where: { slug: { equals: str(fd, 'program') }, type: { in: ['academy-term', 'toddler'] }, status: { equals: 'open' } }, limit: 1, depth: 0 })
   const program = docs[0]
   if (!program) return fail('This program is no longer taking registrations.')

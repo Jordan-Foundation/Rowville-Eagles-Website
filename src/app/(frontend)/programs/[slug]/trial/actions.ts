@@ -1,5 +1,6 @@
 'use server'
 
+import { rateLimit } from '@/lib/form-guard'
 import { redirect } from 'next/navigation'
 import { payload } from '@/lib/payload'
 import { birthYearOf } from '@/lib/age-groups'
@@ -11,7 +12,7 @@ export type ToddlerTrialState = { error?: string; values?: Record<string, string
 
 /** One free Mini Ballers trial per child (matched on name + date of birth), within each session's trial places. */
 export async function bookToddlerTrial(_prev: ToddlerTrialState, fd: FormData): Promise<ToddlerTrialState> {
-  const values = Object.fromEntries([...fd.entries()].filter(([k]) => !k.startsWith('$')).map(([k, v]) => [k, String(v)]))
+  const values = Object.fromEntries([...fd.entries()].filter(([k]) => !k.startsWith('$')).map(([k, v]) => [k, String(v).slice(0, 2000)]))
   const fail = (error: string): ToddlerTrialState => ({ error, values })
   const s = (k: string) => (values[k] ?? '').trim()
   const contact = { firstName: s('contactFirstName'), lastName: s('contactLastName'), email: s('contactEmail').toLowerCase(), phone: s('contactPhone') }
@@ -22,6 +23,8 @@ export async function bookToddlerTrial(_prev: ToddlerTrialState, fd: FormData): 
   if (fd.get('terms') !== 'on') return fail('Please accept the terms to continue.')
 
   const p = await payload()
+  const limited = await rateLimit(p, 'toddler-trial', { email: contact.email })
+  if (limited) return fail(limited)
   const { docs } = await p.find({ collection: 'programs', where: { slug: { equals: s('program') }, type: { equals: 'toddler' }, status: { in: ['open', 'full'] } }, limit: 1, depth: 0 })
   const program = docs[0]
   if (!program) return fail('Mini Ballers trials aren’t available right now.')
