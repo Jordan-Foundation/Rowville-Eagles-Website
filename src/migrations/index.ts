@@ -44,6 +44,8 @@ import * as migration_20261108_093014_mini_ballers_type from './20261108_093014_
 import * as migration_20261108_093100_mini_ballers_draft from './20261108_093100_mini_ballers_draft';
 import * as migration_20261108_095107_community_night_type from './20261108_095107_community_night_type';
 import * as migration_20261108_095200_club_programs from './20261108_095200_club_programs';
+import * as migration_20261108_100234_curriculum from './20261108_100234_curriculum';
+import * as migration_20261108_100300_curriculum_import from './20261108_100300_curriculum_import';
 
 export const migrations = [
   {
@@ -269,11 +271,21 @@ export const migrations = [
   {
     up: migration_20261108_095107_community_night_type.up,
     down: migration_20261108_095107_community_night_type.down,
-    name: '20261108_095107_community_night_type'
+    name: '20261108_095107_community_night_type',
   },
   {
     up: migration_20261108_095200_club_programs.up,
     down: migration_20261108_095200_club_programs.down,
     name: '20261108_095200_club_programs',
+  },
+  {
+    up: migration_20261108_100234_curriculum.up,
+    down: migration_20261108_100234_curriculum.down,
+    name: '20261108_100234_curriculum',
+  },
+  {
+    up: migration_20261108_100300_curriculum_import.up,
+    down: migration_20261108_100300_curriculum_import.down,
+    name: '20261108_100300_curriculum_import',
   },
 ];

@@ -1,0 +1,1182 @@
+{
+ "F": {
+  "ATT": {
+   "standard": "By the end of Foundation, players dribble the ball close to their feet using both feet and change direction with simple stop-turns. They attack the correct goal, are willing to take on an opponent 1v1, and score from close range by placing the ball with the inside of the foot.",
+   "descriptors": [
+    {
+     "code": "FF-F-ATT01",
+     "text": "Dribble with small, frequent touches using both feet, keeping the ball close."
+    },
+    {
+     "code": "FF-F-ATT02",
+     "text": "Stop the ball and change direction (stop-turn with the sole, simple inside hook)."
+    },
+    {
+     "code": "FF-F-ATT03",
+     "text": "Take on an opponent 1v1 with confidence rather than kicking the ball away."
+    },
+    {
+     "code": "FF-F-ATT04",
+     "text": "Shoot at goal from close range, placing the ball with the inside of the foot."
+    },
+    {
+     "code": "FF-F-ATT05",
+     "text": "Recognise the goal to attack and move forward with the ball towards it."
+    }
+   ]
+  },
+  "DEF": {
+   "standard": "By the end of Foundation, players react when their team loses the ball and try to win it back straight away. They move to get between the ball and their own goal, stay on their feet, and use a poke tackle to steal the ball.",
+   "descriptors": [
+    {
+     "code": "FF-F-DEF01",
+     "text": "Recognise when the team has lost the ball and chase to win it back."
+    },
+    {
+     "code": "FF-F-DEF02",
+     "text": "Move to a goal-side position, between the ball and their own goal."
+    },
+    {
+     "code": "FF-F-DEF03",
+     "text": "Use a poke tackle to knock the ball away from an opponent."
+    },
+    {
+     "code": "FF-F-DEF04",
+     "text": "Stay on their feet and watch the ball instead of diving in."
+    }
+   ]
+  },
+  "PHY": {
+   "standard": "By the end of Foundation, players run, stop, dodge and change direction with control in tag and chase games. They balance on one foot, jump and land safely, and combine basic movements (run, skip, hop) with the ball at their feet.",
+   "descriptors": [
+    {
+     "code": "FF-F-PHY01",
+     "text": "Agility: start, stop and dodge in chase and tag games."
+    },
+    {
+     "code": "FF-F-PHY02",
+     "text": "Balance: hop, stand on one foot and land from a jump with control."
+    },
+    {
+     "code": "FF-F-PHY03",
+     "text": "Coordination: run, skip, throw, catch and kick in fun movement games."
+    },
+    {
+     "code": "FF-F-PHY04",
+     "text": "Speed: react to a signal and sprint short distances (5–10 m)."
+    },
+    {
+     "code": "FF-F-PHY05",
+     "text": "Strength: body-weight play such as crawling, jumping and wheelbarrow races."
+    }
+   ]
+  },
+  "PAS": {
+   "standard": "By the end of Foundation, players pass along the ground over short distances (3–8 m) with the inside of the foot and look at their target first. They stop a rolling ball with the sole or inside of the foot, and move into space so a teammate can pass to them.",
+   "descriptors": [
+    {
+     "code": "FF-F-PAS01",
+     "text": "Inside-foot ground pass over short distances to a stationary teammate."
+    },
+    {
+     "code": "FF-F-PAS02",
+     "text": "Receive a rolling ball by stopping it with the sole or inside of the foot."
+    },
+    {
+     "code": "FF-F-PAS03",
+     "text": "Look up at the target before passing."
+    },
+    {
+     "code": "FF-F-PAS04",
+     "text": "Move away from teammates and opponents so someone can pass to you."
+    }
+   ]
+  },
+  "TAC": {
+   "standard": "By the end of Foundation, players know which goal they attack and defend, and whether their team is attacking (we have the ball) or defending (they have the ball). With prompting they spread out instead of bunching, and they follow the basic restarts of small-sided games.",
+   "descriptors": [
+    {
+     "code": "FF-F-TAC01",
+     "text": "Know the direction of play: our goal and their goal."
+    },
+    {
+     "code": "FF-F-TAC02",
+     "text": "Recognise attacking (we have the ball) and defending (they have it)."
+    },
+    {
+     "code": "FF-F-TAC03",
+     "text": "Spread out across the field with prompting instead of all chasing the ball."
+    },
+    {
+     "code": "FF-F-TAC04",
+     "text": "Know basic rules and restarts: in and out of play, kick-ins, goal kicks."
+    }
+   ]
+  },
+  "CHA": {
+   "standard": "By the end of Foundation, players keep trying after mistakes, listen when the coach speaks and shake hands after games. They share the ball, celebrate teammates' efforts, accept decisions, help set up or pack away equipment and help a teammate who falls over.",
+   "descriptors": [
+    {
+     "code": "FF-F-CHA01",
+     "text": "Resilience: keep trying after a mistake or losing a game."
+    },
+    {
+     "code": "FF-F-CHA02",
+     "text": "Respect: listen to coaches, use equipment properly, shake hands with opponents."
+    },
+    {
+     "code": "FF-F-CHA03",
+     "text": "Teamwork: share the ball and celebrate teammates' goals and effort."
+    },
+    {
+     "code": "FF-F-CHA04",
+     "text": "Sportsmanship: play fairly and accept decisions without arguing."
+    },
+    {
+     "code": "FF-F-CHA05",
+     "text": "Initiative: help set up and pack away gear without being asked twice."
+    },
+    {
+     "code": "FF-F-CHA06",
+     "text": "Service: help a teammate up and include players who are new or shy."
+    }
+   ]
+  }
+ },
+ "9": {
+  "ATT": {
+   "standard": "By the end of Age 9, players dribble confidently with both feet under pressure and turn using a Cruyff or step-over to change direction. They place shots accurately with the inside foot, begin to strike with the laces for power, and combine with a teammate using a wall pass (1-2) to get past a defender.",
+   "descriptors": [
+    {
+     "code": "FF-9-ATT01",
+     "text": "Dribble under pressure with close control using both feet (consolidate)."
+    },
+    {
+     "code": "FF-9-ATT02",
+     "text": "Turns: add the Cruyff turn to escape a defender."
+    },
+    {
+     "code": "FF-9-ATT03",
+     "text": "Deception: add the step-over; choose a skill to beat a defender in a 1v1."
+    },
+    {
+     "code": "FF-9-ATT04",
+     "text": "Finishing: placement with the inside foot (consolidate); introduce laces for power."
+    },
+    {
+     "code": "FF-9-ATT05",
+     "text": "Combination play: introduce the wall pass (1-2) to beat a defender."
+    },
+    {
+     "code": "FF-9-ATT06",
+     "text": "Positioning: make forward runs off the ball into space behind or beside defenders."
+    }
+   ]
+  },
+  "DEF": {
+   "standard": "By the end of Age 9, players consistently take a goal-side position and win the ball with well-timed poke tackles. They jockey to delay and show attackers away from goal, use the block tackle with growing confidence, and begin to mark an opponent goal-side when the ball is elsewhere.",
+   "descriptors": [
+    {
+     "code": "FF-9-DEF01",
+     "text": "Goal-side positioning in all situations (consolidate)."
+    },
+    {
+     "code": "FF-9-DEF02",
+     "text": "Jockeying: show the attacker onto their weaker foot or towards the sideline."
+    },
+    {
+     "code": "FF-9-DEF03",
+     "text": "Block tackle: develop timing and body position."
+    },
+    {
+     "code": "FF-9-DEF04",
+     "text": "Introduce man marking: stay goal-side and ball-side of an opponent."
+    },
+    {
+     "code": "FF-9-DEF05",
+     "text": "Decision-making: delay when outnumbered, tackle when support arrives."
+    }
+   ]
+  },
+  "PHY": {
+   "standard": "By the end of Age 9, players combine agility, balance and coordination in complex movements with the ball. They show quick feet and good posture when sprinting, keep balance in fair shoulder-to-shoulder contact, lead their own structured warm-up routine with a partner, and follow basic hydration, eating and hygiene habits.",
+   "descriptors": [
+    {
+     "code": "FF-9-PHY01",
+     "text": "Agility: multi-directional movement and quick feet with and without the ball."
+    },
+    {
+     "code": "FF-9-PHY02",
+     "text": "Balance: shoulder-to-shoulder contact within the laws while keeping the ball."
+    },
+    {
+     "code": "FF-9-PHY03",
+     "text": "Coordination: combine skills (turn then pass, jump then control)."
+    },
+    {
+     "code": "FF-9-PHY04",
+     "text": "Speed: sprint mechanics (arm drive, posture) and acceleration from different starts."
+    },
+    {
+     "code": "FF-9-PHY05",
+     "text": "Strength: body-weight circuits and core stability."
+    },
+    {
+     "code": "FF-9-PHY06",
+     "text": "Injury prevention: run a partner warm-up with correct form."
+    },
+    {
+     "code": "FF-9-PHY07",
+     "text": "Health habits: hydration, healthy eating before and after football, and personal hygiene."
+    }
+   ]
+  },
+  "PAS": {
+   "standard": "By the end of Age 9, players pass accurately along the ground with the inside of either foot and begin to play one-touch passes, driven grass cutters and simple through balls. They receive on the back foot to play forward, begin to receive across the body with the inside of the foot, and control a ball from the air with foot or thigh. They choose when to play forward or keep possession.",
+   "descriptors": [
+    {
+     "code": "FF-9-PAS01",
+     "text": "Inside-foot ground pass with accuracy and correct weight (consolidate)."
+    },
+    {
+     "code": "FF-9-PAS02",
+     "text": "Introduce the one-touch pass to a teammate in support."
+    },
+    {
+     "code": "FF-9-PAS03",
+     "text": "Introduce the grass cutter: a driven, low pass using the laces."
+    },
+    {
+     "code": "FF-9-PAS04",
+     "text": "Introduce the through ball: pass into space for a teammate's run."
+    },
+    {
+     "code": "FF-9-PAS05",
+     "text": "Receiving: back-foot receive to face forward (develop); introduce inside lateral receive across the body."
+    },
+    {
+     "code": "FF-9-PAS06",
+     "text": "Controlling out of the air with foot and thigh (develop)."
+    },
+    {
+     "code": "FF-9-PAS07",
+     "text": "Decision-making: play forward when possible; keep the ball when not."
+    }
+   ]
+  },
+  "TAC": {
+   "standard": "By the end of Age 9, players know the roles of each line in 7v7 and stay connected to their teammates. They spot and exploit 2v1s and begin to recognise 3v2s, use width to stretch the opponent, and understand the three moments of the game: attacking, defending and transition.",
+   "descriptors": [
+    {
+     "code": "FF-9-TAC01",
+     "text": "Positional roles in 7v7: what defenders, midfielders and forwards do in and out of possession."
+    },
+    {
+     "code": "FF-9-TAC02",
+     "text": "Recognise and exploit 2v1 overloads; introduce 3v2."
+    },
+    {
+     "code": "FF-9-TAC03",
+     "text": "Use width to stretch the opponent and create gaps."
+    },
+    {
+     "code": "FF-9-TAC04",
+     "text": "Moments of the game: attack, defend, and the transition between them."
+    },
+    {
+     "code": "FF-9-TAC05",
+     "text": "Stay connected: keep sensible distances between teammates."
+    }
+   ]
+  },
+  "CHA": {
+   "standard": "By the end of Age 9, players bounce back from setbacks within the game, show respect to everyone at the club and work for the team rather than themselves. They play fair under pressure, take responsibility for their own gear and preparation, leave shared spaces clean, and look for ways to help teammates.",
+   "descriptors": [
+    {
+     "code": "FF-9-CHA01",
+     "text": "Resilience: recover quickly from a mistake and stay involved."
+    },
+    {
+     "code": "FF-9-CHA02",
+     "text": "Respect: respect coaches, referees, opponents, parents and volunteers."
+    },
+    {
+     "code": "FF-9-CHA03",
+     "text": "Teamwork: put team success ahead of personal glory (pass to the better- placed player)."
+    },
+    {
+     "code": "FF-9-CHA04",
+     "text": "Sportsmanship: play fair under pressure; no diving or time-wasting."
+    },
+    {
+     "code": "FF-9-CHA05",
+     "text": "Initiative: arrive prepared (boots, shin pads, water) and ready to train."
+    },
+    {
+     "code": "FF-9-CHA06",
+     "text": "Service: help a teammate learn a skill they are finding difficult."
+    },
+    {
+     "code": "FF-9-CHA07",
+     "text": "Collective responsibility: leave change rooms, benches and fields clean, and care for team equipment."
+    }
+   ]
+  }
+ },
+ "13": {
+  "ATT": {
+   "standard": "By the end of Age 13, players beat opponents 1v1 at match speed and finish consistently with either foot and with volleys, and are developing headers on goal. They combine with overlaps and third-man runs to break lines, make intelligent runs in behind and between defenders, and choose between a quick counter-attack and patient build-up.",
+   "descriptors": [
+    {
+     "code": "FF-13-ATT01",
+     "text": "1v1 and deception at full match speed with either foot (refine)."
+    },
+    {
+     "code": "FF-13-ATT02",
+     "text": "Finishing: volleys consistently (consolidate); headers on goal (develop)."
+    },
+    {
+     "code": "FF-13-ATT03",
+     "text": "Combination play: overlaps and third-man runs (consolidate)."
+    },
+    {
+     "code": "FF-13-ATT04",
+     "text": "Positioning: runs in behind, between centre-backs, and timed to stay onside."
+    },
+    {
+     "code": "FF-13-ATT05",
+     "text": "Decision-making: counter-attack quickly or keep the ball and build."
+    }
+   ]
+  },
+  "DEF": {
+   "standard": "By the end of Age 13, players defend as part of a compact zonal unit, pressing, covering and balancing without prompting. They contest aerial duels with developing heading technique, intercept and tackle with excellent timing, and are introduced to the slide tackle as a last-resort technique in controlled practice.",
+   "descriptors": [
+    {
+     "code": "FF-13-DEF01",
+     "text": "Zonal marking and compactness as a back four and midfield line (develop)."
+    },
+    {
+     "code": "FF-13-DEF02",
+     "text": "Defensive heading in aerial duels (develop; light balls, low volume)."
+    },
+    {
+     "code": "FF-13-DEF03",
+     "text": "Introduce the slide tackle in controlled practice: timing, safety, last resort only."
+    },
+    {
+     "code": "FF-13-DEF04",
+     "text": "Defending set pieces: zonal and man-marking roles."
+    },
+    {
+     "code": "FF-13-DEF05",
+     "text": "Decision-making: when to press, when to drop, and how to win the ball cleanly without fouling."
+    }
+   ]
+  },
+  "PHY": {
+   "standard": "By the end of Age 13, players sustain high-intensity football for a full 11v11 match and recover between efforts. They perform supervised strength and power exercises with sound technique, complete the FIFA 11+ injury-prevention warm-up independently and manage their own load, recovery and nutrition.",
+   "descriptors": [
+    {
+     "code": "FF-13-PHY01",
+     "text": "Agility: reactive changes of direction at top speed."
+    },
+    {
+     "code": "FF-13-PHY02",
+     "text": "Speed and power: acceleration, top speed, jumping and landing."
+    },
+    {
+     "code": "FF-13-PHY03",
+     "text": "Strength: supervised resistance training with technique before load."
+    },
+    {
+     "code": "FF-13-PHY04",
+     "text": "Endurance: repeated high-intensity efforts over a full match."
+    },
+    {
+     "code": "FF-13-PHY05",
+     "text": "Injury prevention: lead the FIFA 11+ warm-up independently."
+    },
+    {
+     "code": "FF-13-PHY06",
+     "text": "Self-management: load, sleep, nutrition and hydration habits."
+    }
+   ]
+  },
+  "PAS": {
+   "standard": "By the end of Age 13, players use the full passing range — ground, one-touch, grass cutter, through ball, long pass, cross and outside-foot pass — with accuracy under pressure. They receive on the back foot, across the body and with the outside of the foot to play forward in one or two touches, control any ball from the air, and select the best option after scanning.",
+   "descriptors": [
+    {
+     "code": "FF-13-PAS01",
+     "text": "Full passing range under pressure (refine)."
+    },
+    {
+     "code": "FF-13-PAS02",
+     "text": "Crossing: choose and execute the right cross type (consolidate)."
+    },
+    {
+     "code": "FF-13-PAS03",
+     "text": "Outside-foot pass with disguise (consolidate)."
+    },
+    {
+     "code": "FF-13-PAS04",
+     "text": "All receiving techniques used to play forward in one or two touches (refine)."
+    },
+    {
+     "code": "FF-13-PAS05",
+     "text": "Decision-making: scan, select and execute the best option under match pressure."
+    }
+   ]
+  },
+  "TAC": {
+   "standard": "By the end of Age 13, players understand their team's 11v11 system (e.g. 4-3-3 or 4-4-2) in all four moments of the game and can explain their role in it. They press as a team using agreed triggers, counter-press after losing the ball, adapt to the opponent's formation, and carry out set-piece plans.",
+   "descriptors": [
+    {
+     "code": "FF-13-TAC01",
+     "text": "Team pressing using agreed triggers; counter-press after losing the ball."
+    },
+    {
+     "code": "FF-13-TAC02",
+     "text": "Adapt to the opponent's formation and identify where overloads exist."
+    },
+    {
+     "code": "FF-13-TAC03",
+     "text": "Game plans: understand and follow the team's strategy for a match."
+    },
+    {
+     "code": "FF-13-TAC04",
+     "text": "Set-piece plans in attack and defence."
+    },
+    {
+     "code": "FF-13-TAC05",
+     "text": "Communicate tactically: explain their role and organise nearby teammates."
+    },
+    {
+     "code": "FF-13-TAC06",
+     "text": "Formation understanding: an 11v11 system, how its lines relate, and how roles change from 9v9."
+    }
+   ]
+  },
+  "CHA": {
+   "standard": "By the end of Age 13, players show resilience through setbacks across a season, lead by example in respect and sportsmanship, and strengthen team culture. They take initiative in leadership roles and serve others at the club and in the community.",
+   "descriptors": [
+    {
+     "code": "FF-13-CHA01",
+     "text": "Resilience: bounce back from setbacks over a season (injury, selection, losses)."
+    },
+    {
+     "code": "FF-13-CHA02",
+     "text": "Respect: lead by example towards officials, opponents and teammates."
+    },
+    {
+     "code": "FF-13-CHA03",
+     "text": "Teamwork: strengthen team culture and help resolve conflicts."
+    },
+    {
+     "code": "FF-13-CHA04",
+     "text": "Sportsmanship: be an ambassador for the club's values."
+    },
+    {
+     "code": "FF-13-CHA05",
+     "text": "Initiative: take on leadership roles (captaincy, leading warm-ups)."
+    },
+    {
+     "code": "FF-13-CHA06",
+     "text": "Service: mentor younger players and contribute to the community."
+    }
+   ]
+  }
+ },
+ "8": {
+  "ATT": {
+   "standard": "By the end of Age 8, players dribble at speed with their head up using the inside, outside and sole of both feet. They escape pressure with drag-backs and hooks, use a body feint or scissor to unbalance a defender, and finish into the corners from different angles. They move into space in front of goal when a teammate has the ball.",
+   "descriptors": [
+    {
+     "code": "FF-8-ATT01",
+     "text": "Dribble at speed using different foot surfaces, lifting the head between touches."
+    },
+    {
+     "code": "FF-8-ATT02",
+     "text": "Turn away from pressure using the drag-back and inside and outside hooks."
+    },
+    {
+     "code": "FF-8-ATT03",
+     "text": "Use deception (body feint, scissor) to unbalance a defender in a 1v1."
+    },
+    {
+     "code": "FF-8-ATT04",
+     "text": "Place shots into the corners from different angles with either foot."
+    },
+    {
+     "code": "FF-8-ATT05",
+     "text": "Attacking positioning: move into space in front of goal when a teammate has the ball."
+    }
+   ]
+  },
+  "DEF": {
+   "standard": "By the end of Age 8, players recover goal-side quickly when the ball is lost and close down the ball carrier, slowing down as they arrive. They adopt a low, side-on stance to delay an attacker, use a block tackle with their weight through the ball, and wait for a heavy touch rather than diving in.",
+   "descriptors": [
+    {
+     "code": "FF-8-DEF01",
+     "text": "Recovery run: get back goal-side quickly after losing the ball."
+    },
+    {
+     "code": "FF-8-DEF02",
+     "text": "Apply pressure: close the ball carrier down fast, then slow and settle on arrival."
+    },
+    {
+     "code": "FF-8-DEF03",
+     "text": "Stance and jockeying: low, side-on, on the toes, to delay an attacker."
+    },
+    {
+     "code": "FF-8-DEF04",
+     "text": "Block tackle: inside of the foot, weight forward, through the middle of the ball."
+    },
+    {
+     "code": "FF-8-DEF05",
+     "text": "Decision-making: tackle on a heavy touch; otherwise stay patient and stay on your feet."
+    }
+   ]
+  },
+  "PHY": {
+   "standard": "By the end of Age 8, players change direction with the ball under control and keep their balance when shielding against light contact. They show rhythm and footwork in coordination drills, accelerate sharply over 10–15 m and complete a structured warm-up such as FIFA 11+ Kids with good form.",
+   "descriptors": [
+    {
+     "code": "FF-8-PHY01",
+     "text": "Agility: change direction quickly with the ball under control."
+    },
+    {
+     "code": "FF-8-PHY02",
+     "text": "Balance: hold position and shield the ball against light shoulder contact."
+    },
+    {
+     "code": "FF-8-PHY03",
+     "text": "Coordination: footwork rhythm (ladders, hurdles) using both feet."
+    },
+    {
+     "code": "FF-8-PHY04",
+     "text": "Speed: reaction and acceleration over 10–15 m."
+    },
+    {
+     "code": "FF-8-PHY05",
+     "text": "Strength: body-weight squats, lunges and planks with correct form, through games."
+    },
+    {
+     "code": "FF-8-PHY06",
+     "text": "Injury prevention: complete a structured warm-up (e.g. FIFA 11+ Kids)."
+    }
+   ]
+  },
+  "PAS": {
+   "standard": "By the end of Age 8, players pass along the ground with the inside of either foot to a moving teammate over 5–12 m. They cushion the ball with the inside foot and take the first touch away from pressure, begin to open their body to receive on the back foot, and control a soft ball from the air with the foot or thigh. They choose to pass when a teammate is free and move to create a passing angle.",
+   "descriptors": [
+    {
+     "code": "FF-8-PAS01",
+     "text": "Inside-foot ground pass to a moving teammate (5–12 m) with either foot."
+    },
+    {
+     "code": "FF-8-PAS02",
+     "text": "Receive with an inside-foot cushion, first touch away from pressure."
+    },
+    {
+     "code": "FF-8-PAS03",
+     "text": "Introduce receiving on the back foot: open the body to see the field."
+    },
+    {
+     "code": "FF-8-PAS04",
+     "text": "Introduce controlling out of the air: cushion a soft, thrown ball with foot or thigh."
+    },
+    {
+     "code": "FF-8-PAS05",
+     "text": "Decision-making: pass when a teammate is free; dribble when there is space ahead."
+    },
+    {
+     "code": "FF-8-PAS06",
+     "text": "Positioning: make a passing angle instead of hiding behind an opponent."
+    }
+   ]
+  },
+  "TAC": {
+   "standard": "By the end of Age 8, players understand the basic zones of 7v7 (goalkeeper, defenders, midfielders, forwards). They make the field big (wide and deep) when their team has the ball and get compact when it doesn't. They recognise a 2v1 and attack it, and move to open space away from the ball.",
+   "descriptors": [
+    {
+     "code": "FF-8-TAC01",
+     "text": "Positional understanding: general zones for goalkeeper, defenders, midfielders, forwards in 7v7."
+    },
+    {
+     "code": "FF-8-TAC02",
+     "text": "Make the field big in possession; make it small (compact) out of possession."
+    },
+    {
+     "code": "FF-8-TAC03",
+     "text": "Recognise a 2v1 overload and attack it by passing or dribbling."
+    },
+    {
+     "code": "FF-8-TAC04",
+     "text": "Utilise space: move away from the ball into open areas."
+    },
+    {
+     "code": "FF-8-TAC05",
+     "text": "Restarts: goalkeeper builds out from goal kicks; correct throw-in technique."
+    }
+   ]
+  },
+  "CHA": {
+   "standard": "By the end of Age 8, players respond positively to mistakes and keep trying new skills. They respect referees and opponents, encourage teammates by name, and win or lose graciously. They practise skills at home, ask questions, help coaches and new players, and know the basic laws well enough to help referee their own small- sided games.",
+   "descriptors": [
+    {
+     "code": "FF-8-CHA01",
+     "text": "Resilience: respond positively to errors and keep attempting new skills."
+    },
+    {
+     "code": "FF-8-CHA02",
+     "text": "Respect: accept referee decisions and treat opponents fairly."
+    },
+    {
+     "code": "FF-8-CHA03",
+     "text": "Teamwork: encourage teammates by name and support those who make mistakes."
+    },
+    {
+     "code": "FF-8-CHA04",
+     "text": "Sportsmanship: win and lose graciously; shake hands with referee and opponents."
+    },
+    {
+     "code": "FF-8-CHA05",
+     "text": "Initiative: practise skills at home and ask the coach questions."
+    },
+    {
+     "code": "FF-8-CHA06",
+     "text": "Service: help the coach with equipment and welcome new players."
+    },
+    {
+     "code": "FF-8-CHA07",
+     "text": "Rules and refereeing: know the basic laws and help referee their own small-sided games."
+    }
+   ]
+  }
+ },
+ "10": {
+  "ATT": {
+   "standard": "By the end of Age 10, players use a range of turns fluently to escape pressure and choose a feint or skill that suits the situation in 1v1s. They finish with power or placement depending on the chance, combine with wall passes at speed, and time runs to arrive in the box as the ball does.",
+   "descriptors": [
+    {
+     "code": "FF-10-ATT01",
+     "text": "Turns: perform the full range (drag-back, hooks, Cruyff) fluently under pressure (consolidate)."
+    },
+    {
+     "code": "FF-10-ATT02",
+     "text": "Deception: select the right feint for the defender's position and speed."
+    },
+    {
+     "code": "FF-10-ATT03",
+     "text": "Finishing: choose power (laces) or placement (inside foot) to suit the chance."
+    },
+    {
+     "code": "FF-10-ATT04",
+     "text": "Combination play: wall passes at speed in tight areas."
+    },
+    {
+     "code": "FF-10-ATT05",
+     "text": "Positioning: time runs into the box (near post, far post, cut-back zone)."
+    },
+    {
+     "code": "FF-10-ATT06",
+     "text": "1v1: attack defenders at speed and commit them before releasing the ball."
+    }
+   ]
+  },
+  "DEF": {
+   "standard": "By the end of Age 10, players jockey and block tackle with sound technique and timing. They mark an opponent closely, track runners, and begin to work in pairs and threes using pressure, cover and balance. They decide when to press, when to delay and when to tackle.",
+   "descriptors": [
+    {
+     "code": "FF-10-DEF01",
+     "text": "Jockeying and stance: delay and steer the attacker consistently (consolidate)."
+    },
+    {
+     "code": "FF-10-DEF02",
+     "text": "Block tackle: well timed with strong body position (consolidate)."
+    },
+    {
+     "code": "FF-10-DEF03",
+     "text": "Man marking: track a runner and stay between them and goal."
+    },
+    {
+     "code": "FF-10-DEF04",
+     "text": "Introduce pressure, cover, balance: first defender presses, second covers, third balances."
+    },
+    {
+     "code": "FF-10-DEF05",
+     "text": "Communication: call “man on”, “I've got him”, “squeeze”."
+    }
+   ]
+  },
+  "PHY": {
+   "standard": "By the end of Age 10, players move efficiently with good sprint mechanics and change direction sharply at speed. They show body control in the air and in contact, complete body-weight strength and core circuits with good technique, and sustain effort through a 9v9 match.",
+   "descriptors": [
+    {
+     "code": "FF-10-PHY01",
+     "text": "Agility: sharp cuts and decelerations at speed."
+    },
+    {
+     "code": "FF-10-PHY02",
+     "text": "Balance: control in the air (jumping to contest) and landing safely."
+    },
+    {
+     "code": "FF-10-PHY03",
+     "text": "Coordination: ball skills on the move with either foot."
+    },
+    {
+     "code": "FF-10-PHY04",
+     "text": "Speed: maximal sprints over 15–20 m with full recovery."
+    },
+    {
+     "code": "FF-10-PHY05",
+     "text": "Strength: body-weight circuits, core and landing mechanics."
+    },
+    {
+     "code": "FF-10-PHY06",
+     "text": "Endurance: sustain repeated efforts through small-sided games and 9v9 matches."
+    }
+   ]
+  },
+  "PAS": {
+   "standard": "By the end of Age 10, players play one-touch passes, driven grass cutters and through balls with growing accuracy, and begin to hit a lofted long pass and simple cross. They receive on the back foot as a habit, receive across the body with the inside of the foot, begin outside-lateral receiving, and control a ball from the air with foot, thigh or chest. They scan before receiving to know their next action.",
+   "descriptors": [
+    {
+     "code": "FF-10-PAS01",
+     "text": "One-touch passes and grass cutters with accuracy (develop)."
+    },
+    {
+     "code": "FF-10-PAS02",
+     "text": "Through balls weighted for a runner (develop)."
+    },
+    {
+     "code": "FF-10-PAS03",
+     "text": "Introduce the long pass: lofted with the instep to switch play."
+    },
+    {
+     "code": "FF-10-PAS04",
+     "text": "Introduce crossing from wide areas into the box."
+    },
+    {
+     "code": "FF-10-PAS05",
+     "text": "Receiving: back foot as a habit (consolidate); inside lateral (develop); introduce outside lateral."
+    },
+    {
+     "code": "FF-10-PAS06",
+     "text": "Controlling out of the air: add the chest (develop)."
+    },
+    {
+     "code": "FF-10-PAS07",
+     "text": "Decision-making: scan before receiving and know the next pass."
+    }
+   ]
+  },
+  "TAC": {
+   "standard": "By the end of Age 10, players understand a 9v9 formation and the job of their position in each moment of the game. They play out from the back, recognise and create 3v2 overloads, switch play to use space on the far side, and defend as a compact unit. They begin to solve game problems with teammates without waiting for the coach.",
+   "descriptors": [
+    {
+     "code": "FF-10-TAC01",
+     "text": "Formation understanding: a 9v9 shape (e.g. 3-2-3 or 3-3-2) and its lines."
+    },
+    {
+     "code": "FF-10-TAC02",
+     "text": "Positional roles/jobs in and out of possession for each position."
+    },
+    {
+     "code": "FF-10-TAC03",
+     "text": "Build-up: play out from the goalkeeper through the defenders."
+    },
+    {
+     "code": "FF-10-TAC04",
+     "text": "Overloads: create and use 3v2 situations."
+    },
+    {
+     "code": "FF-10-TAC05",
+     "text": "Utilising space: switch play when one side is crowded."
+    },
+    {
+     "code": "FF-10-TAC06",
+     "text": "Defend as a unit: shift across together, stay compact."
+    },
+    {
+     "code": "FF-10-TAC07",
+     "text": "Player-led problem solving: identify a problem in the game and agree a fix with teammates during play and breaks, without waiting for the coach."
+    }
+   ]
+  },
+  "CHA": {
+   "standard": "By the end of Age 10, players manage frustration and refocus after setbacks, show respect when emotions run high and accept their role in the team. They model fair play, set personal goals and help others at training without being asked.",
+   "descriptors": [
+    {
+     "code": "FF-10-CHA01",
+     "text": "Resilience: manage frustration and refocus after conceding or losing."
+    },
+    {
+     "code": "FF-10-CHA02",
+     "text": "Respect: stay respectful towards referees and opponents when emotions run high."
+    },
+    {
+     "code": "FF-10-CHA03",
+     "text": "Teamwork: accept and perform an assigned role for the team."
+    },
+    {
+     "code": "FF-10-CHA04",
+     "text": "Sportsmanship: model fair play (return the ball after injury stoppages, admit fouls)."
+    },
+    {
+     "code": "FF-10-CHA05",
+     "text": "Initiative: set a personal improvement goal each term."
+    },
+    {
+     "code": "FF-10-CHA06",
+     "text": "Service: help set up training and support younger teams at the club."
+    }
+   ]
+  }
+ },
+ "11": {
+  "ATT": {
+   "standard": "By the end of Age 11, players beat defenders 1v1 using deception fluently and finish with power or placement under pressure. They begin to finish with volleys, combine with wall passes as a habit, and begin to use overlaps and third-man runs to break defensive lines.",
+   "descriptors": [
+    {
+     "code": "FF-11-ATT01",
+     "text": "Deception: perform feints and skills fluently at speed (consolidate)."
+    },
+    {
+     "code": "FF-11-ATT02",
+     "text": "Finishing: power with the laces under pressure (consolidate)."
+    },
+    {
+     "code": "FF-11-ATT03",
+     "text": "Introduce volleys on goal from bouncing and crossed balls."
+    },
+    {
+     "code": "FF-11-ATT04",
+     "text": "Combination play: wall pass as a habit (consolidate); introduce overlaps and third-man runs."
+    },
+    {
+     "code": "FF-11-ATT05",
+     "text": "Positioning: move to receive between the lines of the opposition."
+    },
+    {
+     "code": "FF-11-ATT06",
+     "text": "Attacking transition: break forward quickly when the ball is won."
+    }
+   ]
+  },
+  "DEF": {
+   "standard": "By the end of Age 11, players mark an opponent tightly and win the ball with well-timed tackles. They apply pressure, cover and balance within their defensive line, clear the ball for height and distance with their feet, and organise teammates through clear communication.",
+   "descriptors": [
+    {
+     "code": "FF-11-DEF01",
+     "text": "Man marking: tight marking, track runners, win the ball in front (consolidate)."
+    },
+    {
+     "code": "FF-11-DEF02",
+     "text": "Pressure, cover, balance: work as a back line of three or four (develop)."
+    },
+    {
+     "code": "FF-11-DEF03",
+     "text": "Clearing with the feet: volley or drive the ball clear for height and distance (develop)."
+    },
+    {
+     "code": "FF-11-DEF04",
+     "text": "Defending crosses: body position to see ball and opponent."
+    },
+    {
+     "code": "FF-11-DEF05",
+     "text": "Decision-making: when to step in, when to drop, when to hold the line."
+    }
+   ]
+  },
+  "PHY": {
+   "standard": "By the end of Age 11, players change direction and speed efficiently in match situations and show good technique in body-weight strength exercises. They repeat high-intensity efforts across a 9v9 match, understand that growth spurts affect coordination, and follow simple recovery and hydration habits.",
+   "descriptors": [
+    {
+     "code": "FF-11-PHY01",
+     "text": "Agility: change of pace and direction in game-like situations."
+    },
+    {
+     "code": "FF-11-PHY02",
+     "text": "Balance and coordination: maintain technique as bodies grow (growth- spurt awareness)."
+    },
+    {
+     "code": "FF-11-PHY03",
+     "text": "Speed: acceleration and top speed in repeated sprints."
+    },
+    {
+     "code": "FF-11-PHY04",
+     "text": "Strength: body-weight and core programs with good technique."
+    },
+    {
+     "code": "FF-11-PHY05",
+     "text": "Endurance: repeated high-intensity efforts across a full match."
+    },
+    {
+     "code": "FF-11-PHY06",
+     "text": "Recovery: hydration, cool-down, sleep and nutrition basics."
+    }
+   ]
+  },
+  "PAS": {
+   "standard": "By the end of Age 11, players play one-touch passes and grass cutters accurately and develop their through balls, long passes and crosses. They begin to pass with the outside of the foot, receive across the body with either inside or outside of the foot, and control balls from the air with foot, thigh or chest. They choose the right pass type for the distance and pressure.",
+   "descriptors": [
+    {
+     "code": "FF-11-PAS01",
+     "text": "One-touch passing and grass cutters with accuracy (consolidate)."
+    },
+    {
+     "code": "FF-11-PAS02",
+     "text": "Through balls, long passes and crosses with improving accuracy (develop)."
+    },
+    {
+     "code": "FF-11-PAS03",
+     "text": "Introduce the outside-foot pass over short distances."
+    },
+    {
+     "code": "FF-11-PAS04",
+     "text": "Receiving: inside lateral (consolidate); outside lateral (develop)."
+    },
+    {
+     "code": "FF-11-PAS05",
+     "text": "Controlling out of the air with foot, thigh and chest (consolidate)."
+    },
+    {
+     "code": "FF-11-PAS06",
+     "text": "Decision-making: choose pass type and weight for distance, space and pressure."
+    }
+   ]
+  },
+  "TAC": {
+   "standard": "By the end of Age 11, players understand their role in a 9v9 formation across all four moments of the game, including transitions. They create overloads in wide areas, rotate positions to unbalance opponents, and begin to recognise simple pressing triggers. They know their jobs at set pieces.",
+   "descriptors": [
+    {
+     "code": "FF-11-TAC01",
+     "text": "Four moments: in possession, out of possession, attacking transition, defensive transition."
+    },
+    {
+     "code": "FF-11-TAC02",
+     "text": "Create overloads in wide areas (full-back and winger combinations)."
+    },
+    {
+     "code": "FF-11-TAC03",
+     "text": "Positional rotation: swap positions to unbalance opponents."
+    },
+    {
+     "code": "FF-11-TAC04",
+     "text": "Introduce pressing triggers (back pass, poor touch, ball to the sideline)."
+    },
+    {
+     "code": "FF-11-TAC05",
+     "text": "Set pieces: roles at corners, free kicks and throw-ins."
+    }
+   ]
+  },
+  "CHA": {
+   "standard": "By the end of Age 11, players show resilience by accepting feedback and learning from it. They respect all match officials and opponents, support teammates' development, model sportsmanship for younger players, explain key laws and help officiate, take ownership of their own improvement, and contribute to club life.",
+   "descriptors": [
+    {
+     "code": "FF-11-CHA01",
+     "text": "Resilience: accept feedback and act on it."
+    },
+    {
+     "code": "FF-11-CHA02",
+     "text": "Respect: respect officials' decisions and opponents' efforts, win or lose."
+    },
+    {
+     "code": "FF-11-CHA03",
+     "text": "Teamwork: support teammates' development as well as results."
+    },
+    {
+     "code": "FF-11-CHA04",
+     "text": "Sportsmanship: be a fair-play role model for younger players."
+    },
+    {
+     "code": "FF-11-CHA05",
+     "text": "Initiative: take ownership of personal improvement (extra practice, reflection)."
+    },
+    {
+     "code": "FF-11-CHA06",
+     "text": "Service: contribute to club life (helping at junior sessions, game days)."
+    },
+    {
+     "code": "FF-11-CHA07",
+     "text": "Rules and refereeing: explain key laws, including offside, and run the line in younger or own-age games."
+    }
+   ]
+  }
+ },
+ "12": {
+  "ATT": {
+   "standard": "By the end of Age 12, players apply their full range of dribbling, turning and deception under match pressure on a larger 9v9 field. They finish from crosses with volleys and begin to head on goal, use overlaps and third-man runs with teammates, and make runs that pull defenders out of position to create space for others.",
+   "descriptors": [
+    {
+     "code": "FF-12-ATT01",
+     "text": "1v1: apply dribbling, turns and deception at match speed on a larger 9v9 field."
+    },
+    {
+     "code": "FF-12-ATT02",
+     "text": "Finishing: volleys from crosses (develop); introduce headers on goal (light balls, low volume)."
+    },
+    {
+     "code": "FF-12-ATT03",
+     "text": "Combination play: overlaps and third-man runs (develop)."
+    },
+    {
+     "code": "FF-12-ATT04",
+     "text": "Positioning: decoy runs that drag defenders and open space for teammates."
+    },
+    {
+     "code": "FF-12-ATT05",
+     "text": "Attacking in the final third: cut-backs, shooting from edge of the box."
+    }
+   ]
+  },
+  "DEF": {
+   "standard": "By the end of Age 12, players apply pressure, cover and balance consistently in 9v9. They begin to defend zonally as part of a compact back line, begin to head the ball clear safely, and read the game to intercept passes rather than only tackling.",
+   "descriptors": [
+    {
+     "code": "FF-12-DEF01",
+     "text": "Pressure, cover, balance applied consistently in 9v9 (consolidate)."
+    },
+    {
+     "code": "FF-12-DEF02",
+     "text": "Introduce zonal marking and compactness in a back line of three or four."
+    },
+    {
+     "code": "FF-12-DEF03",
+     "text": "Introduce defensive heading: clear for height and distance (light balls, low volume)."
+    },
+    {
+     "code": "FF-12-DEF04",
+     "text": "Interceptions: read the passer's cues and step in front of the receiver."
+    },
+    {
+     "code": "FF-12-DEF05",
+     "text": "Decision-making: hold the line, step up, or drop as a unit."
+    }
+   ]
+  },
+  "PHY": {
+   "standard": "By the end of Age 12, players cover a larger field with repeated sprints and recover between efforts. They perform body-weight and light resistance exercises with sound technique, adjust as their bodies grow, and follow a recovery routine after games.",
+   "descriptors": [
+    {
+     "code": "FF-12-PHY01",
+     "text": "Agility: reactive agility (responding to opponents and the ball)."
+    },
+    {
+     "code": "FF-12-PHY02",
+     "text": "Speed: top speed and repeat-sprint ability on a larger field."
+    },
+    {
+     "code": "FF-12-PHY03",
+     "text": "Strength: introduce light resistance (bands, medicine balls) with supervision."
+    },
+    {
+     "code": "FF-12-PHY04",
+     "text": "Endurance: aerobic base for longer 9v9 matches and the step to 11v11."
+    },
+    {
+     "code": "FF-12-PHY05",
+     "text": "Coordination: re-establish technique during growth spurts."
+    },
+    {
+     "code": "FF-12-PHY06",
+     "text": "Recovery routine after matches (cool-down, stretching, hydration, sleep)."
+    }
+   ]
+  },
+  "PAS": {
+   "standard": "By the end of Age 12, players play accurate through balls and long passes to switch play, cross with improving consistency and use the outside of the foot to bend passes around defenders. They receive with either inside or outside of the foot to protect the ball and play forward, and control from the air under pressure. They scan regularly and play forward through lines whenever possible.",
+   "descriptors": [
+    {
+     "code": "FF-12-PAS01",
+     "text": "Through balls and long passes with accuracy (consolidate)."
+    },
+    {
+     "code": "FF-12-PAS02",
+     "text": "Crossing: driven, lofted and cut-back crosses (develop)."
+    },
+    {
+     "code": "FF-12-PAS03",
+     "text": "Outside-foot pass to bend the ball around defenders (develop)."
+    },
+    {
+     "code": "FF-12-PAS04",
+     "text": "Receiving: outside lateral to shield and turn (consolidate)."
+    },
+    {
+     "code": "FF-12-PAS05",
+     "text": "Controlling out of the air under pressure (refine)."
+    },
+    {
+     "code": "FF-12-PAS06",
+     "text": "Decision-making: scan regularly and pass through lines."
+    }
+   ]
+  },
+  "TAC": {
+   "standard": "By the end of Age 12, players understand their team's 9v9 formation, how it maps to an 11v11 system (e.g. 3-2-3 to 4-3-3), and the roles and relationships of each position. They create and exploit overloads, use the half-spaces and width, build up through thirds, and press or drop as a unit depending on the situation.",
+   "descriptors": [
+    {
+     "code": "FF-12-TAC01",
+     "text": "Formation understanding: the team's 9v9 system and how it maps to an 11v11 system."
+    },
+    {
+     "code": "FF-12-TAC02",
+     "text": "Positional roles (e.g. full-back, holding midfielder, number 10, striker) in 9v9, preparing for 11v11."
+    },
+    {
+     "code": "FF-12-TAC03",
+     "text": "Build-up through the thirds: defensive, middle, attacking."
+    },
+    {
+     "code": "FF-12-TAC04",
+     "text": "Utilising space: width, depth and the half-spaces."
+    },
+    {
+     "code": "FF-12-TAC05",
+     "text": "Defensive blocks: introduce high, mid and low blocks."
+    },
+    {
+     "code": "FF-12-TAC06",
+     "text": "Recognise overloads across the field and switch play to exploit them."
+    }
+   ]
+  },
+  "CHA": {
+   "standard": "By the end of Age 12, players manage pressure in bigger matches, show respect consistently on and off the field, and put the team first when roles or minutes change. They uphold fair play without reminders, take initiative in their preparation and recovery, and serve their club and community, including through community and environmental actions.",
+   "descriptors": [
+    {
+     "code": "FF-12-CHA01",
+     "text": "Resilience: perform under pressure; handle selection and position changes."
+    },
+    {
+     "code": "FF-12-CHA02",
+     "text": "Respect: consistent respect on and off the field, including online."
+    },
+    {
+     "code": "FF-12-CHA03",
+     "text": "Teamwork: put the team first when roles or minutes change."
+    },
+    {
+     "code": "FF-12-CHA04",
+     "text": "Sportsmanship: uphold fair play without reminders."
+    },
+    {
+     "code": "FF-12-CHA05",
+     "text": "Initiative: own preparation and recovery routines."
+    },
+    {
+     "code": "FF-12-CHA06",
+     "text": "Service: volunteer to assist coaches of younger age groups."
+    },
+    {
+     "code": "FF-12-CHA07",
+     "text": "Citizenship and environment: take part in a club community or environmental action each season."
+    }
+   ]
+  }
+ }
+}

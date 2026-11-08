@@ -4,6 +4,7 @@
  */
 import { getPayload } from 'payload'
 import config from '../src/payload.config'
+import { importCurriculum } from '../src/academy/curriculum/load'
 
 const para = (text: string) => ({
   root: {
@@ -228,6 +229,7 @@ for (const [i, sp] of SPONSORS.entries()) {
 // Player Development Report content (only adds what's missing)
 const { seedPdr } = await import('../src/academy/pdr/seed')
 payload.logger.info(`PDR content: ${JSON.stringify(await seedPdr(payload))}`)
+payload.logger.info(`Curriculum standards: ${await importCurriculum(payload)}`)
 {
   const { monthKey } = await import('../src/academy/pdr/challenge-rules')
   await payload.create({

@@ -110,6 +110,7 @@ export interface Config {
     users: User;
     'consent-records': ConsentRecord;
     'message-log': MessageLog;
+    'curriculum-standards': CurriculumStandard;
     'seen-markers': SeenMarker;
     conversations: Conversation;
     messages: Message;
@@ -165,6 +166,7 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     'consent-records': ConsentRecordsSelect<false> | ConsentRecordsSelect<true>;
     'message-log': MessageLogSelect<false> | MessageLogSelect<true>;
+    'curriculum-standards': CurriculumStandardsSelect<false> | CurriculumStandardsSelect<true>;
     'seen-markers': SeenMarkersSelect<false> | SeenMarkersSelect<true>;
     conversations: ConversationsSelect<false> | ConversationsSelect<true>;
     messages: MessagesSelect<false> | MessagesSelect<true>;
@@ -1924,6 +1926,33 @@ export interface MessageLog {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "curriculum-standards".
+ */
+export interface CurriculumStandard {
+  id: number;
+  label?: string | null;
+  order?: number | null;
+  level: 'F' | '8' | '9' | '10' | '11' | '12' | '13';
+  strand: 'ATT' | 'DEF' | 'PHY' | 'PAS' | 'TAC' | 'CHA';
+  /**
+   * “By the end of …, players …” — coaches rate each player against this.
+   */
+  standard: string;
+  /**
+   * What coaches teach at this level, e.g. FF-9-ATT01.
+   */
+  descriptors?:
+    | {
+        code: string;
+        text: string;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "seen-markers".
  */
 export interface SeenMarker {
@@ -2193,6 +2222,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'message-log';
         value: number | MessageLog;
+      } | null)
+    | ({
+        relationTo: 'curriculum-standards';
+        value: number | CurriculumStandard;
       } | null)
     | ({
         relationTo: 'seen-markers';
@@ -3438,6 +3471,26 @@ export interface MessageLogSelect<T extends boolean = true> {
   status?: T;
   providerId?: T;
   error?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "curriculum-standards_select".
+ */
+export interface CurriculumStandardsSelect<T extends boolean = true> {
+  label?: T;
+  order?: T;
+  level?: T;
+  strand?: T;
+  standard?: T;
+  descriptors?:
+    | T
+    | {
+        code?: T;
+        text?: T;
+        id?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }
