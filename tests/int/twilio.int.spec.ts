@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { dialTwiml, smsKeyword, twilioSignature, validTwilioSignature, voicemailTwiml } from '@/lib/twilio'
+import { signatureUrls } from '@/lib/twilio-inbound'
 
 describe('twilio', () => {
   // Example from Twilio's security docs
@@ -25,3 +26,17 @@ describe('twilio', () => {
     expect(voicemailTwiml({ greeting: 'Hi & welcome', action: '/d', transcribeCallback: '/t' })).toContain('Hi &amp; welcome')
   })
 })
+
+
+describe('webhook addresses Twilio may sign', () => {
+  it('accepts the address with or without :443 (Twilio adds it on some follow-up requests)', () => {
+    const urls = signatureUrls('https://club.vercel.app/twilio/voice/after', 'https://club.vercel.app', 'club.vercel.app')
+    expect(urls).toContain('https://club.vercel.app/twilio/voice/after')
+    expect(urls).toContain('https://club.vercel.app:443/twilio/voice/after')
+    const params = { CallSid: 'CA1', DialCallStatus: 'no-answer' }
+    const sig = twilioSignature('tok', 'https://club.vercel.app:443/twilio/voice/after', params)
+    expect(validTwilioSignature('tok', sig, urls, params)).toBe(true)
+    expect(validTwilioSignature('tok', sig, ['https://club.vercel.app/twilio/voice/after'], params)).toBe(false)
+  })
+})
+

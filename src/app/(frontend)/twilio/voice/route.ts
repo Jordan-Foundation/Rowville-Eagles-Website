@@ -1,7 +1,7 @@
 import { payload } from '@/lib/payload'
 import { toE164 } from '@/lib/sms'
 import { dialTwiml, safeVoicemail, twiml, voicemailTwiml } from '@/lib/twilio'
-import { readTwilioRequest, usersByPhone } from '@/lib/twilio-inbound'
+import { readTwilioRequest, requestOrigin, usersByPhone } from '@/lib/twilio-inbound'
 import { DEFAULT_GREETING, logCall, rejectedWebhook, voiceSettings } from './settings'
 
 /**
@@ -28,9 +28,9 @@ async function handle(req: Request) {
   const { forwardTo, greeting } = await voiceSettings(p)
   const from = toE164(params.From)
   if (forwardTo && forwardTo !== from) {
-    return twiml(dialTwiml({ to: forwardTo, callerId: from ?? undefined, action: '/twilio/voice/after' }))
+    return twiml(dialTwiml({ to: forwardTo, callerId: from ?? undefined, action: `${requestOrigin(req)}/twilio/voice/after` }))
   }
   const users = await usersByPhone(p, params.From)
   await logCall(p, { from: from ?? params.From ?? 'unknown', callSid: params.CallSid, status: 'missed', note: 'Missed call (no forwarding number set)', userId: users[0]?.id })
-  return twiml(voicemailTwiml({ greeting, action: '/twilio/voice/done', transcribeCallback: '/twilio/voice/transcription' }))
+  return twiml(voicemailTwiml({ greeting, action: `${requestOrigin(req)}/twilio/voice/done`, transcribeCallback: `${requestOrigin(req)}/twilio/voice/transcription` }))
 }

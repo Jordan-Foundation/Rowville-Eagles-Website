@@ -1,7 +1,7 @@
 import { payload } from '@/lib/payload'
 import { toE164 } from '@/lib/sms'
 import { safeVoicemail, twiml, voicemailTwiml } from '@/lib/twilio'
-import { readTwilioRequest, usersByPhone } from '@/lib/twilio-inbound'
+import { readTwilioRequest, requestOrigin, usersByPhone } from '@/lib/twilio-inbound'
 import { DEFAULT_GREETING, logCall, minutes, rejectedWebhook, voiceSettings } from '../settings'
 
 /** After the forwarded call: answered → done; no answer / busy / failed → voicemail. */
@@ -29,5 +29,5 @@ async function handle(req: Request) {
   }
   await logCall(p, { from, callSid: params.CallSid, status: 'missed', note: `Missed call (${params.DialCallStatus ?? 'no answer'})`, userId: users[0]?.id })
   const { greeting } = await voiceSettings(p)
-  return twiml(voicemailTwiml({ greeting, action: '/twilio/voice/done', transcribeCallback: '/twilio/voice/transcription' }))
+  return twiml(voicemailTwiml({ greeting, action: `${requestOrigin(req)}/twilio/voice/done`, transcribeCallback: `${requestOrigin(req)}/twilio/voice/transcription` }))
 }

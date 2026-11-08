@@ -21,11 +21,26 @@ export async function readTwilioRequest(req: Request): Promise<Record<string, st
   form.forEach((v, k) => {
     if (typeof v === 'string') params[k] = v
   })
-  const u = new URL(req.url)
-  const urls = [`${siteUrl()}${u.pathname}${u.search}`, req.url]
-  const host = req.headers.get('x-forwarded-host')
-  if (host) urls.push(`https://${host}${u.pathname}${u.search}`)
-  return validTwilioSignature(token, req.headers.get('x-twilio-signature'), [...new Set(urls)], params) ? params : null
+  return validTwilioSignature(token, req.headers.get('x-twilio-signature'), signatureUrls(req.url, siteUrl(), req.headers.get('x-forwarded-host')), params) ? params : null
+}
+
+/**
+ * Every form of the address Twilio may have signed: the public site address, the address the request
+ * arrived on, and the forwarded host — each with and without the default port (Twilio includes ":443" for
+ * some requests, such as the follow-up after a forwarded call, and not for others).
+ */
+export function signatureUrls(requestUrl: string, site: string, forwardedHost?: string | null) {
+  const u = new URL(requestUrl)
+  const path = `${u.pathname}${u.search}`
+  const bases = [site.replace(/\/$/, ''), `${u.protocol}//${u.host}`, ...(forwardedHost ? [`https://${forwardedHost}`] : [])]
+  const out = new Set<string>()
+  for (const b of bases) {
+    const x = new URL(b)
+    const def = x.protocol === 'https:' ? '443' : '80'
+    out.add(`${x.protocol}//${x.hostname}${x.port && x.port !== def ? `:${x.port}` : ''}${path}`)
+    out.add(`${x.protocol}//${x.hostname}:${x.port || def}${path}`)
+  }
+  return [...out]
 }
 
 /** Accounts whose mobile matches the number (a number can belong to two parents' accounts). */
@@ -49,3 +64,10 @@ export async function emailAcademyInbox(payload: Payload, o: { subject: string; 
 
 export const accountLinks = (users: User[]) => users.map((u) => `${siteUrl()}/admin/collections/users/${u.id}`).join(' ')
 export { esc }
+
+/** The address this request came in on (e.g. https://club.vercel.app), for absolute follow-up URLs in TwiML. */
+export function requestOrigin(req: Request) {
+  const host = req.headers.get('x-forwarded-host') || new URL(req.url).host
+  const proto = req.headers.get('x-forwarded-proto') || new URL(req.url).protocol.replace(':', '')
+  return `${proto}://${host}`
+}
