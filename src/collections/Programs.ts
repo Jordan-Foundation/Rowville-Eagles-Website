@@ -140,6 +140,15 @@ export const Programs: CollectionConfig = {
     {
       type: 'row',
       fields: [
+        { name: 'minAge', label: 'Youngest age', type: 'number', min: 0, max: 99, admin: { description: 'For the instant age check when booking (blank = read from “Ages”)' } },
+        { name: 'maxAge', label: 'Oldest age', type: 'number', min: 0, max: 99 },
+      ],
+    },
+    { name: 'dropOffPickUp', label: 'Drop-off & pick-up', type: 'text', admin: { description: 'e.g. “Drop-off from 8:45am · pick-up by 3:15pm at the clubrooms”' } },
+    { name: 'whatToBring', label: 'What to bring', type: 'textarea', admin: { description: 'Shown on the program page, the booking confirmation and the confirmation email' } },
+    {
+      type: 'row',
+      fields: [
         {
           name: 'price',
           type: 'number',

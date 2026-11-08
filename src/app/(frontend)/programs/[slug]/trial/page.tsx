@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation'
 import { payload, formatDate } from '@/lib/payload'
 import { toddlerTrialSessions } from '@/academy/terms/toddler-data'
 import { ToddlerTrialForm } from './ToddlerTrialForm'
+import { contactPrefill, familyKids } from '@/lib/family-kids'
+import { currentUser } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Book a free Mini Ballers trial' }
@@ -11,6 +13,8 @@ export const metadata: Metadata = { title: 'Book a free Mini Ballers trial' }
 export default async function ToddlerTrialPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const p = await payload()
+  const me = await currentUser()
+  const kids = await familyKids(p, me?.id)
   const program = (await p.find({ pagination: false, collection: 'programs', where: { slug: { equals: slug }, type: { equals: 'toddler' } }, limit: 1, depth: 0 })).docs[0]
   if (!program || !['open', 'full'].includes(program.status ?? '')) notFound()
   const sessions = await toddlerTrialSessions(p, program)
@@ -27,7 +31,7 @@ export default async function ToddlerTrialPage({ params }: { params: Promise<{ s
         </div>
       </section>
       <div className="container-x max-w-3xl py-14">
-        {sessions.length ? <ToddlerTrialForm slug={program.slug} sessions={sessions} /> : <p className="rounded-2xl border border-line bg-surface-2 p-6 text-muted">Trial sessions open once the term’s session times are set.</p>}
+        {sessions.length ? <ToddlerTrialForm slug={program.slug} sessions={sessions} kids={kids} prefill={contactPrefill(me)} /> : <p className="rounded-2xl border border-line bg-surface-2 p-6 text-muted">Trial sessions open once the term’s session times are set.</p>}
       </div>
     </div>
   )

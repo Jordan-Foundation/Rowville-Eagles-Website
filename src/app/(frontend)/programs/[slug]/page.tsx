@@ -1,3 +1,5 @@
+import { programPlace } from '@/lib/place'
+import { placesTaken } from '@/lib/payments'
 import { priceBreakdown } from '@/lib/format'
 import { PriceTag } from '@/components/PriceTag'
 import Link from 'next/link'
@@ -41,15 +43,17 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
   const academy = p.brand === 'academy'
   // A location like "Home ground" gets the ground's full address and a directions link
   const settings = await pl.findGlobal({ slug: 'site-settings', depth: 0 })
-  const place = p.location && /\d/.test(p.location) ? p.location : [p.location, settings.ground?.address].filter(Boolean).join(' · ') || null
-  const directions = place ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.location && /\d/.test(p.location) ? p.location : settings.ground?.address || place)}` : null
+  const { place, directions } = programPlace(p.location, settings.ground?.address)
+  // "8 of 20 places left" for whole-program bookings (camps, clinics); timed sessions show places when you pick a time
+  const placesLeft = p.capacity && !p.slots?.length && p.type === 'holiday-camp' ? Math.max(0, p.capacity - (await placesTaken(pl, p.id))) : null
+  const placesLabel = placesLeft === null ? (p.capacity ? `${p.capacity} total` : null) : placesLeft === 0 ? 'Full' : `${placesLeft} of ${p.capacity} left`
 
   const facts = [
     ['When', [formatDate(p.startDate), p.endDate && formatDate(p.endDate)].filter(Boolean).join(' – ')],
     ['Schedule', p.scheduleNote],
     ['Ages', p.ageRange],
     ['Where', place],
-    ['Places', p.capacity ? `${p.capacity} total` : null],
+    ['Places', placesLabel],
   ].filter(([, v]) => v) as [string, string][]
 
   return (
@@ -90,6 +94,22 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
       <div className="container-x grid gap-12 py-14 lg:grid-cols-[1fr_22rem]">
         <article className="prose max-w-none text-ink [&_p]:mb-4 [&_p]:leading-relaxed">
           {p.description ? <RichText data={p.description} /> : <p className="text-muted">Full details coming soon.</p>}
+          {(p.whatToBring || p.dropOffPickUp) && (
+            <div className="not-prose mt-8 grid gap-4 sm:grid-cols-2">
+              {p.whatToBring && (
+                <section className={`border border-line p-5 ${academy ? '' : 'rounded-2xl'}`}>
+                  <h2 className="font-semibold">What to bring</h2>
+                  <p className="mt-2 whitespace-pre-line text-sm text-muted">{p.whatToBring}</p>
+                </section>
+              )}
+              {p.dropOffPickUp && (
+                <section className={`border border-line p-5 ${academy ? '' : 'rounded-2xl'}`}>
+                  <h2 className="font-semibold">Drop-off &amp; pick-up</h2>
+                  <p className="mt-2 whitespace-pre-line text-sm text-muted">{p.dropOffPickUp}</p>
+                </section>
+              )}
+            </div>
+          )}
         </article>
         <aside className={`panel h-fit border border-line bg-surface-2 p-7 lg:sticky lg:top-24 ${academy ? 'gloss-sheen rounded-sm' : 'rounded-2xl'}`}>
           <p><PriceTag p={p} big={`text-4xl font-bold ${academy ? 'font-display' : ''}`} /></p>

@@ -1,3 +1,5 @@
+import { BookingNextSteps } from '@/components/BookingNextSteps'
+import { programPlace } from '@/lib/place'
 import { groupLabel } from '@/lib/age-groups'
 import Link from 'next/link'
 import type { Metadata } from 'next'
@@ -61,6 +63,15 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
             {promoLine && <Row k={promoLine[0]} v={promoLine[1]} />}
             {doc.amount > 0 && <Row k="Paid" v={`${formatAUD(doc.amount)} to ${payeeLabel}`} />}
           </dl>
+          {paid && doc.reference && (
+            <BookingNextSteps
+              reference={doc.reference}
+              academy={academy}
+              directions={program.type === 'registration' ? null : programPlace(program.location, settings.ground?.address).directions}
+              whatToBring={program.whatToBring}
+              dropOffPickUp={program.dropOffPickUp}
+            />
+          )}
           {!paid && <p className="mt-6 text-sm text-muted">Your payment is still being confirmed. This page will update shortly — refresh in a minute.</p>}
           {paid && program.type === 'registration' && (
             <div className="mt-8 rounded-2xl border-2 border-accent p-6 text-left">

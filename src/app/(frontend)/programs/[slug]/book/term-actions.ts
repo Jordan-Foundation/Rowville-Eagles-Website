@@ -1,6 +1,7 @@
 'use server'
 
 import { rateLimit } from '@/lib/form-guard'
+import { rememberKid } from '@/lib/family-kids'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { payload } from '@/lib/payload'
@@ -56,6 +57,10 @@ export async function bookTerm(_prev: TermState, fd: FormData): Promise<TermStat
     const age = toddlerAgeOk(player.dateOfBirth, firstSession)
     if (!age.ok) return fail(age.reason)
   }
+  // Logged-in family: keep this child and their medical / emergency details on the account for next time
+  const kidId = accountId
+    ? await rememberKid(p, accountId, { participantId: Number(str(fd, 'participant')) || null, firstName: player.firstName, lastName: player.lastName, dateOfBirth: player.dateOfBirth, medical: player.medical ?? undefined, emergencyName: player.emergencyName, emergencyPhone: player.emergencyPhone, photoConsent: player.photoConsent })
+    : null
   const existing = await existingRegistration(p, program.id, player)
   if (existing && existing.status === 'paid') return fail(`${player.firstName} is already registered for this term. Check your account for the details.`)
   if (existing && (existing.status === 'interest' || existing.status === 'offered')) {
@@ -67,7 +72,7 @@ export async function bookTerm(_prev: TermState, fd: FormData): Promise<TermStat
   }
 
   if (choice.mode === 'interest') {
-    const reg = await p.create({ collection: 'academy-registrations', overrideAccess: true, data: { program: program.id, status: 'interest', contact, player, account: accountId } })
+    const reg = await p.create({ collection: 'academy-registrations', overrideAccess: true, data: { program: program.id, status: 'interest', contact, player, account: accountId, participant: kidId ?? undefined } })
     await emailInterest(p, reg, program, choice.reason)
     return { interest: { reference: reg.reference ?? '', reason: choice.reason, email: contact.email } }
   }
@@ -97,7 +102,7 @@ export async function bookTerm(_prev: TermState, fd: FormData): Promise<TermStat
   }
   const regs = []
   for (const s of picked) {
-    regs.push(await p.create({ collection: 'academy-registrations', overrideAccess: true, showHiddenFields: true, data: { program: program.id, status: 'pending_payment', slot: s.id, contact, player, account: accountId, nights: twoNights ? '2' : '1' } }))
+    regs.push(await p.create({ collection: 'academy-registrations', overrideAccess: true, showHiddenFields: true, data: { program: program.id, status: 'pending_payment', slot: s.id, contact, player, account: accountId, participant: kidId ?? undefined, nights: twoNights ? '2' : '1' } }))
   }
   let url: string
   try {

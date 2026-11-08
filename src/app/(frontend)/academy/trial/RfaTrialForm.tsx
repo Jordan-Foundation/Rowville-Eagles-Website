@@ -1,5 +1,7 @@
 'use client'
 
+import { KidQuickFill } from '@/components/forms/KidQuickFill'
+import type { KidOption } from '@/lib/family-kids'
 import { PolicyLink } from '@/components/PolicyLink'
 import { useActionState, useMemo, useState } from 'react'
 import { useFormStatus } from 'react-dom'
@@ -8,7 +10,7 @@ import type { TrialNight } from '@/lib/rfa-trials'
 import { Field, Fieldset, Input, inputCls } from '@/components/forms/Field'
 import { bookRfaTrial, type RfaTrialState } from './actions'
 
-export function RfaTrialForm({ rules, nights, priceLabel }: { rules: AgeRules; nights: TrialNight[]; priceLabel: string }) {
+export function RfaTrialForm({ rules, nights, priceLabel, kids = [], prefill }: { rules: AgeRules; nights: TrialNight[]; priceLabel: string; kids?: KidOption[]; prefill?: Record<string, string> }) {
   const [state, action] = useActionState<RfaTrialState, FormData>(bookRfaTrial, {})
   const v = state.values ?? {}
   const [dob, setDob] = useState(v.playerDob ?? '')
@@ -20,6 +22,7 @@ export function RfaTrialForm({ rules, nights, priceLabel }: { rules: AgeRules; n
   return (
     <form action={action} className="space-y-6">
       <Fieldset legend="Player">
+        <KidQuickFill kids={kids} onDob={setDob} />
         <Input label="First name" name="playerFirstName" required defaultValue={v.playerFirstName} />
         <Input label="Last name" name="playerLastName" required defaultValue={v.playerLastName} />
         <Input label="Date of birth" name="playerDob" type="date" required value={dob} onChange={(e) => setDob(e.target.value)} />
@@ -60,10 +63,10 @@ export function RfaTrialForm({ rules, nights, priceLabel }: { rules: AgeRules; n
       </fieldset>
 
       <Fieldset legend="Parent / guardian">
-        <Input label="First name" name="contactFirstName" autoComplete="given-name" required defaultValue={v.contactFirstName} />
-        <Input label="Last name" name="contactLastName" autoComplete="family-name" required defaultValue={v.contactLastName} />
-        <Input label="Email" name="contactEmail" type="email" autoComplete="email" required defaultValue={v.contactEmail} />
-        <Input label="Mobile" name="contactPhone" type="tel" autoComplete="tel" required defaultValue={v.contactPhone} />
+        <Input label="First name" name="contactFirstName" autoComplete="given-name" required defaultValue={v.contactFirstName ?? prefill?.contactFirstName} />
+        <Input label="Last name" name="contactLastName" autoComplete="family-name" required defaultValue={v.contactLastName ?? prefill?.contactLastName} />
+        <Input label="Email" name="contactEmail" type="email" autoComplete="email" required defaultValue={v.contactEmail ?? prefill?.contactEmail} />
+        <Input label="Mobile" name="contactPhone" type="tel" autoComplete="tel" required defaultValue={v.contactPhone ?? prefill?.contactPhone} />
         <div className="sm:col-span-2">
           <Field label="Medical conditions, allergies or injuries">
             <textarea name="medical" rows={2} className={inputCls} defaultValue={v.medical} />

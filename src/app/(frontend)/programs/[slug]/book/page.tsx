@@ -1,5 +1,7 @@
 import Link from 'next/link'
 import { PromoNotice } from '@/promotions/PromoNotice'
+import { contactPrefill, familyKids } from '@/lib/family-kids'
+import { ageBounds } from '@/lib/age-check'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { payload, formatAUD, formatDate } from '@/lib/payload'
@@ -63,6 +65,8 @@ export default async function BookPage({
   }
   const payee = isPayee(program.payee) ? program.payee : defaultPayee(program.type)
   const now = new Date()
+  const me = await currentUser()
+  const kids = await familyKids(p, me?.id)
 
   // Academy terms with training times: the player's year of birth picks the slot
   let termSlots: TermSlotOption[] | null = null
@@ -91,8 +95,7 @@ export default async function BookPage({
           twoLabel: q2.perSession !== null ? `${q2.count} × ${formatAUD(q2.perSession)} = ${formatAUD(q2.total)}` : formatAUD(q2.total),
         }
       })
-      const user = await currentUser()
-      if (user) prefill = { contactFirstName: user.firstName ?? '', contactLastName: user.lastName ?? '', contactEmail: user.email, contactPhone: user.phone ?? '' }
+      prefill = contactPrefill(me)
     }
   }
   const slots = await Promise.all(
@@ -137,11 +140,14 @@ export default async function BookPage({
                 This program is fully booked. Please check back later or contact the club about the waitlist.
               </p>
             ) : termSlots ? (
-              <TermBookingForm slug={program.slug} slots={termSlots} rates={{ one: program.pricePerSession ?? null, two: program.twoNightPricePerSession ?? null }} payeeLabel={stripeAccounts[payee].label} prefill={prefill} />
+              <TermBookingForm slug={program.slug} slots={termSlots} rates={{ one: program.pricePerSession ?? null, two: program.twoNightPricePerSession ?? null }} payeeLabel={stripeAccounts[payee].label} prefill={prefill} kids={kids} bounds={ageBounds(program)} />
             ) : (
               <BookingForm
                 slug={program.slug}
                 isTeamEntry={false}
+                kids={kids}
+                prefill={contactPrefill(me)}
+                bounds={ageBounds(program)}
                 offeredPlayers={offered}
                 defaultPlayer={participantParam}
                 slots={slots}

@@ -11,7 +11,7 @@ import { isTermMember, memberWindowEnd } from '@/academy/pricing'
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = {
   title: '1-on-1 coaching',
-  description: 'Book a 1-on-1 session with a Foundation Academy coach — choose a time, meet the coaches free then, and book online.',
+  description: 'Book a 1-on-1 session with a Foundation Academy coach — pick a time, see which coaches are free, and book online.',
 }
 
 export default async function OneOnOnePage({ searchParams }: { searchParams: Promise<{ mode?: string; link?: string }> }) {
@@ -42,7 +42,7 @@ export default async function OneOnOnePage({ searchParams }: { searchParams: Pro
           <p className="mt-8 text-xs font-medium uppercase tracking-[0.35em] text-muted">Foundation Academy</p>
           <h1 className="mt-3 max-w-3xl font-display text-5xl font-semibold uppercase leading-[0.95] tracking-tight sm:text-6xl">1-on-1 coaching</h1>
           <p className="mt-5 max-w-2xl text-lg text-muted">
-            Pick a time, meet the coaches free then, and choose the one that suits your player. {term ? `${term.sessionMinutes}-minute sessions.` : ''}
+            Pick a time, see which coaches are free, and choose the one that suits your player. {term ? `${term.sessionMinutes}-minute sessions.` : ''}
           </p>
           {term && (
             <div className="mt-8 flex flex-wrap gap-3 text-sm" role="tablist" aria-label="Booking type">
@@ -54,6 +54,18 @@ export default async function OneOnOnePage({ searchParams }: { searchParams: Pro
                 Whole term · <strong>{formatAUD(term.pricePerSession)}</strong>/session
               </a>
             </div>
+          )}
+          {term && (
+            <dl className="mt-6 grid max-w-3xl gap-3 text-sm sm:grid-cols-2">
+              <div className={`border p-4 ${mode === 'casual' ? 'border-white/60' : 'border-line'}`}>
+                <dt className="font-semibold">Casual session</dt>
+                <dd className="mt-1 text-muted">One session, any free time. Good for trying a coach or a one-off boost.</dd>
+              </div>
+              <div className={`border p-4 ${mode === 'term' ? 'border-white/60' : 'border-line'}`}>
+                <dt className="font-semibold">Whole term</dt>
+                <dd className="mt-1 text-muted">The same coach, day and time every week for the rest of term, at a lower price per session. Pay upfront, or weekly when enough of the term is left.</dd>
+              </div>
+            </dl>
           )}
         </div>
       </section>

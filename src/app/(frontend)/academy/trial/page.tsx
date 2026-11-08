@@ -5,6 +5,8 @@ import { currentAcademyTerm, trialNights } from '@/lib/rfa-trials'
 import { AcademyBackdrop } from '@/components/AcademyBackdrop'
 import { RfaLogo } from '@/components/Logos'
 import { RfaTrialForm } from './RfaTrialForm'
+import { contactPrefill, familyKids } from '@/lib/family-kids'
+import { currentUser } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = {
@@ -15,6 +17,7 @@ export const metadata: Metadata = {
 export default async function RfaTrialPage({ searchParams }: { searchParams: Promise<{ cancelled?: string }> }) {
   const { cancelled } = await searchParams
   const p = await payload()
+  const me = await currentUser()
   const [term, settings] = await Promise.all([currentAcademyTerm(p), p.findGlobal({ slug: 'site-settings', depth: 0 })])
   const nights = term ? await trialNights(p, term) : []
 
@@ -37,7 +40,7 @@ export default async function RfaTrialPage({ searchParams }: { searchParams: Pro
       <div className="container-x max-w-3xl py-14">
         {cancelled && <p className="panel mb-6 border border-line bg-surface-2 px-4 py-3 text-sm">Payment was cancelled — nothing was charged.</p>}
         {term && nights.length > 0 ? (
-          <RfaTrialForm rules={await getAgeRules(p)} nights={nights} priceLabel={formatAUD(term.trialPrice ?? 0)} />
+          <RfaTrialForm rules={await getAgeRules(p)} nights={nights} priceLabel={formatAUD(term.trialPrice ?? 0)} kids={await familyKids(p, me?.id)} prefill={contactPrefill(me)} />
         ) : (
           <p className="panel border border-line bg-surface-2 p-6 text-muted">Trial nights for the next Academy term will open soon.</p>
         )}

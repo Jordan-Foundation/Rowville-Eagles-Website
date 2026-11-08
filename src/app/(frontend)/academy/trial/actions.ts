@@ -5,6 +5,7 @@ import { dobProblem, phoneOk } from '@/lib/validate'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { findDiscount, recordUse } from '@/promotions/service'
+import { rememberKid } from '@/lib/family-kids'
 import { payload } from '@/lib/payload'
 import { birthYearOf, groupLabel } from '@/lib/age-groups'
 import { confirmPayment, newReference, startCheckout } from '@/lib/payments'
@@ -76,6 +77,10 @@ export async function bookRfaTrial(_prev: RfaTrialState, fd: FormData): Promise<
     data: { reference, program: term.id, bookingType: 'trial', birthYear, sessionStart: night.start, status: 'pending', payee: 'academy', amount: due, discount: promo?.off, promotion: promo?.promotion, account: accountId, contact, player },
   })
   if (promo && accountId) await recordUse(p, { applied: promo, account: accountId, kind: 'program', reference, paidAmount: due })
+  if (accountId) {
+    const kidId = await rememberKid(p, accountId, { participantId: Number(s('participant')) || null, firstName: player.firstName, lastName: player.lastName, dateOfBirth: player.dateOfBirth, medical: player.medical, emergencyName: player.emergencyName, emergencyPhone: player.emergencyPhone, photoConsent: player.photoConsent })
+    if (kidId) await p.update({ collection: 'bookings', id: booking.id, data: { participant: kidId }, overrideAccess: true, depth: 0 })
+  }
 
   let url = `/checkout/success?kind=booking&ref=${reference}`
   if (due === 0) {

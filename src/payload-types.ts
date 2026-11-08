@@ -472,6 +472,19 @@ export interface Program {
    */
   ageRange?: string | null;
   /**
+   * For the instant age check when booking (blank = read from “Ages”)
+   */
+  minAge?: number | null;
+  maxAge?: number | null;
+  /**
+   * e.g. “Drop-off from 8:45am · pick-up by 3:15pm at the clubrooms”
+   */
+  dropOffPickUp?: string | null;
+  /**
+   * Shown on the program page, the booking confirmation and the confirmation email
+   */
+  whatToBring?: string | null;
+  /**
    * AUD incl. GST.
    */
   price?: number | null;
@@ -3297,6 +3310,10 @@ export interface ProgramsSelect<T extends boolean = true> {
   scheduleNote?: T;
   location?: T;
   ageRange?: T;
+  minAge?: T;
+  maxAge?: T;
+  dropOffPickUp?: T;
+  whatToBring?: T;
   price?: T;
   twoNightPricePerSession?: T;
   pricePerSession?: T;

@@ -1,3 +1,5 @@
+import { BookingNextSteps } from '@/components/BookingNextSteps'
+import { programPlace } from '@/lib/place'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { payload, formatAUD, formatDate } from '@/lib/payload'
@@ -40,6 +42,7 @@ export default async function BookedPage({ searchParams }: { searchParams: Promi
     ? (await p.find({ pagination: false, collection: 'academy-sessions', where: { booking: { equals: booking.id } }, sort: 'startsAt', limit: 60, depth: 0, overrideAccess: true })).docs
     : []
   const covered = sessions.filter((x) => x.needsCover)
+  const termPlace = booking?.term && typeof booking.term === 'object' ? booking.term.location : null
 
   return (
     <div data-brand="academy" data-page-brand="academy" className="relative overflow-hidden">
@@ -86,6 +89,7 @@ export default async function BookedPage({ searchParams }: { searchParams: Promi
                 {coach?.displayName} is away for {covered.length} session{covered.length === 1 ? '' : 's'} ({covered.map((x) => formatDate(x.startsAt, { day: 'numeric', month: 'short' })).join(', ')}). A replacement coach will be allocated, with a detailed handover so progress continues.
               </p>
             )}
+            {confirmed && <BookingNextSteps reference={booking.reference} academy directions={termPlace ? programPlace(termPlace, null).directions : null} />}
             {!confirmed ? (
               <p className="mt-6 text-sm text-muted">Your payment is being confirmed — this page will update shortly. Refresh in a minute.</p>
             ) : account?.activated ? (

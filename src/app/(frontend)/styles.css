@@ -104,6 +104,8 @@ body {
 a.club-only { display: inline-flex; }
 body:has([data-page-brand='academy']) .academy-only { display: inline-flex !important; }
 body:has([data-page-brand='academy']) .club-only { display: none !important; }
+/* Header extras that move into the ☰ menu on phones */
+@media (max-width: 639px) { body:has([data-page-brand='academy']) .academy-only.sm-up { display: none !important; } }
 body:has([data-page-brand='academy']) { background: #000; }
 body:has([data-page-brand='academy']) .site-header { background: rgb(0 0 0 / 0.92); }
 

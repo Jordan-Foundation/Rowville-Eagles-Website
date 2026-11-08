@@ -1,5 +1,7 @@
 'use client'
 
+import { KidQuickFill } from '@/components/forms/KidQuickFill'
+import type { KidOption } from '@/lib/family-kids'
 import { PolicyLink } from '@/components/PolicyLink'
 import { useActionState } from 'react'
 import { useFormStatus } from 'react-dom'
@@ -7,13 +9,14 @@ import { Field, Fieldset, Input, inputCls } from '@/components/forms/Field'
 import type { ToddlerTrialSession } from '@/academy/terms/toddler-data'
 import { bookToddlerTrial, type ToddlerTrialState } from './actions'
 
-export function ToddlerTrialForm({ slug, sessions }: { slug: string; sessions: ToddlerTrialSession[] }) {
+export function ToddlerTrialForm({ slug, sessions, kids = [], prefill }: { slug: string; sessions: ToddlerTrialSession[]; kids?: KidOption[]; prefill?: Record<string, string> }) {
   const [state, action] = useActionState<ToddlerTrialState, FormData>(bookToddlerTrial, {})
   const v = state.values ?? {}
   return (
     <form action={action} className="space-y-6">
       <input type="hidden" name="program" value={slug} />
       <Fieldset legend="Your child">
+        <KidQuickFill kids={kids} />
         <Input label="First name" name="playerFirstName" required defaultValue={v.playerFirstName} />
         <Input label="Last name" name="playerLastName" required defaultValue={v.playerLastName} />
         <Input label="Date of birth" name="playerDob" type="date" required defaultValue={v.playerDob} />
@@ -34,10 +37,10 @@ export function ToddlerTrialForm({ slug, sessions }: { slug: string; sessions: T
         </div>
       </fieldset>
       <Fieldset legend="Parent / guardian">
-        <Input label="First name" name="contactFirstName" autoComplete="given-name" required defaultValue={v.contactFirstName} />
-        <Input label="Last name" name="contactLastName" autoComplete="family-name" required defaultValue={v.contactLastName} />
-        <Input label="Email" name="contactEmail" type="email" autoComplete="email" required defaultValue={v.contactEmail} />
-        <Input label="Mobile" name="contactPhone" type="tel" autoComplete="tel" required defaultValue={v.contactPhone} />
+        <Input label="First name" name="contactFirstName" autoComplete="given-name" required defaultValue={v.contactFirstName ?? prefill?.contactFirstName} />
+        <Input label="Last name" name="contactLastName" autoComplete="family-name" required defaultValue={v.contactLastName ?? prefill?.contactLastName} />
+        <Input label="Email" name="contactEmail" type="email" autoComplete="email" required defaultValue={v.contactEmail ?? prefill?.contactEmail} />
+        <Input label="Mobile" name="contactPhone" type="tel" autoComplete="tel" required defaultValue={v.contactPhone ?? prefill?.contactPhone} />
         <div className="sm:col-span-2">
           <Field label="Medical conditions, allergies or anything we should know">
             <textarea name="medical" rows={2} className={inputCls} defaultValue={v.medical} />

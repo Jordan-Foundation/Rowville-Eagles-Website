@@ -1,5 +1,7 @@
 'use client'
 
+import { KidQuickFill } from '@/components/forms/KidQuickFill'
+import type { KidOption } from '@/lib/family-kids'
 import { PolicyLink } from '@/components/PolicyLink'
 import { useActionState, useMemo, useState } from 'react'
 import { useFormStatus } from 'react-dom'
@@ -10,7 +12,7 @@ import { joinUs, type JoinState } from './actions'
 /** `remaining` is keyed by year of birth */
 export type TrialOption = { id: number; label: string; birthYears: number[]; remaining: Record<string, number> }
 
-export function JoinForm({ rules, trials }: { rules: AgeRules; trials: TrialOption[] }) {
+export function JoinForm({ rules, trials, kids = [], prefill }: { rules: AgeRules; trials: TrialOption[]; kids?: KidOption[]; prefill?: Record<string, string> }) {
   const season = rules.season
   const [state, action] = useActionState<JoinState, FormData>(joinUs, {})
   const v = state.values ?? {}
@@ -24,6 +26,7 @@ export function JoinForm({ rules, trials }: { rules: AgeRules; trials: TrialOpti
   return (
     <form action={action} className="space-y-6">
       <Fieldset legend="Player">
+        <KidQuickFill kids={kids} onDob={setDob} />
         <Input label="First name" name="playerFirstName" required defaultValue={v.playerFirstName} />
         <Input label="Last name" name="playerLastName" required defaultValue={v.playerLastName} />
         <Input label="Date of birth" name="playerDob" type="date" required value={dob} onChange={(e) => setDob(e.target.value)} />
@@ -48,10 +51,10 @@ export function JoinForm({ rules, trials }: { rules: AgeRules; trials: TrialOpti
       </Fieldset>
 
       <Fieldset legend="Parent / guardian">
-        <Input label="First name" name="contactFirstName" autoComplete="given-name" required defaultValue={v.contactFirstName} />
-        <Input label="Last name" name="contactLastName" autoComplete="family-name" required defaultValue={v.contactLastName} />
-        <Input label="Email" name="contactEmail" type="email" autoComplete="email" required defaultValue={v.contactEmail} />
-        <Input label="Mobile" name="contactPhone" type="tel" autoComplete="tel" required defaultValue={v.contactPhone} />
+        <Input label="First name" name="contactFirstName" autoComplete="given-name" required defaultValue={v.contactFirstName ?? prefill?.contactFirstName} />
+        <Input label="Last name" name="contactLastName" autoComplete="family-name" required defaultValue={v.contactLastName ?? prefill?.contactLastName} />
+        <Input label="Email" name="contactEmail" type="email" autoComplete="email" required defaultValue={v.contactEmail ?? prefill?.contactEmail} />
+        <Input label="Mobile" name="contactPhone" type="tel" autoComplete="tel" required defaultValue={v.contactPhone ?? prefill?.contactPhone} />
         <div className="sm:col-span-2">
           <Field label="Anything we should know? (optional)">
             <textarea name="notes" rows={2} className={inputCls} defaultValue={v.notes} />

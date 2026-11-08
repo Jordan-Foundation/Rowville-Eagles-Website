@@ -66,18 +66,30 @@ function CasualView({ slots, member, onPick }: { slots: CasualSlot[]; member?: P
     for (const s of slots) m.set(s.date, [...(m.get(s.date) ?? []), s])
     return m
   }, [slots])
+  const next = slots[0] // slots come sorted by start time
+  const weekHasTimes = days.some((d) => byDate.has(d))
   return (
     <>
+      {next && (
+        <button type="button" onClick={() => onPick(next)} className="mb-6 flex w-full items-center justify-between gap-4 border border-white/40 px-5 py-4 text-left transition hover:bg-white hover:text-black sm:w-auto">
+          <span>
+            <span className="block text-xs font-semibold uppercase tracking-[0.2em] opacity-70">Next available</span>
+            <span className="font-display text-lg font-semibold">{fmt(next.date, { weekday: 'long', day: 'numeric', month: 'short' })} · {time12(next.time)}</span>
+          </span>
+          <span aria-hidden>→</span>
+        </button>
+      )}
       <div className="flex items-center justify-between gap-4">
         <button type="button" onClick={() => setWeek((w) => Math.max(0, w - 1))} disabled={week === 0} className="border border-line px-4 py-2 text-sm disabled:opacity-30">← Prev</button>
         <p className="font-display text-lg font-semibold uppercase">Week of {fmt(monday, { day: 'numeric', month: 'long' })}</p>
         <button type="button" onClick={() => setWeek((w) => Math.min(weeks.length - 1, w + 1))} disabled={week >= weeks.length - 1} className="border border-line px-4 py-2 text-sm disabled:opacity-30">Next →</button>
       </div>
+      {!weekHasTimes && <p className="mt-6 text-sm text-muted">No times free this week — try the next week.</p>}
       <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-7">
         {days.map((d, i) => {
           const list = byDate.get(d) ?? []
           return (
-            <div key={d} className={`panel border border-line p-4 ${list.length ? '' : 'opacity-40'}`}>
+            <div key={d} className={`panel border border-line p-4 ${list.length ? '' : 'hidden opacity-40 lg:block'}`}>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">{DAY[i]}</p>
               <p className="font-display text-xl font-semibold">{fmt(d, { day: 'numeric', month: 'short' })}</p>
               <div className="mt-3 flex flex-wrap gap-2 lg:flex-col">
@@ -107,7 +119,7 @@ function TermView({ weekly, pricePerSession, onPick }: { weekly: TermSlot[]; pri
         const list = weekly.filter((s) => s.weekday === day)
         const n = list[0]?.sessions.length
         return (
-          <div key={day} className={`panel border border-line p-4 ${list.length ? '' : 'opacity-40'}`}>
+          <div key={day} className={`panel border border-line p-4 ${list.length ? '' : 'hidden opacity-40 lg:block'}`}>
             <p className="font-display text-xl font-semibold uppercase">{DAY[i]}s</p>
             <p className="text-xs text-muted">{n ? `${n} sessions left · ${aud(pricePerSession * n)}` : 'No weekly times'}</p>
             <div className="mt-3 flex flex-wrap gap-2 lg:flex-col">

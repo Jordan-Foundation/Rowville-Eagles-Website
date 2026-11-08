@@ -1,3 +1,4 @@
+import { siteUrl } from '@/lib/payments'
 import type { Payload } from 'payload'
 import { commitTransaction, createLocalReq, initTransaction, killTransaction } from 'payload'
 import type { AcademyBooking, AcademyCoach, AcademyTerm, Media } from '@/payload-types'
@@ -262,7 +263,7 @@ async function afterConfirmed(payload: Payload, booking: AcademyBooking) {
             : ([['Paid', `${formatAUD(booking.amount)}${booking.termMemberPrice ? ' (term member price)' : ''}`]] as [string, string][])),
         ['Reference', booking.reference],
       ],
-      after: `${dateList}${coverNote}${dateList || coverNote ? '<br><br>' : ''}Please bring boots, shin pads, a ball and a water bottle, and arrive 5 minutes early. Need to change something? Reply to this email.`,
+      after: `${dateList}${coverNote}${dateList || coverNote ? '<br><br>' : ''}Please bring boots, shin pads, a ball and a water bottle, and arrive 5 minutes early. Need to change something? Reply to this email.<br><br><a href="${siteUrl()}/calendar/${encodeURIComponent(booking.reference)}">Add to your calendar</a>`,
     },
     {
       heading: user.activated ? 'See it in your account' : 'Create your free account',

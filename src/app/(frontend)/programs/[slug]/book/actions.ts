@@ -9,6 +9,7 @@ import { confirmPayment, newReference, placesTaken, startCheckout } from '@/lib/
 import { defaultPayee } from '@/collections/Programs'
 import { isPayee } from '@/lib/stripe-accounts'
 import { findDiscount, recordUse } from '@/promotions/service'
+import { rememberKid } from '@/lib/family-kids'
 
 export type BookingState = { error?: string; values?: Record<string, string> }
 
@@ -121,6 +122,20 @@ export async function bookProgram(_prev: BookingState, fd: FormData): Promise<Bo
   })
 
   if (promo && accountId) await recordUse(p, { applied: promo, account: accountId, kind: 'program', reference, paidAmount: due })
+  // Logged-in family: keep this child (and their medical / emergency details) on the account for next time
+  if (accountId && !isTeamEntry && player.firstName && player.dateOfBirth) {
+    const kidId = await rememberKid(p, accountId, {
+      participantId: offeredParticipant?.id ?? (Number(str(fd, 'participant')) || null),
+      firstName: player.firstName,
+      lastName: player.lastName,
+      dateOfBirth: player.dateOfBirth,
+      medical: player.medical,
+      emergencyName: player.emergencyName,
+      emergencyPhone: player.emergencyPhone,
+      photoConsent: player.photoConsent,
+    })
+    if (kidId && !offeredParticipant) await p.update({ collection: 'bookings', id: booking.id, data: { participant: kidId }, overrideAccess: true, depth: 0 })
+  }
   let url: string
   if (due === 0) {
     await confirmPayment(p, 'booking', reference)

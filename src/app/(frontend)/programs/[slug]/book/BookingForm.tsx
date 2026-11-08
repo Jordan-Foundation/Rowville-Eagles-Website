@@ -5,6 +5,8 @@ import { useActionState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { bookProgram, type BookingState } from './actions'
 import { Field, Fieldset, Input, inputCls } from '@/components/forms/Field'
+import { PlayerFields } from '@/components/forms/PlayerFields'
+import type { KidOption } from '@/lib/family-kids'
 
 type Slot = { start: string; label: string; remaining: number }
 
@@ -17,10 +19,15 @@ export function BookingForm(props: {
   /** Team registrations: players on this account with an offer (name/DOB already known). */
   offeredPlayers?: { id: number; label: string }[]
   defaultPlayer?: string
+  /** Logged-in families: their children (to pick) and their own details (prefilled). */
+  kids?: KidOption[]
+  prefill?: Record<string, string>
+  bounds?: { min: number | null; max: number | null }
 }) {
   const offer = (props.offeredPlayers?.length ?? 0) > 0
   const [state, action] = useActionState<BookingState, FormData>(bookProgram, {})
   const v = state.values ?? {}
+  const c = { ...(props.prefill ?? {}), ...v }
 
   return (
     <form action={action} className="space-y-6">
@@ -47,10 +54,10 @@ export function BookingForm(props: {
       )}
 
       <Fieldset legend={props.isTeamEntry ? 'Team manager' : 'Parent / guardian'}>
-        <Input label="First name" name="contactFirstName" autoComplete="given-name" required defaultValue={v.contactFirstName} />
-        <Input label="Last name" name="contactLastName" autoComplete="family-name" required defaultValue={v.contactLastName} />
-        <Input label="Email" name="contactEmail" type="email" autoComplete="email" required defaultValue={v.contactEmail} />
-        <Input label="Mobile" name="contactPhone" type="tel" autoComplete="tel" required defaultValue={v.contactPhone} />
+        <Input label="First name" name="contactFirstName" autoComplete="given-name" required defaultValue={c.contactFirstName} />
+        <Input label="Last name" name="contactLastName" autoComplete="family-name" required defaultValue={c.contactLastName} />
+        <Input label="Email" name="contactEmail" type="email" autoComplete="email" required defaultValue={c.contactEmail} />
+        <Input label="Mobile" name="contactPhone" type="tel" autoComplete="tel" required defaultValue={c.contactPhone} />
       </Fieldset>
 
       {offer ? (
@@ -81,22 +88,7 @@ export function BookingForm(props: {
           <Input label="Club" name="playerLastName" placeholder="e.g. Rowville Eagles" defaultValue={v.playerLastName} />
         </Fieldset>
       ) : (
-        <Fieldset legend="Player">
-          <Input label="First name" name="playerFirstName" required defaultValue={v.playerFirstName} />
-          <Input label="Last name" name="playerLastName" required defaultValue={v.playerLastName} />
-          <Input label="Date of birth" name="playerDob" type="date" required defaultValue={v.playerDob} />
-          <div className="sm:col-span-2">
-            <Field label="Medical conditions, allergies or injuries" hint="Shared only with the coaches running this program.">
-              <textarea name="medical" rows={2} className={inputCls} defaultValue={v.medical} />
-            </Field>
-          </div>
-          <Input label="Emergency contact name" name="emergencyName" required defaultValue={v.emergencyName} />
-          <Input label="Emergency contact phone" name="emergencyPhone" type="tel" required defaultValue={v.emergencyPhone} />
-          <label className="flex items-start gap-3 text-sm sm:col-span-2">
-            <input type="checkbox" name="photoConsent" defaultChecked={v.photoConsent === 'on'} className="mt-1" />
-            <span>I consent to photos/video of this player being used in club and Academy communications.</span>
-          </label>
-        </Fieldset>
+        <PlayerFields kids={props.kids ?? []} values={v} bounds={props.bounds} />
       )}
 
       <label className="flex items-start gap-3 text-sm">

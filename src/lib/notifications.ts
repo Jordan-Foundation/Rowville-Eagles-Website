@@ -18,12 +18,29 @@ const when = (iso: string) => formatDate(iso, { weekday: 'long', day: 'numeric',
  *  - tag the player: team registration → Rowville, Academy term → RFA
  *  - email confirmation (+ "create your account" link for new families)
  */
+/** What to bring, drop-off/pick-up and an "Add to calendar" link, for booking confirmation emails (HTML). */
+function bookingExtras(program: Program, reference?: string | null) {
+  const nl = (t: string) => esc(t).replace(/\n/g, '<br>')
+  return [
+    program.whatToBring && `<strong>What to bring:</strong> ${nl(program.whatToBring)}`,
+    program.dropOffPickUp && `<strong>Drop-off &amp; pick-up:</strong> ${nl(program.dropOffPickUp)}`,
+    reference && `<a href="${siteUrl()}/calendar/${encodeURIComponent(reference)}">Add to your calendar</a>`,
+  ].filter(Boolean).join('<br><br>')
+}
+
 export async function onBookingPaid(payload: Payload, booking: Booking) {
   const promoLine = await (await import('../promotions/service')).discountLine(payload, booking)
   const programId = typeof booking.program === 'object' ? booking.program.id : booking.program
   const program = (await payload.findByID({ collection: 'programs', id: programId, depth: 0 })) as Program
   const academy = booking.payee === 'academy'
   const settings = await payload.findGlobal({ slug: 'site-settings', depth: 0 })
+  if (program.capacity && program.slug) {
+    try {
+      ;(await import('next/cache')).revalidatePath(`/programs/${program.slug}`) // "places left" on the program page
+    } catch {
+      /* not in a request */
+    }
+  }
 
   // Trial nights: confirmation only — families get an account once they enrol.
   if (booking.bookingType === 'trial') {
@@ -38,7 +55,7 @@ export async function onBookingPaid(payload: Payload, booking: Booking) {
           ['Where', program.location || settings.ground?.address || 'Rowville'],
           ['Reference', booking.reference ?? ''],
         ],
-        after: 'Please bring boots, shin pads and a water bottle, and arrive 10 minutes early. At the end of the session our coaches will talk you through enrolling for the term.',
+        after: `${program.whatToBring ? '' : 'Please bring boots, shin pads and a water bottle. '}Arrive 10 minutes early. At the end of the session our coaches will talk you through enrolling for the term.<br><br>${bookingExtras(program, booking.reference)}`,
       },
     ])
     await sendEmail(payload, { to: booking.contact.email, subject: 'RFA trial booked', html, sender: 'academy', replyTo: settings.email || undefined })
@@ -104,7 +121,7 @@ export async function onBookingPaid(payload: Payload, booking: Booking) {
       after:
         program.type === 'registration'
           ? `<strong>Next step:</strong> complete the Football Victoria section in <a href="${settings.links?.playFootball || 'https://www.playfootball.com.au'}">PlayFootball</a> and select Rowville Eagles FC.`
-          : 'Your account shows every upcoming session, camp and booking for your family in one place.',
+          : `${bookingExtras(program, booking.reference)}<br><br>Your account shows every upcoming session, camp and booking for your family in one place.`,
     },
   ])
   await sendEmail(payload, {

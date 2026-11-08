@@ -54,6 +54,7 @@ import * as migration_20261108_114556_promotion_sending from './20261108_114556_
 import * as migration_20261108_201445_policies from './20261108_201445_policies';
 import * as migration_20261108_204924_resumable_sends from './20261108_204924_resumable_sends';
 import * as migration_20261108_212256_status_indexes from './20261108_212256_status_indexes';
+import * as migration_20261108_220051_program_details from './20261108_220051_program_details';
 
 export const migrations = [
   {
@@ -334,6 +335,11 @@ export const migrations = [
   {
     up: migration_20261108_212256_status_indexes.up,
     down: migration_20261108_212256_status_indexes.down,
-    name: '20261108_212256_status_indexes'
+    name: '20261108_212256_status_indexes',
+  },
+  {
+    up: migration_20261108_220051_program_details.up,
+    down: migration_20261108_220051_program_details.down,
+    name: '20261108_220051_program_details'
   },
 ];

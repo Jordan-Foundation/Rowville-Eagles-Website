@@ -1,5 +1,7 @@
 'use client'
 
+import { AgeHint } from '@/components/forms/PlayerFields'
+import type { KidOption } from '@/lib/family-kids'
 import { PolicyLink } from '@/components/PolicyLink'
 import { useActionState, useState } from 'react'
 import { useFormStatus } from 'react-dom'
@@ -8,10 +10,15 @@ import { Field, Fieldset, Input, inputCls } from '@/components/forms/Field'
 
 export type TermSlotOption = { id: number; label: string; years: string; birthYears: number[]; remaining: number | null; sessions: string; bookable: boolean; total: number; priceLabel: string; twoTotal: number; twoLabel: string }
 
-export function TermBookingForm(props: { slug: string; slots: TermSlotOption[]; rates: { one: number | null; two: number | null }; payeeLabel: string; prefill?: Record<string, string> }) {
+export function TermBookingForm(props: { slug: string; slots: TermSlotOption[]; rates: { one: number | null; two: number | null }; payeeLabel: string; prefill?: Record<string, string>; kids?: KidOption[]; bounds?: { min: number | null; max: number | null } }) {
   const [state, action] = useActionState<TermState, FormData>(bookTerm, {})
   const v = { ...props.prefill, ...state.values }
-  const [dob, setDob] = useState(v.playerDob ?? '')
+  const kids = props.kids ?? []
+  const [who, setWho] = useState(v.participant ?? (kids[0] ? String(kids[0].id) : 'new'))
+  const kid = kids.find((k) => String(k.id) === who) ?? null
+  const [typedDob, setDob] = useState(v.playerDob ?? '')
+  const dob = kid ? kid.dob : typedDob
+  const [typedName, setTypedName] = useState(v.playerFirstName ?? '')
   const [picked, setPicked] = useState(v.slot ?? '')
   const year = /^\d{4}-\d{2}-\d{2}$/.test(dob) ? Number(dob.slice(0, 4)) : null
   const fits = year ? props.slots.filter((s) => s.birthYears.includes(year) && s.bookable) : []
@@ -45,11 +52,42 @@ export function TermBookingForm(props: { slug: string; slots: TermSlotOption[]; 
     <form action={action} className="space-y-6">
       <input type="hidden" name="program" value={props.slug} />
       <Fieldset legend="Player">
-        <Input label="First name" name="playerFirstName" required defaultValue={v.playerFirstName} />
-        <Input label="Last name" name="playerLastName" required defaultValue={v.playerLastName} />
-        <Field label="Date of birth" hint="Players train with their year of birth.">
-          <input name="playerDob" type="date" required value={dob} onChange={(e) => setDob(e.target.value)} className={inputCls} />
-        </Field>
+        {kids.length > 0 && (
+          <div className="space-y-2 sm:col-span-2" role="radiogroup" aria-label="Who is this booking for?">
+            <p className="text-sm font-semibold">Who is it for?</p>
+            <div className="flex flex-wrap gap-2">
+              {kids.map((k) => (
+                <label key={k.id} className="flex cursor-pointer items-center gap-2 rounded-full border border-line bg-surface px-4 py-2.5 text-sm has-[:checked]:border-ink has-[:checked]:ring-1 has-[:checked]:ring-ink">
+                  <input type="radio" name="$who" value={k.id} checked={who === String(k.id)} onChange={() => setWho(String(k.id))} />
+                  {k.firstName}
+                </label>
+              ))}
+              <label className="flex cursor-pointer items-center gap-2 rounded-full border border-dashed border-line px-4 py-2.5 text-sm has-[:checked]:border-ink">
+                <input type="radio" name="$who" value="new" checked={who === 'new'} onChange={() => setWho('new')} />
+                + New child
+              </label>
+            </div>
+          </div>
+        )}
+        {kid ? (
+          <>
+            <input type="hidden" name="participant" value={kid.id} />
+            <input type="hidden" name="playerFirstName" value={kid.firstName} />
+            <input type="hidden" name="playerLastName" value={kid.lastName} />
+            <input type="hidden" name="playerDob" value={kid.dob} />
+            <p className="text-sm sm:col-span-2"><strong>{kid.firstName} {kid.lastName}</strong> · born {kid.dob ? new Date(`${kid.dob}T00:00:00`).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'}</p>
+            <AgeHint dob={kid.dob} name={kid.firstName} bounds={props.bounds} />
+          </>
+        ) : (
+          <>
+            <Input label="First name" name="playerFirstName" required defaultValue={v.playerFirstName} onChange={(e) => setTypedName(e.currentTarget.value)} />
+            <Input label="Last name" name="playerLastName" required defaultValue={v.playerLastName} />
+            <Field label="Date of birth" hint="Players train with their year of birth.">
+              <input name="playerDob" type="date" required value={typedDob} max={new Date().toISOString().slice(0, 10)} onChange={(e) => setDob(e.target.value)} className={inputCls} />
+            </Field>
+            <AgeHint dob={typedDob} name={typedName} bounds={props.bounds} />
+          </>
+        )}
       </Fieldset>
 
       {year !== null && (
@@ -125,17 +163,19 @@ export function TermBookingForm(props: { slug: string; slots: TermSlotOption[]; 
       </Fieldset>
 
       <Fieldset legend="Health & emergency">
+        <div key={who} className="contents">
         <div className="sm:col-span-2">
           <Field label="Medical conditions, allergies or injuries" hint="Shared only with the player’s coaches.">
-            <textarea name="medical" rows={2} className={inputCls} defaultValue={v.medical} />
+            <textarea name="medical" rows={2} className={inputCls} defaultValue={v.medical ?? kid?.medical ?? ''} />
           </Field>
         </div>
-        <Input label="Emergency contact name" name="emergencyName" required defaultValue={v.emergencyName} />
-        <Input label="Emergency contact phone" name="emergencyPhone" type="tel" required defaultValue={v.emergencyPhone} />
+        <Input label="Emergency contact name" name="emergencyName" required defaultValue={v.emergencyName ?? kid?.emergencyName ?? ''} />
+        <Input label="Emergency contact phone" name="emergencyPhone" type="tel" required defaultValue={v.emergencyPhone ?? kid?.emergencyPhone ?? ''} />
         <label className="flex items-start gap-3 text-sm sm:col-span-2">
-          <input type="checkbox" name="photoConsent" defaultChecked={v.photoConsent === 'on'} className="mt-1" />
+          <input type="checkbox" name="photoConsent" defaultChecked={v.photoConsent ? v.photoConsent === 'on' : !!kid?.photoConsent} className="mt-1" />
           <span>I consent to photos/video of this player being used in Academy communications.</span>
         </label>
+        </div>
       </Fieldset>
 
       <label className="flex items-start gap-3 text-sm">
