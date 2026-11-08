@@ -57,7 +57,7 @@ export default async function StaffTermsPage({ searchParams }: { searchParams: P
       <p className="mt-4 text-sm text-muted">
         {program.startDate && program.endDate ? `${formatDate(program.startDate, { day: 'numeric', month: 'short' })} – ${formatDate(program.endDate, { day: 'numeric', month: 'short', year: 'numeric' })} · ` : ''}
         {programPriceLabel(program)} · {regs.filter((r) => r.status === 'paid').length} paid · {unplaced.length} waiting for a place ·{' '}
-        <Link href="/admin/collections/academy-term-slots/create" className="underline">Add a training time</Link> · <Link href="/admin/prices" className="underline">Prices</Link>
+        <Link href="/admin/collections/academy-term-slots/create" className="underline">Add a training time</Link> · <Link href="/management/prices" className="underline">Prices</Link>
       </p>
 
       {unplaced.length > 0 && (

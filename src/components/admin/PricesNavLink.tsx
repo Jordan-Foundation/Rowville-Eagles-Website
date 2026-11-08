@@ -3,7 +3,7 @@ import Link from 'next/link'
 /** Shown in the admin side menu and on the dashboard. */
 export function PricesNavLink() {
   return (
-    <Link href="/admin/prices" className="nav__link" style={{ display: 'block', padding: '6px 0', fontWeight: 600 }}>
+    <Link href="/management/prices" className="nav__link" style={{ display: 'block', padding: '6px 0', fontWeight: 600 }}>
       💲 Prices
     </Link>
   )
@@ -23,7 +23,7 @@ export function PricesDashboardCard() {
       <span>
         <strong>Prices</strong> — change 1-on-1, Academy term, program, tournament and shop prices in one place.
       </span>
-      <Link href="/admin/prices" className="btn btn--style-secondary btn--size-small" style={{ margin: 0 }}>
+      <Link href="/management/prices" className="btn btn--style-secondary btn--size-small" style={{ margin: 0 }}>
         Open prices
       </Link>
     </div>

@@ -36,8 +36,8 @@ export async function loadPrices(payload: Payload): Promise<PriceSection[]> {
   const pl = fplus.plans ?? {}
   const [terms, groupPrograms, programs, rounds, squads, products] = await Promise.all([
     payload.find({ collection: 'academy-terms', sort: '-startDate', limit: 12, ...q }),
-    payload.find({ collection: 'programs', where: { type: { equals: 'academy-term' } }, sort: '-startDate', limit: 30, ...q }),
-    payload.find({ collection: 'programs', where: { type: { not_in: ['academy-term'] } }, sort: '-startDate', limit: 100, ...q }),
+    payload.find({ collection: 'programs', where: { type: { in: ['academy-term', 'toddler'] } }, sort: '-startDate', limit: 30, ...q }),
+    payload.find({ collection: 'programs', where: { type: { not_in: ['academy-term', 'toddler', 'community'] } }, sort: '-startDate', limit: 100, ...q }),
     payload.find({ collection: 'selection-rounds', where: { kind: { equals: 'tournament' } }, sort: '-createdAt', limit: 30, ...q }),
     payload.find({ collection: 'squads', sort: 'name', limit: 300, ...q }),
     payload.find({ collection: 'products', sort: 'name', limit: 300, ...q }),
@@ -97,9 +97,18 @@ export async function loadPrices(payload: Payload): Promise<PriceSection[]> {
       })),
     },
     {
-      title: 'Academy group training (terms)',
-      intro: 'Families pay the price per session × the sessions left in their training time(s) (at least 2, booked 24h ahead). 2 nights a week uses its own per-session price on both nights; leave it empty to offer 1 night only. Trial sessions use the trial price (0 = free).',
-      rows: groupPrograms.docs.map((p) => ({
+      title: 'Academy group training & Mini Ballers (terms)',
+      intro: 'Families pay the price per session × the sessions left in their training time(s) (at least 2, booked 24h ahead). 2 nights a week uses its own per-session price on both nights; leave it empty to offer 1 night only. Trial sessions use the trial price (0 = free). Mini Ballers is one session a week.',
+      rows: groupPrograms.docs.map((p): PriceRow => p.type === 'toddler' ? {
+        title: p.title,
+        note: ['Mini Ballers', p.status].filter(Boolean).join(' · '),
+        href: `/admin/collections/programs/${p.id}`,
+        muted: done(p.status),
+        fields: [
+          { key: `programs.${p.id}.pricePerSession`, label: 'Per session', value: p.pricePerSession ?? 20, unit: 'aud' as const },
+          { key: `programs.${p.id}.trialPrice`, label: 'Trial session', value: p.trialPrice ?? 0, unit: 'aud' as const },
+        ],
+      } : ({
         title: p.title,
         note: p.status ?? '',
         href: `/admin/collections/programs/${p.id}`,

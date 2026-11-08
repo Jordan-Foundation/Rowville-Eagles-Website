@@ -4,6 +4,7 @@ import { attendanceDue } from '../academy/coach-sessions'
 import { unreadCount } from '../messaging/service'
 import { seenAt } from './seen'
 import { outstandingFor } from '../academy/reports/service'
+import { loadDateIssues } from './dates-data'
 
 /**
  * "Needs attention" counts for the dashboard badges. Every count is a cheap database count, worked out on
@@ -72,7 +73,7 @@ export async function coachAttention(p: Payload, user: User, coach: AcademyCoach
   return { messages, sessions, attendance, availability, groups, teams, reviews, reports }
 }
 
-export type ManagementCounts = Record<'bookings' | 'payments' | 'cover' | 'availability' | 'terms' | 'selections' | 'messages' | 'store' | 'foundation' | 'consent' | 'reports', number>
+export type ManagementCounts = Record<'bookings' | 'payments' | 'cover' | 'availability' | 'terms' | 'selections' | 'messages' | 'store' | 'foundation' | 'consent' | 'reports' | 'dates', number>
 
 export async function managementAttention(p: Payload, user: User): Promise<ManagementCounts> {
   const now = new Date().toISOString()
@@ -133,5 +134,6 @@ export async function managementAttention(p: Payload, user: User): Promise<Manag
   ])
   // Reports submitted by coaches, waiting for Management review
   const reports = await safe(async () => (await p.count({ collection: 'player-reports', where: { status: { equals: 'submitted' } }, ...q })).totalDocs)
-  return { bookings, payments, cover, availability, terms, selections, messages, store, foundation, consent, reports }
+  const dates = await safe(async () => (await loadDateIssues(p)).length)
+  return { bookings, payments, cover, availability, terms, selections, messages, store, foundation, consent, reports, dates }
 }
