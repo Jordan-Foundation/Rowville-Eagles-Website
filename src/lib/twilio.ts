@@ -62,21 +62,25 @@ export async function sendTwilioSms(to: string, body: string, statusCallback?: s
  * the numbers in the request. Used when the signature doesn't match (e.g. a small difference in the
  * webhook address) — a forged request can't name a real, current call.
  */
-export async function confirmCallWithTwilio(p: { CallSid?: string; From?: string; To?: string; AccountSid?: string }) {
+export async function confirmCallWithTwilio(p: { CallSid?: string; From?: string; To?: string; AccountSid?: string }): Promise<{ ok: boolean; why: string }> {
   const cfg = twilioConfig()
-  if (!cfg || !p.CallSid || !/^CA[0-9a-f]{32}$/i.test(p.CallSid)) return false
-  if (p.AccountSid && p.AccountSid !== cfg.sid) return false
+  if (!cfg) return { ok: false, why: 'Twilio settings missing' }
+  if (!p.CallSid || !/^CA[0-9a-f]{32}$/i.test(p.CallSid)) return { ok: false, why: `no valid CallSid (${p.CallSid ? p.CallSid.length + ' chars' : 'missing'})` }
+  if (p.AccountSid && p.AccountSid !== cfg.sid) return { ok: false, why: 'different account' }
   try {
     const res = await fetch(`${apiBase()}/2010-04-01/Accounts/${cfg.sid}/Calls/${p.CallSid}.json`, {
       headers: { authorization: `Basic ${Buffer.from(`${cfg.sid}:${cfg.token}`).toString('base64')}` },
       signal: AbortSignal.timeout(5000),
     })
-    if (!res.ok) return false
-    const call = (await res.json()) as { from?: string; to?: string; start_time?: string | null; date_created?: string }
-    const recent = Date.now() - new Date(call.date_created ?? 0).getTime() < 2 * 3_600_000
-    return recent && (!p.From || call.from === p.From) && (!p.To || call.to === p.To || call.from === p.To)
-  } catch {
-    return false
+    if (!res.ok) return { ok: false, why: `Twilio API answered ${res.status}` }
+    const call = (await res.json()) as { from?: string; to?: string; date_created?: string }
+    const age = Date.now() - new Date(call.date_created ?? 0).getTime()
+    if (!(age < 2 * 3_600_000)) return { ok: false, why: `call too old or no date (${call.date_created ?? 'none'})` }
+    if (p.From && call.from !== p.From) return { ok: false, why: `caller differs (${(call.from ?? '').slice(-3)} vs ${p.From.slice(-3)})` }
+    if (p.To && call.to !== p.To && call.from !== p.To) return { ok: false, why: `called number differs (${(call.to ?? '').slice(-3)} vs ${p.To.slice(-3)})` }
+    return { ok: true, why: 'confirmed with Twilio' }
+  } catch (e) {
+    return { ok: false, why: `Twilio API not reached (${e instanceof Error ? e.message : 'error'})` }
   }
 }
 

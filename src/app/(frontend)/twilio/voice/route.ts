@@ -19,7 +19,7 @@ export async function POST(req: Request) {
 }
 
 async function handle(req: Request) {
-  const params = await readTwilioRequest(req.clone())
+  const params = await readTwilioRequest(req)
   if (!params) {
     await rejectedWebhook(req)
     return new Response('Forbidden', { status: 403 })

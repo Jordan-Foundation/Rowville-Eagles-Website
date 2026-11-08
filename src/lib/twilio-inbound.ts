@@ -12,31 +12,46 @@ import { confirmCallWithTwilio, validTwilioSignature } from './twilio'
  * from Twilio. Twilio signs the exact URL configured on the number, so we accept the public site URL
  * as well as the URL the request arrived on (they differ behind proxies).
  */
+// The request body can only be read once — keep it (and the outcome of the checks) for the Message log
+const bodies = new WeakMap<Request, string>()
+const notes = new WeakMap<Request, string>()
+const rawBody = async (req: Request) => {
+  if (!bodies.has(req)) bodies.set(req, req.method === 'GET' ? '' : await req.text().catch(() => ''))
+  return bodies.get(req)!
+}
+
 export async function readTwilioRequest(req: Request): Promise<Record<string, string> | null> {
   const token = process.env.TWILIO_AUTH_TOKEN
   if (!token) return null
   // POST (the default): fields in the body, read raw so every field is signed exactly as Twilio sent it.
   // GET (if chosen in Twilio): fields in the address, which is signed as a whole.
   const isGet = req.method === 'GET'
-  const pairs: [string, string][] = isGet ? [...new URL(req.url).searchParams.entries()] : [...new URLSearchParams(await req.text().catch(() => '')).entries()]
+  const pairs: [string, string][] = isGet ? [...new URL(req.url).searchParams.entries()] : [...new URLSearchParams(await rawBody(req)).entries()]
   const params: Record<string, string> = Object.fromEntries(pairs)
   const urls = signatureUrls(req.url, siteUrl(), req.headers.get('x-forwarded-host'))
   if (validTwilioSignature(token, req.headers.get('x-twilio-signature'), urls, isGet ? [] : pairs)) return params
   // Calls: if the signature doesn't match, confirm the call with Twilio directly
-  if (params.CallSid && req.headers.has('x-twilio-signature') && (await confirmCallWithTwilio(params))) return params
+  if (params.CallSid && req.headers.has('x-twilio-signature')) {
+    const check = await confirmCallWithTwilio(params)
+    notes.set(req, check.why)
+    if (check.ok) {
+      console.warn(`Twilio webhook ${new URL(req.url).pathname}: signature didn’t match; accepted after confirming the call with Twilio`)
+      return params
+    }
+  } else notes.set(req, params.CallSid ? 'no signature header' : `no CallSid among ${pairs.length} fields read`)
   return null
 }
 
 /** For the Message log when a request is rejected: what arrived (field names only — no values, no secrets). */
 export async function rejectionDetail(req: Request) {
   const u = new URL(req.url)
-  const body = req.method === 'GET' ? '' : await req.text().catch(() => '')
+  const body = await rawBody(req)
   const keys = [...new URLSearchParams(req.method === 'GET' ? u.search : body).keys()]
   const dupes = [...new Set(keys.filter((k, i) => keys.indexOf(k) !== i))]
   const sent = new URLSearchParams(req.method === 'GET' ? u.search : body).get('AccountSid')
   const mine = process.env.TWILIO_ACCOUNT_SID
   const account = !sent ? 'no AccountSid sent' : sent === mine ? 'same Twilio account as TWILIO_ACCOUNT_SID' : `DIFFERENT Twilio account (…${sent.slice(-6)}) from TWILIO_ACCOUNT_SID (…${(mine ?? '').slice(-6)}) — this number is in another (sub)account, so its calls are signed with that account’s Auth Token`
-  return `${account}. ${req.method} ${req.headers.get('content-type') ?? '(no type)'} to ${req.headers.get('x-forwarded-host') ?? u.host}${u.pathname}${u.search ? ' (with query)' : ''}; ${keys.length} fields${dupes.length ? `, repeated: ${dupes.join(', ')}` : ''}: ${keys.join(', ')}; signature header ${req.headers.get('x-twilio-signature')?.length ?? 0} chars`
+  return `${account}. Second check: ${notes.get(req) ?? 'not run'}. ${req.method} ${req.headers.get('content-type') ?? '(no type)'} to ${req.headers.get('x-forwarded-host') ?? u.host}${u.pathname}${u.search ? ' (with query)' : ''}; ${keys.length} fields${dupes.length ? `, repeated: ${dupes.join(', ')}` : ''}: ${keys.join(', ')}; signature header ${req.headers.get('x-twilio-signature')?.length ?? 0} chars`
 }
 
 /**

@@ -13,7 +13,7 @@ import { receiveSms, systemNote } from '@/messaging/service'
  */
 export async function POST(req: Request) {
   const signed = req.headers.has('x-twilio-signature')
-  const params = await readTwilioRequest(req.clone())
+  const params = await readTwilioRequest(req)
   const p = await payload()
   if (!params) {
     // Looks like Twilio but the security check failed — record it so the setup problem is visible (Admin → Message log)
