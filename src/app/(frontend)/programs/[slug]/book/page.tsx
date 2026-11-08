@@ -35,6 +35,7 @@ export default async function BookPage({
 
   // Tournaments are by selection: register interest instead
   if (program.type === 'tournament') redirect(`/programs/${slug}/interest`)
+  if (program.type === 'community') redirect(`/programs/${slug}`) // nothing to book — just come along
   const academy = program.brand === 'academy'
 
   // Team registrations: only logged-in families with an offer for this program

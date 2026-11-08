@@ -42,6 +42,8 @@ import * as migration_20261108_041303_messaging_inbox from './20261108_041303_me
 import * as migration_20261108_084744_seen_markers from './20261108_084744_seen_markers';
 import * as migration_20261108_093014_mini_ballers_type from './20261108_093014_mini_ballers_type';
 import * as migration_20261108_093100_mini_ballers_draft from './20261108_093100_mini_ballers_draft';
+import * as migration_20261108_095107_community_night_type from './20261108_095107_community_night_type';
+import * as migration_20261108_095200_club_programs from './20261108_095200_club_programs';
 
 export const migrations = [
   {
@@ -257,11 +259,21 @@ export const migrations = [
   {
     up: migration_20261108_093014_mini_ballers_type.up,
     down: migration_20261108_093014_mini_ballers_type.down,
-    name: '20261108_093014_mini_ballers_type'
+    name: '20261108_093014_mini_ballers_type',
   },
   {
     up: migration_20261108_093100_mini_ballers_draft.up,
     down: migration_20261108_093100_mini_ballers_draft.down,
     name: '20261108_093100_mini_ballers_draft',
+  },
+  {
+    up: migration_20261108_095107_community_night_type.up,
+    down: migration_20261108_095107_community_night_type.down,
+    name: '20261108_095107_community_night_type'
+  },
+  {
+    up: migration_20261108_095200_club_programs.up,
+    down: migration_20261108_095200_club_programs.down,
+    name: '20261108_095200_club_programs',
   },
 ];

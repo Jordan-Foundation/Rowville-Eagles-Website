@@ -18,13 +18,13 @@ export function ToddlerTrialForm({ slug, sessions }: { slug: string; sessions: T
         <Input label="Date of birth" name="playerDob" type="date" required defaultValue={v.playerDob} />
         <p className="self-end text-sm text-muted">Ages 2–5 on the day of the session.</p>
       </Fieldset>
-      <fieldset className="panel rounded-sm border border-line bg-surface-2 p-6">
+      <fieldset className="rounded-2xl border border-line bg-surface-2 p-6">
         <legend className="px-2 font-display text-lg font-semibold uppercase tracking-wide">Choose a session</legend>
         <div className="grid max-h-[26rem] gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
           {sessions.map((n) => (
-            <label key={n.start} className={`flex cursor-pointer items-center justify-between gap-3 border border-line bg-surface px-4 py-3 text-sm transition has-[:checked]:border-white has-[:checked]:ring-1 has-[:checked]:ring-white ${n.left === 0 ? 'pointer-events-none opacity-35' : 'hover:border-white/40'}`}>
+            <label key={n.start} className={`flex cursor-pointer items-center justify-between gap-3 border border-line bg-surface px-4 py-3 text-sm transition has-[:checked]:border-brand has-[:checked]:ring-1 has-[:checked]:ring-brand ${n.left === 0 ? 'pointer-events-none opacity-35' : 'hover:border-brand'}`}>
               <span className="flex items-center gap-3">
-                <input type="radio" name="session" value={n.start} required disabled={n.left === 0} defaultChecked={v.session === n.start} className="accent-white" />
+                <input type="radio" name="session" value={n.start} required disabled={n.left === 0} defaultChecked={v.session === n.start} className="accent-[var(--color-brand)]" />
                 {n.label}
               </span>
               <span className="text-xs uppercase tracking-wider text-muted">{n.left === 0 ? 'Full' : `${n.left} spot${n.left === 1 ? '' : 's'}`}</span>
@@ -46,14 +46,14 @@ export function ToddlerTrialForm({ slug, sessions }: { slug: string; sessions: T
         <Input label="Emergency contact phone" name="emergencyPhone" type="tel" required defaultValue={v.emergencyPhone} />
         <label className="flex items-start gap-3 text-sm sm:col-span-2">
           <input type="checkbox" name="photoConsent" defaultChecked={v.photoConsent === 'on'} className="mt-1" />
-          <span>I consent to photos/video of my child being used in Academy communications.</span>
+          <span>I consent to photos/video of my child being used in club communications.</span>
         </label>
       </Fieldset>
       <label className="flex items-start gap-3 text-sm">
         <input type="checkbox" name="terms" required defaultChecked={v.terms === 'on'} className="mt-1" />
-        <span>I’ll stay at the session to supervise my child, and I agree to the Academy’s Child Safe policy and terms.</span>
+        <span>I’ll stay at the session to supervise my child, and I agree to the club’s Child Safe policy and terms.</span>
       </label>
-      {state.error && <p role="alert" className="border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300">{state.error}</p>}
+      {state.error && <p role="alert" className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-700">{state.error}</p>}
       <Submit />
     </form>
   )
@@ -62,7 +62,7 @@ export function ToddlerTrialForm({ slug, sessions }: { slug: string; sessions: T
 function Submit() {
   const { pending } = useFormStatus()
   return (
-    <button type="submit" disabled={pending} className="w-full bg-white px-6 py-4 text-sm font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-white/85 disabled:opacity-60">
+    <button type="submit" disabled={pending} className="w-full rounded-full bg-accent px-6 py-4 text-sm font-semibold text-accent-ink transition hover:brightness-110 disabled:opacity-60">
       {pending ? 'Booking…' : 'Book free trial'}
     </button>
   )

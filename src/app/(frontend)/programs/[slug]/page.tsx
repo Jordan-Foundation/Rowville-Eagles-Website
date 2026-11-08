@@ -59,7 +59,12 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
               </div>
             ))}
           </dl>
-          {p.type === 'registration' ? (
+          {p.type === 'community' ? (
+            <div className="mt-7 space-y-2 rounded-xl border border-line bg-surface p-4 text-sm">
+              <p className="font-semibold">No booking needed — just come along.</p>
+              <p className="text-muted">A parent or carer stays to supervise their child. All welcome.</p>
+            </div>
+          ) : p.type === 'registration' ? (
             <div className="mt-7 space-y-3">
               <p className="text-sm text-muted">Team registration is by invitation after trials. Families who receive an offer pay from their account.</p>
               <Link href="/join" className="block w-full rounded-full bg-accent px-6 py-3 text-center font-semibold text-accent-ink hover:brightness-110">Join us for trials</Link>

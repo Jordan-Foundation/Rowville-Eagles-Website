@@ -14,9 +14,10 @@ export const metadata: Metadata = { title: 'Confirm your place', robots: { index
 export default async function TermPayPage({ params, searchParams }: { params: Promise<{ ref: string }>; searchParams: Promise<{ t?: string; cancelled?: string }> }) {
   const [{ ref }, { t, cancelled }] = await Promise.all([params, searchParams])
   const data = await loadTermRegistration(ref, t)
+  const club = data?.program.brand === 'club' // Mini Ballers is a Rowville Eagles program
   const shell = (body: React.ReactNode) => (
-    <div data-brand="academy" data-page-brand="academy" className="relative min-h-[70vh] overflow-hidden">
-      <AcademyBackdrop />
+    <div data-brand={club ? undefined : 'academy'} data-page-brand={club ? undefined : 'academy'} className="relative min-h-[70vh] overflow-hidden">
+      {!club && <AcademyBackdrop />}
       <div className="container-x relative max-w-4xl py-14">{body}</div>
     </div>
   )

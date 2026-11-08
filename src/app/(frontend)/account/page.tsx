@@ -158,7 +158,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
           )}
           {termRegs.length > 0 && (
             <div className="mb-10">
-              <h2 className="font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase">Academy training</h2>
+              <h2 className="font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase">Training groups</h2>
               <TermList regs={termRegs} />
             </div>
           )}

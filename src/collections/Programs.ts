@@ -11,12 +11,16 @@ export const programTypes = [
   { label: 'Tournament', value: 'tournament' },
   { label: 'Academy term', value: 'academy-term' },
   { label: 'Mini Ballers (ages 2–5)', value: 'toddler' },
+  { label: 'Community night', value: 'community' },
   { label: 'Academy trial session', value: 'academy-trial' },
   { label: '1-on-1 session', value: 'private-session' },
 ] as const
 
 /** Which Stripe account is paid. Team registrations → Club; everything else → Academy (override per program). */
-export const defaultPayee = (type?: string | null): 'club' | 'academy' => (type === 'registration' ? 'club' : 'academy')
+export const defaultPayee = (type?: string | null): 'club' | 'academy' => (type === 'registration' || type === 'toddler' || type === 'community' ? 'club' : 'academy')
+
+/** Rowville Eagles (club) programs vs Foundation Academy programs. Mini Ballers and Community night are club programs. */
+export const defaultBrand = (type?: string | null): 'club' | 'academy' => (type === 'registration' || type === 'toddler' || type === 'community' ? 'club' : 'academy')
 
 export const Programs: CollectionConfig = {
   slug: 'programs',
@@ -58,6 +62,7 @@ export const Programs: CollectionConfig = {
         if (data.price == null || (data.price as unknown) === '') data.price = originalDoc?.price ?? 0
         return {
           ...data,
+          ...(!originalDoc?.id && !data.brand ? { brand: defaultBrand(type) } : {}),
           payee: data.payee || originalDoc?.payee || defaultPayee(type),
           visibility: data.visibility || originalDoc?.visibility || (type === 'registration' ? 'offer-only' : 'public'),
         }

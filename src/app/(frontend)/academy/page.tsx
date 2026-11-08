@@ -3,7 +3,7 @@ import { DashIcon } from '@/components/dashboard/icons'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { payload, formatAUD, formatDate } from '@/lib/payload'
-import { programTypes } from '@/collections/Programs'
+import { openTerms } from '@/academy/booking-data'
 import { FoundationMark, RfaLogo } from '@/components/Logos'
 import { AcademyBackdrop } from '@/components/AcademyBackdrop'
 
@@ -29,15 +29,34 @@ const steps = [
   { t: 'Train & track', d: 'Sessions, feedback and progress — all in your player portal.' },
 ]
 
-const labelOf = (v: string) => programTypes.find((t) => t.value === v)?.label
 
 export default async function AcademyPage() {
-  const { docs } = await (await payload()).find({
-    collection: 'programs',
-    where: { brand: { equals: 'academy' }, status: { in: ['open', 'full'] }, type: { not_in: ['academy-trial', 'private-session'] } },
-    depth: 0,
-    limit: 50,
-  })
+  // Always three choices: the current/next Academy term, the next holiday camp, and 1-on-1 coaching
+  const p = await payload()
+  const nowIso = new Date().toISOString()
+  const [{ docs: terms }, { docs: camps }, oneOnOneTerms] = await Promise.all([
+    p.find({ collection: 'programs', where: { type: { equals: 'academy-term' }, status: { in: ['open', 'full'] }, or: [{ endDate: { greater_than: nowIso } }, { endDate: { exists: false } }] }, sort: 'startDate', depth: 0, limit: 1 }),
+    p.find({ collection: 'programs', where: { type: { equals: 'holiday-camp' }, status: { in: ['open', 'full'] }, or: [{ endDate: { greater_than: nowIso } }, { and: [{ endDate: { exists: false } }, { startDate: { greater_than: nowIso } }] }] }, sort: 'startDate', depth: 0, limit: 1 }),
+    openTerms(p),
+  ])
+  const oneTerm = oneOnOneTerms[0]
+  const oneFrom = oneTerm ? Math.min(...[oneTerm.pricePerSession, oneTerm.casualPrice].filter((x): x is number => typeof x === 'number')) : null
+  const choices = [
+    ...terms.map((t) => ({ key: 'term', eyebrow: 'Academy term', title: t.title, summary: t.summary ?? '', meta: [t.ageRange, t.scheduleNote, t.startDate && formatDate(t.startDate)], price: <PriceTag p={t} big="font-display text-3xl" />, href: t.status === 'open' ? `/programs/${t.slug}/book` : `/programs/${t.slug}`, cta: t.status === 'full' ? 'Waitlist →' : 'Book →' })),
+    ...camps.map((c) => ({ key: 'camp', eyebrow: 'Holiday camp', title: c.title, summary: c.summary ?? '', meta: [c.ageRange, c.scheduleNote, c.startDate && formatDate(c.startDate)], price: <PriceTag p={c} big="font-display text-3xl" />, href: c.status === 'open' ? `/programs/${c.slug}/book` : `/programs/${c.slug}`, cta: c.status === 'full' ? 'Waitlist →' : 'Book →' })),
+    {
+      key: '1on1',
+      eyebrow: '1-on-1 coaching',
+      title: '1-on-1 sessions',
+      summary: 'Personalised sessions with an Academy coach — book a casual session or the same time every week for the term.',
+      meta: [oneTerm ? `${oneTerm.sessionMinutes} minutes` : null, 'Choose your coach & time'],
+      price: oneFrom != null ? (
+        <span className="inline-flex items-baseline gap-1"><span className="text-xs font-medium uppercase tracking-wider opacity-70">from</span><span className="font-display text-3xl font-semibold leading-none">{formatAUD(oneFrom)}</span><span className="text-xs font-medium opacity-70">/ session</span></span>
+      ) : null,
+      href: '/academy/1-on-1',
+      cta: 'Book →',
+    },
+  ]
 
   return (
     <div data-brand="academy" data-page-brand="academy" className="font-[family-name:var(--font-inter)]">
@@ -105,24 +124,19 @@ export default async function AcademyPage() {
           <p className="text-xs font-medium uppercase tracking-[0.35em] text-muted">Programs</p>
           <h2 className="mt-4 font-display text-4xl font-semibold uppercase tracking-tight sm:text-5xl">Choose your program</h2>
           <div className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {docs.map((p) => (
-              <Link key={p.id} href={`/programs/${p.slug}`} className="gloss gloss-sheen group flex flex-col rounded-sm p-7 transition hover:border-white/40">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-muted">{labelOf(p.type)}</p>
-                <h3 className="mt-4 font-display text-2xl font-semibold uppercase leading-tight tracking-tight">{p.title}</h3>
-                <p className="mt-3 flex-1 text-sm leading-relaxed text-muted">{p.summary}</p>
-                <p className="mt-5 text-xs uppercase tracking-wider text-muted">
-                  {[p.ageRange, p.scheduleNote, p.startDate && formatDate(p.startDate)].filter(Boolean).join('  ·  ')}
-                </p>
+            {choices.map((c) => (
+              <Link key={c.key} href={c.href} className="gloss gloss-sheen group flex flex-col rounded-sm p-7 transition hover:border-white/40">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-muted">{c.eyebrow}</p>
+                <h3 className="mt-4 font-display text-2xl font-semibold uppercase leading-tight tracking-tight">{c.title}</h3>
+                <p className="mt-3 flex-1 text-sm leading-relaxed text-muted">{c.summary}</p>
+                <p className="mt-5 text-xs uppercase tracking-wider text-muted">{c.meta.filter(Boolean).join('  ·  ')}</p>
                 <div className="mt-6 flex items-center justify-between border-t border-line pt-5">
-                  <PriceTag p={p} big="font-display text-3xl" />
-                  <span className="text-xs font-semibold uppercase tracking-[0.2em] transition group-hover:translate-x-1">
-                    {p.status === 'full' ? 'Waitlist →' : 'Book →'}
-                  </span>
+                  {c.price}
+                  <span className="text-xs font-semibold uppercase tracking-[0.2em] transition group-hover:translate-x-1">{c.cta}</span>
                 </div>
               </Link>
             ))}
           </div>
-          {docs.length === 0 && <p className="mt-10 text-muted">New programs will be announced soon.</p>}
         </div>
       </section>
 

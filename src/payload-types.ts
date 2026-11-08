@@ -686,7 +686,14 @@ export interface Program {
   title: string;
   slug: string;
   type:
-    'registration' | 'holiday-camp' | 'tournament' | 'academy-term' | 'toddler' | 'academy-trial' | 'private-session';
+    | 'registration'
+    | 'holiday-camp'
+    | 'tournament'
+    | 'academy-term'
+    | 'toddler'
+    | 'community'
+    | 'academy-trial'
+    | 'private-session';
   brand: 'club' | 'academy';
   status: 'draft' | 'open' | 'full' | 'closed';
   /**

@@ -117,7 +117,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
           )}
           {termRegs.length > 0 && (
             <div className="mb-10">
-              <h2 className="font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase">Academy training</h2>
+              <h2 className="font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase">Training groups</h2>
               <TermList regs={termRegs} showPlayer={false} />
             </div>
           )}

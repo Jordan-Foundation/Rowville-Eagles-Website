@@ -19,7 +19,7 @@ export async function bookProgram(_prev: BookingState, fd: FormData): Promise<Bo
   const p = await payload()
   const { docs } = await p.find({
     collection: 'programs',
-    where: { slug: { equals: str(fd, 'program') }, status: { equals: 'open' }, type: { not_equals: 'academy-trial' } },
+    where: { slug: { equals: str(fd, 'program') }, status: { equals: 'open' }, type: { not_in: ['academy-trial', 'community'] } },
     limit: 1,
     depth: 0,
   })

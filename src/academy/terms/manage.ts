@@ -1,3 +1,4 @@
+import { brandOf } from './brand-of'
 import type { Payload } from 'payload'
 import type { AcademyCoach, AcademyRegistration, AcademyTermSlot, Program, User } from '@/payload-types'
 import { groupLabel, type AgeRules } from '../../lib/age-groups'
@@ -38,7 +39,7 @@ export async function notifyFamilies(payload: Payload, changes: Change[], headin
     const first = list[0].reg
     const program = (typeof first.program === 'object' ? first.program : await payload.findByID({ collection: 'programs', id: first.program, depth: 0, overrideAccess: true })) as Program
     const user = first.account ? ((await payload.findByID({ collection: 'users', id: rel(first.account)!, depth: 0, overrideAccess: true, disableErrors: true })) as User | null) : null
-    const html = emailLayout('academy', [
+    const html = emailLayout(brandOf(program), [
       {
         heading,
         intro: `Hi ${esc(first.contact.firstName)}, there’s a change to ${esc(program.title)}:<br><br>${list
@@ -48,9 +49,9 @@ export async function notifyFamilies(payload: Payload, changes: Change[], headin
         after: 'Questions? Just reply to this email.',
       },
     ])
-    await sendEmail(payload, { to: first.contact.email, subject: `${heading}: ${list.map((c) => c.reg.player.firstName).join(' & ')} — ${program.title}`, html, sender: 'academy', userId: user?.id })
+    await sendEmail(payload, { to: first.contact.email, subject: `${heading}: ${list.map((c) => c.reg.player.firstName).join(' & ')} — ${program.title}`, html, sender: brandOf(program), userId: user?.id })
     const short = list.map((c) => `${c.reg.player.firstName}: ${c.lines.join('; ')}`).join(' | ')
-    await sendSms(payload, { to: first.contact.phone, kind: 'service', optedOut: user?.smsOptOut, userId: user?.id, body: `${program.title} update — ${short.slice(0, 300)} – Foundation Academy` })
+    await sendSms(payload, { to: first.contact.phone, kind: 'service', optedOut: user?.smsOptOut, userId: user?.id, body: `${program.title} update — ${short.slice(0, 300)} ${brandOf(program) === 'club' ? '– Rowville Eagles FC' : '– Foundation Academy'}` })
     sent++
   }
   return sent

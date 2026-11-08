@@ -1,6 +1,7 @@
+import { brandOf } from './brand-of'
 import type { Payload } from 'payload'
 import type { AcademyRegistration, AcademyTermSlot, Booking, Program, User } from '@/payload-types'
-import { academyBrand } from '../brand'
+import { academyBrand, clubBrand } from '../brand'
 import { defaultPayee } from '../../collections/Programs'
 import { groupLabel } from '../../lib/age-groups'
 import { sendEmail } from '../../lib/email'
@@ -164,7 +165,7 @@ export function slotRows(slot: AcademyTermSlot, program: Pick<Program, 'startDat
 
 export async function emailInterest(payload: Payload, reg: AcademyRegistration, program: Program, reason: 'no_slot' | 'full') {
   const by = reg.birthYear ? groupLabel(reg.birthYear) : ''
-  const html = emailLayout('academy', [
+  const html = emailLayout(brandOf(program), [
     {
       heading: 'Interest registered',
       intro: `Thanks ${esc(reg.contact.firstName)} — we’ve registered ${esc(reg.player.firstName)}’s interest in <strong>${esc(program.title)}</strong>. ${
@@ -177,8 +178,8 @@ export async function emailInterest(payload: Payload, reg: AcademyRegistration, 
       ],
     },
   ])
-  await sendEmail(payload, { to: reg.contact.email, subject: `Interest registered: ${program.title}`, html, sender: 'academy', userId: rel(reg.account) ?? undefined })
-  const staff = emailLayout('academy', [
+  await sendEmail(payload, { to: reg.contact.email, subject: `Interest registered: ${program.title}`, html, sender: brandOf(program), userId: rel(reg.account) ?? undefined })
+  const staff = emailLayout(brandOf(program), [
     {
       heading: 'New term interest',
       intro: `${esc(reg.player.firstName)} ${esc(reg.player.lastName)} (${esc(by)}) registered interest in ${esc(program.title)} — ${reason === 'full' ? 'their training times are full' : 'no training time for their age group'}. Offer a place from Management → Academy terms.`,
@@ -190,7 +191,7 @@ export async function emailInterest(payload: Payload, reg: AcademyRegistration, 
       cta: { label: 'Open Academy terms', href: `${siteUrl()}/management/academy/terms?program=${program.id}` },
     },
   ])
-  await sendEmail(payload, { to: academyBrand.email, subject: `Term interest: ${reg.player.firstName} ${reg.player.lastName} (${by})`, html: staff, sender: 'academy' })
+  await sendEmail(payload, { to: brandOf(program) === 'club' ? clubBrand.email : academyBrand.email, subject: `Term interest: ${reg.player.firstName} ${reg.player.lastName} (${by})`, html: staff, sender: brandOf(program) })
 }
 
 export const termPayUrl = (reg: Pick<AcademyRegistration, 'reference' | 'token'>) => `${siteUrl()}/academy/terms/pay/${reg.reference}${reg.token ? `?t=${reg.token}` : ''}`
@@ -240,7 +241,7 @@ export async function offerSlot(payload: Payload, regId: number, slotIds: number
   const quotes = slots.map((sl) => termQuote(sl, program, rate))
   const total = quotes.reduce((n, q) => n + q.total, 0)
   const nightRows = slots.flatMap((sl, i) => slotRows(sl, program).map(([k, v]) => [nights === 2 && k === 'Training' ? `Night ${i + 1}` : k, v] as [string, string]).filter(([k]) => i === 0 || k !== 'Age groups'))
-  const html = emailLayout('academy', [
+  const html = emailLayout(brandOf(program), [
     {
       heading: 'A place is ready',
       intro: `Hi ${esc(reg.contact.firstName)}, we have a place for ${esc(reg.player.firstName)} in <strong>${esc(program.title)}</strong>${nights === 2 ? ' — <strong>2 nights a week</strong>' : ''}. Please confirm and pay by <strong>${esc(due)}</strong> to secure it.`,
@@ -255,13 +256,13 @@ export async function offerSlot(payload: Payload, regId: number, slotIds: number
     },
   ])
   const user = reg.account ? ((await payload.findByID({ collection: 'users', id: rel(reg.account)!, depth: 0, overrideAccess: true, disableErrors: true })) as User | null) : null
-  await sendEmail(payload, { to: reg.contact.email, subject: `A place for ${reg.player.firstName}: ${program.title}`, html, sender: 'academy', userId: user?.id })
+  await sendEmail(payload, { to: reg.contact.email, subject: `A place for ${reg.player.firstName}: ${program.title}`, html, sender: brandOf(program), userId: user?.id })
   await sendSms(payload, {
     to: reg.contact.phone,
     kind: 'service',
     optedOut: user?.smsOptOut,
     userId: user?.id,
-    body: `A place is ready for ${reg.player.firstName} in ${program.title} (${slots.map(slotLabel).join(' + ')}). Confirm and pay by ${due}: ${url} – Foundation Academy`,
+    body: `A place is ready for ${reg.player.firstName} in ${program.title} (${slots.map(slotLabel).join(' + ')}). Confirm and pay by ${due}: ${url} ${brandOf(program) === 'club' ? '– Rowville Eagles FC' : '– Foundation Academy'}`,
   })
   return updated
 }

@@ -44,11 +44,12 @@ export async function bookToddlerTrial(_prev: ToddlerTrialState, fd: FormData): 
     return fail(`${player.firstName} has already had a free trial. To keep coming, book the term from the Mini Ballers page.`)
   }
 
-  const reference = newReference('academy')
+  const payee = program.payee === 'academy' ? 'academy' : 'club'
+  const reference = newReference(payee)
   await p.create({
     collection: 'bookings',
     overrideAccess: true,
-    data: { reference, program: program.id, bookingType: 'trial', birthYear: birthYearOf(player.dateOfBirth) ?? undefined, sessionStart: session.start, status: 'pending', payee: 'academy', amount: 0, contact, player },
+    data: { reference, program: program.id, bookingType: 'trial', birthYear: birthYearOf(player.dateOfBirth) ?? undefined, sessionStart: session.start, status: 'pending', payee, amount: 0, contact, player },
   })
   await confirmPayment(p, 'booking', reference)
   redirect(`/checkout/success?kind=booking&ref=${reference}`)
