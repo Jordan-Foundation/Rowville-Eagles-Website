@@ -1,4 +1,5 @@
-import { programPriceLabel } from '@/lib/format'
+import { priceBreakdown } from '@/lib/format'
+import { PriceTag } from '@/components/PriceTag'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { RichText } from '@payloadcms/richtext-lexical/react'
@@ -41,7 +42,14 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
           {p.description ? <RichText data={p.description} /> : <p className="text-muted">Full details coming soon.</p>}
         </article>
         <aside className={`panel h-fit border border-line bg-surface-2 p-7 lg:sticky lg:top-24 ${academy ? 'gloss-sheen rounded-sm' : 'rounded-2xl'}`}>
-          <p className={`text-3xl font-bold ${academy ? 'font-display' : ''}`}>{programPriceLabel(p)}</p>
+          <p><PriceTag p={p} big={`text-4xl font-bold ${academy ? 'font-display' : ''}`} /></p>
+          {priceBreakdown(p).length > 1 && (
+            <dl className="mt-3 space-y-1 text-sm">
+              {priceBreakdown(p).map((r) => (
+                <div key={r.label} className="flex justify-between gap-4"><dt className="text-muted">{r.label}</dt><dd className="font-semibold">{r.price}</dd></div>
+              ))}
+            </dl>
+          )}
           {p.priceNote && <p className="mt-1 text-sm text-muted">{p.priceNote}</p>}
           <dl className="mt-6 space-y-3 border-t border-line pt-6 text-sm">
             {facts.map(([k, v]) => (

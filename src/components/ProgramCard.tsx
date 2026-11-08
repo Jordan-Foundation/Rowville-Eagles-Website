@@ -1,7 +1,8 @@
 import Link from 'next/link'
 import type { Program } from '@/payload-types'
 import { programTypes } from '@/collections/Programs'
-import { formatAUD, formatDate, programPriceLabel } from '@/lib/format'
+import { formatDate } from '@/lib/format'
+import { PriceTag } from './PriceTag'
 import { RfaLogo } from './Logos'
 
 export function ProgramCard({ p }: { p: Program }) {
@@ -27,7 +28,7 @@ export function ProgramCard({ p }: { p: Program }) {
         {p.ageRange && <div><dt className="sr-only">Ages</dt><dd>{p.ageRange}</dd></div>}
       </dl>
       <div className="mt-5 flex items-center justify-between border-t border-line pt-4">
-        <span className="text-lg font-semibold">{programPriceLabel(p)}</span>
+        <PriceTag p={p} big="text-2xl" />
         <span className="text-sm font-semibold text-ink transition group-hover:text-accent">View details →</span>
       </div>
     </Link>

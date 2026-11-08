@@ -1,4 +1,5 @@
-import { programPriceLabel } from '@/lib/format'
+import { PriceTag } from '@/components/PriceTag'
+import { DashIcon } from '@/components/dashboard/icons'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { payload, formatAUD, formatDate } from '@/lib/payload'
@@ -12,11 +13,14 @@ export const metadata: Metadata = {
   description: 'RFA — elite player development at Rowville Eagles: term programs, trials, 1-on-1 coaching, holiday camps and tournaments.',
 }
 
+/** The six pillars = the six strands of the Foundation Football Curriculum (wording to check: Setup checklist). */
 const pillars = [
-  { t: 'Technical', d: 'Ball mastery, first touch and finishing through high-repetition, game-realistic work.' },
-  { t: 'Tactical', d: 'Scanning, decision-making and positional play, taught with video analysis.' },
-  { t: 'Physical', d: 'Age-appropriate speed, agility, coordination and injury prevention.' },
-  { t: 'Mindset', d: 'Resilience, leadership and the habits that separate good players from great ones.' },
+  { t: 'Attacking', icon: 'target', d: 'Dribbling with both feet, 1v1 courage, finishing and creating chances — at match speed.' },
+  { t: 'Defending', icon: 'shield', d: 'Winning the ball back: goal-side positioning, pressing, tackling and defending as a unit.' },
+  { t: 'Physical', icon: 'bolt', d: 'Agility, balance, coordination and speed built through games, with injury prevention as players grow.' },
+  { t: 'Passing & Receiving', icon: 'arrows', d: 'A first touch that sets up the next action, scanning before the ball arrives and a growing passing range.' },
+  { t: 'Tactical', icon: 'board', d: 'Understanding the game: space, positions and transitions, and making better decisions every year.' },
+  { t: 'Character', icon: 'heart', d: 'Resilience, respect, teamwork and leadership — the habits that make great teammates and players.' },
 ]
 
 const steps = [
@@ -77,16 +81,16 @@ export default async function AcademyPage() {
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div>
             <p className="text-xs font-medium uppercase tracking-[0.35em] text-muted">The method</p>
-            <h2 className="mt-4 font-display text-4xl font-semibold uppercase tracking-tight sm:text-5xl">Four pillars</h2>
+            <h2 className="mt-4 font-display text-4xl font-semibold uppercase tracking-tight sm:text-5xl">Six pillars</h2>
           </div>
-          <p className="max-w-md text-muted">Every session, every term and every 1-on-1 is built around the same development framework.</p>
+          <p className="max-w-md text-muted">Every session, every term and every 1-on-1 follows our football curriculum — the same six strands players are reported on.</p>
         </div>
-        <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {pillars.map((p, i) => (
             <div key={p.t} className="gloss gloss-sheen rounded-sm p-8">
               <div className="flex items-center justify-between">
                 <span className="font-display text-sm font-semibold text-muted">0{i + 1}</span>
-                <FoundationMark className="h-5 w-auto" ink="#fff" />
+                <DashIcon name={p.icon} className="h-6 w-6" />
               </div>
               <h3 className="mt-14 font-display text-2xl font-semibold uppercase tracking-tight">{p.t}</h3>
               <p className="mt-3 text-sm leading-relaxed text-muted">{p.d}</p>
@@ -110,7 +114,7 @@ export default async function AcademyPage() {
                   {[p.ageRange, p.scheduleNote, p.startDate && formatDate(p.startDate)].filter(Boolean).join('  ·  ')}
                 </p>
                 <div className="mt-6 flex items-center justify-between border-t border-line pt-5">
-                  <span className="font-display text-2xl font-semibold">{programPriceLabel(p)}</span>
+                  <PriceTag p={p} big="font-display text-3xl" />
                   <span className="text-xs font-semibold uppercase tracking-[0.2em] transition group-hover:translate-x-1">
                     {p.status === 'full' ? 'Waitlist →' : 'Book →'}
                   </span>

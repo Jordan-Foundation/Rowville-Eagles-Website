@@ -26,3 +26,15 @@ describe('dashboard badges', () => {
     expect(badgeLabel('Messages', 0)).toBe('Messages')
   })
 })
+
+import { cardPrice, priceBreakdown } from '@/lib/format'
+
+describe('program card prices', () => {
+  it('shows the lowest option with "from" when there is a choice', () => {
+    expect(cardPrice({ type: 'academy-term', price: 0, pricePerSession: 25, twoNightPricePerSession: 20 })).toEqual({ from: true, amount: 20, unit: '/ session' })
+    expect(cardPrice({ type: 'academy-term', price: 0, pricePerSession: 25, twoNightPricePerSession: null })).toEqual({ from: false, amount: 25, unit: '/ session' })
+    expect(cardPrice({ type: 'academy-term', pricePerSession: 20, twoNightPricePerSession: 20 })).toMatchObject({ from: false, amount: 20 })
+    expect(cardPrice({ type: 'holiday-camp', price: 180 })).toEqual({ from: false, amount: 180, unit: null })
+    expect(priceBreakdown({ type: 'academy-term', pricePerSession: 25, twoNightPricePerSession: 20 }).map((r) => r.price)).toEqual(['$25 / session', '$20 / session'])
+  })
+})
