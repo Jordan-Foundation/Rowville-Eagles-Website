@@ -12,6 +12,7 @@ import { creditBalance, creditStateFor, reserveCredit } from '@/academy/credits'
 import { toYmd } from '@/academy/term-dates'
 import { weeklyPlan, type WeeklyPlan } from '@/academy/weekly'
 import { casualPrice, isTermMember } from '@/academy/pricing'
+import { activeHold, findShareLink, linkMatches, releaseShareHold } from '@/academy/share-links'
 import { formatDate } from '@/lib/format'
 import type { Weekday } from '@/academy/constants'
 
@@ -34,7 +35,11 @@ export async function bookSession(_prev: BookState, fd: FormData): Promise<BookS
   const termId = Number(s('term'))
   const term = termId ? await p.findByID({ collection: 'academy-terms', id: termId, depth: 0, disableErrors: true }) : null
   if (!term || term.status !== 'open' || !coachId) return fail('This booking isn’t available any more.')
-  const data = await loadTermBookingData(p, term)
+  // Booking from a coach's share link: the coach's reservation is this family's to use
+  const shareLink = s('share') ? await findShareLink(p, s('share')) : null
+  const share = shareLink && linkMatches(shareLink, { mode, coach: coachId, start: s('start'), weekday: s('weekday'), time: s('time') }) ? shareLink : null
+  const shareHold = share ? await activeHold(p, share) : null
+  const data = await loadTermBookingData(p, term, { ignoreBooking: shareHold?.id })
   const engine = { term, coaches: data.availability, taken: data.taken, now: new Date(), cutoffHours: term.bookingCutoffHours ?? 24 }
 
   // Re-check the slot and work out the sessions + price
@@ -106,6 +111,8 @@ export async function bookSession(_prev: BookState, fd: FormData): Promise<BookS
   const coach = await p.findByID({ collection: 'academy-coaches', id: coachId, depth: 0 })
   const reference = makeReference('RFA')
   const holdMinutes = holdMinutesFor(term)
+  // Hand the coach's reservation over to this checkout (released and re-held straight away)
+  if (share) await releaseShareHold(p, share)
   const hold = await createHold(p, {
     reference,
     type: mode,
@@ -136,11 +143,12 @@ export async function bookSession(_prev: BookState, fd: FormData): Promise<BookS
     account: user?.id,
     participant: participantId,
     marketingOptIn: !user && fd.get('marketingOptIn') === 'on',
-    source: 'web',
+    source: share ? 'coach-link' : 'web',
     sessions,
     holdMinutes,
   })
   if (!hold.ok) return fail('Sorry — someone booked that time a moment ago. Please choose another.')
+  if (share) await p.update({ collection: 'academy-share-links', id: share.id, overrideAccess: true, data: { booking: hold.booking.id } })
   if (creditUse > 0) {
     await reserveCredit(p, { account: user!.id, sessions: creditSessionsUsed, value: creditUse, booking: hold.booking.id })
     // Two checkouts at once could both see the same credit — the second one backs off
@@ -157,7 +165,7 @@ export async function bookSession(_prev: BookState, fd: FormData): Promise<BookS
 
   const first = sessions[0].startsAt
   const last = sessions.at(-1)!.startsAt
-  const back = mode === 'term' ? `mode=term&coach=${coachId}&weekday=${weekday}&time=${startTime}` : `coach=${coachId}&start=${encodeURIComponent(first)}`
+  const back = (mode === 'term' ? `mode=term&coach=${coachId}&weekday=${weekday}&time=${startTime}` : `coach=${coachId}&start=${encodeURIComponent(first)}`) + (share ? `&share=${s('share')}` : '')
   let url: string
   try {
     const checkout = await startCheckout({

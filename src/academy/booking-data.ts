@@ -32,7 +32,7 @@ export async function releaseExpiredHolds(payload: Payload) {
   return { released: docs.length }
 }
 
-async function releaseBooking(payload: Payload, booking: AcademyBooking, status: 'expired' | 'cancelled') {
+export async function releaseBooking(payload: Payload, booking: AcademyBooking, status: 'expired' | 'cancelled') {
   await payload.update({ collection: 'academy-sessions', where: { booking: { equals: booking.id } }, data: { status: 'cancelled' }, overrideAccess: true })
   await payload.update({ collection: 'academy-bookings', id: booking.id, data: { status }, overrideAccess: true })
   if (booking.creditApplied) await settleReservedCredit(payload, booking.id, 'void')
@@ -46,7 +46,7 @@ export async function openTerms(payload: Payload) {
 export type PublicCoach = { id: number; name: string; photo: string | null; bio: string; specialties: string[] }
 
 /** Everything the slot engine needs for a term, plus the public coach cards. */
-export async function loadTermBookingData(payload: Payload, term: AcademyTerm) {
+export async function loadTermBookingData(payload: Payload, term: AcademyTerm, o: { ignoreBooking?: number | null } = {}) {
   const [{ docs: coaches }, { docs: avail }] = await Promise.all([
     payload.find({ collection: 'academy-coaches', where: { active: { equals: true } }, depth: 1, limit: 200, sort: 'order' }),
     payload.find({ collection: 'academy-availability', where: { term: { equals: term.id } }, depth: 0, limit: 500, overrideAccess: true }),
@@ -58,7 +58,7 @@ export async function loadTermBookingData(payload: Payload, term: AcademyTerm) {
     depth: 0,
     limit: 5000,
     overrideAccess: true,
-    select: { coach: true, startsAt: true },
+    select: { coach: true, startsAt: true, booking: true },
   })
   const availability: CoachAvailability[] = avail
     .filter((a) => activeIds.has(id(a.coach)!))
@@ -74,7 +74,9 @@ export async function loadTermBookingData(payload: Payload, term: AcademyTerm) {
     bio: c.bio ?? '',
     specialties: (c.specialties ?? []).map((s) => s.label),
   }))
-  return { availability, taken: live.map((s) => ({ coachId: id(s.coach)!, startsAt: s.startsAt })), coaches: cards }
+  // A coach's share-link reservation is free for the family it was made for
+  const taken = live.filter((s) => !o.ignoreBooking || id(s.booking) !== o.ignoreBooking).map((s) => ({ coachId: id(s.coach)!, startsAt: s.startsAt }))
+  return { availability, taken, coaches: cards }
 }
 
 type HoldInput = Omit<AcademyBooking, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'holdExpiresAt'> & {
@@ -153,6 +155,7 @@ export async function confirmAcademyBooking(payload: Payload, reference: string)
   }
   // Weekly plan: today's payment covers the first session
   if (booking.paymentMode === 'weekly') await syncPaidSessions(payload, booking, 1)
+  if (booking.source === 'coach-link') await payload.update({ collection: 'academy-share-links', where: { booking: { equals: booking.id } }, data: { status: 'booked' }, overrideAccess: true })
   try {
     await afterConfirmed(payload, confirmed)
   } catch (e) {

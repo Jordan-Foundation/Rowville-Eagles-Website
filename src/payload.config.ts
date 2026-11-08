@@ -33,6 +33,7 @@ import { AcademyCoaches } from './academy/collections/AcademyCoaches'
 import { AcademyAvailability } from './academy/collections/AcademyAvailability'
 import { AcademyReminderLog } from './academy/collections/AcademyReminderLog'
 import { AcademyBookings } from './academy/collections/AcademyBookings'
+import { AcademyShareLinks } from './academy/collections/AcademyShareLinks'
 import { AcademySessions } from './academy/collections/AcademySessions'
 import { AcademyTermSlots } from './academy/terms/collections/AcademyTermSlots'
 import { AcademyRegistrations } from './academy/terms/collections/AcademyRegistrations'
@@ -77,7 +78,7 @@ export default buildConfig({
       },
     },
   },
-  collections: [AcademyBookings, AcademySessions, AcademyTerms, AcademyTermSlots, AcademyRegistrations, PdrAreas, PdrLevels, PdrStages, PdrVideos, PdrBadges, PdrProgress, PdrChallenges, PdrSubmissions, PdrAudit, PdrAwards, FplusWaitlist, FplusEvents, FplusTrialCards, FormThrottle, AcademyCoaches, AcademyAvailability, AcademyReminderLog, AcademyCredits, Posts, SelectionRounds, Squads, SelectionEntries, TrialSessions, Programs, Bookings, Products, Orders, Teams, TeamMembers, TeamPosts, ForumThreads, ForumReplies, Sponsors, Participants, Users, ConsentRecords, MessageLog, InviteTokens, Media],
+  collections: [AcademyBookings, AcademyShareLinks, AcademySessions, AcademyTerms, AcademyTermSlots, AcademyRegistrations, PdrAreas, PdrLevels, PdrStages, PdrVideos, PdrBadges, PdrProgress, PdrChallenges, PdrSubmissions, PdrAudit, PdrAwards, FplusWaitlist, FplusEvents, FplusTrialCards, FormThrottle, AcademyCoaches, AcademyAvailability, AcademyReminderLog, AcademyCredits, Posts, SelectionRounds, Squads, SelectionEntries, TrialSessions, Programs, Bookings, Products, Orders, Teams, TeamMembers, TeamPosts, ForumThreads, ForumReplies, Sponsors, Participants, Users, ConsentRecords, MessageLog, InviteTokens, Media],
   globals: [SiteSettings, About, DifferencePage, AcademySettings, PdrSettings, SetupProgress],
   editor: lexicalEditor(),
   ...(process.env.RESEND_API_KEY

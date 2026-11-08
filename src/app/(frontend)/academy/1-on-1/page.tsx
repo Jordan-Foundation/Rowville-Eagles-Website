@@ -14,8 +14,9 @@ export const metadata: Metadata = {
   description: 'Book a 1-on-1 session with a Foundation Academy coach — choose a time, meet the coaches free then, and book online.',
 }
 
-export default async function OneOnOnePage({ searchParams }: { searchParams: Promise<{ mode?: string }> }) {
-  const mode = (await searchParams).mode === 'term' ? 'term' : 'casual'
+export default async function OneOnOnePage({ searchParams }: { searchParams: Promise<{ mode?: string; link?: string }> }) {
+  const sp = await searchParams
+  const mode = sp.mode === 'term' ? 'term' : 'casual'
   const p = await payload()
   await releaseExpiredHolds(p)
   const terms = await openTerms(p)
@@ -57,6 +58,7 @@ export default async function OneOnOnePage({ searchParams }: { searchParams: Pro
         </div>
       </section>
       <div className="container-x py-12">
+        {sp.link === 'expired' && <p role="note" className="panel mb-8 border border-line px-5 py-4 text-sm">That booking link has expired or has already been used — choose a time below, or ask your coach to send a new one.</p>}
         {!term || !data ? (
           <p className="panel border border-line p-6 text-muted">1-on-1 bookings for the next term open soon.</p>
         ) : (mode === 'term' ? weekly : slots).length === 0 ? (

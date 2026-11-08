@@ -37,6 +37,7 @@ import * as migration_20261107_120146_foundation_plus_billing from './20261107_1
 import * as migration_20261107_121722_foundation_plus_trial from './20261107_121722_foundation_plus_trial';
 import * as migration_20261107_205754_shop_item_access from './20261107_205754_shop_item_access';
 import * as migration_20261107_215132_monthly_challenges from './20261107_215132_monthly_challenges';
+import * as migration_20261108_034355_coach_share_links from './20261108_034355_coach_share_links';
 
 export const migrations = [
   {
@@ -232,6 +233,11 @@ export const migrations = [
   {
     up: migration_20261107_215132_monthly_challenges.up,
     down: migration_20261107_215132_monthly_challenges.down,
-    name: '20261107_215132_monthly_challenges'
+    name: '20261107_215132_monthly_challenges',
+  },
+  {
+    up: migration_20261108_034355_coach_share_links.up,
+    down: migration_20261108_034355_coach_share_links.down,
+    name: '20261108_034355_coach_share_links'
   },
 ];

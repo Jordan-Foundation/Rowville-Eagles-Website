@@ -68,6 +68,7 @@ export interface Config {
   blocks: {};
   collections: {
     'academy-bookings': AcademyBooking;
+    'academy-share-links': AcademyShareLink;
     'academy-sessions': AcademySession;
     'academy-terms': AcademyTerm;
     'academy-term-slots': AcademyTermSlot;
@@ -119,6 +120,7 @@ export interface Config {
   collectionsJoins: {};
   collectionsSelect: {
     'academy-bookings': AcademyBookingsSelect<false> | AcademyBookingsSelect<true>;
+    'academy-share-links': AcademyShareLinksSelect<false> | AcademyShareLinksSelect<true>;
     'academy-sessions': AcademySessionsSelect<false> | AcademySessionsSelect<true>;
     'academy-terms': AcademyTermsSelect<false> | AcademyTermsSelect<true>;
     'academy-term-slots': AcademyTermSlotsSelect<false> | AcademyTermSlotsSelect<true>;
@@ -771,6 +773,41 @@ export interface Program {
    */
   trialPrice?: number | null;
   heroImage?: (number | null) | Media;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "academy-share-links".
+ */
+export interface AcademyShareLink {
+  id: number;
+  label?: string | null;
+  tokenHash: string;
+  coach: number | AcademyCoach;
+  term: number | AcademyTerm;
+  mode: 'casual' | 'term';
+  startsAt?: string | null;
+  weekday?: ('Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday') | null;
+  startTime?: string | null;
+  client: {
+    firstName: string;
+    lastName: string;
+    playerFirstName?: string | null;
+    email: string;
+    mobile?: string | null;
+  };
+  message?: string | null;
+  holdHours?: number | null;
+  holdUntil?: string | null;
+  expiresAt?: string | null;
+  status: 'active' | 'booked' | 'cancelled';
+  holdBooking?: (number | null) | AcademyBooking;
+  booking?: (number | null) | AcademyBooking;
+  sentEmail?: boolean | null;
+  sentSms?: boolean | null;
+  openedAt?: string | null;
+  createdBy?: (number | null) | User;
   updatedAt: string;
   createdAt: string;
 }
@@ -1915,6 +1952,10 @@ export interface PayloadLockedDocument {
         value: number | AcademyBooking;
       } | null)
     | ({
+        relationTo: 'academy-share-links';
+        value: number | AcademyShareLink;
+      } | null)
+    | ({
         relationTo: 'academy-sessions';
         value: number | AcademySession;
       } | null)
@@ -2215,6 +2256,42 @@ export interface AcademyBookingsSelect<T extends boolean = true> {
   stripeSubscriptionId?: T;
   stripeCustomerId?: T;
   organisation?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "academy-share-links_select".
+ */
+export interface AcademyShareLinksSelect<T extends boolean = true> {
+  label?: T;
+  tokenHash?: T;
+  coach?: T;
+  term?: T;
+  mode?: T;
+  startsAt?: T;
+  weekday?: T;
+  startTime?: T;
+  client?:
+    | T
+    | {
+        firstName?: T;
+        lastName?: T;
+        playerFirstName?: T;
+        email?: T;
+        mobile?: T;
+      };
+  message?: T;
+  holdHours?: T;
+  holdUntil?: T;
+  expiresAt?: T;
+  status?: T;
+  holdBooking?: T;
+  booking?: T;
+  sentEmail?: T;
+  sentSms?: T;
+  openedAt?: T;
+  createdBy?: T;
   updatedAt?: T;
   createdAt?: T;
 }

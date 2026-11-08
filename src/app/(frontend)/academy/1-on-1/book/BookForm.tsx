@@ -20,11 +20,13 @@ type Props = {
   loginHref?: string
   me: { firstName?: string | null; lastName?: string | null; email: string; phone?: string | null } | null
   players: { id: number; name: string }[]
+  /** Opened from a coach's share link: its secret, and the details the coach entered */
+  share?: { token: string; prefill: Record<string, string> }
 }
 
-export function BookForm({ coach, slot, term, price, weekly, credit, loginHref, me, players }: Props) {
+export function BookForm({ coach, slot, term, price, weekly, credit, loginHref, me, players, share }: Props) {
   const [state, action] = useActionState<BookState, FormData>(bookSession, {})
-  const v = state.values ?? {}
+  const v = state.values ?? share?.prefill ?? {}
   const [who, setWho] = useState(v.participant ?? (players[0] ? String(players[0].id) : 'new'))
   const newPlayer = !me || who === 'new'
   const [payMode, setPayMode] = useState<'upfront' | 'weekly'>(v.payMode === 'weekly' && weekly ? 'weekly' : 'upfront')
@@ -38,6 +40,7 @@ export function BookForm({ coach, slot, term, price, weekly, credit, loginHref, 
       <input type="hidden" name="coach" value={coach} />
       <input type="hidden" name="term" value={term} />
       <input type="hidden" name="mode" value={slot.mode} />
+      {share && <input type="hidden" name="share" value={share.token} />}
       {slot.mode === 'casual' ? (
         <input type="hidden" name="start" value={slot.start} />
       ) : (

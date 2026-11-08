@@ -10,11 +10,12 @@ import { weeklyPlan } from '@/academy/weekly'
 import { creditBalance } from '@/academy/credits'
 import { casualPrice, isTermMember } from '@/academy/pricing'
 import { BookForm } from './BookForm'
+import { activeHold, findShareLink, linkMatches } from '@/academy/share-links'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Book a 1-on-1', robots: { index: false } }
 
-type Search = { mode?: string; coach?: string; start?: string; weekday?: string; time?: string; cancelled?: string }
+type Search = { mode?: string; coach?: string; start?: string; weekday?: string; time?: string; cancelled?: string; share?: string }
 
 /** "Mon 1 Mar – Sun 7 Mar" style ranges from consecutive away session dates. */
 function awayRanges(dates: string[], periods: { from: string; to: string }[]) {
@@ -39,7 +40,11 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
   const coachId = Number(q.coach)
   const terms = await openTerms(p)
   const term = mode === 'term' ? terms[0] : terms.find((t) => q.start && q.start >= t.startDate && q.start <= t.endDate)
-  const data = term ? await loadTermBookingData(p, term) : null
+  // A coach's share link: the time they reserved is free for this family, and their details are filled in
+  const shareLink = q.share ? await findShareLink(p, q.share) : null
+  const share = shareLink && linkMatches(shareLink, { mode, coach: coachId, start: q.start, weekday: q.weekday, time: q.time }) ? shareLink : null
+  const shareHold = share ? await activeHold(p, share) : null
+  const data = term ? await loadTermBookingData(p, term, { ignoreBooking: shareHold?.id }) : null
   const engine = term && data ? { term, coaches: data.availability, taken: data.taken, now: new Date(), cutoffHours: term.bookingCutoffHours ?? 24 } : null
 
   const termSlot = engine && mode === 'term' && q.weekday && q.time ? findTermSlot({ ...engine, minSessions: term!.minTermSessions ?? 2, coachId, weekday: q.weekday, time: q.time }) : null
@@ -68,6 +73,13 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
           <Link href={`/academy/1-on-1${mode === 'term' ? '?mode=term' : ''}`} className="text-sm text-muted hover:text-ink">← All times</Link>
           <h1 className="mt-4 font-display text-4xl font-semibold uppercase tracking-tight">{mode === 'term' ? 'Book your term of 1-on-1s' : 'Book your 1-on-1'}</h1>
           {q.cancelled && <p className="panel mt-6 border border-line px-4 py-3 text-sm">Payment was cancelled — nothing was charged.</p>}
+          {share && open && coach && (
+            <div role="note" className="panel mt-6 border border-white/40 p-5 text-sm">
+              <p className="font-semibold">{coach.name} sent you this time{share.client.playerFirstName ? ` for ${share.client.playerFirstName}` : ''}.</p>
+              {shareHold?.holdExpiresAt && <p className="mt-1 text-muted">It’s held for you until {formatDate(share.holdUntil ?? shareHold.holdExpiresAt, { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' })}.</p>}
+              {share.message && <p className="mt-3 whitespace-pre-line italic">“{share.message}”</p>}
+            </div>
+          )}
 
           {open && coach && ranges.length > 0 && (
             <div role="note" className="mt-6 border-2 border-white/60 p-5 text-sm leading-relaxed">
@@ -92,6 +104,7 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
                 loginHref={`/login?next=${encodeURIComponent(`/academy/1-on-1/book?${new URLSearchParams(Object.entries(q).filter(([k, v]) => k !== 'cancelled' && v) as [string, string][]).toString()}`)}`}
                 me={user ? { firstName: user.firstName, lastName: user.lastName, email: user.email, phone: user.phone } : null}
                 players={players}
+                share={share && !user ? { token: q.share!, prefill: { contactFirstName: share.client.firstName, contactLastName: share.client.lastName, contactEmail: share.client.email, contactMobile: share.client.mobile ?? '', playerFirstName: share.client.playerFirstName ?? '', playerLastName: share.client.lastName } } : share ? { token: q.share!, prefill: {} } : undefined}
               />
             ) : (
               <p className="panel border border-line p-6">
