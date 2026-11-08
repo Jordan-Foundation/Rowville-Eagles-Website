@@ -12,9 +12,17 @@ import { receiveSms, systemNote } from '@/messaging/service'
  * unknown number) and their coaches — or the academy inbox — get an email alert.
  */
 export async function POST(req: Request) {
-  const params = await readTwilioRequest(req)
-  if (!params) return new Response('Forbidden', { status: 403 })
+  const signed = req.headers.has('x-twilio-signature')
+  const params = await readTwilioRequest(req.clone())
   const p = await payload()
+  if (!params) {
+    // Looks like Twilio but the security check failed — record it so the setup problem is visible (Admin → Message log)
+    if (signed) {
+      const u = new URL(req.url)
+      await logSms(p, { to: 'Twilio webhook', body: 'Incoming text rejected: security check failed', kind: 'service', status: 'failed', inbound: true, error: process.env.TWILIO_AUTH_TOKEN ? `Signature didn’t match. Site address ${process.env.NEXT_PUBLIC_SITE_URL || '(NEXT_PUBLIC_SITE_URL not set)'}; request came to ${u.host}${u.pathname}. Set the webhook to exactly ${process.env.NEXT_PUBLIC_SITE_URL || 'https://' + u.host}/twilio/sms` : 'TWILIO_AUTH_TOKEN is not set in Vercel' })
+    }
+    return new Response('Forbidden', { status: 403 })
+  }
   const from = toE164(params.From) ?? params.From ?? 'unknown'
   const body = (params.Body ?? '').trim()
   const media = Number(params.NumMedia ?? 0)
@@ -38,6 +46,11 @@ export async function POST(req: Request) {
   }
   if (kw === 'help') return twiml() // Twilio sends the standard HELP reply
 
-  await receiveSms(p, { from, body, sid: params.MessageSid, media, users })
+  try {
+    await receiveSms(p, { from, body, sid: params.MessageSid, media, users })
+  } catch (e) {
+    p.logger.error({ err: e, msg: 'Filing an incoming text failed' })
+    await logSms(p, { to: from, body: 'Incoming text could not be added to Messages', kind: 'service', status: 'failed', inbound: true, sid: params.MessageSid, error: e instanceof Error ? e.message : String(e) })
+  }
   return twiml()
 }
