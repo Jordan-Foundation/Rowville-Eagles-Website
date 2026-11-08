@@ -99,10 +99,15 @@ export async function confirmCallWithTwilio(p: { CallSid?: string; From?: string
 export async function fetchRecording(recordingSid: string) {
   const cfg = twilioConfig()
   if (!cfg || !/^RE[0-9a-f]{32}$/i.test(recordingSid)) return null
-  const res = await fetch(`${apiBase()}/2010-04-01/Accounts/${cfg.sid}/Recordings/${recordingSid}.mp3`, {
-    headers: { authorization: `Basic ${Buffer.from(`${cfg.sid}:${cfg.token}`).toString('base64')}` },
-  })
-  return res.ok ? res : null
+  // Recordings live in the region that handled the call: the default (US) region, or Australia (AU1)
+  const regions: [string, string][] = [[apiBase(), cfg.token], ...(auRegionToken() ? ([[process.env.NODE_ENV !== 'production' && process.env.TWILIO_API_BASE_AU1 ? process.env.TWILIO_API_BASE_AU1 : 'https://api.sydney.au1.twilio.com', auRegionToken()!]] as [string, string][]) : [])]
+  for (const [base, token] of regions) {
+    const res = await fetch(`${base}/2010-04-01/Accounts/${cfg.sid}/Recordings/${recordingSid}.mp3`, {
+      headers: { authorization: `Basic ${Buffer.from(`${cfg.sid}:${token}`).toString('base64')}` },
+    })
+    if (res.ok) return res
+  }
+  return null
 }
 
 // ── TwiML ────────────────────────────────────────────────────────────────────
