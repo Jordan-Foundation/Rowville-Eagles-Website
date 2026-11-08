@@ -116,8 +116,21 @@ const xmlEsc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').rep
 export const twiml = (inner = '') => new Response(`<?xml version="1.0" encoding="UTF-8"?><Response>${inner}</Response>`, { headers: { 'content-type': 'text/xml' } })
 
 /** Forward the call, showing the caller's own number; afterwards Twilio calls `action` with the outcome. */
-export const dialTwiml = (o: { to: string; callerId?: string; action: string; timeout?: number }) =>
-  `<Dial${o.callerId ? ` callerId="${xmlEsc(o.callerId)}"` : ''} timeout="${o.timeout ?? 20}" action="${xmlEsc(o.action)}" method="POST"><Number>${xmlEsc(o.to)}</Number></Dial>`
+export const dialTwiml = (o: { to: string; callerId?: string; action: string; timeout?: number; screenUrl?: string }) =>
+  `<Dial${o.callerId ? ` callerId="${xmlEsc(o.callerId)}"` : ''} timeout="${o.timeout ?? 20}" action="${xmlEsc(o.action)}" method="POST"><Number${o.screenUrl ? ` url="${xmlEsc(o.screenUrl)}" method="POST"` : ''}>${xmlEsc(o.to)}</Number></Dial>`
+
+/** Read a phone number digit by digit ("0 4 1 2 …"), or "a private number". */
+export const spokenNumber = (e164: string | null | undefined) => {
+  const m = (e164 ?? '').replace(/^\+61/, '0').replace(/[^0-9]/g, '')
+  return m.length >= 6 ? m.split('').join(' ') : 'a private number'
+}
+
+/**
+ * Call screening, played to whoever picks up the forwarded call: a person presses 1 to take it; a phone's
+ * own voicemail can't, so the call comes back and the caller gets the Foundation Academy voicemail instead.
+ */
+export const screenTwiml = (o: { from: string | null | undefined; action: string }) =>
+  `<Gather numDigits="1" timeout="6" action="${xmlEsc(o.action)}" method="POST">${sayTwiml(`Foundation Academy call from ${spokenNumber(o.from)}. Press 1 to take the call.`)}</Gather>${sayTwiml('Sending the caller to voicemail.')}<Hangup/>`
 
 /** Amazon Polly's Australian voice (Twilio only accepts it by its neural name). */
 export const VOICE = 'Polly.Olivia-Neural'

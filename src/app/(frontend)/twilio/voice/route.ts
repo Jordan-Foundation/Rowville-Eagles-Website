@@ -28,7 +28,7 @@ async function handle(req: Request) {
   const { forwardTo, greeting } = await voiceSettings(p)
   const from = toE164(params.From)
   if (forwardTo && forwardTo !== from) {
-    return twiml(dialTwiml({ to: forwardTo, callerId: from ?? undefined, action: `${requestOrigin(req)}/twilio/voice/after` }))
+    return twiml(dialTwiml({ to: forwardTo, callerId: from ?? undefined, action: `${requestOrigin(req)}/twilio/voice/after`, screenUrl: `${requestOrigin(req)}/twilio/voice/screen` }))
   }
   const users = await usersByPhone(p, params.From)
   await logCall(p, { from: from ?? params.From ?? 'unknown', callSid: params.CallSid, status: 'missed', note: 'Missed call (no forwarding number set)', userId: users[0]?.id })

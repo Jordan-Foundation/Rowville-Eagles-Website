@@ -57,3 +57,14 @@ export async function rejectedWebhook(req: Request) {
     // logging must never stop the call
   }
 }
+
+/** Marker that the person on the forwarded phone pressed 1 (written by /twilio/voice/screen, keyed by the caller's call). */
+export async function markAccepted(payload: Payload, parentCallSid: string, from: string) {
+  await payload.create({ collection: 'message-log', overrideAccess: true, data: { channel: 'call', to: from, subject: 'Call taken', kind: 'service', sender: 'academy', status: 'answered', providerId: parentCallSid } })
+}
+
+export async function findAccepted(payload: Payload, callSid: string | undefined) {
+  if (!callSid) return null
+  const { docs } = await payload.find({ collection: 'message-log', where: { providerId: { equals: callSid }, channel: { equals: 'call' }, status: { equals: 'answered' } }, limit: 1, overrideAccess: true })
+  return docs[0] ?? null
+}

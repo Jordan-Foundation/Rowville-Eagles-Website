@@ -49,3 +49,16 @@ describe('webhook address variants', () => {
     expect(withQuery).toContain('https://club.vercel.app/twilio/voice/?From=%2B61')
   })
 })
+
+import { screenTwiml, spokenNumber } from '@/lib/twilio'
+
+describe('call screening', () => {
+  it('asks the person who picks up to press 1, so a phone voicemail can’t take the call', () => {
+    expect(spokenNumber('+61412345678')).toBe('0 4 1 2 3 4 5 6 7 8')
+    expect(spokenNumber('anonymous')).toBe('a private number')
+    const x = screenTwiml({ from: '+61412345678', action: 'https://x/twilio/voice/screen' })
+    expect(x).toContain('<Gather numDigits="1"')
+    expect(x).toContain('Press 1 to take the call.')
+    expect(x.endsWith('<Hangup/>')).toBe(true)
+  })
+})
