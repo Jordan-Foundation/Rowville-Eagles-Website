@@ -51,7 +51,7 @@ export async function rejectedWebhook(req: Request) {
         kind: 'service',
         sender: 'academy',
         status: 'failed',
-        error: process.env.TWILIO_AUTH_TOKEN ? `Signature didn’t match. Site address ${process.env.NEXT_PUBLIC_SITE_URL || '(NEXT_PUBLIC_SITE_URL not set)'}; request came to ${u.host}${u.pathname}.` : 'TWILIO_AUTH_TOKEN is not set in Vercel',
+        error: process.env.TWILIO_AUTH_TOKEN ? `Signature didn’t match. ${req.method} ${req.headers.get('content-type') ?? ''} to ${req.headers.get('x-forwarded-host') ?? u.host}${u.pathname}${u.search ? ' (with query)' : ''}; site address ${process.env.NEXT_PUBLIC_SITE_URL || '(NEXT_PUBLIC_SITE_URL not set)'}. If this keeps happening, check TWILIO_AUTH_TOKEN in Vercel matches Twilio → Account → API keys & tokens → Auth Token (primary).` : 'TWILIO_AUTH_TOKEN is not set in Vercel',
       },
     })
   } catch {

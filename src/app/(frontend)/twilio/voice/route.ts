@@ -34,3 +34,6 @@ async function handle(req: Request) {
   await logCall(p, { from: from ?? params.From ?? 'unknown', callSid: params.CallSid, status: 'missed', note: 'Missed call (no forwarding number set)', userId: users[0]?.id })
   return twiml(voicemailTwiml({ greeting, action: `${requestOrigin(req)}/twilio/voice/done`, transcribeCallback: `${requestOrigin(req)}/twilio/voice/transcription` }))
 }
+
+// Twilio can be set to send these as GET instead of POST
+export { POST as GET }

@@ -31,3 +31,6 @@ async function handle(req: Request) {
   const { greeting } = await voiceSettings(p)
   return twiml(voicemailTwiml({ greeting, action: `${requestOrigin(req)}/twilio/voice/done`, transcribeCallback: `${requestOrigin(req)}/twilio/voice/transcription` }))
 }
+
+// Twilio can be set to send these as GET instead of POST
+export { POST as GET }

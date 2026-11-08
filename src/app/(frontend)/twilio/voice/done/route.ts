@@ -32,3 +32,6 @@ export async function POST(req: Request) {
   }
   return twiml(`${sayTwiml('Thanks. We’ll be in touch soon. Goodbye.')}<Hangup/>`)
 }
+
+// Twilio can be set to send these as GET instead of POST
+export { POST as GET }

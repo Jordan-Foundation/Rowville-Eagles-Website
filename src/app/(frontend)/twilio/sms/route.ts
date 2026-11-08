@@ -19,7 +19,7 @@ export async function POST(req: Request) {
     // Looks like Twilio but the security check failed — record it so the setup problem is visible (Admin → Message log)
     if (signed) {
       const u = new URL(req.url)
-      await logSms(p, { to: 'Twilio webhook', body: 'Incoming text rejected: security check failed', kind: 'service', status: 'failed', inbound: true, error: process.env.TWILIO_AUTH_TOKEN ? `Signature didn’t match. Site address ${process.env.NEXT_PUBLIC_SITE_URL || '(NEXT_PUBLIC_SITE_URL not set)'}; request came to ${u.host}${u.pathname}. Set the webhook to exactly ${process.env.NEXT_PUBLIC_SITE_URL || 'https://' + u.host}/twilio/sms` : 'TWILIO_AUTH_TOKEN is not set in Vercel' })
+      await logSms(p, { to: 'Twilio webhook', body: 'Incoming text rejected: security check failed', kind: 'service', status: 'failed', inbound: true, error: process.env.TWILIO_AUTH_TOKEN ? `Signature didn’t match (${req.method}). Site address ${process.env.NEXT_PUBLIC_SITE_URL || '(NEXT_PUBLIC_SITE_URL not set)'}; request came to ${u.host}${u.pathname}. Set the webhook to exactly ${process.env.NEXT_PUBLIC_SITE_URL || 'https://' + u.host}/twilio/sms` : 'TWILIO_AUTH_TOKEN is not set in Vercel' })
     }
     return new Response('Forbidden', { status: 403 })
   }
@@ -54,3 +54,6 @@ export async function POST(req: Request) {
   }
   return twiml()
 }
+
+// Twilio can be set to send these as GET instead of POST
+export { POST as GET }

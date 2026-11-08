@@ -40,3 +40,12 @@ describe('webhook addresses Twilio may sign', () => {
   })
 })
 
+
+describe('webhook address variants', () => {
+  it('accepts an address entered with a trailing slash', () => {
+    const urls = signatureUrls('https://club.vercel.app/twilio/voice', 'https://club.vercel.app', null)
+    expect(urls).toContain('https://club.vercel.app/twilio/voice/')
+    const withQuery = signatureUrls('https://club.vercel.app/twilio/voice?From=%2B61', 'https://club.vercel.app', null)
+    expect(withQuery).toContain('https://club.vercel.app/twilio/voice/?From=%2B61')
+  })
+})

@@ -24,3 +24,6 @@ export async function POST(req: Request) {
   })
   return new Response(null, { status: 204 })
 }
+
+// Twilio can be set to send these as GET instead of POST
+export { POST as GET }

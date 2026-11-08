@@ -15,13 +15,20 @@ import { validTwilioSignature } from './twilio'
 export async function readTwilioRequest(req: Request): Promise<Record<string, string> | null> {
   const token = process.env.TWILIO_AUTH_TOKEN
   if (!token) return null
-  const form = await req.formData().catch(() => null)
-  if (!form) return null
   const params: Record<string, string> = {}
-  form.forEach((v, k) => {
-    if (typeof v === 'string') params[k] = v
-  })
-  return validTwilioSignature(token, req.headers.get('x-twilio-signature'), signatureUrls(req.url, siteUrl(), req.headers.get('x-forwarded-host')), params) ? params : null
+  // POST (the default): fields in the body. GET (if chosen in Twilio): fields in the address, which is signed as a whole.
+  const isGet = req.method === 'GET'
+  if (isGet) {
+    new URL(req.url).searchParams.forEach((v, k) => (params[k] = v))
+  } else {
+    const form = await req.formData().catch(() => null)
+    if (!form) return null
+    form.forEach((v, k) => {
+      if (typeof v === 'string') params[k] = v
+    })
+  }
+  const urls = signatureUrls(req.url, siteUrl(), req.headers.get('x-forwarded-host'))
+  return validTwilioSignature(token, req.headers.get('x-twilio-signature'), urls, isGet ? {} : params) ? params : null
 }
 
 /**
@@ -37,8 +44,12 @@ export function signatureUrls(requestUrl: string, site: string, forwardedHost?: 
   for (const b of bases) {
     const x = new URL(b)
     const def = x.protocol === 'https:' ? '443' : '80'
-    out.add(`${x.protocol}//${x.hostname}${x.port && x.port !== def ? `:${x.port}` : ''}${path}`)
-    out.add(`${x.protocol}//${x.hostname}:${x.port || def}${path}`)
+    // …and with or without a trailing slash (an address entered as /twilio/voice/ is redirected here)
+    const paths = [path, u.pathname.endsWith('/') ? path.replace(/\/(\?|$)/, '$1') : `${u.pathname}/${u.search}`]
+    for (const pth of paths) {
+      out.add(`${x.protocol}//${x.hostname}${x.port && x.port !== def ? `:${x.port}` : ''}${pth}`)
+      out.add(`${x.protocol}//${x.hostname}:${x.port || def}${pth}`)
+    }
   }
   return [...out]
 }
