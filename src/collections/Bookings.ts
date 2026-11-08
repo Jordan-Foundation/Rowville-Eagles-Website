@@ -37,7 +37,7 @@ export const Bookings: CollectionConfig = {
     { name: 'reference', type: 'text', unique: true, admin: { readOnly: true, description: 'Created automatically when saved' } },
     { name: 'program', type: 'relationship', relationTo: 'programs', required: true },
     {
-      name: 'status',
+      name: 'status', index: true,
       type: 'select',
       required: true,
       defaultValue: 'pending',

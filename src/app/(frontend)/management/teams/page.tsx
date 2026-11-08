@@ -14,8 +14,8 @@ export default async function StaffTeams({ searchParams }: { searchParams: Promi
   const user = await requireManagement('/management/teams')
   const show = (await searchParams).show
   const p = await payload()
-  const { docs: teams } = await p.find({ collection: 'teams', where: show === 'archived' ? { archived: { equals: true } } : { archived: { not_equals: true } }, sort: 'order', limit: 300, depth: 0, overrideAccess: true })
-  const { docs: members } = await p.find({ collection: 'team-members', where: { active: { equals: true } }, limit: 10000, depth: 0, overrideAccess: true, select: { team: true } })
+  const { docs: teams } = await p.find({ pagination: false, collection: 'teams', where: show === 'archived' ? { archived: { equals: true } } : { archived: { not_equals: true } }, sort: 'order', limit: 300, depth: 0, overrideAccess: true })
+  const { docs: members } = await p.find({ pagination: false, collection: 'team-members', where: { active: { equals: true } }, limit: 10000, depth: 0, overrideAccess: true, select: { team: true } })
   const count = (id: number) => members.filter((m) => (typeof m.team === 'object' ? m.team.id : m.team) === id).length
 
   return (

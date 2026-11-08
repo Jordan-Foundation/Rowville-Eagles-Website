@@ -26,7 +26,7 @@ export async function logCall(payload: Payload, o: { from: string; callSid?: str
 
 export async function findCallLog(payload: Payload, callSid: string | undefined) {
   if (!callSid) return null
-  const { docs } = await payload.find({ collection: 'message-log', where: { providerId: { equals: callSid }, channel: { equals: 'call' } }, limit: 1, sort: '-createdAt', overrideAccess: true })
+  const { docs } = await payload.find({ pagination: false, collection: 'message-log', where: { providerId: { equals: callSid }, channel: { equals: 'call' } }, limit: 1, sort: '-createdAt', overrideAccess: true })
   return docs[0] ?? null
 }
 
@@ -65,6 +65,6 @@ export async function markAccepted(payload: Payload, parentCallSid: string, from
 
 export async function findAccepted(payload: Payload, callSid: string | undefined) {
   if (!callSid) return null
-  const { docs } = await payload.find({ collection: 'message-log', where: { providerId: { equals: callSid }, channel: { equals: 'call' }, status: { equals: 'answered' } }, limit: 1, overrideAccess: true })
+  const { docs } = await payload.find({ pagination: false, collection: 'message-log', where: { providerId: { equals: callSid }, channel: { equals: 'call' }, status: { equals: 'answered' } }, limit: 1, overrideAccess: true })
   return docs[0] ?? null
 }

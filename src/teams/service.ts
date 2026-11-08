@@ -48,7 +48,7 @@ export async function ensureSquadTeam(payload: Payload, squad: Squad): Promise<n
 }
 
 export async function addMember(payload: Payload, m: { team: number; participant: number; account: number; source: 'selection' | 'registration' | 'admin'; selectionEntry?: number }) {
-  const { docs } = await payload.find({ collection: 'team-members', where: { team: { equals: m.team }, participant: { equals: m.participant } }, limit: 1, depth: 0, overrideAccess: true })
+  const { docs } = await payload.find({ pagination: false, collection: 'team-members', where: { team: { equals: m.team }, participant: { equals: m.participant } }, limit: 1, depth: 0, overrideAccess: true })
   if (docs[0]) {
     if (!docs[0].active) await payload.update({ collection: 'team-members', id: docs[0].id, data: { active: true }, overrideAccess: true })
     return docs[0]
@@ -73,9 +73,9 @@ export async function joinFromEntry(payload: Payload, e: SelectionEntry) {
  */
 export async function syncTeamMembers(payload: Payload) {
   const result = { selections: 0, registrations: 0 }
-  const { docs: paid } = await payload.find({ collection: 'selection-entries', where: { status: { equals: 'registered' }, squad: { exists: true } }, limit: 5000, depth: 1, overrideAccess: true })
+  const { docs: paid } = await payload.find({ pagination: false, collection: 'selection-entries', where: { status: { equals: 'registered' }, squad: { exists: true } }, limit: 5000, depth: 1, overrideAccess: true })
   for (const e of paid) if (await joinFromEntry(payload, e)) result.selections++
-  const { docs: kids } = await payload.find({ collection: 'participants', where: { team: { exists: true }, 'registrationOffer.status': { equals: 'paid' } }, limit: 5000, depth: 0, overrideAccess: true })
+  const { docs: kids } = await payload.find({ pagination: false, collection: 'participants', where: { team: { exists: true }, 'registrationOffer.status': { equals: 'paid' } }, limit: 5000, depth: 0, overrideAccess: true })
   for (const k of kids) {
     await addMember(payload, { team: rel(k.team)!, participant: k.id, account: rel(k.account)!, source: 'registration' })
     result.registrations++
@@ -117,7 +117,7 @@ export async function myTeams(payload: Payload, user: User, participantId?: numb
     teams.set(t.id, cur)
   }
   if (!participantId) {
-    const { docs: coached } = await payload.find({ collection: 'teams', where: { coaches: { in: [user.id] }, archived: { not_equals: true } }, depth: 0, limit: 50, overrideAccess: true })
+    const { docs: coached } = await payload.find({ pagination: false, collection: 'teams', where: { coaches: { in: [user.id] }, archived: { not_equals: true } }, depth: 0, limit: 50, overrideAccess: true })
     for (const t of coached) teams.set(t.id, { ...(teams.get(t.id) ?? { team: t, players: [] }), coach: true })
   }
   return [...teams.values()]
@@ -127,7 +127,7 @@ export async function myTeams(payload: Payload, user: User, participantId?: numb
 
 /** Parents of active members, once each. */
 export async function teamRecipients(payload: Payload, teamId: number) {
-  const { docs } = await payload.find({ collection: 'team-members', where: { team: { equals: teamId }, active: { equals: true } }, depth: 1, limit: 1000, overrideAccess: true })
+  const { docs } = await payload.find({ pagination: false, collection: 'team-members', where: { team: { equals: teamId }, active: { equals: true } }, depth: 1, limit: 1000, overrideAccess: true })
   const users = new Map<number, User>()
   for (const m of docs) if (typeof m.account === 'object' && m.account) users.set(m.account.id, m.account as User)
   return [...users.values()]

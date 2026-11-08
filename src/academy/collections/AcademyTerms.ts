@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { refreshAfterChange, refreshAfterDelete } from '../../lib/revalidate'
 import { APIError } from 'payload'
 import { anyone, isStaff } from '../../access'
 import { DEFAULT_WEEKDAY_TIMES, DEFAULT_WEEKEND_TIMES, TIME_RE } from '../constants'
@@ -17,6 +18,8 @@ export const AcademyTerms: CollectionConfig = {
   access: { read: anyone, create: isStaff, update: isStaff, delete: isStaff },
   defaultSort: '-startDate',
   hooks: {
+    afterChange: [refreshAfterChange],
+    afterDelete: [refreshAfterDelete],
     beforeValidate: [
       ({ data, originalDoc }) => {
         if (!data) return data

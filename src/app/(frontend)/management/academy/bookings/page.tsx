@@ -19,8 +19,8 @@ export default async function StaffBookingsPage({ searchParams }: { searchParams
   const q = await searchParams
   const p = await payload()
   const [{ docs: terms }, { docs: coaches }] = await Promise.all([
-    p.find({ collection: 'academy-terms', sort: '-startDate', limit: 20, depth: 0 }),
-    p.find({ collection: 'academy-coaches', sort: 'displayName', limit: 100, depth: 0, overrideAccess: true }),
+    p.find({ pagination: false, collection: 'academy-terms', sort: '-startDate', limit: 20, depth: 0 }),
+    p.find({ pagination: false, collection: 'academy-coaches', sort: 'displayName', limit: 100, depth: 0, overrideAccess: true }),
   ])
   const and: Where[] = []
   if (q.q?.trim()) {
@@ -32,7 +32,7 @@ export default async function StaffBookingsPage({ searchParams }: { searchParams
   if (q.term) and.push({ term: { equals: Number(q.term) } })
   if (q.coach) and.push({ coach: { equals: Number(q.coach) } })
   if (q.type) and.push({ type: { equals: q.type } })
-  const { docs } = await p.find({ collection: 'academy-bookings', where: { and }, sort: '-createdAt', limit: 200, depth: 1, overrideAccess: true })
+  const { docs } = await p.find({ pagination: false, collection: 'academy-bookings', where: { and }, sort: '-createdAt', limit: 200, depth: 1, overrideAccess: true })
   // Club members (Rowville registered players) vs RFA-only players
   const rows = docs.filter((b) => {
     if (!q.member) return true

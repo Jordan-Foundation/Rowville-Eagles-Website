@@ -2,11 +2,11 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { payload, formatDate } from '@/lib/payload'
 
-export const revalidate = 60
-export const metadata: Metadata = { title: 'News' }
+export const revalidate = 3600
+export const metadata: Metadata = { title: 'News', description: 'Club news, match reports, tournament results and announcements from Rowville Eagles FC and the Foundation Academy.' }
 
 export default async function NewsPage() {
-  const { docs } = await (await payload()).find({ collection: 'posts', where: { status: { equals: 'published' } }, depth: 0, limit: 30 })
+  const { docs } = await (await payload()).find({ pagination: false, collection: 'posts', where: { status: { equals: 'published' } }, depth: 0, limit: 30 })
   return (
     <div className="container-x py-16">
       <h1 className="font-[family-name:var(--font-barlow)] text-5xl font-extrabold uppercase sm:text-6xl">Club News</h1>

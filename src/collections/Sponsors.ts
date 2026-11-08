@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { refreshAfterChange, refreshAfterDelete } from '../lib/revalidate'
 import { anyone, isStaff } from '../access'
 
 export const Sponsors: CollectionConfig = {
@@ -6,6 +7,7 @@ export const Sponsors: CollectionConfig = {
   admin: { useAsTitle: 'name', defaultColumns: ['name', 'tier'], group: 'Club' },
   access: { read: anyone, create: isStaff, update: isStaff, delete: isStaff },
   defaultSort: 'order',
+  hooks: { afterChange: [refreshAfterChange], afterDelete: [refreshAfterDelete] },
   fields: [
     { name: 'name', type: 'text', required: true },
     {

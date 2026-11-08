@@ -13,7 +13,7 @@ export default async function ReviewQueue({ searchParams }: { searchParams: Prom
   await requireReviewer('/coach/reviews')
   const f = await searchParams
   const p = await payload()
-  const { docs: areas } = await p.find({ collection: 'pdr-areas', sort: 'order', depth: 0, limit: 20, overrideAccess: true })
+  const { docs: areas } = await p.find({ pagination: false, collection: 'pdr-areas', sort: 'order', depth: 0, limit: 20, overrideAccess: true })
   const { docs } = await p.find({
     collection: 'pdr-submissions',
     where: {

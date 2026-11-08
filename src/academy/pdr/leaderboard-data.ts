@@ -12,7 +12,7 @@ const monthFrom = () => new Date(`${monthStart(new Date())}T00:00:00+10:00`).toI
 
 async function players(p: Payload, ids: number[]) {
   if (!ids.length) return new Map<number, Participant>()
-  const { docs } = await p.find({ collection: 'participants', where: { id: { in: ids } }, limit: ids.length, depth: 0, overrideAccess: true, select: { firstName: true, lastName: true, dateOfBirth: true, pdr: true, account: true } })
+  const { docs } = await p.find({ pagination: false, collection: 'participants', where: { id: { in: ids } }, limit: ids.length, depth: 0, overrideAccess: true, select: { firstName: true, lastName: true, dateOfBirth: true, pdr: true, account: true } })
   return new Map(docs.map((d) => [d.id, d as Participant]))
 }
 
@@ -37,10 +37,10 @@ export async function stageBoard(p: Payload, stage: Pick<PdrStage, 'id' | 'crite
   const direction = stage.criteria?.direction === 'lower' ? 'lower' : 'higher'
   let entries: Entry[]
   if (o.period === 'month') {
-    const { docs } = await p.find({ collection: 'pdr-submissions', where: { stage: { equals: stage.id }, status: { equals: 'verified' }, verifiedScore: { exists: true }, reviewedAt: { greater_than_equal: monthFrom() } }, limit: 5000, depth: 0, overrideAccess: true, select: { player: true, verifiedScore: true, reviewedAt: true } })
+    const { docs } = await p.find({ pagination: false, collection: 'pdr-submissions', where: { stage: { equals: stage.id }, status: { equals: 'verified' }, verifiedScore: { exists: true }, reviewedAt: { greater_than_equal: monthFrom() } }, limit: 5000, depth: 0, overrideAccess: true, select: { player: true, verifiedScore: true, reviewedAt: true } })
     entries = bestPerPlayer(docs.map((d) => ({ player: rel(d.player), value: d.verifiedScore!, at: d.reviewedAt })), direction)
   } else {
-    const { docs } = await p.find({ collection: 'pdr-progress', where: { stage: { equals: stage.id }, method: { equals: 'verified' }, score: { exists: true } }, limit: 5000, depth: 0, overrideAccess: true, select: { player: true, score: true, passedAt: true } })
+    const { docs } = await p.find({ pagination: false, collection: 'pdr-progress', where: { stage: { equals: stage.id }, method: { equals: 'verified' }, score: { exists: true } }, limit: 5000, depth: 0, overrideAccess: true, select: { player: true, score: true, passedAt: true } })
     entries = docs.map((d) => ({ player: rel(d.player), value: d.score!, at: d.passedAt }))
   }
   return publish(p, entries, direction, o)
@@ -70,7 +70,7 @@ export async function areaBoard(p: Payload, areaId: number, o: { period: Period;
 /** "Top 15%" for one player's verified best on a stage (everyone who passed counts, opted-out or not). */
 export async function stageStanding(p: Payload, stage: Pick<PdrStage, 'id' | 'criteria'>, playerId: number) {
   const s = await p.findGlobal({ slug: 'pdr-settings', depth: 0, overrideAccess: true })
-  const { docs } = await p.find({ collection: 'pdr-progress', where: { stage: { equals: stage.id }, method: { equals: 'verified' }, score: { exists: true } }, limit: 5000, depth: 0, overrideAccess: true, select: { player: true, score: true } })
+  const { docs } = await p.find({ pagination: false, collection: 'pdr-progress', where: { stage: { equals: stage.id }, method: { equals: 'verified' }, score: { exists: true } }, limit: 5000, depth: 0, overrideAccess: true, select: { player: true, score: true } })
   const mine = docs.find((d) => rel(d.player) === playerId)
   if (!mine) return null
   return standing(mine.score!, docs.map((d) => d.score!), stage.criteria?.direction ?? 'higher', s.minPlayersForRanking ?? 5)
@@ -79,6 +79,6 @@ export async function stageStanding(p: Payload, stage: Pick<PdrStage, 'id' | 'cr
 /** The visitor's own players (highlighted on boards). */
 export async function myPlayers(p: Payload, userId: number | undefined) {
   if (!userId) return new Set<number>()
-  const { docs } = await p.find({ collection: 'participants', where: { account: { equals: userId } }, limit: 20, depth: 0, overrideAccess: true, select: { firstName: true } })
+  const { docs } = await p.find({ pagination: false, collection: 'participants', where: { account: { equals: userId } }, limit: 20, depth: 0, overrideAccess: true, select: { firstName: true } })
   return new Set(docs.map((d) => d.id))
 }

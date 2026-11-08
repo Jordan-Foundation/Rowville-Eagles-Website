@@ -72,7 +72,7 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
   if (!sub.stage) notFound()
   const stage = sub.stage as PdrStage
   const area = stage.area as PdrArea
-  const { docs: history } = await p.find({ collection: 'pdr-progress', where: { player: { equals: kid.id }, stage: { equals: stage.id } }, limit: 1, depth: 0, overrideAccess: true })
+  const { docs: history } = await p.find({ pagination: false, collection: 'pdr-progress', where: { player: { equals: kid.id }, stage: { equals: stage.id } }, limit: 1, depth: 0, overrideAccess: true })
   const best = history[0]
 
   return (

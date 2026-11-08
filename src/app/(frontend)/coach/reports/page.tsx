@@ -21,7 +21,7 @@ export default async function CoachReportsPage({ searchParams }: { searchParams:
   const { user } = await requireCoach('/coach/reports')
   const sp = await searchParams
   const p = await payload()
-  const { docs: all } = await p.find({ collection: 'player-reports', where: { coach: { equals: user.id } }, limit: 2000, depth: 1, sort: 'playerName', overrideAccess: true })
+  const { docs: all } = await p.find({ pagination: false, collection: 'player-reports', where: { coach: { equals: user.id } }, limit: 2000, depth: 1, sort: 'playerName', overrideAccess: true })
   const cycles = [...new Map(all.map((r) => [typeof r.cycle === 'object' ? r.cycle.id : r.cycle, r.cycle])).values()].filter((c) => typeof c === 'object')
   const openCycles = cycles.filter((c) => c.status === 'open').sort((a, b) => a.dueDate.localeCompare(b.dueDate))
   const cycleId = Number(sp.cycle) || openCycles[0]?.id || cycles[0]?.id

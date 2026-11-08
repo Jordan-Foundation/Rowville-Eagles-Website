@@ -20,12 +20,12 @@ const typeLabel: Record<string, string> = { 'holiday-camp': 'Holiday camp', tour
 export async function loadDates(p: Payload): Promise<DateSection[]> {
   const settings = await p.findGlobal({ slug: 'site-settings', depth: 0, overrideAccess: true })
   const [terms, programs, trials, rounds, cycles, challenges] = await Promise.all([
-    p.find({ collection: 'academy-terms', sort: '-startDate', limit: 12, ...q }),
-    p.find({ collection: 'programs', where: { type: { not_in: ['private-session', 'community'] }, status: { not_equals: 'closed' } }, sort: 'startDate', limit: 100, ...q }),
-    p.find({ collection: 'trial-sessions', where: { start: { greater_than: new Date(Date.now() - 30 * 86400000).toISOString() } }, sort: 'start', limit: 50, ...q }),
-    p.find({ collection: 'selection-rounds', where: { status: { not_equals: 'closed' } }, sort: '-createdAt', limit: 30, ...q }),
-    p.find({ collection: 'report-cycles', sort: '-dueDate', limit: 10, ...q }),
-    p.find({ collection: 'pdr-challenges', sort: '-month', limit: 6, ...q }),
+    p.find({ pagination: false, collection: 'academy-terms', sort: '-startDate', limit: 12, ...q }),
+    p.find({ pagination: false, collection: 'programs', where: { type: { not_in: ['private-session', 'community'] }, status: { not_equals: 'closed' } }, sort: 'startDate', limit: 100, ...q }),
+    p.find({ pagination: false, collection: 'trial-sessions', where: { start: { greater_than: new Date(Date.now() - 30 * 86400000).toISOString() } }, sort: 'start', limit: 50, ...q }),
+    p.find({ pagination: false, collection: 'selection-rounds', where: { status: { not_equals: 'closed' } }, sort: '-createdAt', limit: 30, ...q }),
+    p.find({ pagination: false, collection: 'report-cycles', sort: '-dueDate', limit: 10, ...q }),
+    p.find({ pagination: false, collection: 'pdr-challenges', sort: '-month', limit: 6, ...q }),
   ])
   const termName = new Map(terms.docs.map((t) => [t.id, t.name]))
   const termOf = (v: unknown) => (v && typeof v === 'object' ? (v as { id: number }).id : (v as number | null))
@@ -95,9 +95,9 @@ export async function loadDates(p: Payload): Promise<DateSection[]> {
 export async function loadDateIssues(p: Payload, now = new Date()) {
   const settings = await p.findGlobal({ slug: 'site-settings', depth: 0, overrideAccess: true })
   const [terms, programs, cycles] = await Promise.all([
-    p.find({ collection: 'academy-terms', limit: 30, ...q, select: { name: true, status: true, startDate: true, endDate: true } }),
-    p.find({ collection: 'programs', where: { status: { equals: 'open' } }, limit: 100, ...q, select: { title: true, type: true, status: true, startDate: true, endDate: true, academyTerm: true } }),
-    p.find({ collection: 'report-cycles', where: { status: { equals: 'open' } }, limit: 20, ...q }),
+    p.find({ pagination: false, collection: 'academy-terms', limit: 30, ...q, select: { name: true, status: true, startDate: true, endDate: true } }),
+    p.find({ pagination: false, collection: 'programs', where: { status: { equals: 'open' } }, limit: 100, ...q, select: { title: true, type: true, status: true, startDate: true, endDate: true, academyTerm: true } }),
+    p.find({ pagination: false, collection: 'report-cycles', where: { status: { equals: 'open' } }, limit: 20, ...q }),
   ])
   const outstanding = await Promise.all(cycles.docs.map(async (c) => (await p.count({ collection: 'player-reports', where: { cycle: { equals: c.id }, status: { in: ['not_started', 'draft', 'returned'] } }, overrideAccess: true })).totalDocs))
   return dateIssues({

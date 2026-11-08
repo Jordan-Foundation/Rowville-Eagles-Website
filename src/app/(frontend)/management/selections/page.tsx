@@ -9,8 +9,8 @@ export const metadata: Metadata = { title: 'Selections', robots: { index: false 
 export default async function SelectionsPage() {
   await requireSelector('/management/selections')
   const p = await payload()
-  const { docs: rounds } = await p.find({ collection: 'selection-rounds', sort: '-createdAt', limit: 100, depth: 1, overrideAccess: true })
-  const { docs: entries } = await p.find({ collection: 'selection-entries', where: { round: { in: rounds.map((r) => r.id) } }, limit: 20000, depth: 0, overrideAccess: true, select: { round: true, status: true, outcomeQueued: true } })
+  const { docs: rounds } = await p.find({ pagination: false, collection: 'selection-rounds', sort: '-createdAt', limit: 100, depth: 1, overrideAccess: true })
+  const { docs: entries } = await p.find({ pagination: false, collection: 'selection-entries', where: { round: { in: rounds.map((r) => r.id) } }, limit: 20000, depth: 0, overrideAccess: true, select: { round: true, status: true, outcomeQueued: true } })
   const count = (id: number, f: (e: (typeof entries)[number]) => boolean) => entries.filter((e) => (typeof e.round === 'object' ? e.round.id : e.round) === id && f(e)).length
 
   return (

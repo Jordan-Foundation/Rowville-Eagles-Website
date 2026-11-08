@@ -7,12 +7,35 @@ import { payload, formatAUD, formatDate } from '@/lib/payload'
 import { programTypes } from '@/collections/Programs'
 import { AcademyBackdrop } from '@/components/AcademyBackdrop'
 import { RfaLogo } from '@/components/Logos'
+import type { Metadata } from 'next'
+import { cache } from 'react'
+import { describe, jsonLd, mediaUrl, siteBase } from '@/lib/seo'
+
+export const revalidate = 600
+export const generateStaticParams = () => [] as { slug: string }[]
+
+const getProgram = cache(async (slug: string) => {
+  const { docs } = await (await payload()).find({ pagination: false, collection: 'programs', where: { slug: { equals: slug } }, limit: 1, depth: 1 })
+  return docs[0] ?? null
+})
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const p = await getProgram((await params).slug)
+  if (!p) return { title: 'Programs' }
+  const when = p.startDate ? ` · ${formatDate(p.startDate, { day: 'numeric', month: 'short', year: 'numeric' })}` : ''
+  const image = mediaUrl(p.heroImage)
+  return {
+    title: `${p.title}${when}`,
+    description: describe([p.summary, p.ageRange, p.scheduleNote].filter(Boolean).join(' · ')),
+    alternates: { canonical: `/programs/${p.slug}` },
+    openGraph: { title: p.title, description: describe(p.summary), ...(image ? { images: [image] } : {}) },
+  }
+}
 
 export default async function ProgramPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const pl = await payload()
-  const { docs } = await pl.find({ collection: 'programs', where: { slug: { equals: slug } }, limit: 1, depth: 1 })
-  const p = docs[0]
+  const p = await getProgram(slug)
   if (!p) notFound()
   if (p.type === 'private-session') redirect('/academy/1-on-1')
   const academy = p.brand === 'academy'
@@ -31,6 +54,28 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
 
   return (
     <div data-brand={academy ? 'academy' : undefined} data-page-brand={academy ? 'academy' : undefined}>
+      {p.startDate && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: jsonLd({
+              '@context': 'https://schema.org',
+              '@type': 'SportsEvent',
+              name: p.title,
+              description: p.summary,
+              startDate: p.startDate,
+              endDate: p.endDate ?? undefined,
+              eventStatus: 'https://schema.org/EventScheduled',
+              eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+              location: place ? { '@type': 'Place', name: p.location || settings.ground?.name || 'Rowville Eagles', address: place } : undefined,
+              image: mediaUrl(p.heroImage),
+              organizer: { '@id': `${siteBase()}/#club` },
+              url: `${siteBase()}/programs/${p.slug}`,
+              offers: p.type === 'community' ? undefined : { '@type': 'Offer', price: p.pricePerSession ?? p.price ?? 0, priceCurrency: 'AUD', availability: p.status === 'open' ? 'https://schema.org/InStock' : 'https://schema.org/SoldOut', url: `${siteBase()}/programs/${p.slug}` },
+            }),
+          }}
+        />
+      )}
       <section className={academy ? 'relative overflow-hidden border-b border-line' : 'pitch-lines bg-[#0f2a55] text-white'}>
         {academy && <AcademyBackdrop size="md" />}
         <div className="container-x relative py-16 md:py-24">

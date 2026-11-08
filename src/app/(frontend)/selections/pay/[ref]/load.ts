@@ -6,7 +6,7 @@ import { feeFor, payeeFor } from '@/selections/payment'
 /** The entry behind a pay link, if the visitor may pay for it: the private link (token) or the family's own login. */
 export async function loadPayable(ref: string, token?: string | null) {
   const p = await payload()
-  const entry = (await p.find({ collection: 'selection-entries', where: { reference: { equals: ref } }, limit: 1, depth: 2, overrideAccess: true, showHiddenFields: true })).docs[0] as SelectionEntry | undefined
+  const entry = (await p.find({ pagination: false, collection: 'selection-entries', where: { reference: { equals: ref } }, limit: 1, depth: 2, overrideAccess: true, showHiddenFields: true })).docs[0] as SelectionEntry | undefined
   if (!entry) return null
   const user = await currentUser()
   const owner = user && (typeof entry.account === 'object' ? entry.account?.id : entry.account) === user.id

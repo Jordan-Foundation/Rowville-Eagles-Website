@@ -30,7 +30,7 @@ export const PdrStages: CollectionConfig = {
         if (!levelId || !n) return data
         const level = await req.payload.findByID({ collection: 'pdr-levels', id: typeof levelId === 'object' ? levelId.id : levelId, depth: 1, req, overrideAccess: true })
         const area = level.area as { id: number; name: string; order?: number | null }
-        const { docs } = await req.payload.find({ collection: 'pdr-stages', where: { level: { equals: level.id }, stageNumber: { equals: n } }, limit: 2, depth: 0, req, overrideAccess: true })
+        const { docs } = await req.payload.find({ pagination: false, collection: 'pdr-stages', where: { level: { equals: level.id }, stageNumber: { equals: n } }, limit: 2, depth: 0, req, overrideAccess: true })
         if (docs.some((d) => d.id !== originalDoc?.id)) throw new APIError(`${level.displayName} already has stage ${n}.`, 400, undefined, true)
         const scoring = data.scoring ?? originalDoc?.scoring
         const problem = criteriaProblem(scoring, { ...originalDoc?.criteria, ...data.criteria })

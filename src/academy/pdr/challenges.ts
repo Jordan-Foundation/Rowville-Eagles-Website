@@ -18,12 +18,12 @@ export const challengeUrl = (id: number) => `${siteUrl()}/foundation-plus/challe
 
 /** Live challenges players can see: this month's and past ones (newest first). */
 export async function visibleChallenges(p: Payload, now = new Date()) {
-  const { docs } = await p.find({ collection: 'pdr-challenges', where: { published: { equals: true }, month: { less_than_equal: monthKey(now) } }, sort: '-month', limit: 24, depth: 0, ...q })
+  const { docs } = await p.find({ pagination: false, collection: 'pdr-challenges', where: { published: { equals: true }, month: { less_than_equal: monthKey(now) } }, sort: '-month', limit: 24, depth: 0, ...q })
   return docs
 }
 
 export async function currentChallenge(p: Payload, now = new Date()) {
-  const { docs } = await p.find({ collection: 'pdr-challenges', where: { published: { equals: true }, month: { equals: monthKey(now) } }, limit: 1, depth: 0, ...q })
+  const { docs } = await p.find({ pagination: false, collection: 'pdr-challenges', where: { published: { equals: true }, month: { equals: monthKey(now) } }, limit: 1, depth: 0, ...q })
   return docs[0] ?? null
 }
 
@@ -33,13 +33,13 @@ export const groupName = (g: string) => (g === 'all' ? 'Overall' : groupLabel(Nu
 
 async function kidsById(p: Payload, ids: number[]) {
   if (!ids.length) return new Map<number, Participant>()
-  const { docs } = await p.find({ collection: 'participants', where: { id: { in: ids } }, limit: ids.length, depth: 0, ...q, select: { firstName: true, lastName: true, dateOfBirth: true, pdr: true, account: true } })
+  const { docs } = await p.find({ pagination: false, collection: 'participants', where: { id: { in: ids } }, limit: ids.length, depth: 0, ...q, select: { firstName: true, lastName: true, dateOfBirth: true, pdr: true, account: true } })
   return new Map(docs.map((d) => [d.id, d as Participant]))
 }
 
 /** Every checked entry, as standings per group (live during the month; the saved results once finalised). */
 export async function standings(p: Payload, ch: PdrChallenge) {
-  const { docs } = await p.find({ collection: 'pdr-submissions', where: { challenge: { equals: ch.id }, status: { equals: 'verified' }, verifiedScore: { exists: true } }, limit: 10000, depth: 0, ...q, select: { player: true, verifiedScore: true, reviewedAt: true } })
+  const { docs } = await p.find({ pagination: false, collection: 'pdr-submissions', where: { challenge: { equals: ch.id }, status: { equals: 'verified' }, verifiedScore: { exists: true } }, limit: 10000, depth: 0, ...q, select: { player: true, verifiedScore: true, reviewedAt: true } })
   const entries = docs.map((d) => ({ player: rel(d.player), value: d.verifiedScore!, at: d.reviewedAt }))
   const kids = await kidsById(p, [...new Set(entries.map((e) => e.player))])
   const rows = challengeResults(entries, (id) => groupKey(ch, kids.get(id)), ch.direction === 'lower' ? 'lower' : 'higher', ch.winnersPerGroup ?? 1)
@@ -68,7 +68,7 @@ export async function challengeBoard(p: Payload, ch: PdrChallenge, mine: Set<num
 
 /** What a family's player has done in this challenge. */
 export async function myEntries(p: Payload, ch: PdrChallenge, kidId: number) {
-  const { docs } = await p.find({ collection: 'pdr-submissions', where: { challenge: { equals: ch.id }, player: { equals: kidId }, status: { not_equals: 'uploading' } }, sort: '-createdAt', limit: 50, depth: 0, ...q })
+  const { docs } = await p.find({ pagination: false, collection: 'pdr-submissions', where: { challenge: { equals: ch.id }, player: { equals: kidId }, status: { not_equals: 'uploading' } }, sort: '-createdAt', limit: 50, depth: 0, ...q })
   const verified = docs.filter((d) => d.status === 'verified' && d.verifiedScore != null).map((d) => d.verifiedScore!)
   const best = verified.length ? (ch.direction === 'lower' ? Math.min(...verified) : Math.max(...verified)) : null
   return { attempts: docs, pending: docs.filter((d) => d.status === 'pending').length, best }
@@ -168,7 +168,7 @@ const GRACE_MS = 7 * 86_400_000
  */
 export async function finaliseChallenges(p: Payload, now = new Date()) {
   const out = { finalised: 0, winners: 0, waiting: 0 }
-  const { docs } = await p.find({ collection: 'pdr-challenges', where: { published: { equals: true }, closedAt: { exists: false }, month: { less_than: monthKey(now) } }, limit: 12, depth: 0, ...q })
+  const { docs } = await p.find({ pagination: false, collection: 'pdr-challenges', where: { published: { equals: true }, closedAt: { exists: false }, month: { less_than: monthKey(now) } }, limit: 12, depth: 0, ...q })
   const fs = await foundationSettings(p)
   for (const ch of docs) {
     const [y, m] = ch.month.split('-').map(Number)
@@ -213,7 +213,7 @@ export async function finaliseChallenges(p: Payload, now = new Date()) {
 
 /** Challenges this player won (for the Trophy Cabinet). */
 export async function challengeWins(p: Payload, kidId: number) {
-  const { docs } = await p.find({ collection: 'pdr-challenges', where: { 'results.player': { equals: kidId }, closedAt: { exists: true } }, limit: 100, depth: 0, sort: '-month', ...q })
+  const { docs } = await p.find({ pagination: false, collection: 'pdr-challenges', where: { 'results.player': { equals: kidId }, closedAt: { exists: true } }, limit: 100, depth: 0, sort: '-month', ...q })
   return docs.flatMap((ch) => {
     const r = (ch.results ?? []).find((x) => rel(x.player) === kidId && x.winner)
     return r ? [{ id: ch.id, title: ch.title, month: ch.month, rank: r.rank ?? 1, group: groupName(r.group ?? 'all'), value: r.value, unit: ch.unit }] : []

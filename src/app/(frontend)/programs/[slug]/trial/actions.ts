@@ -25,7 +25,7 @@ export async function bookToddlerTrial(_prev: ToddlerTrialState, fd: FormData): 
   const p = await payload()
   const limited = await rateLimit(p, 'toddler-trial', { email: contact.email })
   if (limited) return fail(limited)
-  const { docs } = await p.find({ collection: 'programs', where: { slug: { equals: s('program') }, type: { equals: 'toddler' }, status: { in: ['open', 'full'] } }, limit: 1, depth: 0 })
+  const { docs } = await p.find({ pagination: false, collection: 'programs', where: { slug: { equals: s('program') }, type: { equals: 'toddler' }, status: { in: ['open', 'full'] } }, limit: 1, depth: 0 })
   const program = docs[0]
   if (!program) return fail('Mini Ballers trials aren’t available right now.')
   const session = (await toddlerTrialSessions(p, program)).find((x) => x.start === s('session'))

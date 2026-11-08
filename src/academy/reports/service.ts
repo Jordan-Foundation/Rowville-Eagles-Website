@@ -20,14 +20,14 @@ export async function cycleCandidates(p: Payload, cycle: ReportCycle): Promise<C
   const programIds = ids(cycle.programs)
   if (programIds.length) {
     const [{ docs: slots }, { docs: regs }, { docs: programs }] = await Promise.all([
-      p.find({ collection: 'academy-term-slots', where: { program: { in: programIds } }, limit: 500, ...q }),
-      p.find({ collection: 'academy-registrations', where: { program: { in: programIds }, status: { equals: 'paid' } }, limit: 5000, sort: 'player.firstName', ...q }),
-      p.find({ collection: 'programs', where: { id: { in: programIds } }, limit: 100, ...q }),
+      p.find({ pagination: false, collection: 'academy-term-slots', where: { program: { in: programIds } }, limit: 500, ...q }),
+      p.find({ pagination: false, collection: 'academy-registrations', where: { program: { in: programIds }, status: { equals: 'paid' } }, limit: 5000, sort: 'player.firstName', ...q }),
+      p.find({ pagination: false, collection: 'programs', where: { id: { in: programIds } }, limit: 100, ...q }),
     ])
     // Coach profiles → their login accounts
     const coachIds = new Set<number>()
     for (const s of slots) { ids(s.coaches).forEach((c) => coachIds.add(c)); (s.groups ?? []).forEach((g) => ids(g.coaches).forEach((c) => coachIds.add(c))) }
-    const { docs: coaches } = coachIds.size ? await p.find({ collection: 'academy-coaches', where: { id: { in: [...coachIds] } }, limit: 500, ...q }) : { docs: [] }
+    const { docs: coaches } = coachIds.size ? await p.find({ pagination: false, collection: 'academy-coaches', where: { id: { in: [...coachIds] } }, limit: 500, ...q }) : { docs: [] }
     const userOfCoach = new Map(coaches.map((c) => [c.id, idOf(c.user)]))
     const slotById = new Map(slots.map((s) => [s.id, s]))
     const programById = new Map(programs.map((x) => [x.id, x]))
@@ -56,8 +56,8 @@ export async function cycleCandidates(p: Payload, cycle: ReportCycle): Promise<C
   const teamIds = ids(cycle.teams)
   if (teamIds.length) {
     const [{ docs: teams }, { docs: members }] = await Promise.all([
-      p.find({ collection: 'teams', where: { id: { in: teamIds } }, limit: 100, ...q }),
-      p.find({ collection: 'team-members', where: { team: { in: teamIds }, active: { equals: true } }, limit: 5000, overrideAccess: true, depth: 1 }),
+      p.find({ pagination: false, collection: 'teams', where: { id: { in: teamIds } }, limit: 100, ...q }),
+      p.find({ pagination: false, collection: 'team-members', where: { team: { in: teamIds }, active: { equals: true } }, limit: 5000, overrideAccess: true, depth: 1 }),
     ])
     const teamById = new Map((teams as Team[]).map((t) => [t.id, t]))
     for (const m of members) {
@@ -86,7 +86,7 @@ export async function cycleCandidates(p: Payload, cycle: ReportCycle): Promise<C
 export async function createCycleReports(p: Payload, cycleId: number, by: number | null) {
   const cycle = await p.findByID({ collection: 'report-cycles', id: cycleId, ...q })
   const candidates = await cycleCandidates(p, cycle)
-  const { docs: existing } = await p.find({ collection: 'player-reports', where: { cycle: { equals: cycleId } }, limit: 10000, ...q, select: { key: true } })
+  const { docs: existing } = await p.find({ pagination: false, collection: 'player-reports', where: { cycle: { equals: cycleId } }, limit: 10000, ...q, select: { key: true } })
   const plan = planReports(candidates, cycle.season, new Set(existing.map((e) => e.key)))
   let created = 0
   for (const c of plan.create) {
@@ -155,7 +155,7 @@ export async function reassignReport(p: Payload, reportId: number, coachUserId: 
 
 /** Outstanding reports for a coach in open cycles (the coach dashboard badge). */
 export async function outstandingFor(p: Payload, userId: number) {
-  const { docs: cycles } = await p.find({ collection: 'report-cycles', where: { status: { equals: 'open' } }, limit: 50, ...q, select: { name: true } })
+  const { docs: cycles } = await p.find({ pagination: false, collection: 'report-cycles', where: { status: { equals: 'open' } }, limit: 50, ...q, select: { name: true } })
   if (!cycles.length) return 0
   return (await p.count({ collection: 'player-reports', where: { coach: { equals: userId }, cycle: { in: cycles.map((c) => c.id) }, status: { in: OUTSTANDING } }, overrideAccess: true })).totalDocs
 }
@@ -163,15 +163,15 @@ export async function outstandingFor(p: Payload, userId: number) {
 /** Daily job: remind coaches with unfinished reports 14, 7, 3 and 1 days before the cycle's due date. */
 export async function sendReportReminders(p: Payload, now = new Date()) {
   const result = { cycles: 0, sent: 0 }
-  const { docs: cycles } = await p.find({ collection: 'report-cycles', where: { status: { equals: 'open' }, dueDate: { greater_than: now.toISOString() } }, limit: 20, ...q })
+  const { docs: cycles } = await p.find({ pagination: false, collection: 'report-cycles', where: { status: { equals: 'open' }, dueDate: { greater_than: now.toISOString() } }, limit: 20, ...q })
   for (const cycle of cycles) {
     result.cycles++
     const days = daysUntil(new Date(cycle.dueDate), now)
-    const { docs } = await p.find({ collection: 'player-reports', where: { cycle: { equals: cycle.id }, status: { in: OUTSTANDING }, coach: { exists: true } }, limit: 10000, ...q, select: { coach: true } })
+    const { docs } = await p.find({ pagination: false, collection: 'player-reports', where: { cycle: { equals: cycle.id }, status: { in: OUTSTANDING }, coach: { exists: true } }, limit: 10000, ...q, select: { coach: true } })
     const perCoach = new Map<number, number>()
     for (const r of docs) { const c = idOf(r.coach); if (c) perCoach.set(c, (perCoach.get(c) ?? 0) + 1) }
     for (const [coachId, outstanding] of perCoach) {
-      const { docs: log } = await p.find({ collection: 'report-reminder-log', where: { cycle: { equals: cycle.id }, coach: { equals: coachId } }, limit: 10, ...q })
+      const { docs: log } = await p.find({ pagination: false, collection: 'report-reminder-log', where: { cycle: { equals: cycle.id }, coach: { equals: coachId } }, limit: 10, ...q })
       const kind = dueReminder(days, new Set(log.map((l) => l.kind)))
       if (!kind) continue
       try {

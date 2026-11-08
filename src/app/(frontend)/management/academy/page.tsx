@@ -14,12 +14,12 @@ export default async function StaffAcademyPage() {
   const user = await requireManagement('/management/academy')
   const p = await payload()
   const [{ docs: terms }, { docs: coaches }] = await Promise.all([
-    p.find({ collection: 'academy-terms', where: { status: { in: ['availability', 'open'] } }, sort: 'startDate', depth: 0, limit: 10 }),
-    p.find({ collection: 'academy-coaches', depth: 1, limit: 200, sort: 'displayName', overrideAccess: true }),
+    p.find({ pagination: false, collection: 'academy-terms', where: { status: { in: ['availability', 'open'] } }, sort: 'startDate', depth: 0, limit: 10 }),
+    p.find({ pagination: false, collection: 'academy-coaches', depth: 1, limit: 200, sort: 'displayName', overrideAccess: true }),
   ])
   const [{ docs: avail }, { docs: log }] = await Promise.all([
-    p.find({ collection: 'academy-availability', where: { term: { in: terms.map((t) => t.id) } }, depth: 0, limit: 1000, overrideAccess: true }),
-    p.find({ collection: 'academy-reminder-log', where: { term: { in: terms.map((t) => t.id) } }, depth: 0, limit: 5000, overrideAccess: true }),
+    p.find({ pagination: false, collection: 'academy-availability', where: { term: { in: terms.map((t) => t.id) } }, depth: 0, limit: 1000, overrideAccess: true }),
+    p.find({ pagination: false, collection: 'academy-reminder-log', where: { term: { in: terms.map((t) => t.id) } }, depth: 0, limit: 5000, overrideAccess: true }),
   ])
   const id = (v: number | { id: number }) => (typeof v === 'object' ? v.id : v)
   const { docs: cover } = await p.find({

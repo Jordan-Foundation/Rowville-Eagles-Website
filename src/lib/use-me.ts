@@ -16,20 +16,25 @@ let inflight: Promise<void> | null = null
 const listeners = new Set<() => void>()
 const emit = () => listeners.forEach((l) => l())
 
-function readHint(): Me {
+const GUEST_TTL = 5 * 60_000
+// Pages that can log someone in without the login form — always re-check after them
+const LOGIN_PAGES = /\/(login|account\/activate|foundation-plus\/(start|join|subscribe)|checkout\/success|academy\/1-on-1\/booked)/
+
+function readHint(): { me: Me; fresh: boolean } {
   try {
     const raw = window.localStorage.getItem(HINT)
-    if (raw === null) return undefined
-    return raw === 'guest' ? null : (JSON.parse(raw) as { firstName?: string })
+    if (raw === null) return { me: undefined, fresh: false }
+    if (raw.startsWith('guest')) return { me: null, fresh: Date.now() - Number(raw.split(':')[1] ?? 0) < GUEST_TTL }
+    return { me: JSON.parse(raw) as { firstName?: string }, fresh: false }
   } catch {
-    return undefined
+    return { me: undefined, fresh: false }
   }
 }
 
 function writeHint(v: Me) {
   try {
     if (v === undefined) window.localStorage.removeItem(HINT)
-    else window.localStorage.setItem(HINT, v === null ? 'guest' : JSON.stringify({ firstName: v.firstName ?? '' }))
+    else window.localStorage.setItem(HINT, v === null ? `guest:${Date.now()}` : JSON.stringify({ firstName: v.firstName ?? '' }))
   } catch {
     /* storage blocked — the live check still works */
   }
@@ -57,12 +62,15 @@ function subscribe(cb: () => void) {
   listeners.add(cb)
   if (!started) {
     started = true
-    me = readHint() // remembered answer first (no flash), then confirm with the server
+    const hint = readHint() // remembered answer first (no flash), then confirm with the server
+    me = hint.me
     window.addEventListener('refc-auth', () => {
       writeHint(undefined)
       void load()
     })
-    void load()
+    // Visitors who aren't logged in (checked in the last 10 minutes) skip the check; logging in re-checks at once
+    const fromLogin = (() => { try { return LOGIN_PAGES.test(new URL(document.referrer).pathname) } catch { return false } })()
+    if (!hint.fresh || fromLogin) void load()
     queueMicrotask(emit)
   }
   return () => listeners.delete(cb)

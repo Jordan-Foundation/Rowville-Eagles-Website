@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: 'Leaderboards', robots: { index: fals
 export default async function Leaderboards() {
   const { p, settings, user } = await foundationGate()
   if (!user) redirect('/login?next=/foundation-plus/leaderboards')
-  const { docs: areas } = await p.find({ collection: 'pdr-areas', where: { hasLeaderboard: { equals: true } }, sort: 'order', depth: 0, limit: 20, overrideAccess: true })
+  const { docs: areas } = await p.find({ pagination: false, collection: 'pdr-areas', where: { hasLeaderboard: { equals: true } }, sort: 'order', depth: 0, limit: 20, overrideAccess: true })
   return (
     <div>
       <Crumbs items={[{ href: '/foundation-plus', label: settings.name }, { label: 'Leaderboards' }]} />

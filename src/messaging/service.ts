@@ -18,8 +18,8 @@ const localNumber = (e164: string) => (/^\+614\d{8}$/.test(e164) ? `0${e164.slic
 /** Coaches who work with this family: 1-on-1 bookings and paid Academy term places. */
 export async function familyCoaches(p: Payload, accountId: number) {
   const [bookings, regs] = await Promise.all([
-    p.find({ collection: 'academy-bookings', where: { account: { equals: accountId }, status: { in: ['confirmed', 'completed', 'payment_failed'] } }, limit: 200, depth: 0, ...q, select: { coach: true } }),
-    p.find({ collection: 'academy-registrations', where: { account: { equals: accountId }, status: { equals: 'paid' } }, limit: 100, depth: 1, ...q, select: { slot: true, groupId: true } }),
+    p.find({ pagination: false, collection: 'academy-bookings', where: { account: { equals: accountId }, status: { in: ['confirmed', 'completed', 'payment_failed'] } }, limit: 200, depth: 0, ...q, select: { coach: true } }),
+    p.find({ pagination: false, collection: 'academy-registrations', where: { account: { equals: accountId }, status: { equals: 'paid' } }, limit: 100, depth: 1, ...q, select: { slot: true, groupId: true } }),
   ])
   const ids = new Set<number>(bookings.docs.map((b) => rel(b.coach)).filter((x): x is number => x != null))
   for (const r of regs.docs) {
@@ -34,7 +34,7 @@ export async function familyCoaches(p: Payload, accountId: number) {
 /** The family's conversation (or an unknown number's), created on first use; its coaches kept current. */
 export async function conversationFor(p: Payload, o: { account?: User | null; phone?: string | null }) {
   if (o.account) {
-    const { docs } = await p.find({ collection: 'conversations', where: { account: { equals: o.account.id } }, limit: 1, depth: 0, ...q })
+    const { docs } = await p.find({ pagination: false, collection: 'conversations', where: { account: { equals: o.account.id } }, limit: 1, depth: 0, ...q })
     const coaches = await familyCoaches(p, o.account.id)
     if (docs[0]) {
       const same = (docs[0].coaches ?? []).map(rel).sort().join() === [...coaches].sort().join()
@@ -43,7 +43,7 @@ export async function conversationFor(p: Payload, o: { account?: User | null; ph
     return p.create({ collection: 'conversations', ...q, data: { title: nameOf(o.account), account: o.account.id, coaches } })
   }
   const phone = toE164(o.phone) ?? o.phone ?? 'unknown'
-  const { docs } = await p.find({ collection: 'conversations', where: { phone: { equals: phone }, account: { exists: false } }, limit: 1, depth: 0, ...q })
+  const { docs } = await p.find({ pagination: false, collection: 'conversations', where: { phone: { equals: phone }, account: { exists: false } }, limit: 1, depth: 0, ...q })
   return docs[0] ?? p.create({ collection: 'conversations', ...q, data: { title: `Unknown number ${localNumber(phone)}`, phone, coaches: [] } })
 }
 
@@ -79,7 +79,7 @@ export type Viewer = { user: User; side: Side; coach?: AcademyCoach | null }
 export async function viewerFor(p: Payload, user: User | null): Promise<Viewer | null> {
   if (!user) return null
   if (hasRole(user, 'admin', 'committee')) return { user, side: 'management' }
-  const { docs } = await p.find({ collection: 'academy-coaches', where: { user: { equals: user.id } }, limit: 1, depth: 0, ...q })
+  const { docs } = await p.find({ pagination: false, collection: 'academy-coaches', where: { user: { equals: user.id } }, limit: 1, depth: 0, ...q })
   if (docs[0]) return { user, side: 'coach', coach: docs[0] }
   return { user, side: 'family' }
 }
@@ -96,17 +96,20 @@ export async function inbox(p: Payload, v: Viewer, o: { filter?: 'all' | 'unassi
     v.side === 'management'
       ? o.filter === 'unassigned' ? { account: { exists: false } } : {}
       : v.side === 'coach' ? { coaches: { contains: v.coach!.id } } : { account: { equals: v.user.id } }
-  const { docs } = await p.find({ collection: 'conversations', where: { ...where, lastMessageAt: { exists: true } }, sort: '-lastMessageAt', limit: 300, depth: 0, ...q })
+  const { docs } = await p.find({ pagination: false, collection: 'conversations', where: { ...where, lastMessageAt: { exists: true } }, sort: '-lastMessageAt', limit: 300, depth: 0, ...q })
   return docs.map((c) => ({ conv: c, unread: isUnread(c, v.user.id, v.side === 'family' ? 'family' : 'management') }))
 }
 
 export async function unreadCount(p: Payload, v: Viewer | null) {
   if (!v) return 0
-  return (await inbox(p, v)).filter((x) => x.unread).length
+  // Only the fields needed to tell read from unread (badges ask often)
+  const where: Where = v.side === 'management' ? {} : v.side === 'coach' ? { coaches: { contains: v.coach!.id } } : { account: { equals: v.user.id } }
+  const { docs } = await p.find({ pagination: false, collection: 'conversations', where: { ...where, lastMessageAt: { exists: true } }, sort: '-lastMessageAt', limit: 300, depth: 0, ...q, select: { reads: true, lastFamilyAt: true, lastStaffAt: true } })
+  return docs.filter((c) => isUnread(c as never, v.user.id, v.side === 'family' ? 'family' : 'management')).length
 }
 
 export async function thread(p: Payload, conv: Conversation) {
-  const { docs } = await p.find({ collection: 'messages', where: { conversation: { equals: conv.id } }, sort: 'createdAt', limit: 500, depth: 0, ...q })
+  const { docs } = await p.find({ pagination: false, collection: 'messages', where: { conversation: { equals: conv.id } }, sort: 'createdAt', limit: 500, depth: 0, ...q })
   return docs
 }
 
@@ -115,7 +118,7 @@ async function alertStaff(p: Payload, conv: Conversation, text: string, via: str
   if (conv.lastAlertAt && Date.now() - new Date(conv.lastAlertAt).getTime() < 10 * 60_000) return
   await p.update({ collection: 'conversations', id: conv.id, ...q, data: { lastAlertAt: new Date().toISOString() } })
   const coachIds = (conv.coaches ?? []).map(rel).filter((x): x is number => x != null)
-  const coaches = coachIds.length ? (await p.find({ collection: 'academy-coaches', where: { id: { in: coachIds } }, depth: 1, limit: 20, ...q })).docs : []
+  const coaches = coachIds.length ? (await p.find({ pagination: false, collection: 'academy-coaches', where: { id: { in: coachIds } }, depth: 1, limit: 20, ...q })).docs : []
   const to = coaches.map((c) => (typeof c.user === 'object' ? (c.user as User | null)?.email : null)).filter((e): e is string => Boolean(e))
   const send = async (email: string, href: string) =>
     sendEmail(p, {
@@ -185,7 +188,7 @@ export async function staffReply(p: Payload, v: Viewer, convId: number, text: st
 export async function assignToAccount(p: Payload, convId: number, email: string) {
   const conv = await p.findByID({ collection: 'conversations', id: convId, depth: 0, ...q, disableErrors: true })
   if (!conv || conv.account) throw new MessageError('Only unassigned conversations can be linked.')
-  const user = (await p.find({ collection: 'users', where: { email: { equals: email.trim().toLowerCase() } }, limit: 1, depth: 0, ...q })).docs[0]
+  const user = (await p.find({ pagination: false, collection: 'users', where: { email: { equals: email.trim().toLowerCase() } }, limit: 1, depth: 0, ...q })).docs[0]
   if (!user) throw new MessageError('No account with that email.')
   const target = await conversationFor(p, { account: user })
   await p.update({ collection: 'messages', where: { conversation: { equals: conv.id } }, ...q, data: { conversation: target.id } })
@@ -197,14 +200,14 @@ export async function assignToAccount(p: Payload, convId: number, email: string)
 /** Families a coach can start a conversation with (they've booked or are in the coach's groups). */
 export async function coachFamilies(p: Payload, coachId: number) {
   const [bookings, slots] = await Promise.all([
-    p.find({ collection: 'academy-bookings', where: { coach: { equals: coachId }, status: { in: ['confirmed', 'completed', 'payment_failed'] }, account: { exists: true } }, limit: 500, depth: 0, ...q, select: { account: true } }),
-    p.find({ collection: 'academy-term-slots', where: { or: [{ coaches: { contains: coachId } }, { 'groups.coaches': { contains: coachId } }] }, limit: 200, depth: 0, ...q, select: { coaches: true } }),
+    p.find({ pagination: false, collection: 'academy-bookings', where: { coach: { equals: coachId }, status: { in: ['confirmed', 'completed', 'payment_failed'] }, account: { exists: true } }, limit: 500, depth: 0, ...q, select: { account: true } }),
+    p.find({ pagination: false, collection: 'academy-term-slots', where: { or: [{ coaches: { contains: coachId } }, { 'groups.coaches': { contains: coachId } }] }, limit: 200, depth: 0, ...q, select: { coaches: true } }),
   ])
   const regs = slots.docs.length
-    ? await p.find({ collection: 'academy-registrations', where: { slot: { in: slots.docs.map((s) => s.id) }, status: { equals: 'paid' }, account: { exists: true } }, limit: 1000, depth: 0, ...q, select: { account: true } })
+    ? await p.find({ pagination: false, collection: 'academy-registrations', where: { slot: { in: slots.docs.map((s) => s.id) }, status: { equals: 'paid' }, account: { exists: true } }, limit: 1000, depth: 0, ...q, select: { account: true } })
     : { docs: [] as { account?: unknown }[] }
   const ids = [...new Set([...bookings.docs, ...regs.docs].map((d) => rel(d.account)).filter((x): x is number => x != null))]
   if (!ids.length) return []
-  const { docs } = await p.find({ collection: 'users', where: { id: { in: ids } }, limit: ids.length, depth: 0, ...q, select: { firstName: true, lastName: true, email: true } })
+  const { docs } = await p.find({ pagination: false, collection: 'users', where: { id: { in: ids } }, limit: ids.length, depth: 0, ...q, select: { firstName: true, lastName: true, email: true } })
   return docs.map((u) => ({ id: u.id, name: nameOf(u as User) })).sort((a, b) => a.name.localeCompare(b.name))
 }

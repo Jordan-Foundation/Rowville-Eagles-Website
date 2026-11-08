@@ -36,13 +36,13 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
   const foundation = await foundationSettings(p)
   const showFoundation = foundation.enabled || isStaffOrCoach(user)
   const [{ docs: selections }, rules, { docs: termRegs }] = await Promise.all([
-    p.find({ collection: 'selection-entries', where: { participant: { equals: kid.id }, status: { not_in: ['withdrawn', 'closed', 'released'] } }, sort: '-createdAt', depth: 2, limit: 30, overrideAccess: true }),
+    p.find({ pagination: false, collection: 'selection-entries', where: { participant: { equals: kid.id }, status: { not_in: ['withdrawn', 'closed', 'released'] } }, sort: '-createdAt', depth: 2, limit: 30, overrideAccess: true }),
     getAgeRules(p),
-    p.find({ collection: 'academy-registrations', where: { participant: { equals: kid.id }, status: { not_equals: 'cancelled' } }, sort: '-createdAt', depth: 2, limit: 20, overrideAccess: true }),
+    p.find({ pagination: false, collection: 'academy-registrations', where: { participant: { equals: kid.id }, status: { not_equals: 'cancelled' } }, sort: '-createdAt', depth: 2, limit: 20, overrideAccess: true }),
   ])
   const [{ docs: academyBookings }, { docs: clubBookings }] = await Promise.all([
-    p.find({ collection: 'academy-bookings', where: { participant: { equals: kid.id } }, depth: 0, limit: 100, overrideAccess: true }),
-    p.find({ collection: 'bookings', where: { participant: { equals: kid.id }, status: { equals: 'paid' } }, depth: 1, limit: 50, sort: '-createdAt', overrideAccess: true }),
+    p.find({ pagination: false, collection: 'academy-bookings', where: { participant: { equals: kid.id } }, depth: 0, limit: 100, overrideAccess: true }),
+    p.find({ pagination: false, collection: 'bookings', where: { participant: { equals: kid.id }, status: { equals: 'paid' } }, depth: 1, limit: 50, sort: '-createdAt', overrideAccess: true }),
   ])
   const byId = new Map(academyBookings.map((b) => [b.id, b]))
   const { docs: sessions } = academyBookings.length

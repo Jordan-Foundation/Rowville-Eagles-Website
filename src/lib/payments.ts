@@ -87,7 +87,7 @@ export async function confirmPayment(payload: Payload, kind: CheckoutKind, refer
 async function confirmPaymentInner(payload: Payload, kind: CheckoutKind, reference: string) {
   if (kind === 'academy') return confirmAcademyBooking(payload, reference)
   if (kind === 'booking') {
-    const { docs } = await payload.find({ collection: 'bookings', where: { reference: { equals: reference } }, limit: 1, depth: 0 })
+    const { docs } = await payload.find({ pagination: false, collection: 'bookings', where: { reference: { equals: reference } }, limit: 1, depth: 0 })
     const b = docs[0]
     if (!b || b.status !== 'pending') return b
     const paid = await payload.update({ collection: 'bookings', id: b.id, data: { status: 'paid' } })
@@ -99,7 +99,7 @@ async function confirmPaymentInner(payload: Payload, kind: CheckoutKind, referen
     return paid
   }
 
-  const { docs } = await payload.find({ collection: 'orders', where: { reference: { equals: reference } }, limit: 1, depth: 0 })
+  const { docs } = await payload.find({ pagination: false, collection: 'orders', where: { reference: { equals: reference } }, limit: 1, depth: 0 })
   const o = docs[0]
   if (!o || o.status !== 'pending') return o
   // Decrement tracked stock
@@ -126,7 +126,7 @@ export async function cancelPending(payload: Payload, kind: CheckoutKind, refere
   await settleUses(payload, reference, 'cancelled')
   if (kind === 'academy') return releaseAcademyHold(payload, reference)
   const collection = kind === 'booking' ? 'bookings' : 'orders'
-  const { docs } = await payload.find({ collection, where: { reference: { equals: reference } }, limit: 1, depth: 0 })
+  const { docs } = await payload.find({ pagination: false, collection, where: { reference: { equals: reference } }, limit: 1, depth: 0 })
   const doc = docs[0]
   if (doc?.status === 'pending') await payload.update({ collection, id: doc.id, data: { status: 'cancelled' } })
 }

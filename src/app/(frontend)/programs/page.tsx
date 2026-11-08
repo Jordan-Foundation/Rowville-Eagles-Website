@@ -5,7 +5,7 @@ import { payload } from '@/lib/payload'
 import { programTypes } from '@/collections/Programs'
 import { ProgramCard } from '@/components/ProgramCard'
 
-export const metadata: Metadata = { title: 'Camps & Programs' }
+export const metadata: Metadata = { title: 'Camps & Programs', description: 'Holiday camps, Foundation Academy terms, Mini Ballers (ages 2–5), trials and Friday Community Night at Rowville Eagles FC — see dates and book online.', alternates: { canonical: '/programs' } }
 
 export default async function ProgramsPage({ searchParams }: { searchParams: Promise<{ type?: string }> }) {
   const { type } = await searchParams
@@ -15,7 +15,7 @@ export default async function ProgramsPage({ searchParams }: { searchParams: Pro
     status: { in: ['open', 'full'] },
     type: active ? { equals: active } : { not_in: ['registration', 'academy-trial', 'private-session'] },
   }
-  const { docs } = await (await payload()).find({ collection: 'programs', where, depth: 0, limit: 100 })
+  const { docs } = await (await payload()).find({ pagination: false, collection: 'programs', where, depth: 0, limit: 100 })
 
   return (
     <>

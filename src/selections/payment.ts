@@ -117,7 +117,7 @@ export async function runSelectionReminders(payload: Payload, now = new Date()) 
 // ── Release / paid ───────────────────────────────────────────────────────────
 
 export async function releaseEntries(payload: Payload, ids: number[], o: { email: boolean; actorId: number }) {
-  const { docs } = await payload.find({ collection: 'selection-entries', where: { id: { in: ids } }, limit: ids.length, depth: 1, overrideAccess: true })
+  const { docs } = await payload.find({ pagination: false, collection: 'selection-entries', where: { id: { in: ids } }, limit: ids.length, depth: 1, overrideAccess: true })
   let released = 0
   for (const e of docs) {
     if (!awaitingPayment(e)) continue

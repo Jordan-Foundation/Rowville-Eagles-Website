@@ -1,4 +1,5 @@
 import type { GlobalConfig } from 'payload'
+import { refreshGlobal } from '../lib/revalidate'
 import { isStaff } from '../access'
 import { POLICIES } from '../lib/policies'
 
@@ -11,6 +12,7 @@ export const Policies: GlobalConfig = {
   label: 'Policies',
   admin: { group: 'Club', description: 'Linked from every booking form. Paste the text, or a link to the document (PDF or Football Victoria page).' },
   access: { read: () => true, update: isStaff },
+  hooks: { afterChange: [refreshGlobal] },
   fields: POLICIES.map((p) => ({
     type: 'collapsible' as const,
     label: p.title,

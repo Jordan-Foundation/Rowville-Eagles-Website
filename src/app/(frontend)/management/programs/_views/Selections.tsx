@@ -15,20 +15,20 @@ export async function RowvilleView({ q }: { q: Record<string, string | undefined
   const rules = await getAgeRules(p)
   const season = Number(q.season) || rules.season
   const [{ docs: rounds }, { docs: teams }] = await Promise.all([
-    p.find({ collection: 'selection-rounds', where: { kind: { equals: 'rowville' } }, sort: '-season', limit: 50, depth: 0, overrideAccess: true }),
-    p.find({ collection: 'teams', where: { type: { equals: 'rowville' }, archived: { not_equals: true } }, sort: 'name', limit: 200, depth: 0, overrideAccess: true }),
+    p.find({ pagination: false, collection: 'selection-rounds', where: { kind: { equals: 'rowville' } }, sort: '-season', limit: 50, depth: 0, overrideAccess: true }),
+    p.find({ pagination: false, collection: 'teams', where: { type: { equals: 'rowville' }, archived: { not_equals: true } }, sort: 'name', limit: 200, depth: 0, overrideAccess: true }),
   ])
   const seasons = [...new Set([season, ...rounds.map((r) => r.season)])].sort((a, b) => b - a)
   const seasonRounds = rounds.filter((r) => r.season === season)
   const { docs: entriesAll } = seasonRounds.length
-    ? await p.find({ collection: 'selection-entries', where: { round: { in: seasonRounds.map((r) => r.id) } }, limit: 5000, depth: 0, overrideAccess: true })
+    ? await p.find({ pagination: false, collection: 'selection-entries', where: { round: { in: seasonRounds.map((r) => r.id) } }, limit: 5000, depth: 0, overrideAccess: true })
     : { docs: [] as SelectionEntry[] }
   const teamFilter = q.team ? Number(q.team) : null
   const yearFilter = q.age ? Number(q.age) : null
   const entries = entriesAll.filter((e) => (!teamFilter || rel(e.offeredTeam) === teamFilter) && (!yearFilter || playing(e) === yearFilter))
   const seasonTeams = teams.filter((t) => !t.season || t.season === season)
   const { docs: members } = seasonTeams.length
-    ? await p.find({ collection: 'team-members', where: { team: { in: seasonTeams.map((t) => t.id) }, active: { equals: true } }, limit: 5000, depth: 0, overrideAccess: true, select: { team: true } })
+    ? await p.find({ pagination: false, collection: 'team-members', where: { team: { in: seasonTeams.map((t) => t.id) }, active: { equals: true } }, limit: 5000, depth: 0, overrideAccess: true, select: { team: true } })
     : { docs: [] }
   const years = [...new Set(entriesAll.map(playing).filter((y): y is number => y != null))].sort((a, b) => b - a)
   const count = (s: string[]) => entries.filter((e) => s.includes(e.status)).length
@@ -80,14 +80,14 @@ export async function RowvilleView({ q }: { q: Record<string, string | undefined
 /** Tournaments: expressions of interest → selected → paid, per tournament and squad. */
 export async function TournamentsView({ q }: { q: Record<string, string | undefined> }) {
   const p = await payload()
-  const { docs: rounds } = await p.find({ collection: 'selection-rounds', where: { kind: { equals: 'tournament' } }, sort: '-createdAt', limit: 50, depth: 0, overrideAccess: true })
+  const { docs: rounds } = await p.find({ pagination: false, collection: 'selection-rounds', where: { kind: { equals: 'tournament' } }, sort: '-createdAt', limit: 50, depth: 0, overrideAccess: true })
   const round = rounds.find((r) => String(r.id) === q.tournament) ?? null
   const scope = round ? [round] : rounds.filter((r) => r.status !== 'closed')
   const ids = scope.map((r) => r.id)
   const [{ docs: entriesAll }, { docs: squads }] = ids.length
     ? await Promise.all([
-        p.find({ collection: 'selection-entries', where: { round: { in: ids } }, limit: 5000, depth: 0, overrideAccess: true }),
-        p.find({ collection: 'squads', where: { round: { in: ids } }, sort: 'name', limit: 300, depth: 0, overrideAccess: true }),
+        p.find({ pagination: false, collection: 'selection-entries', where: { round: { in: ids } }, limit: 5000, depth: 0, overrideAccess: true }),
+        p.find({ pagination: false, collection: 'squads', where: { round: { in: ids } }, sort: 'name', limit: 300, depth: 0, overrideAccess: true }),
       ])
     : [{ docs: [] as SelectionEntry[] }, { docs: [] as { id: number; name: string; capacity?: number | null; fee?: number | null; round: unknown }[] }]
   const squadFilter = q.squad ? Number(q.squad) : null

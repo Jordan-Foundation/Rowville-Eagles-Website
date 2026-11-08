@@ -30,7 +30,7 @@ export default async function BookPage({
 }) {
   const [{ slug }, { cancelled, participant: participantParam }] = await Promise.all([params, searchParams])
   const p = await payload()
-  const { docs } = await p.find({ collection: 'programs', where: { slug: { equals: slug } }, limit: 1, depth: 0 })
+  const { docs } = await p.find({ pagination: false, collection: 'programs', where: { slug: { equals: slug } }, limit: 1, depth: 0 })
   const program = docs[0]
   if (!program) notFound()
 

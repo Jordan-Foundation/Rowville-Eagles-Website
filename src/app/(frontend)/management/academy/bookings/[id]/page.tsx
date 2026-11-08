@@ -26,8 +26,8 @@ export default async function StaffBookingPage({ params, searchParams }: { param
   const b = await p.findByID({ collection: 'academy-bookings', id: Number(id), depth: 1, overrideAccess: true, disableErrors: true })
   if (!b) notFound()
   const [{ docs: sessions }, { docs: coaches }] = await Promise.all([
-    p.find({ collection: 'academy-sessions', where: { booking: { equals: b.id } }, sort: 'startsAt', limit: 100, depth: 1, overrideAccess: true }),
-    p.find({ collection: 'academy-coaches', where: { active: { equals: true } }, limit: 100, depth: 0, sort: 'displayName', overrideAccess: true }),
+    p.find({ pagination: false, collection: 'academy-sessions', where: { booking: { equals: b.id } }, sort: 'startsAt', limit: 100, depth: 1, overrideAccess: true }),
+    p.find({ pagination: false, collection: 'academy-coaches', where: { active: { equals: true } }, limit: 100, depth: 0, sort: 'displayName', overrideAccess: true }),
   ])
   const coach = b.coach as AcademyCoach
   const term = b.term as AcademyTerm

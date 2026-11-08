@@ -26,6 +26,9 @@ const nextConfig: NextConfig = {
     ]
   },
   images: {
+    // Uploaded photos come straight from Vercel Blob storage
+    remotePatterns: [{ protocol: 'https', hostname: '*.public.blob.vercel-storage.com' }],
+    formats: ['image/avif', 'image/webp'],
     localPatterns: [
       { pathname: '/api/media/file/**' },
       { pathname: '/brand/**' },

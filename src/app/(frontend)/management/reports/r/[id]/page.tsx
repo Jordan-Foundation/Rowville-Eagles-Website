@@ -24,7 +24,7 @@ export default async function ReviewReportPage({ params }: { params: Promise<{ i
   const coach = typeof r.coach === 'object' ? r.coach : null
   const all = await curriculum(p)
   // Next report waiting for review in this cycle (for "Approve & next")
-  const { docs: queue } = await p.find({ collection: 'player-reports', where: { cycle: { equals: cycle.id }, status: { equals: 'submitted' }, id: { not_equals: r.id } }, sort: 'playerName', limit: 1, depth: 0, overrideAccess: true, select: { playerName: true } })
+  const { docs: queue } = await p.find({ pagination: false, collection: 'player-reports', where: { cycle: { equals: cycle.id }, status: { equals: 'submitted' }, id: { not_equals: r.id } }, sort: 'playerName', limit: 1, depth: 0, overrideAccess: true, select: { playerName: true } })
   const next = queue[0] ? `/management/reports/r/${queue[0].id}` : `/management/reports/${cycle.id}`
   const historyUsers = new Map<number, string>()
   for (const h of r.history ?? []) { const u = h.by && typeof h.by === 'object' ? h.by : null; if (u) historyUsers.set(u.id, [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email) }

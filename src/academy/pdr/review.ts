@@ -140,7 +140,7 @@ export async function reviewSubmission(p: Payload, coach: User, id: number, o: {
   const scored = stage.scoring === 'scored'
   const score = scored ? (o.score ?? sub.claimedScore ?? null) : null
   if (scored && score == null) throw new FoundationError('Enter the score you counted.')
-  const { docs } = await p.find({ collection: 'pdr-progress', where: { player: { equals: kid.id }, stage: { equals: stage.id } }, limit: 1, depth: 0, overrideAccess: true })
+  const { docs } = await p.find({ pagination: false, collection: 'pdr-progress', where: { player: { equals: kid.id }, stage: { equals: stage.id } }, limit: 1, depth: 0, overrideAccess: true })
   const existing = docs[0]
   if (!existing && scored && !meetsTarget(score, stage.criteria)) {
     throw new FoundationError(`That’s below the target (${criteriaSummary(stage.criteria)}) — choose “Needs another attempt” instead.`)
@@ -196,7 +196,7 @@ export async function promoteStage(p: Payload, coach: User, kid: Participant, st
 export async function purgeSubmissionVideos(p: Payload, now = new Date()) {
   const out = { deleted: 0, abandoned: 0, failed: 0 }
   if (!streamConfigured()) return out
-  const { docs } = await p.find({ collection: 'pdr-submissions', where: { streamUid: { exists: true }, videoDeletedAt: { exists: false }, deleteVideoAfter: { less_than: now.toISOString() } }, limit: 500, depth: 0, overrideAccess: true })
+  const { docs } = await p.find({ pagination: false, collection: 'pdr-submissions', where: { streamUid: { exists: true }, videoDeletedAt: { exists: false }, deleteVideoAfter: { less_than: now.toISOString() } }, limit: 500, depth: 0, overrideAccess: true })
   for (const d of docs) {
     try {
       await deleteVideo(d.streamUid!)
@@ -207,7 +207,7 @@ export async function purgeSubmissionVideos(p: Payload, now = new Date()) {
       p.logger.error({ err: e, msg: `Deleting video for submission ${d.id} failed` })
     }
   }
-  const { docs: stale } = await p.find({ collection: 'pdr-submissions', where: { status: { equals: 'uploading' }, createdAt: { less_than: new Date(now.getTime() - 86_400_000).toISOString() } }, limit: 500, depth: 0, overrideAccess: true })
+  const { docs: stale } = await p.find({ pagination: false, collection: 'pdr-submissions', where: { status: { equals: 'uploading' }, createdAt: { less_than: new Date(now.getTime() - 86_400_000).toISOString() } }, limit: 500, depth: 0, overrideAccess: true })
   for (const d of stale) {
     try {
       if (d.streamUid) await deleteVideo(d.streamUid).catch(() => undefined)

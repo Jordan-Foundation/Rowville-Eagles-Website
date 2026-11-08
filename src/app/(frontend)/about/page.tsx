@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 import { payload } from '@/lib/payload'
 import { Crest } from '@/components/Logos'
 
-export const revalidate = 60
+export const revalidate = 3600
 export const metadata: Metadata = {
   title: 'About the Club',
   description: 'Rowville Eagles Football Club — community football in Rowville since 1985. Our history, mission and values.',

@@ -30,7 +30,7 @@ export const toLive = (d: Promotion): LivePromo => ({
 /** Live promotions this account received. */
 export async function promosFor(p: Payload, userId: number | null | undefined): Promise<LivePromo[]> {
   if (!userId) return []
-  const { docs } = await p.find({ collection: 'promotions', where: { status: { equals: 'live' }, recipients: { in: [userId] } }, limit: 50, depth: 0, overrideAccess: true })
+  const { docs } = await p.find({ pagination: false, collection: 'promotions', where: { status: { equals: 'live' }, recipients: { in: [userId] } }, limit: 50, depth: 0, overrideAccess: true })
   return docs.map(toLive)
 }
 

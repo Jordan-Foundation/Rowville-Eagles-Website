@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { payload } from '@/lib/payload'
 import { SponsorCard } from '@/components/SponsorLogo'
 
-export const revalidate = 300
+export const revalidate = 3600
 export const metadata: Metadata = {
   title: 'Our Sponsors',
   description: 'The local businesses who support Rowville Eagles Football Club and the Rowville Foundation Academy.',
@@ -18,7 +18,7 @@ const tiers = [
 export default async function SponsorsPage() {
   const p = await payload()
   const [{ docs }, settings] = await Promise.all([
-    p.find({ collection: 'sponsors', limit: 100, depth: 1, sort: 'order' }),
+    p.find({ pagination: false, collection: 'sponsors', limit: 100, depth: 1, sort: 'order' }),
     p.findGlobal({ slug: 'site-settings', depth: 0 }),
   ])
   const groups = tiers.map((t) => ({ ...t, items: docs.filter((d) => d.tier === t.value) })).filter((g) => g.items.length)

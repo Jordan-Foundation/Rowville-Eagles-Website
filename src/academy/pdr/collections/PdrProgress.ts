@@ -36,7 +36,7 @@ export const PdrProgress: CollectionConfig = {
         if (!player || !stageId) return data
         const sid = typeof stageId === 'object' ? stageId.id : stageId
         const pid = typeof player === 'object' ? player.id : player
-        const { docs } = await req.payload.find({ collection: 'pdr-progress', where: { player: { equals: pid }, stage: { equals: sid } }, limit: 2, depth: 0, req, overrideAccess: true })
+        const { docs } = await req.payload.find({ pagination: false, collection: 'pdr-progress', where: { player: { equals: pid }, stage: { equals: sid } }, limit: 2, depth: 0, req, overrideAccess: true })
         if (docs.some((d) => d.id !== originalDoc?.id)) throw new APIError('This player has already passed that stage.', 400, undefined, true)
         const [stage, kid] = await Promise.all([
           req.payload.findByID({ collection: 'pdr-stages', id: sid, depth: 0, req, overrideAccess: true }),

@@ -20,7 +20,7 @@ export async function currentAcademyTerm(payload: Payload): Promise<Program | un
     depth: 0,
   })
   if (!docs.length) return undefined
-  const { docs: slots } = await payload.find({ collection: 'academy-term-slots', where: { program: { in: docs.map((d) => d.id) }, active: { not_equals: false } }, limit: 200, depth: 0, overrideAccess: true, select: { program: true } })
+  const { docs: slots } = await payload.find({ pagination: false, collection: 'academy-term-slots', where: { program: { in: docs.map((d) => d.id) }, active: { not_equals: false } }, limit: 200, depth: 0, overrideAccess: true, select: { program: true } })
   const withSlots = new Set(slots.map((s) => (typeof s.program === 'object' ? s.program.id : s.program)))
   return docs.find((d) => withSlots.has(d.id)) ?? docs.find((d) => (d.weeklySessions?.length ?? 0) > 0)
 }
@@ -51,7 +51,7 @@ export async function trialNights(payload: Payload, term: Program): Promise<Tria
 
   const nights: TrialNight[] = []
   // Every night the academy runs: each session of each training time (cancelled weeks skipped)
-  const { docs: slots } = await payload.find({ collection: 'academy-term-slots', where: { program: { equals: term.id }, active: { not_equals: false } }, limit: 200, depth: 0, overrideAccess: true })
+  const { docs: slots } = await payload.find({ pagination: false, collection: 'academy-term-slots', where: { program: { equals: term.id }, active: { not_equals: false } }, limit: 200, depth: 0, overrideAccess: true })
   if (slots.length) {
     const { slotSessions } = await import('../academy/terms/slots')
     const byStart = new Map<string, Set<number>>()

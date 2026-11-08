@@ -10,11 +10,15 @@ export const metadata: Metadata = { title: 'Promotions', robots: { index: false 
 export default async function PromotionsPage() {
   await requireManagement('/management/promotions')
   const p = await payload()
-  const { docs } = await p.find({ collection: 'promotions', sort: '-createdAt', limit: 100, depth: 0, overrideAccess: true })
-  const stats = await Promise.all(docs.map(async (d) => {
-    const { docs: uses } = await p.find({ collection: 'promotion-uses', where: { promotion: { equals: d.id }, status: { equals: 'paid' } }, limit: 5000, depth: 0, overrideAccess: true, select: { amountOff: true, paidAmount: true } })
+  const { docs } = await p.find({ pagination: false, collection: 'promotions', sort: '-createdAt', limit: 100, depth: 0, overrideAccess: true })
+  // One query for every promotion's uses
+  const { docs: allUses } = docs.length
+    ? await p.find({ pagination: false, collection: 'promotion-uses', where: { promotion: { in: docs.map((d) => d.id) }, status: { equals: 'paid' } }, limit: 20000, depth: 0, overrideAccess: true, select: { promotion: true, paidAmount: true } })
+    : { docs: [] }
+  const stats = docs.map((d) => {
+    const uses = allUses.filter((u) => (typeof u.promotion === 'object' ? u.promotion.id : u.promotion) === d.id)
     return { uses: uses.length, paid: uses.reduce((n, u) => n + (u.paidAmount ?? 0), 0) }
-  }))
+  })
   const tone: Record<string, string> = { scheduled: 'bg-sky-100 text-sky-900', live: 'bg-emerald-100 text-emerald-900', draft: 'bg-surface-2 text-muted', ended: 'bg-surface-2 text-muted line-through' }
   return (
     <div className="container-x max-w-4xl py-14">

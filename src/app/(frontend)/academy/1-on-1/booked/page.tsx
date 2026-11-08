@@ -15,7 +15,7 @@ export const metadata: Metadata = { title: 'Booked', robots: { index: false } }
 export default async function BookedPage({ searchParams }: { searchParams: Promise<{ ref?: string; session_id?: string; simulated?: string }> }) {
   const { ref, session_id, simulated } = await searchParams
   const p = await payload()
-  let booking = ref ? (await p.find({ collection: 'academy-bookings', where: { reference: { equals: ref } }, limit: 1, depth: 1, overrideAccess: true })).docs[0] : undefined
+  let booking = ref ? (await p.find({ pagination: false, collection: 'academy-bookings', where: { reference: { equals: ref } }, limit: 1, depth: 1, overrideAccess: true })).docs[0] : undefined
 
   // Confirm here too, in case the Stripe webhook is a few seconds behind
   if (booking && booking.status === 'held') {
@@ -26,7 +26,7 @@ export default async function BookedPage({ searchParams }: { searchParams: Promi
       if (paid) {
         await confirmAcademyBooking(p, booking.reference)
         if (checkout) await activateWeeklyPlan(p, booking.reference, checkout.id)
-        booking = (await p.find({ collection: 'academy-bookings', where: { reference: { equals: booking.reference } }, limit: 1, depth: 1, overrideAccess: true })).docs[0]
+        booking = (await p.find({ pagination: false, collection: 'academy-bookings', where: { reference: { equals: booking.reference } }, limit: 1, depth: 1, overrideAccess: true })).docs[0]
       }
     } catch (e) {
       p.logger.error(e)
@@ -37,7 +37,7 @@ export default async function BookedPage({ searchParams }: { searchParams: Promi
   const viewer = await currentUser()
   const coach = booking?.coach as AcademyCoach | undefined
   const sessions = booking
-    ? (await p.find({ collection: 'academy-sessions', where: { booking: { equals: booking.id } }, sort: 'startsAt', limit: 60, depth: 0, overrideAccess: true })).docs
+    ? (await p.find({ pagination: false, collection: 'academy-sessions', where: { booking: { equals: booking.id } }, sort: 'startsAt', limit: 60, depth: 0, overrideAccess: true })).docs
     : []
   const covered = sessions.filter((x) => x.needsCover)
 

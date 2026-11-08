@@ -24,8 +24,8 @@ export default async function CyclePage({ params, searchParams }: { params: Prom
   const cycle = await p.findByID({ collection: 'report-cycles', id: Number(id), depth: 1, overrideAccess: true, disableErrors: true })
   if (!cycle) notFound()
   const [{ docs: reports }, { docs: coaches }] = await Promise.all([
-    p.find({ collection: 'player-reports', where: { cycle: { equals: cycle.id } }, sort: 'playerName', limit: 5000, depth: 0, overrideAccess: true }),
-    p.find({ collection: 'users', where: { roles: { contains: 'coach' } }, sort: 'firstName', limit: 300, depth: 0, overrideAccess: true, select: { firstName: true, lastName: true, email: true } }),
+    p.find({ pagination: false, collection: 'player-reports', where: { cycle: { equals: cycle.id } }, sort: 'playerName', limit: 5000, depth: 0, overrideAccess: true }),
+    p.find({ pagination: false, collection: 'users', where: { roles: { contains: 'coach' } }, sort: 'firstName', limit: 300, depth: 0, overrideAccess: true, select: { firstName: true, lastName: true, email: true } }),
   ])
   const coachName = new Map(coaches.map((c) => [c.id, [c.firstName, c.lastName].filter(Boolean).join(' ') || c.email]))
   const byStatus = REPORT_STATUSES.map((s) => ({ ...s, n: reports.filter((r) => r.status === s.value).length }))

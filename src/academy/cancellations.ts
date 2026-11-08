@@ -27,7 +27,7 @@ export async function loadForCancellation(payload: Payload, bookingId: number) {
   const booking = await payload.findByID({ collection: 'academy-bookings', id: bookingId, depth: 0, overrideAccess: true, disableErrors: true })
   if (!booking) return null
   const [{ docs: sessions }, term] = await Promise.all([
-    payload.find({ collection: 'academy-sessions', where: { booking: { equals: bookingId } }, sort: 'startsAt', limit: 100, depth: 0, overrideAccess: true }),
+    payload.find({ pagination: false, collection: 'academy-sessions', where: { booking: { equals: bookingId } }, sort: 'startsAt', limit: 100, depth: 0, overrideAccess: true }),
     payload.findByID({ collection: 'academy-terms', id: rel(booking.term)!, depth: 0, overrideAccess: true }),
   ])
   return { booking, sessions, term }

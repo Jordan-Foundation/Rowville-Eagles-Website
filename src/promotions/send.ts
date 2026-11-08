@@ -15,13 +15,13 @@ const BIG = 20000
 /** Every family account with what we know about them (memberships, what they've bought, players' birth years, teams). */
 export async function loadFamilies(p: Payload): Promise<Family[]> {
   const [users, kids, bookings, regs, oneOnOnes, orders, members] = await Promise.all([
-    p.find({ collection: 'users', where: { roles: { contains: 'parent' } }, limit: BIG, ...q, select: { email: true } }),
-    p.find({ collection: 'participants', limit: BIG, ...q, select: { account: true, memberships: true, dateOfBirth: true } }),
-    p.find({ collection: 'bookings', where: { status: { equals: 'paid' } }, limit: BIG, ...q, select: { account: true, program: true } }),
-    p.find({ collection: 'academy-registrations', where: { status: { equals: 'paid' } }, limit: BIG, ...q, select: { account: true, program: true } }),
-    p.find({ collection: 'academy-bookings', where: { status: { in: ['confirmed', 'completed'] } }, limit: BIG, ...q, select: { account: true } }),
-    p.find({ collection: 'orders', where: { status: { in: ['paid', 'ready', 'completed'] } }, limit: BIG, ...q, select: { account: true } }),
-    p.find({ collection: 'team-members', where: { active: { equals: true } }, limit: BIG, ...q, select: { account: true, team: true } }),
+    p.find({ pagination: false, collection: 'users', where: { roles: { contains: 'parent' } }, limit: BIG, ...q, select: { email: true } }),
+    p.find({ pagination: false, collection: 'participants', limit: BIG, ...q, select: { account: true, memberships: true, dateOfBirth: true } }),
+    p.find({ pagination: false, collection: 'bookings', where: { status: { equals: 'paid' } }, limit: BIG, ...q, select: { account: true, program: true } }),
+    p.find({ pagination: false, collection: 'academy-registrations', where: { status: { equals: 'paid' } }, limit: BIG, ...q, select: { account: true, program: true } }),
+    p.find({ pagination: false, collection: 'academy-bookings', where: { status: { in: ['confirmed', 'completed'] } }, limit: BIG, ...q, select: { account: true } }),
+    p.find({ pagination: false, collection: 'orders', where: { status: { in: ['paid', 'ready', 'completed'] } }, limit: BIG, ...q, select: { account: true } }),
+    p.find({ pagination: false, collection: 'team-members', where: { active: { equals: true } }, limit: BIG, ...q, select: { account: true, team: true } }),
   ])
   const fams = new Map<number, Family>(users.docs.map((u) => [u.id, { userId: u.id, email: u.email, memberships: new Set(), history: new Set(), birthYears: new Set(), teams: new Set() }]))
   const get = (v: unknown) => { const id = idOf(v); return id ? fams.get(id) : undefined }
@@ -36,9 +36,9 @@ export async function loadFamilies(p: Payload): Promise<Family[]> {
 /** Choices for the audience form. */
 export async function audienceOptions(p: Payload) {
   const [programs, teams, kids] = await Promise.all([
-    p.find({ collection: 'programs', where: { type: { not_in: ['community', 'private-session'] } }, sort: '-startDate', limit: 60, ...q, select: { title: true, type: true } }),
-    p.find({ collection: 'teams', where: { archived: { not_equals: true } }, sort: 'name', limit: 100, ...q, select: { name: true, event: true, type: true } }),
-    p.find({ collection: 'participants', limit: BIG, ...q, select: { dateOfBirth: true } }),
+    p.find({ pagination: false, collection: 'programs', where: { type: { not_in: ['community', 'private-session'] } }, sort: '-startDate', limit: 60, ...q, select: { title: true, type: true } }),
+    p.find({ pagination: false, collection: 'teams', where: { archived: { not_equals: true } }, sort: 'name', limit: 100, ...q, select: { name: true, event: true, type: true } }),
+    p.find({ pagination: false, collection: 'participants', limit: BIG, ...q, select: { dateOfBirth: true } }),
   ])
   const years = [...new Set(kids.docs.map((k) => birthYearOf(k.dateOfBirth)).filter((y): y is number => !!y))].sort((a, b) => b - a)
   return {
@@ -56,7 +56,7 @@ export async function scopeSummary(p: Payload, d: Promotion) {
   const names = async (collection: 'programs' | 'products' | 'academy-terms' | 'selection-rounds', ids: unknown, field: string) => {
     const list = (Array.isArray(ids) ? ids : []).map(idOf).filter((x): x is number => !!x)
     if (!list.length) return []
-    const { docs } = await p.find({ collection, where: { id: { in: list } }, limit: list.length, ...q })
+    const { docs } = await p.find({ pagination: false, collection, where: { id: { in: list } }, limit: list.length, ...q })
     return docs.map((x) => String((x as unknown as Record<string, unknown>)[field] ?? ''))
   }
   parts.push(...(await names('programs', d.programs, 'title')))
@@ -102,7 +102,7 @@ export async function audiencePreview(p: Payload, a: Audience) {
   const families = await loadFamilies(p)
   const { ids, unknown } = audienceIds(a, families)
   if (!ids.length) return { families: 0, email: 0, sms: 0, unknown, ids }
-  const { docs } = await p.find({ collection: 'users', where: { id: { in: ids } }, limit: ids.length, ...q, select: { marketingEmail: true, marketingSms: true, smsOptOut: true, phone: true } })
+  const { docs } = await p.find({ pagination: false, collection: 'users', where: { id: { in: ids } }, limit: ids.length, ...q, select: { marketingEmail: true, marketingSms: true, smsOptOut: true, phone: true } })
   return {
     families: ids.length,
     email: docs.filter((u) => u.marketingEmail === true).length,
@@ -176,7 +176,7 @@ export async function continuePromotionSend(p: Payload, id: number, budgetMs = B
 
 /** Daily job: send promotions scheduled for today or earlier. */
 export async function runScheduledPromotions(p: Payload, now = new Date()) {
-  const { docs } = await p.find({ collection: 'promotions', where: { status: { equals: 'scheduled' }, scheduledFor: { less_than_equal: now.toISOString() }, sentAt: { exists: false } }, limit: 10, ...q })
+  const { docs } = await p.find({ pagination: false, collection: 'promotions', where: { status: { equals: 'scheduled' }, scheduledFor: { less_than_equal: now.toISOString() }, sentAt: { exists: false } }, limit: 10, ...q })
   let sent = 0
   for (const d of docs) {
     try {
@@ -187,7 +187,7 @@ export async function runScheduledPromotions(p: Payload, now = new Date()) {
     }
   }
   // Sends that ran out of time earlier carry on here
-  const { docs: unfinished } = await p.find({ collection: 'promotions', where: { sentAt: { exists: true }, sendCompletedAt: { exists: false } }, limit: 10, ...q, select: { name: true } })
+  const { docs: unfinished } = await p.find({ pagination: false, collection: 'promotions', where: { sentAt: { exists: true }, sendCompletedAt: { exists: false } }, limit: 10, ...q, select: { name: true } })
   let continued = 0
   for (const d of unfinished) {
     try {

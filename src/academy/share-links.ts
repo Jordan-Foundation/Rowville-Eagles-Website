@@ -157,7 +157,7 @@ async function sendShareLink(p: Payload, link: AcademyShareLink, token: string, 
     sentEmail = true
   }
   if (o.viaSms && c.mobile) {
-    const user = (await p.find({ collection: 'users', where: { email: { equals: c.email.toLowerCase() } }, limit: 1, depth: 0, ...q })).docs[0]
+    const user = (await p.find({ pagination: false, collection: 'users', where: { email: { equals: c.email.toLowerCase() } }, limit: 1, depth: 0, ...q })).docs[0]
     const r = await sendSms(p, {
       to: c.mobile,
       kind: 'service',
@@ -174,7 +174,7 @@ async function sendShareLink(p: Payload, link: AcademyShareLink, token: string, 
 /** A live link from its secret, or null (unknown, cancelled, booked or past its date). */
 export async function findShareLink(p: Payload, token: string | null | undefined) {
   if (!token || !validShareToken(token)) return null
-  const { docs } = await p.find({ collection: 'academy-share-links', where: { tokenHash: { equals: hashShareToken(token) } }, limit: 1, depth: 0, ...q })
+  const { docs } = await p.find({ pagination: false, collection: 'academy-share-links', where: { tokenHash: { equals: hashShareToken(token) } }, limit: 1, depth: 0, ...q })
   const link = docs[0]
   if (!link || link.status !== 'active' || (link.expiresAt && new Date(link.expiresAt) <= new Date())) return null
   return link
@@ -230,7 +230,7 @@ export async function resendShareLink(p: Payload, coach: AcademyCoach, id: numbe
 }
 
 export async function myShareLinks(p: Payload, coachId: number) {
-  const { docs } = await p.find({ collection: 'academy-share-links', where: { coach: { equals: coachId } }, sort: '-createdAt', limit: 50, depth: 0, ...q })
+  const { docs } = await p.find({ pagination: false, collection: 'academy-share-links', where: { coach: { equals: coachId } }, sort: '-createdAt', limit: 50, depth: 0, ...q })
   const holds = await Promise.all(docs.map((l) => activeHold(p, l)))
   return docs.map((l, i) => ({ link: l, holdActive: Boolean(holds[i]) }))
 }

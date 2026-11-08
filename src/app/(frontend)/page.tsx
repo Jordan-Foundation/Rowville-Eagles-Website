@@ -7,7 +7,7 @@ import { SponsorCard } from '@/components/SponsorLogo'
 import { currentSeason } from '@/lib/age-groups'
 import { differenceContent } from '@/content/difference-load'
 
-export const revalidate = 60
+export const revalidate = 3600
 
 const pathway = [
   { stage: 'MiniRoos', ages: 'U5 – U11', copy: 'Small-sided, fun-first football where every child gets touches, goals and confidence.' },
@@ -19,9 +19,9 @@ export default async function Home() {
   const p = await payload()
   const [settings, others, posts, sponsors] = await Promise.all([
     p.findGlobal({ slug: 'site-settings', depth: 0 }),
-    p.find({ collection: 'programs', where: { status: { equals: 'open' }, type: { not_in: ['registration', 'academy-trial', 'private-session'] } }, limit: 3, depth: 0, sort: 'startDate' }),
-    p.find({ collection: 'posts', where: { status: { equals: 'published' } }, limit: 3, depth: 0 }),
-    p.find({ collection: 'sponsors', limit: 20, depth: 1, sort: 'order' }),
+    p.find({ pagination: false, collection: 'programs', where: { status: { equals: 'open' }, type: { not_in: ['registration', 'academy-trial', 'private-session'] } }, limit: 3, depth: 0, sort: 'startDate' }),
+    p.find({ pagination: false, collection: 'posts', where: { status: { equals: 'published' } }, limit: 3, depth: 0 }),
+    p.find({ pagination: false, collection: 'sponsors', limit: 20, depth: 1, sort: 'order' }),
   ])
   const programs = others
   const diff = await differenceContent(p)

@@ -13,9 +13,9 @@ export default async function ReportsPage() {
   await requireManagement('/management/reports')
   const p = await payload()
   const [{ docs: cycles }, { docs: programs }, { docs: teams }, rules] = await Promise.all([
-    p.find({ collection: 'report-cycles', sort: '-createdAt', limit: 50, depth: 0, overrideAccess: true }),
-    p.find({ collection: 'programs', where: { type: { equals: 'academy-term' }, status: { not_equals: 'closed' } }, sort: '-startDate', limit: 30, depth: 0, overrideAccess: true }),
-    p.find({ collection: 'teams', where: { archived: { not_equals: true } }, sort: 'name', limit: 100, depth: 0, overrideAccess: true }),
+    p.find({ pagination: false, collection: 'report-cycles', sort: '-createdAt', limit: 50, depth: 0, overrideAccess: true }),
+    p.find({ pagination: false, collection: 'programs', where: { type: { equals: 'academy-term' }, status: { not_equals: 'closed' } }, sort: '-startDate', limit: 30, depth: 0, overrideAccess: true }),
+    p.find({ pagination: false, collection: 'teams', where: { archived: { not_equals: true } }, sort: 'name', limit: 100, depth: 0, overrideAccess: true }),
     getAgeRules(p),
   ])
   const counts = await Promise.all(cycles.map(async (c) => {

@@ -28,7 +28,7 @@ export function Header() {
     <header className="site-header sticky top-0 z-50 border-b border-white/10 bg-[#0f2a55]/95 text-white backdrop-blur">
       <div className="container-x flex h-16 items-center justify-between gap-4">
         <Link href="/" className="flex items-center gap-3" aria-label="Rowville Eagles home">
-          <Crest className="h-10 w-auto" />
+          <Crest className="h-10 w-auto" preload />
           <span className="academy-only items-center gap-3">
             <span className="h-7 w-px bg-white/20" aria-hidden />
             <RfaLogo className="h-6 w-auto" ink="#fff" paper="#000" />

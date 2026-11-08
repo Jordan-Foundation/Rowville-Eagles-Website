@@ -24,15 +24,15 @@ export default async function StaffTermsPage({ searchParams }: { searchParams: P
   const user = await requireManagement('/management/academy/terms')
   const { program: programParam } = await searchParams
   const p = await payload()
-  const { docs: programs } = await p.find({ collection: 'programs', where: { type: { in: ['academy-term', 'toddler'] } }, sort: '-startDate', limit: 30, depth: 0, overrideAccess: true })
+  const { docs: programs } = await p.find({ pagination: false, collection: 'programs', where: { type: { in: ['academy-term', 'toddler'] } }, sort: '-startDate', limit: 30, depth: 0, overrideAccess: true })
   const program = programs.find((x) => String(x.id) === programParam) ?? programs.find((x) => x.status === 'open') ?? programs[0]
   if (!program) return <div className="container-x py-14"><p>No Academy term programs yet — create one in the admin (Programs → type “Academy term”).</p></div>
 
   const [slots, taken, { docs: regs }, { docs: coachDocs }, rules] = await Promise.all([
     programSlots(p, program.id),
     slotTaken(p, program.id),
-    p.find({ collection: 'academy-registrations', where: { program: { equals: program.id }, status: { not_equals: 'cancelled' } }, sort: 'player.lastName', limit: 2000, depth: 0, overrideAccess: true }),
-    p.find({ collection: 'academy-coaches', where: { active: { equals: true } }, sort: 'displayName', limit: 200, depth: 0, overrideAccess: true }),
+    p.find({ pagination: false, collection: 'academy-registrations', where: { program: { equals: program.id }, status: { not_equals: 'cancelled' } }, sort: 'player.lastName', limit: 2000, depth: 0, overrideAccess: true }),
+    p.find({ pagination: false, collection: 'academy-coaches', where: { active: { equals: true } }, sort: 'displayName', limit: 200, depth: 0, overrideAccess: true }),
     getAgeRules(p),
   ])
   const coaches = coachDocs.map((c) => ({ id: c.id, name: c.displayName }))

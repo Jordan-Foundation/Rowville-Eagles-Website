@@ -5,7 +5,7 @@ import { Crest, RfaLogo } from './Logos'
 export function ProductImage({ product, className = '' }: { product: Product; className?: string }) {
   const img = product.images?.find((i): i is Media => typeof i === 'object')
   if (img?.url) {
-    return <Image src={img.url} alt={img.alt} width={img.width ?? 800} height={img.height ?? 800} className={`aspect-square w-full object-cover ${className}`} />
+    return <Image src={img.url} alt={img.alt} width={img.width ?? 800} height={img.height ?? 800} sizes="(min-width: 1024px) 40vw, (min-width: 640px) 50vw, 100vw" className={`aspect-square w-full object-cover ${className}`} />
   }
   const academy = product.brand === 'academy'
   return (

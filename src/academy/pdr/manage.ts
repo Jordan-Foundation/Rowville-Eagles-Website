@@ -15,7 +15,7 @@ export type PastDueRow = { kid: Participant; parent: User | null; plan: string; 
 
 /** Players whose Foundation+ payment is failing and who still have access (in the grace period). */
 export async function pastDueMembers(p: Payload, now = new Date()): Promise<PastDueRow[]> {
-  const { docs } = await p.find({ collection: 'participants', where: { 'pdr.subscriptionStatus': { in: PAST_DUE }, 'pdr.tier': { not_equals: 'free' } }, sort: 'pdr.pastDueSince', limit: 300, overrideAccess: true, depth: 1 })
+  const { docs } = await p.find({ pagination: false, collection: 'participants', where: { 'pdr.subscriptionStatus': { in: PAST_DUE }, 'pdr.tier': { not_equals: 'free' } }, sort: 'pdr.pastDueSince', limit: 300, overrideAccess: true, depth: 1 })
   return docs.map((kid) => {
     const parent = kid.account && typeof kid.account === 'object' ? kid.account : null
     const plan = PLANS.find((x) => x.key === kid.pdr?.plan)
@@ -64,7 +64,7 @@ export async function foundationAttention(p: Payload, now = new Date()) {
   const [reviews, pastDue, challenges] = await Promise.all([
     p.count({ collection: 'pdr-submissions', where: { status: { equals: 'pending' } }, overrideAccess: true }),
     p.count({ collection: 'participants', where: { 'pdr.subscriptionStatus': { in: PAST_DUE }, 'pdr.tier': { not_equals: 'free' } }, overrideAccess: true }),
-    p.find({ collection: 'pdr-challenges', sort: '-month', limit: 3, ...q, select: { month: true, published: true } }),
+    p.find({ pagination: false, collection: 'pdr-challenges', sort: '-month', limit: 3, ...q, select: { month: true, published: true } }),
   ])
   return reviews.totalDocs + pastDue.totalDocs + (challengeSetupNeeded(challenges.docs, now) ? 1 : 0)
 }

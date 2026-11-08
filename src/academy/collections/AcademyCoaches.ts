@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { refreshAfterChange, refreshAfterDelete } from '../../lib/revalidate'
 import { hasRole, isStaff } from '../../access'
 
 /** Public coach profile shown to families in the booking carousel. Linked to a user with the coach role. */
@@ -18,6 +19,7 @@ export const AcademyCoaches: CollectionConfig = {
     delete: isStaff,
   },
   defaultSort: 'order',
+  hooks: { afterChange: [refreshAfterChange], afterDelete: [refreshAfterDelete] },
   fields: [
     { name: 'user', type: 'relationship', relationTo: 'users', required: true, unique: true, filterOptions: { roles: { contains: 'coach' } }, access: { update: ({ req: { user } }) => hasRole(user as never, 'admin', 'committee') } },
     { name: 'displayName', type: 'text', required: true, admin: { description: 'Name shown to families, e.g. "Coach Sam"' } },

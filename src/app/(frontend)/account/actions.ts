@@ -43,7 +43,7 @@ export async function requestReset(_prev: FormState, fd: FormData): Promise<Form
   const p = await payload()
   const limited = await rateLimit(p, 'password-reset', { email: email })
   if (limited) return { error: limited }
-  const { docs } = await p.find({ collection: 'users', where: { email: { equals: email } }, limit: 1, overrideAccess: true })
+  const { docs } = await p.find({ pagination: false, collection: 'users', where: { email: { equals: email } }, limit: 1, overrideAccess: true })
   if (docs[0]) {
     const token = await p.forgotPassword({ collection: 'users', data: { email }, disableEmail: true })
     const html = emailLayout('club', [

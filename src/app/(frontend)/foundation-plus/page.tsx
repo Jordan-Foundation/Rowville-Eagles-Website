@@ -45,7 +45,7 @@ export default async function FoundationPlusPage() {
   const p = await payload()
   const [settings, user, s] = await Promise.all([foundationSettings(p), currentUser(), p.findGlobal({ slug: 'pdr-settings', depth: 0, overrideAccess: true })])
   const live = settings.enabled
-  const kids = user && (live || isStaffOrCoach(user)) ? (await p.find({ collection: 'participants', where: { account: { equals: user.id } }, sort: 'firstName', depth: 0, limit: 20, overrideAccess: true })).docs : []
+  const kids = user && (live || isStaffOrCoach(user)) ? (await p.find({ pagination: false, collection: 'participants', where: { account: { equals: user.id } }, sort: 'firstName', depth: 0, limit: 20, overrideAccess: true })).docs : []
   const plan = s.plans ?? {}
   const prices = await displayPrices(p)
   const trialDays = plan.trialDays ?? 30

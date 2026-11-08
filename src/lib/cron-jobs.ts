@@ -45,5 +45,10 @@ export const cronJobs: Record<string, Record<string, Job>> = {
     purgeOldInvites,
     foundationVideos: (payload) => purgeSubmissionVideos(payload),
     formThrottle: (payload) => purgeThrottle(payload),
+    oldMessageLog: async (payload) => {
+      // Email/SMS delivery log: keep 12 months (enough for any query or complaint)
+      const r = await payload.delete({ collection: 'message-log', where: { createdAt: { less_than: new Date(Date.now() - 365 * 86_400_000).toISOString() } }, overrideAccess: true, depth: 0 })
+      return { deleted: r.docs.length }
+    },
   },
 }

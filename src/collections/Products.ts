@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { refreshAfterChange, refreshAfterDelete } from '../lib/revalidate'
 import { hasRole, isStaff, publishedOrStaff, type WithRoles } from '../access'
 
 const slugify = (s: string) => s.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80) || 'item'
@@ -10,6 +11,8 @@ export const Products: CollectionConfig = {
   access: { read: publishedOrStaff('status', ['active']), create: isStaff, update: isStaff, delete: isStaff },
   defaultSort: 'order',
   hooks: {
+    afterChange: [refreshAfterChange],
+    afterDelete: [refreshAfterDelete],
     beforeValidate: [
       ({ data }) => {
         if (data && !(data.audiences?.length) && !(data.teams?.length) && !(data.accounts?.length)) data.audiences = ['everyone']

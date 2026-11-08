@@ -1,4 +1,5 @@
 import type { GlobalConfig } from 'payload'
+import { refreshGlobal } from '../lib/revalidate'
 import { isStaff } from '../access'
 
 /** About page content. Any empty field falls back to the default copy in the page component. */
@@ -7,6 +8,7 @@ export const About: GlobalConfig = {
   label: 'About page',
   admin: { group: 'Club' },
   access: { read: () => true, update: isStaff },
+  hooks: { afterChange: [refreshGlobal] },
   fields: [
     { name: 'intro', type: 'textarea', admin: { description: 'Opening paragraph under the page title' } },
     { name: 'mission', label: 'Mission statement', type: 'textarea' },

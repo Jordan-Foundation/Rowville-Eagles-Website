@@ -103,7 +103,7 @@ export async function previewReschedule(bookingId: number, f: Record<string, str
   const p = await payload()
   const plan = await planReschedule(p, req)
   if ('error' in plan) return { error: plan.error as string }
-  const { docs: coaches } = await p.find({ collection: 'academy-coaches', where: { id: { in: [...new Set(plan.moves.map((m) => m.coachId))] } }, depth: 0, limit: 20, overrideAccess: true })
+  const { docs: coaches } = await p.find({ pagination: false, collection: 'academy-coaches', where: { id: { in: [...new Set(plan.moves.map((m) => m.coachId))] } }, depth: 0, limit: 20, overrideAccess: true })
   return { moves: plan.moves.map((m) => ({ sessionId: m.sessionId, from: m.from, to: m.to, coach: coaches.find((c) => c.id === m.coachId)?.displayName ?? '' })), errors: plan.errors, warnings: plan.warnings }
 }
 

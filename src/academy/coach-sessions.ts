@@ -98,7 +98,7 @@ export async function loadCoachSession(payload: Payload, coachId: number, sessio
   })
   const inBooking = history.filter((h) => rel(h.booking) === booking.id)
   const { totalDocs: bookingSessions } = await payload.count({ collection: 'academy-sessions', where: { booking: { equals: booking.id }, status: { not_equals: 'cancelled' } }, overrideAccess: true })
-  const { docs: ordered } = await payload.find({ collection: 'academy-sessions', where: { booking: { equals: booking.id }, status: { not_equals: 'cancelled' } }, sort: 'startsAt', depth: 0, limit: 60, overrideAccess: true, select: { startsAt: true } })
+  const { docs: ordered } = await payload.find({ pagination: false, collection: 'academy-sessions', where: { booking: { equals: booking.id }, status: { not_equals: 'cancelled' } }, sort: 'startsAt', depth: 0, limit: 60, overrideAccess: true, select: { startsAt: true } })
   return {
     session,
     booking,

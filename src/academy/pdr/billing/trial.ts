@@ -27,7 +27,7 @@ export function trialEligibility(family: Participant[], kid: Participant | null)
 }
 
 async function family(payload: Payload, userId: number) {
-  return (await payload.find({ collection: 'participants', where: { account: { equals: userId } }, limit: 20, depth: 0, overrideAccess: true })).docs as Participant[]
+  return (await payload.find({ pagination: false, collection: 'participants', where: { account: { equals: userId } }, limit: 20, depth: 0, overrideAccess: true })).docs as Participant[]
 }
 
 /** Email a secure link: start a free month (trial) or create a free account (join). Never reveals anything on screen. */
@@ -143,7 +143,7 @@ export async function guardTrialCard(payload: Payload, sub: { id: string; status
   const hash = fp(print)
   const account = Number(sub.metadata?.account) || undefined
   const player = Number(sub.metadata?.player) || undefined
-  const { docs } = await payload.find({ collection: 'fplus-trial-cards', where: { fingerprint: { equals: hash } }, limit: 1, depth: 0, overrideAccess: true })
+  const { docs } = await payload.find({ pagination: false, collection: 'fplus-trial-cards', where: { fingerprint: { equals: hash } }, limit: 1, depth: 0, overrideAccess: true })
   const seen = docs[0]
   if (!seen) {
     await payload.create({ collection: 'fplus-trial-cards', overrideAccess: true, data: { fingerprint: hash, account, player, subscriptionId: sub.id } })

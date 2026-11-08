@@ -55,9 +55,9 @@ export function buildCabinet(o: {
  */
 export async function awardLevelBadge(payload: Payload, playerId: number, areaId: number, levelNumber: number, req?: PayloadRequest) {
   const q = { depth: 0, overrideAccess: true, req } as const
-  const level = (await payload.find({ collection: 'pdr-levels', where: { area: { equals: areaId }, number: { equals: levelNumber } }, limit: 1, ...q })).docs[0]
+  const level = (await payload.find({ pagination: false, collection: 'pdr-levels', where: { area: { equals: areaId }, number: { equals: levelNumber } }, limit: 1, ...q })).docs[0]
   if (!level) return null
-  const badge = (await payload.find({ collection: 'pdr-badges', where: { level: { equals: level.id } }, limit: 1, ...q })).docs[0]
+  const badge = (await payload.find({ pagination: false, collection: 'pdr-badges', where: { level: { equals: level.id } }, limit: 1, ...q })).docs[0]
   if (!badge) return null
   const [{ docs: stages }, { docs: progress }, { totalDocs: already }] = await Promise.all([
     payload.find({ collection: 'pdr-stages', where: { level: { equals: level.id } }, limit: 100, ...q, select: { stageNumber: true } }),

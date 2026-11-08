@@ -44,6 +44,6 @@ export async function reportCard(p: Payload, r: PlayerReport) {
 
 /** Released reports for a player, newest first. */
 export async function releasedFor(p: Payload, participantId: number) {
-  const { docs } = await p.find({ collection: 'player-reports', where: { participant: { equals: participantId }, status: { equals: 'released' } }, sort: '-releasedAt', limit: 50, depth: 1, overrideAccess: true })
+  const { docs } = await p.find({ pagination: false, collection: 'player-reports', where: { participant: { equals: participantId }, status: { equals: 'released' } }, sort: '-releasedAt', limit: 50, depth: 1, overrideAccess: true })
   return docs
 }

@@ -48,7 +48,7 @@ export async function returnReport(p: Payload, id: number, note: string, by: num
 /** Approve submitted reports (one or many). Returns how many were approved. */
 export async function approveReports(p: Payload, ids: number[], by: number) {
   if (!ids.length) return 0
-  const { docs } = await p.find({ collection: 'player-reports', where: { id: { in: ids } }, limit: ids.length, ...q })
+  const { docs } = await p.find({ pagination: false, collection: 'player-reports', where: { id: { in: ids } }, limit: ids.length, ...q })
   let n = 0
   for (const r of docs) {
     if (!canApprove(r.status)) continue

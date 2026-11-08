@@ -1,4 +1,5 @@
 import type { Field, GlobalConfig } from 'payload'
+import { refreshGlobal } from '../lib/revalidate'
 import { isStaff } from '../access'
 import { DIFFERENCE as D } from '../content/difference'
 
@@ -29,6 +30,7 @@ export const DifferencePage: GlobalConfig = {
   label: 'What Makes Us Different',
   admin: { group: 'Club', description: 'Copy is pre-filled with a draft — check each section and add photos. Empty fields fall back to the draft.' },
   access: { read: () => true, update: isStaff },
+  hooks: { afterChange: [refreshGlobal] },
   fields: [
     {
       type: 'collapsible',

@@ -35,12 +35,12 @@ export async function setupChecklist(payload: Payload, ticked: Record<string, bo
   const [academy, fplus, programs, slots, placeholders, badges, noArt, stagesLive] = await Promise.all([
     payload.findGlobal({ slug: 'academy-settings', depth: 0, ...q }).catch(() => null),
     payload.findGlobal({ slug: 'pdr-settings', depth: 0, ...q }).catch(() => null),
-    payload.find({ collection: 'programs', where: { type: { in: ['academy-term', 'toddler'] }, status: { in: ['open', 'full'] } }, limit: 50, depth: 0, ...q }),
-    payload.find({ collection: 'academy-term-slots', limit: 500, depth: 0, ...q, select: { program: true } }),
+    payload.find({ pagination: false, collection: 'programs', where: { type: { in: ['academy-term', 'toddler'] }, status: { in: ['open', 'full'] } }, limit: 50, depth: 0, ...q }),
+    payload.find({ pagination: false, collection: 'academy-term-slots', limit: 500, depth: 0, ...q, select: { program: true } }),
     payload.count({ collection: 'pdr-stages', where: { placeholder: { equals: true } }, ...q }),
     payload.count({ collection: 'pdr-badges', where: { placeholder: { equals: true } }, ...q }),
     payload.count({ collection: 'pdr-badges', where: { artwork: { exists: false } }, ...q }),
-    payload.find({ collection: 'pdr-stages', where: { published: { equals: true } }, limit: 500, depth: 1, ...q, select: { code: true, tutorialVideo: true, demoVideo: true } }),
+    payload.find({ pagination: false, collection: 'pdr-stages', where: { published: { equals: true } }, limit: 500, depth: 1, ...q, select: { code: true, tutorialVideo: true, demoVideo: true } }),
   ])
   const sample = await findSampleText(payload).catch(() => [])
   const pol = (await payload.findGlobal({ slug: 'policies', depth: 0, overrideAccess: true }).catch(() => null)) as unknown as Record<string, string | null> | null
@@ -76,6 +76,7 @@ export async function setupChecklist(payload: Payload, ticked: Record<string, bo
     {
       title: 'Scheduled jobs',
       items: [
+        auto('db-pooled', 'Database uses Neon’s pooled connection', 'Vercel → Settings → Environment Variables: DATABASE_URL should be the “pooled” Neon address (its host contains “-pooler”). The Neon integration sets this by default; it lets many visitors share database connections.', /-pooler\./.test(process.env.DATABASE_URL ?? '') || !(process.env.DATABASE_URL ?? '').startsWith('postgres'), { status: 'todo' }),
         auto('cron', 'Daily jobs secured', 'Vercel env: CRON_SECRET (any long random string). Runs reminders, video clean-up and team syncs each morning.', has('CRON_SECRET')),
         manual('vercel-pro', 'Vercel Pro plan', 'Needed for hourly jobs (SMS reminders 24h before each 1-on-1) and for commercial use.', { status: 'later' }),
       ],

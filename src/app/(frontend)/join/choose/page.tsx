@@ -12,7 +12,7 @@ export default async function ChoosePage({ searchParams }: { searchParams: Promi
   const { ref, token } = await searchParams
   const p = await payload()
   const reg = ref
-    ? (await p.find({ collection: 'selection-entries', where: { reference: { equals: ref } }, limit: 1, depth: 0, overrideAccess: true, showHiddenFields: true })).docs[0]
+    ? (await p.find({ pagination: false, collection: 'selection-entries', where: { reference: { equals: ref } }, limit: 1, depth: 0, overrideAccess: true, showHiddenFields: true })).docs[0]
     : undefined
   const valid = reg && token && reg.token === token
   const options = valid && reg.birthYear ? (await clubTrialOptions(p)).filter((o) => o.birthYears.includes(reg.birthYear!)) : []

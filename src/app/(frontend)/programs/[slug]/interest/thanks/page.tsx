@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: 'Interest received', robots: { index:
 export default async function InterestThanks({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ ref?: string }> }) {
   const [{ slug }, { ref }] = await Promise.all([params, searchParams])
   const p = await payload()
-  const entry = ref ? (await p.find({ collection: 'selection-entries', where: { reference: { equals: ref } }, limit: 1, depth: 1, overrideAccess: true })).docs[0] : undefined
+  const entry = ref ? (await p.find({ pagination: false, collection: 'selection-entries', where: { reference: { equals: ref } }, limit: 1, depth: 1, overrideAccess: true })).docs[0] : undefined
   const rules = await getAgeRules(p)
   const program = entry && typeof entry.round === 'object' && entry.round.program && typeof entry.round.program === 'object' ? entry.round.program : null
 

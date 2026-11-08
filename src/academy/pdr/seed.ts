@@ -19,13 +19,13 @@ export async function seedPdr(payload: Payload, req?: PayloadRequest) {
   const q = { overrideAccess: true, req, depth: 0 } as const
   const made = { areas: 0, levels: 0, stages: 0, badges: 0 }
   for (const [i, a] of AREAS.entries()) {
-    let area = (await payload.find({ collection: 'pdr-areas', where: { slug: { equals: a.slug } }, limit: 1, ...q })).docs[0]
+    let area = (await payload.find({ pagination: false, collection: 'pdr-areas', where: { slug: { equals: a.slug } }, limit: 1, ...q })).docs[0]
     if (!area) {
       area = await payload.create({ collection: 'pdr-areas', ...q, data: { name: a.name, slug: a.slug, order: i + 1, hasLeaderboard: a.hasLeaderboard, colour: a.colour } })
       made.areas++
     }
     for (let n = 1; n <= START_LEVELS; n++) {
-      let level = (await payload.find({ collection: 'pdr-levels', where: { area: { equals: area.id }, number: { equals: n } }, limit: 1, ...q })).docs[0]
+      let level = (await payload.find({ pagination: false, collection: 'pdr-levels', where: { area: { equals: area.id }, number: { equals: n } }, limit: 1, ...q })).docs[0]
       if (!level) {
         level = await payload.create({ collection: 'pdr-levels', ...q, data: { area: area.id, number: n } })
         made.levels++

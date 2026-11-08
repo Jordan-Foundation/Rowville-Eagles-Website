@@ -15,7 +15,7 @@ export default async function TermAvailability({ params }: { params: Promise<{ t
   const p = await payload()
   const term = await p.findByID({ collection: 'academy-terms', id: Number(termId), depth: 0, disableErrors: true })
   if (!term || term.status === 'draft') notFound()
-  const { docs } = await p.find({ collection: 'academy-availability', where: { coach: { equals: coach.id }, term: { equals: term.id } }, limit: 1, depth: 0, overrideAccess: true })
+  const { docs } = await p.find({ pagination: false, collection: 'academy-availability', where: { coach: { equals: coach.id }, term: { equals: term.id } }, limit: 1, depth: 0, overrideAccess: true })
   const mine = docs[0]
   const locked = !['availability', 'open'].includes(term.status)
   const allowed = Object.fromEntries(WEEKDAYS.map((d) => [d, startTimesFor(term, d)]))

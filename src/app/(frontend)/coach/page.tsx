@@ -15,8 +15,8 @@ export default async function CoachHome() {
   const p = await payload()
   const [kids, counts] = await Promise.all([myChildren(p, user), coachAttention(p, user, coach)])
   const [{ docs: terms }, { docs: mine }] = await Promise.all([
-    p.find({ collection: 'academy-terms', where: { status: { in: ['availability', 'open'] } }, sort: 'startDate', depth: 0, limit: 10 }),
-    p.find({ collection: 'academy-availability', where: { coach: { equals: coach.id } }, depth: 0, limit: 50, overrideAccess: true }),
+    p.find({ pagination: false, collection: 'academy-terms', where: { status: { in: ['availability', 'open'] } }, sort: 'startDate', depth: 0, limit: 10 }),
+    p.find({ pagination: false, collection: 'academy-availability', where: { coach: { equals: coach.id } }, depth: 0, limit: 50, overrideAccess: true }),
   ])
   const now = new Date()
   const [next, groups] = await Promise.all([coachSessions(p, coach.id, { from: now, to: new Date(now.getTime() + 7 * 86_400_000) }), coachGroups(p, coach.id)])

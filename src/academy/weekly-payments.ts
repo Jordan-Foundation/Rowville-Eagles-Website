@@ -22,7 +22,7 @@ async function findWeekly(payload: Payload, ref: { reference?: string | null; su
     ...(ref.subscriptionId ? [{ stripeSubscriptionId: { equals: ref.subscriptionId } }] : []),
   ]
   if (!or.length) return undefined
-  const { docs } = await payload.find({ collection: 'academy-bookings', where: { or, paymentMode: { equals: 'weekly' } }, limit: 1, depth: 0, overrideAccess: true })
+  const { docs } = await payload.find({ pagination: false, collection: 'academy-bookings', where: { or, paymentMode: { equals: 'weekly' } }, limit: 1, depth: 0, overrideAccess: true })
   return docs[0]
 }
 

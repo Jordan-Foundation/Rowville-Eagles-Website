@@ -17,9 +17,9 @@ export function coachesFor(slot: AcademyTermSlot, groupId?: string | null) {
 
 /** Every coach assignment across open Academy term programs: what each coach is doing, and when. */
 async function assignments(payload: Payload) {
-  const { docs: programs } = await payload.find({ collection: 'programs', where: { type: { in: ['academy-term', 'toddler'] }, status: { not_equals: 'closed' } }, limit: 50, depth: 0, overrideAccess: true })
+  const { docs: programs } = await payload.find({ pagination: false, collection: 'programs', where: { type: { in: ['academy-term', 'toddler'] }, status: { not_equals: 'closed' } }, limit: 50, depth: 0, overrideAccess: true })
   const byId = new Map(programs.map((p) => [p.id, p]))
-  const { docs: slots } = await payload.find({ collection: 'academy-term-slots', where: { program: { in: programs.map((p) => p.id) } }, limit: 500, depth: 0, overrideAccess: true })
+  const { docs: slots } = await payload.find({ pagination: false, collection: 'academy-term-slots', where: { program: { in: programs.map((p) => p.id) } }, limit: 500, depth: 0, overrideAccess: true })
   const out: { coach: number; slotId: number; groupId: string | null; label: string; sessions: ReturnType<typeof slotSessions> }[] = []
   for (const s of slots) {
     const program = byId.get(rel(s.program)!)!
@@ -42,8 +42,8 @@ export async function clashMap(payload: Payload, program: Program, slots: Academ
   const from = program.startDate ?? new Date().toISOString()
   const to = program.endDate ?? new Date(Date.now() + 120 * 86_400_000).toISOString()
   const [{ docs: oneOnOnes }, { docs: avail }] = await Promise.all([
-    payload.find({ collection: 'academy-sessions', where: { coach: { in: coachIds }, status: { in: ['held', 'scheduled'] }, startsAt: { greater_than_equal: from, less_than_equal: to } }, limit: 5000, depth: 0, overrideAccess: true, select: { coach: true, startsAt: true } }),
-    payload.find({ collection: 'academy-availability', where: { coach: { in: coachIds } }, limit: 500, depth: 0, overrideAccess: true, select: { coach: true, awayPeriods: true } }),
+    payload.find({ pagination: false, collection: 'academy-sessions', where: { coach: { in: coachIds }, status: { in: ['held', 'scheduled'] }, startsAt: { greater_than_equal: from, less_than_equal: to } }, limit: 5000, depth: 0, overrideAccess: true, select: { coach: true, startsAt: true } }),
+    payload.find({ pagination: false, collection: 'academy-availability', where: { coach: { in: coachIds } }, limit: 500, depth: 0, overrideAccess: true, select: { coach: true, awayPeriods: true } }),
   ])
   for (const slot of slots) {
     const keys: [string, string | null][] = [[String(slot.id), null], ...(slot.groups ?? []).map((g) => [`${slot.id}:${g.id}`, g.id ?? null] as [string, string | null])]

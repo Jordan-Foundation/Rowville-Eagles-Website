@@ -13,7 +13,7 @@ export async function ensureAccount(
   req?: PayloadRequest,
 ): Promise<{ user: User; created: boolean }> {
   const email = contact.email.trim().toLowerCase()
-  const { docs } = await payload.find({ collection: 'users', where: { email: { equals: email } }, limit: 1, depth: 0, overrideAccess: true, req })
+  const { docs } = await payload.find({ pagination: false, collection: 'users', where: { email: { equals: email } }, limit: 1, depth: 0, overrideAccess: true, req })
   if (docs[0]) return { user: docs[0], created: false }
   const user = await payload.create({
     collection: 'users',
@@ -45,7 +45,7 @@ export async function findOrCreateParticipant(
   p: { firstName: string; lastName: string; dateOfBirth: string; gender?: Participant['gender'] },
   req?: PayloadRequest,
 ): Promise<Participant> {
-  const { docs } = await payload.find({ collection: 'participants', where: { account: { equals: accountId } }, limit: 50, depth: 0, overrideAccess: true, req })
+  const { docs } = await payload.find({ pagination: false, collection: 'participants', where: { account: { equals: accountId } }, limit: 50, depth: 0, overrideAccess: true, req })
   const same = (a?: string | null, b?: string | null) => (a ?? '').trim().toLowerCase() === (b ?? '').trim().toLowerCase()
   const day = (d?: string | null) => (d ? new Date(d).toISOString().slice(0, 10) : '')
   const match = docs.find((d) => same(d.firstName, p.firstName) && same(d.lastName, p.lastName) && day(d.dateOfBirth) === day(p.dateOfBirth))
@@ -66,7 +66,7 @@ export async function addMembership(payload: Payload, participant: Participant, 
 /** Combined membership tags of everyone on the account — used to decide what the shop shows. */
 export async function accountMemberships(payload: Payload, userId?: number | null): Promise<Set<Membership>> {
   if (!userId) return new Set()
-  const { docs } = await payload.find({ collection: 'participants', where: { account: { equals: userId } }, limit: 50, depth: 0, overrideAccess: true })
+  const { docs } = await payload.find({ pagination: false, collection: 'participants', where: { account: { equals: userId } }, limit: 50, depth: 0, overrideAccess: true })
   return new Set(docs.flatMap((d) => (d.memberships ?? []) as Membership[]))
 }
 
@@ -80,14 +80,14 @@ export async function linkGuestRecords(payload: Payload, user: Pick<User, 'id' |
   const unlinked = { 'contact.email': { equals: email }, account: { exists: false } }
   const linked = { academy: 0, bookings: 0, orders: 0, 'academy-registrations': 0 }
 
-  const { docs: academy } = await payload.find({ collection: 'academy-bookings', where: unlinked, limit: 200, depth: 0, overrideAccess: true, req })
+  const { docs: academy } = await payload.find({ pagination: false, collection: 'academy-bookings', where: unlinked, limit: 200, depth: 0, overrideAccess: true, req })
   for (const b of academy) {
     await payload.update({ collection: 'academy-bookings', id: b.id, data: { account: user.id }, overrideAccess: true, req })
     await payload.update({ collection: 'academy-sessions', where: { booking: { equals: b.id } }, data: { account: user.id }, overrideAccess: true, req })
     linked.academy++
   }
   for (const collection of ['bookings', 'orders', 'academy-registrations'] as const) {
-    const { docs } = await payload.find({ collection, where: unlinked, limit: 200, depth: 0, overrideAccess: true, req })
+    const { docs } = await payload.find({ pagination: false, collection, where: unlinked, limit: 200, depth: 0, overrideAccess: true, req })
     for (const d of docs) await payload.update({ collection, id: d.id, data: { account: user.id }, overrideAccess: true, req })
     linked[collection] = docs.length
   }

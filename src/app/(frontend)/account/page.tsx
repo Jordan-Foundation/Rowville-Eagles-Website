@@ -33,21 +33,21 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   const p = await payload()
   const familyUnread = (await inbox(p, { user, side: 'family' })).filter((x) => x.unread).length
   const [participants, bookings, academy, plans] = await Promise.all([
-    p.find({ collection: 'participants', where: { account: { equals: user.id } }, depth: 1, limit: 50, overrideAccess: true }),
-    p.find({ collection: 'bookings', where: { account: { equals: user.id }, status: { equals: 'paid' } }, depth: 1, limit: 100, sort: '-createdAt', overrideAccess: true }),
+    p.find({ pagination: false, collection: 'participants', where: { account: { equals: user.id } }, depth: 1, limit: 50, overrideAccess: true }),
+    p.find({ pagination: false, collection: 'bookings', where: { account: { equals: user.id }, status: { equals: 'paid' } }, depth: 1, limit: 100, sort: '-createdAt', overrideAccess: true }),
     // Foundation Academy 1-on-1 sessions (one row per session)
-    p.find({ collection: 'academy-sessions', where: { account: { equals: user.id }, status: { in: ['scheduled', 'completed', 'no_show'] } }, depth: 2, limit: 300, sort: 'startsAt', overrideAccess: true }),
+    p.find({ pagination: false, collection: 'academy-sessions', where: { account: { equals: user.id }, status: { in: ['scheduled', 'completed', 'no_show'] } }, depth: 2, limit: 300, sort: 'startsAt', overrideAccess: true }),
     // Weekly payment plans that need attention
-    p.find({ collection: 'academy-bookings', where: { account: { equals: user.id }, paymentMode: { equals: 'weekly' }, status: { equals: 'payment_failed' } }, depth: 1, limit: 20, overrideAccess: true }),
+    p.find({ pagination: false, collection: 'academy-bookings', where: { account: { equals: user.id }, paymentMode: { equals: 'weekly' }, status: { equals: 'payment_failed' } }, depth: 1, limit: 20, overrideAccess: true }),
   ])
 
-  const { docs: orders } = await p.find({ collection: 'orders', where: { account: { equals: user.id }, status: { not_equals: 'pending' } }, sort: '-createdAt', limit: 20, depth: 0, overrideAccess: true })
+  const { docs: orders } = await p.find({ pagination: false, collection: 'orders', where: { account: { equals: user.id }, status: { not_equals: 'pending' } }, sort: '-createdAt', limit: 20, depth: 0, overrideAccess: true })
   const credits = await creditStateFor(p, user.id)
   const teams = await myTeams(p, user)
   const [{ docs: selections }, rules, { docs: termRegs }] = await Promise.all([
-    p.find({ collection: 'selection-entries', where: { account: { equals: user.id }, status: { not_in: ['withdrawn', 'closed', 'released'] } }, sort: '-createdAt', depth: 2, limit: 50, overrideAccess: true }),
+    p.find({ pagination: false, collection: 'selection-entries', where: { account: { equals: user.id }, status: { not_in: ['withdrawn', 'closed', 'released'] } }, sort: '-createdAt', depth: 2, limit: 50, overrideAccess: true }),
     getAgeRules(p),
-    p.find({ collection: 'academy-registrations', where: { account: { equals: user.id }, status: { not_equals: 'cancelled' } }, sort: '-createdAt', depth: 2, limit: 50, overrideAccess: true }),
+    p.find({ pagination: false, collection: 'academy-registrations', where: { account: { equals: user.id }, status: { not_equals: 'cancelled' } }, sort: '-createdAt', depth: 2, limit: 50, overrideAccess: true }),
   ])
   const credit = credits.available
   // Rowville offers that came through selections show in "Trials & selections" with their own button

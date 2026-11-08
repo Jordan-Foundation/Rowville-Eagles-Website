@@ -6,8 +6,23 @@ import Image from 'next/image'
 
 type MarkProps = { className?: string; ink?: string; paper?: string; title?: string }
 
-export function Crest({ className = 'h-10 w-auto' }: { className?: string }) {
-  return <Image src="/brand/rowville-eagles-crest.png" alt="Rowville Eagles FC crest" width={566} height={706} className={className} priority />
+/**
+ * The club crest. `height` is the displayed height in px (matches the h-* class), so the browser downloads a
+ * right-sized image instead of the full artwork. Only the header crest is preloaded.
+ */
+export function Crest({ className = 'h-10 w-auto', height, preload = false }: { className?: string; height?: number; preload?: boolean }) {
+  const h = height ?? Number(/\bh-(\d+)\b/.exec(className)?.[1] ?? 10) * 4
+  const big = h > 120
+  return (
+    <Image
+      src={big ? '/brand/rowville-eagles-crest.png' : '/brand/rowville-eagles-crest-sm.png'}
+      alt="Rowville Eagles FC crest"
+      width={Math.round((h * 566) / 706)}
+      height={h}
+      className={className}
+      preload={preload}
+    />
+  )
 }
 
 /** Foundation triangle — three slanted bars. */

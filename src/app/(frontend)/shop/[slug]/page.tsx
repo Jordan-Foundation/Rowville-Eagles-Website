@@ -1,4 +1,6 @@
 import Link from 'next/link'
+import type { Metadata } from 'next'
+import { describe, jsonLd, mediaUrl, siteBase } from '@/lib/seo'
 import { notFound } from 'next/navigation'
 import { payload, formatAUD } from '@/lib/payload'
 import { ProductImage } from '@/components/ProductImage'
@@ -9,10 +11,18 @@ import { foundationSettings } from '@/academy/pdr/load'
 
 export const dynamic = 'force-dynamic'
 
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { docs } = await (await payload()).find({ pagination: false, collection: 'products', where: { slug: { equals: (await params).slug }, status: { equals: 'active' } }, limit: 1, depth: 1, overrideAccess: true })
+  const product = docs[0]
+  if (!product) return { title: 'Shop' }
+  const image = mediaUrl(product.images?.[0])
+  return { title: product.name, description: describe(product.description || `${product.name} — Rowville Eagles club shop.`), alternates: { canonical: `/shop/${product.slug}` }, openGraph: { title: product.name, ...(image ? { images: [image] } : {}) } }
+}
+
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const p = await payload()
-  const { docs } = await p.find({ collection: 'products', where: { slug: { equals: slug }, status: { equals: 'active' } }, limit: 1, depth: 1, overrideAccess: true })
+  const { docs } = await p.find({ pagination: false, collection: 'products', where: { slug: { equals: slug }, status: { equals: 'active' } }, limit: 1, depth: 1, overrideAccess: true })
   const product = docs[0]
   if (!product) notFound()
   const user = await currentUser()
@@ -24,6 +34,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
   return (
     <div className="container-x py-12">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd({ '@context': 'https://schema.org', '@type': 'Product', name: product.name, description: product.description ?? undefined, image: mediaUrl(product.images?.[0]), brand: { '@type': 'Brand', name: product.brand === 'academy' ? 'Rowville Foundation Academy' : 'Rowville Eagles FC' }, offers: { '@type': 'Offer', price: product.price, priceCurrency: 'AUD', availability: 'https://schema.org/InStock', url: `${siteBase()}/shop/${product.slug}` } }) }} />
       <Link href="/shop" className="text-sm text-muted hover:text-ink">← Club Shop</Link>
       <div className="mt-6 grid gap-12 lg:grid-cols-2">
         <div className="overflow-hidden rounded-3xl">

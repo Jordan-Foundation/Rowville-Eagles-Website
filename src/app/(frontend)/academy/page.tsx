@@ -7,7 +7,7 @@ import { openTerms } from '@/academy/booking-data'
 import { FoundationMark, RfaLogo } from '@/components/Logos'
 import { AcademyBackdrop } from '@/components/AcademyBackdrop'
 
-export const revalidate = 60
+export const revalidate = 600
 export const metadata: Metadata = {
   title: 'Rowville Foundation Academy',
   description: 'RFA — elite player development at Rowville Eagles: term programs, trials, 1-on-1 coaching, holiday camps and tournaments.',
@@ -35,8 +35,8 @@ export default async function AcademyPage() {
   const p = await payload()
   const nowIso = new Date().toISOString()
   const [{ docs: terms }, { docs: camps }, oneOnOneTerms] = await Promise.all([
-    p.find({ collection: 'programs', where: { type: { equals: 'academy-term' }, status: { in: ['open', 'full'] }, or: [{ endDate: { greater_than: nowIso } }, { endDate: { exists: false } }] }, sort: 'startDate', depth: 0, limit: 1 }),
-    p.find({ collection: 'programs', where: { type: { equals: 'holiday-camp' }, status: { in: ['open', 'full'] }, or: [{ endDate: { greater_than: nowIso } }, { and: [{ endDate: { exists: false } }, { startDate: { greater_than: nowIso } }] }] }, sort: 'startDate', depth: 0, limit: 1 }),
+    p.find({ pagination: false, collection: 'programs', where: { type: { equals: 'academy-term' }, status: { in: ['open', 'full'] }, or: [{ endDate: { greater_than: nowIso } }, { endDate: { exists: false } }] }, sort: 'startDate', depth: 0, limit: 1 }),
+    p.find({ pagination: false, collection: 'programs', where: { type: { equals: 'holiday-camp' }, status: { in: ['open', 'full'] }, or: [{ endDate: { greater_than: nowIso } }, { and: [{ endDate: { exists: false } }, { startDate: { greater_than: nowIso } }] }] }, sort: 'startDate', depth: 0, limit: 1 }),
     openTerms(p),
   ])
   const oneTerm = oneOnOneTerms[0]

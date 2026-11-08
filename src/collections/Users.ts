@@ -97,7 +97,7 @@ export const Users: CollectionConfig = {
           admin: { readOnly: true },
         },
         {
-          name: 'consentReviewStatus',
+          name: 'consentReviewStatus', index: true,
           type: 'select',
           defaultValue: 'new',
           access: { create: isAdminField, update: isAdminField },

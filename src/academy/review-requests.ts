@@ -20,11 +20,18 @@ export async function sendReviewRequests(payload: Payload) {
   if (!url || settings.reviewRequestsOn === false) return { skipped: 'no review link set (Academy settings)' }
   const threshold = settings.reviewAfterSessions ?? 12
 
-  // Attended sessions per family
-  const { docs } = await payload.find({ collection: 'academy-sessions', where: { status: { equals: 'completed' }, account: { exists: true } }, limit: 50000, depth: 0, overrideAccess: true, select: { account: true } })
+  // Only families who haven't been asked yet, and only their attended sessions (asked families are never re-read)
+  const { docs: notAsked } = await payload.find({ pagination: false, collection: 'users', where: { reviewRequestSentAt: { exists: false } }, limit: 20000, depth: 0, overrideAccess: true, select: { email: true } })
+  if (!notAsked.length) return { eligible: 0, sent: 0, unsubscribed: 0 }
+  const docs: { account?: unknown }[] = []
+  for (let i = 0; i < notAsked.length; i += 500) {
+    const ids = notAsked.slice(i, i + 500).map((u) => u.id)
+    const { docs: chunk } = await payload.find({ pagination: false, collection: 'academy-sessions', where: { status: { equals: 'completed' }, account: { in: ids } }, limit: 50000, depth: 0, overrideAccess: true, select: { account: true } })
+    docs.push(...chunk)
+  }
   const count = new Map<number, number>()
   for (const s of docs) {
-    const a = typeof s.account === 'object' ? s.account?.id : s.account
+    const a = s.account && typeof s.account === 'object' ? (s.account as { id: number }).id : (s.account as number | undefined)
     if (a) count.set(a, (count.get(a) ?? 0) + 1)
   }
   const result = { eligible: 0, sent: 0, unsubscribed: 0 }
@@ -36,7 +43,7 @@ export async function sendReviewRequests(payload: Payload) {
     // Claim first so a second run can't send twice
     const claimed = await payload.update({ collection: 'users', where: { id: { equals: user.id }, reviewRequestSentAt: { exists: false } }, data: { reviewRequestSentAt: new Date().toISOString() }, overrideAccess: true })
     if (!claimed.docs.length) continue
-    const { docs: optOut } = await payload.find({ collection: 'consent-records', where: { user: { equals: user.id }, channel: { equals: 'marketing_email' } }, sort: '-createdAt', limit: 1, depth: 0, overrideAccess: true })
+    const { docs: optOut } = await payload.find({ pagination: false, collection: 'consent-records', where: { user: { equals: user.id }, channel: { equals: 'marketing_email' } }, sort: '-createdAt', limit: 1, depth: 0, overrideAccess: true })
     if (optOut[0]?.action === 'withdrawn' && optOut[0].source === 'unsubscribe_link') {
       result.unsubscribed++
       continue

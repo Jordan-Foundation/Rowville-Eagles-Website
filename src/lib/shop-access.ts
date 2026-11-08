@@ -49,8 +49,8 @@ export async function shopViewer(payload: Payload, userId?: number | null): Prom
   if (!userId) return { userId: null, groups: new Set(), teams: new Set() }
   const [tags, members, coached] = await Promise.all([
     accountMemberships(payload, userId),
-    payload.find({ collection: 'team-members', where: { account: { equals: userId }, active: { equals: true } }, depth: 0, limit: 100, overrideAccess: true, select: { team: true } }),
-    payload.find({ collection: 'teams', where: { coaches: { in: [userId] }, archived: { not_equals: true } }, depth: 0, limit: 50, overrideAccess: true, select: { name: true } }),
+    payload.find({ pagination: false, collection: 'team-members', where: { account: { equals: userId }, active: { equals: true } }, depth: 0, limit: 100, overrideAccess: true, select: { team: true } }),
+    payload.find({ pagination: false, collection: 'teams', where: { coaches: { in: [userId] }, archived: { not_equals: true } }, depth: 0, limit: 50, overrideAccess: true, select: { name: true } }),
   ])
   const teams = new Set<number>([...ids(members.docs.map((m) => m.team)), ...coached.docs.map((t) => t.id)])
   return { userId, groups: new Set([...tags].filter((t) => t in AUDIENCE_LABELS) as Audience[]), teams }

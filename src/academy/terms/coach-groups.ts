@@ -30,7 +30,7 @@ export async function coachGroups(payload: Payload, coachId: number): Promise<Co
     if (!program || typeof program !== 'object' || program.status === 'closed') continue
     const whole = ids(slot.coaches as never).includes(coachId)
     const mine = (slot.groups ?? []).filter((g) => ids(g.coaches as never).includes(coachId))
-    const { docs: players } = await payload.find({ collection: 'academy-registrations', where: { slot: { equals: slot.id }, status: { equals: 'paid' } }, sort: 'player.firstName', limit: 500, depth: 0, overrideAccess: true })
+    const { docs: players } = await payload.find({ pagination: false, collection: 'academy-registrations', where: { slot: { equals: slot.id }, status: { equals: 'paid' } }, sort: 'player.firstName', limit: 500, depth: 0, overrideAccess: true })
     const sessions = slotSessions(slot, program)
     const base = { program, slot: { ...slot, program: rel(slot.program as never)! } as AcademyTermSlot, sessions }
     if (whole) out.push({ ...base, key: String(slot.id), title: `${slotLabel(slot)} · ${program.type === 'toddler' ? `${program.title} · Ages 2–5` : yearsLabel(slot.birthYears)}`, groupName: null, players })

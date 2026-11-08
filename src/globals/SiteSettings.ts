@@ -1,10 +1,12 @@
 import type { GlobalConfig } from 'payload'
+import { refreshGlobal } from '../lib/revalidate'
 import { isStaff } from '../access'
 
 export const SiteSettings: GlobalConfig = {
   slug: 'site-settings',
   admin: { group: 'Club' },
   access: { read: () => true, update: isStaff },
+  hooks: { afterChange: [refreshGlobal] },
   fields: [
     { name: 'clubName', type: 'text', defaultValue: 'Rowville Eagles Football Club' },
     { name: 'tagline', type: 'text' },

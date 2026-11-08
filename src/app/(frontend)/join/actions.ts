@@ -117,7 +117,7 @@ export async function chooseTrial(_prev: JoinState, fd: FormData): Promise<JoinS
   const p = await payload()
   const limited = await rateLimit(p, 'join-choose', { perIp: 20 })
   if (limited) return { error: limited }
-  const { docs } = await p.find({ collection: 'selection-entries', where: { reference: { equals: ref } }, limit: 1, overrideAccess: true, showHiddenFields: true })
+  const { docs } = await p.find({ pagination: false, collection: 'selection-entries', where: { reference: { equals: ref } }, limit: 1, overrideAccess: true, showHiddenFields: true })
   const reg = docs[0]
   if (!reg || !token || reg.token !== token) return { error: 'This link is no longer valid. Please contact the club.' }
   if (reg.status !== 'interested') return { error: 'A trial is already booked for this player — check your email for the details.' }

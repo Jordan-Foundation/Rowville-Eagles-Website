@@ -19,8 +19,8 @@ export async function loadRound(payload: Payload, roundId: number) {
   const round = await payload.findByID({ collection: 'selection-rounds', id: roundId, depth: 1, overrideAccess: true, disableErrors: true })
   if (!round) return null
   const [{ docs: squads }, { docs: entries }] = await Promise.all([
-    payload.find({ collection: 'squads', where: { round: { equals: roundId } }, sort: 'name', limit: 200, depth: 1, overrideAccess: true }),
-    payload.find({ collection: 'selection-entries', where: { round: { equals: roundId } }, sort: 'player.lastName', limit: 5000, depth: 1, overrideAccess: true, showHiddenFields: true }),
+    payload.find({ pagination: false, collection: 'squads', where: { round: { equals: roundId } }, sort: 'name', limit: 200, depth: 1, overrideAccess: true }),
+    payload.find({ pagination: false, collection: 'selection-entries', where: { round: { equals: roundId } }, sort: 'player.lastName', limit: 5000, depth: 1, overrideAccess: true, showHiddenFields: true }),
   ])
   return { round, squads, entries }
 }
@@ -29,7 +29,7 @@ export async function loadRound(payload: Payload, roundId: number) {
 
 export async function moveEntries(payload: Payload, o: { ids: number[]; to: number; reason: string; confirmWarning: boolean; actor: User; rules: AgeRules }) {
   if (!o.reason.trim()) return { ok: false as const, error: 'Every age-group move needs a reason.' }
-  const { docs } = await payload.find({ collection: 'selection-entries', where: { id: { in: o.ids } }, limit: o.ids.length, depth: 0, overrideAccess: true })
+  const { docs } = await payload.find({ pagination: false, collection: 'selection-entries', where: { id: { in: o.ids } }, limit: o.ids.length, depth: 0, overrideAccess: true })
   // Check everyone first, so a blocked player doesn't leave a half-applied bulk move
   const checks = docs.map((e) => ({ e, c: checkMove(e.birthYear!, o.to, o.rules) }))
   const blocked = checks.filter((x) => !x.c.allowed)
@@ -64,7 +64,7 @@ export async function assignSquad(payload: Payload, ids: number[], squadId: numb
 
 /** Stage an outcome (or clear it). Picks need a squad; Rowville picks also need the squad's club team + the round's registration. */
 export async function queueOutcome(payload: Payload, round: SelectionRound, ids: number[], outcome: 'pick' | 'unsuccessful' | 'clear', emailUnsuccessful = true) {
-  const { docs } = await payload.find({ collection: 'selection-entries', where: { id: { in: ids }, round: { equals: round.id } }, limit: ids.length, depth: 1, overrideAccess: true })
+  const { docs } = await payload.find({ pagination: false, collection: 'selection-entries', where: { id: { in: ids }, round: { equals: round.id } }, limit: ids.length, depth: 1, overrideAccess: true })
   if (outcome === 'pick') {
     const noSquad = docs.filter((e) => !e.squad)
     if (noSquad.length) return { ok: false as const, error: `Put ${noSquad.map((e) => e.player.firstName).join(', ')} in a squad first.` }

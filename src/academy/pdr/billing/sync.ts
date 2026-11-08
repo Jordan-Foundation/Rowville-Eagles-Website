@@ -29,7 +29,7 @@ export async function applySubscription(payload: Payload, sub: SubLike, now = ne
   let kid: Participant | null = null
   const pid = Number(sub.metadata?.player)
   if (pid) kid = (await payload.findByID({ collection: 'participants', id: pid, depth: 0, overrideAccess: true, disableErrors: true })) as Participant | null
-  if (!kid) kid = ((await payload.find({ collection: 'participants', where: { 'pdr.subscriptionId': { equals: sub.id } }, limit: 1, depth: 0, overrideAccess: true })).docs[0] as Participant) ?? null
+  if (!kid) kid = ((await payload.find({ pagination: false, collection: 'participants', where: { 'pdr.subscriptionId': { equals: sub.id } }, limit: 1, depth: 0, overrideAccess: true })).docs[0] as Participant) ?? null
   if (!kid) {
     payload.logger.error(`Foundation+ subscription ${sub.id} has no matching player`)
     return null

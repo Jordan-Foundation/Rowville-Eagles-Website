@@ -17,7 +17,7 @@ export default async function ShopPage() {
   const [viewer, fplus, found] = await Promise.all([
     shopViewer(p, user?.id),
     foundationSettings(p),
-    p.find({ collection: 'products', where: { status: { equals: 'active' } }, depth: 1, limit: 200, overrideAccess: true }),
+    p.find({ pagination: false, collection: 'products', where: { status: { equals: 'active' } }, depth: 1, limit: 200, overrideAccess: true }),
   ])
   const docs = found.docs.flatMap((d) => {
     const access = itemAccess(d, viewer, fplus.enabled)

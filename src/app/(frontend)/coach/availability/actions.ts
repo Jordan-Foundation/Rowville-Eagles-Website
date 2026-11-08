@@ -20,7 +20,7 @@ async function load(termIdRaw: FormDataEntryValue | null) {
   const termId = Number(termIdRaw)
   const term = termId ? await p.findByID({ collection: 'academy-terms', id: termId, depth: 0, disableErrors: true }) : null
   if (!term || !['availability', 'open'].includes(term.status)) return { error: 'This term isn’t taking availability any more. Contact the admin to make changes.' as const }
-  const { docs } = await p.find({ collection: 'academy-availability', where: { coach: { equals: me.coach.id }, term: { equals: term.id } }, limit: 1, depth: 0, overrideAccess: true })
+  const { docs } = await p.find({ pagination: false, collection: 'academy-availability', where: { coach: { equals: me.coach.id }, term: { equals: term.id } }, limit: 1, depth: 0, overrideAccess: true })
   return { me, p, term: term as AcademyTerm, existing: docs[0] as AcademyAvailability | undefined }
 }
 

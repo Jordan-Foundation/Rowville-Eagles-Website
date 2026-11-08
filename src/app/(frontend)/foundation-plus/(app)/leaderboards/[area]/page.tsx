@@ -15,13 +15,13 @@ export default async function AreaBoard({ params, searchParams }: { params: Prom
   const [{ area: slug }, sp] = await Promise.all([params, searchParams])
   const { p, settings, user } = await foundationGate()
   if (!user) redirect(`/login?next=/foundation-plus/leaderboards/${slug}`)
-  const area = (await p.find({ collection: 'pdr-areas', where: { slug: { equals: slug }, hasLeaderboard: { equals: true } }, limit: 1, depth: 0, overrideAccess: true })).docs[0]
+  const area = (await p.find({ pagination: false, collection: 'pdr-areas', where: { slug: { equals: slug }, hasLeaderboard: { equals: true } }, limit: 1, depth: 0, overrideAccess: true })).docs[0]
   if (!area) notFound()
   const period: Period = sp.period === 'month' ? 'month' : 'all'
   const age = Number(sp.age) || null
   const [board, { docs: stages }] = await Promise.all([
     areaBoard(p, area.id, { period, birthYear: age, mine: await myPlayers(p, user.id) }),
-    p.find({ collection: 'pdr-stages', where: { area: { equals: area.id }, published: { equals: true }, scoring: { equals: 'scored' } }, sort: 'sortKey', limit: 200, depth: 0, overrideAccess: true }),
+    p.find({ pagination: false, collection: 'pdr-stages', where: { area: { equals: area.id }, published: { equals: true }, scoring: { equals: 'scored' } }, sort: 'sortKey', limit: 200, depth: 0, overrideAccess: true }),
   ])
   const q = new URLSearchParams({ ...(period === 'month' ? { period } : {}), ...(age ? { age: String(age) } : {}) }).toString()
   return (

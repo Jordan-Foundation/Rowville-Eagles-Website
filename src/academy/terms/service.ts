@@ -18,7 +18,7 @@ const DAY = 86_400_000
 export const OFFER_HOLD_DAYS = 7
 
 export async function programSlots(payload: Payload, programId: number) {
-  const { docs } = await payload.find({ collection: 'academy-term-slots', where: { program: { equals: programId } }, sort: 'title', limit: 100, depth: 0, overrideAccess: true })
+  const { docs } = await payload.find({ pagination: false, collection: 'academy-term-slots', where: { program: { equals: programId } }, sort: 'title', limit: 100, depth: 0, overrideAccess: true })
   return docs
 }
 

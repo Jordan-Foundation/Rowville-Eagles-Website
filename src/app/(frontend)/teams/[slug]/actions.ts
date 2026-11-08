@@ -18,7 +18,7 @@ async function gate(fd: FormData, need: 'view' | 'manage') {
   const user = await currentUser()
   if (!user) return { error: 'Please log in again.' } as const
   const p = await payload()
-  const team = (await p.find({ collection: 'teams', where: { slug: { equals: s(fd, 'slug') } }, limit: 1, depth: 0, overrideAccess: true })).docs[0] as Team | undefined
+  const team = (await p.find({ pagination: false, collection: 'teams', where: { slug: { equals: s(fd, 'slug') } }, limit: 1, depth: 0, overrideAccess: true })).docs[0] as Team | undefined
   if (!team) return { error: 'Team not found.' } as const
   const access = await teamAccess(p, user, team)
   if (!access[need]) return { error: need === 'manage' ? 'Only this team’s coaches and admins can do that.' : 'You don’t have access to this team.' } as const

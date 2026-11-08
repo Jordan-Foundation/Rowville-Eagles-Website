@@ -14,22 +14,22 @@ const rel = (v: number | { id: number } | null | undefined) => (v && typeof v ==
 /** 1-on-1 coaching — the original Academy dashboard, unchanged. */
 export async function OneOnOneView({ q }: { q: Q }) {
   const p = await payload()
-  const { docs: terms } = await p.find({ collection: 'academy-terms', where: { status: { not_equals: 'draft' } }, sort: '-startDate', limit: 20, depth: 0 })
+  const { docs: terms } = await p.find({ pagination: false, collection: 'academy-terms', where: { status: { not_equals: 'draft' } }, sort: '-startDate', limit: 20, depth: 0 })
   const term = terms.find((t) => String(t.id) === q.term) ?? terms.find((t) => t.status === 'open') ?? terms[0]
   if (!term) return <p className="text-muted">No 1-on-1 terms yet.</p>
   const coachFilter = q.coach ? Number(q.coach) : null
   const now = new Date()
 
   const [{ docs: bookingsAll }, data, { docs: credits }] = await Promise.all([
-    p.find({ collection: 'academy-bookings', where: { term: { equals: term.id }, status: { in: ['confirmed', 'payment_failed', 'completed', 'cancelled', 'refunded'] } }, depth: 1, limit: 2000, overrideAccess: true }),
+    p.find({ pagination: false, collection: 'academy-bookings', where: { term: { equals: term.id }, status: { in: ['confirmed', 'payment_failed', 'completed', 'cancelled', 'refunded'] } }, depth: 1, limit: 2000, overrideAccess: true }),
     loadTermBookingData(p, term),
-    p.find({ collection: 'academy-credits', where: { status: { in: ['active', 'pending'] } }, depth: 0, limit: 10000, overrideAccess: true, select: { account: true, sessions: true, status: true, createdAt: true, expiresAt: true } }),
+    p.find({ pagination: false, collection: 'academy-credits', where: { status: { in: ['active', 'pending'] } }, depth: 0, limit: 10000, overrideAccess: true, select: { account: true, sessions: true, status: true, createdAt: true, expiresAt: true } }),
   ])
   const isMember = (b: (typeof bookingsAll)[number]) => Boolean(b.participant && typeof b.participant === 'object' && (b.participant as Participant).memberships?.includes('rowville'))
   const bookings = bookingsAll.filter((b) => (!coachFilter || rel(b.coach) === coachFilter) && (!q.member || (q.member === 'club' ? isMember(b) : !isMember(b))))
   const ids = bookings.map((b) => b.id)
   const { docs: sessions } = ids.length
-    ? await p.find({ collection: 'academy-sessions', where: { booking: { in: ids } }, depth: 0, limit: 10000, overrideAccess: true, select: { booking: true, coach: true, coverCoach: true, status: true, startsAt: true } })
+    ? await p.find({ pagination: false, collection: 'academy-sessions', where: { booking: { in: ids } }, depth: 0, limit: 10000, overrideAccess: true, select: { booking: true, coach: true, coverCoach: true, status: true, startsAt: true } })
     : { docs: [] }
 
   // Money

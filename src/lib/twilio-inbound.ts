@@ -84,7 +84,7 @@ export function signatureUrls(requestUrl: string, site: string, forwardedHost?: 
 export async function usersByPhone(payload: Payload, phone: string | undefined) {
   const e164 = toE164(phone)
   if (!e164) return []
-  const { docs } = await payload.find({ collection: 'users', where: { phoneE164: { equals: e164 } }, limit: 5, depth: 0, overrideAccess: true })
+  const { docs } = await payload.find({ pagination: false, collection: 'users', where: { phoneE164: { equals: e164 } }, limit: 5, depth: 0, overrideAccess: true })
   return docs as User[]
 }
 

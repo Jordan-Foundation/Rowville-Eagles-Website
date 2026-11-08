@@ -1,4 +1,5 @@
 import type { GlobalConfig } from 'payload'
+import { refreshGlobal } from '../lib/revalidate'
 import { isStaff } from '../access'
 import { toE164 } from '../lib/sms'
 
@@ -8,6 +9,7 @@ export const AcademySettings: GlobalConfig = {
   label: 'Academy settings',
   admin: { group: 'Foundation Academy' },
   access: { read: isStaff, update: isStaff },
+  hooks: { afterChange: [refreshGlobal] },
   fields: [
     {
       type: 'collapsible',

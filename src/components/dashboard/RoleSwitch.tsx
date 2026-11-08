@@ -7,7 +7,7 @@ export type View = 'management' | 'coach' | 'family'
 
 /** The family's own players (a Management or Coach account can also be a parent). */
 export async function myChildren(p: Payload, user: User) {
-  const { docs } = await p.find({ collection: 'participants', where: { account: { equals: user.id } }, limit: 20, depth: 0, overrideAccess: true, select: { firstName: true } })
+  const { docs } = await p.find({ pagination: false, collection: 'participants', where: { account: { equals: user.id } }, limit: 20, depth: 0, overrideAccess: true, select: { firstName: true } })
   return docs.map((d) => ({ id: d.id, firstName: d.firstName }))
 }
 

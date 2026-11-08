@@ -42,7 +42,7 @@ export async function saveDateRow(_prev: DateRowState, fd: FormData): Promise<Da
       await p.update({ collection: collection as 'programs', id, data: data as never, user, overrideAccess: false })
       // Group programs + Mini Ballers linked to the term take its new dates
       if (collection === 'academy-terms' && ('startDate' in data || 'endDate' in data)) {
-        const { docs } = await p.find({ collection: 'programs', where: { academyTerm: { equals: id }, type: { in: ['academy-term', 'toddler'] } }, limit: 50, depth: 0, overrideAccess: true })
+        const { docs } = await p.find({ pagination: false, collection: 'programs', where: { academyTerm: { equals: id }, type: { in: ['academy-term', 'toddler'] } }, limit: 50, depth: 0, overrideAccess: true })
         for (const prog of docs) await p.update({ collection: 'programs', id: prog.id, data: { academyTerm: id }, overrideAccess: true })
       }
     }

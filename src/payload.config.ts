@@ -104,12 +104,15 @@ export default buildConfig({
   // Postgres (Neon) when DATABASE_URL is a postgres URL — production & previews. SQLite file for quick local dev.
   db: usePostgres
     ? postgresAdapter({
-        pool: { connectionString: databaseUrl },
+        // Small pool per serverless instance; idle connections close quickly so Neon can sleep
+        pool: { connectionString: databaseUrl, max: 5, idleTimeoutMillis: 10_000 },
         migrationDir: path.resolve(dirname, 'migrations'),
         push: false, // schema changes ship as migrations (npm run migrate:create)
       })
     : sqliteAdapter({ client: { url: databaseUrl } }),
   sharp,
+  // Not used (the site and admin use the REST/local API) — switched off to shrink what's exposed
+  graphQL: { disable: true },
   plugins: [
     // Uploaded images go to Vercel Blob when configured (Vercel's filesystem is not persistent).
     vercelBlobStorage({

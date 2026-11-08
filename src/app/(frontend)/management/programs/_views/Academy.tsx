@@ -8,14 +8,14 @@ const rel = (v: unknown) => (v && typeof v === 'object' ? (v as { id: number }).
 /** Foundation Academy term programs (and Mini Ballers, which uses the same machinery). */
 export async function AcademyView({ q, type = 'academy-term', program: key = 'academy' }: { q: Record<string, string | undefined>; type?: 'academy-term' | 'toddler'; program?: string }) {
   const p = await payload()
-  const { docs: programs } = await p.find({ collection: 'programs', where: { type: { equals: type } }, sort: '-startDate', limit: 30, depth: 0, overrideAccess: true })
+  const { docs: programs } = await p.find({ pagination: false, collection: 'programs', where: { type: { equals: type } }, sort: '-startDate', limit: 30, depth: 0, overrideAccess: true })
   const program = programs.find((x) => String(x.id) === q.term) ?? programs.find((x) => x.status === 'open' || x.status === 'full') ?? programs[0]
   const title = type === 'toddler' ? 'Mini Ballers' : 'Foundation Academy'
   if (!program) return <div className="space-y-4"><Heading title={title} /><p className="text-muted">No {type === 'toddler' ? 'Mini Ballers' : 'Academy term'} programs yet — create one in the admin (Programs).</p></div>
   const [slots, { docs: regs }, { docs: coaches }] = await Promise.all([
     programSlots(p, program.id),
-    p.find({ collection: 'academy-registrations', where: { program: { equals: program.id } }, limit: 5000, depth: 0, overrideAccess: true }),
-    p.find({ collection: 'academy-coaches', depth: 0, limit: 200, overrideAccess: true, sort: 'displayName' }),
+    p.find({ pagination: false, collection: 'academy-registrations', where: { program: { equals: program.id } }, limit: 5000, depth: 0, overrideAccess: true }),
+    p.find({ pagination: false, collection: 'academy-coaches', depth: 0, limit: 200, overrideAccess: true, sort: 'displayName' }),
   ])
   const coachName = (id: number | null) => coaches.find((c) => c.id === id)?.displayName ?? '—'
   const slotFilter = q.slot ? Number(q.slot) : null
@@ -37,7 +37,7 @@ export async function AcademyView({ q, type = 'academy-term', program: key = 'ac
   }, 0)
   const capacity = shown.reduce((n, s) => n + (s.capacity ?? 0), 0)
   const toddler = type === 'toddler'
-  const trials = toddler ? (await p.find({ collection: 'bookings', where: { program: { equals: program.id }, bookingType: { equals: 'trial' }, status: { equals: 'paid' } }, limit: 2000, depth: 0, overrideAccess: true, select: { sessionStart: true } })).docs : []
+  const trials = toddler ? (await p.find({ pagination: false, collection: 'bookings', where: { program: { equals: program.id }, bookingType: { equals: 'trial' }, status: { equals: 'paid' } }, limit: 2000, depth: 0, overrideAccess: true, select: { sessionStart: true } })).docs : []
   const now = Date.now()
   const allSessions = shown.flatMap((s) => slotSessions(s, program).filter((x) => !x.cancelled))
   const done = allSessions.filter((x) => new Date(x.startsAt).getTime() < now).length

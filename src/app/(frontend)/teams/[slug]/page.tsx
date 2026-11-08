@@ -37,7 +37,7 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
   const user = await currentUser()
   if (!user) redirect(`/login?next=/teams/${slug}`)
   const p = await payload()
-  const team = (await p.find({ collection: 'teams', where: { slug: { equals: slug } }, limit: 1, depth: 1, overrideAccess: true })).docs[0] as Team | undefined
+  const team = (await p.find({ pagination: false, collection: 'teams', where: { slug: { equals: slug } }, limit: 1, depth: 1, overrideAccess: true })).docs[0] as Team | undefined
   if (team && user) void markSeen(p, user.id, `team:${team.id}`)
   if (!team) notFound()
   const access = await teamAccess(p, user, team)
@@ -47,12 +47,12 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
   const tournament = team.type === 'tournament'
   const showForum = !tournament && sections.forum !== false
   const [{ docs: posts }, { docs: threads }, { docs: members }] = await Promise.all([
-    p.find({ collection: 'team-posts', where: { team: { equals: team.id } }, sort: '-createdAt', limit: 100, depth: 1, overrideAccess: true }),
-    showForum ? p.find({ collection: 'forum-threads', where: { team: { equals: team.id }, removedAt: { exists: false } }, sort: '-lastActivityAt', limit: 50, depth: 1, overrideAccess: true }) : Promise.resolve({ docs: [] }),
-    access.manage ? p.find({ collection: 'team-members', where: { team: { equals: team.id }, active: { equals: true } }, depth: 1, limit: 200, overrideAccess: true }) : Promise.resolve({ docs: [] }),
+    p.find({ pagination: false, collection: 'team-posts', where: { team: { equals: team.id } }, sort: '-createdAt', limit: 100, depth: 1, overrideAccess: true }),
+    showForum ? p.find({ pagination: false, collection: 'forum-threads', where: { team: { equals: team.id }, removedAt: { exists: false } }, sort: '-lastActivityAt', limit: 50, depth: 1, overrideAccess: true }) : Promise.resolve({ docs: [] }),
+    access.manage ? p.find({ pagination: false, collection: 'team-members', where: { team: { equals: team.id }, active: { equals: true } }, depth: 1, limit: 200, overrideAccess: true }) : Promise.resolve({ docs: [] }),
   ])
   const replies = threads.length
-    ? (await p.find({ collection: 'forum-replies', where: { thread: { in: threads.map((t) => t.id) }, removedAt: { exists: false } }, sort: 'createdAt', limit: 1000, depth: 1, overrideAccess: true })).docs
+    ? (await p.find({ pagination: false, collection: 'forum-replies', where: { thread: { in: threads.map((t) => t.id) }, removedAt: { exists: false } }, sort: 'createdAt', limit: 1000, depth: 1, overrideAccess: true })).docs
     : []
   const ordered = [...posts].sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)))
   const threadsOrdered = [...threads].sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)))

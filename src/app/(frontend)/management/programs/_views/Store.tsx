@@ -13,8 +13,8 @@ export async function StoreView({ q }: { q: Record<string, string | undefined> }
   const from = q.from || new Date(Date.now() - 90 * 86_400_000).toISOString().slice(0, 10)
   const to = q.to || new Date().toISOString().slice(0, 10)
   const [{ docs: orders }, { docs: products }] = await Promise.all([
-    p.find({ collection: 'orders', where: { createdAt: { greater_than_equal: `${from}T00:00:00+10:00`, less_than_equal: `${to}T23:59:59+10:00` }, status: { in: ['paid', 'ready', 'completed', 'refunded'] } }, limit: 5000, depth: 0, overrideAccess: true, sort: '-createdAt' }),
-    p.find({ collection: 'products', limit: 1000, depth: 0, overrideAccess: true }),
+    p.find({ pagination: false, collection: 'orders', where: { createdAt: { greater_than_equal: `${from}T00:00:00+10:00`, less_than_equal: `${to}T23:59:59+10:00` }, status: { in: ['paid', 'ready', 'completed', 'refunded'] } }, limit: 5000, depth: 0, overrideAccess: true, sort: '-createdAt' }),
+    p.find({ pagination: false, collection: 'products', limit: 1000, depth: 0, overrideAccess: true }),
   ])
   const byId = new Map(products.map((x) => [x.id, x as Product]))
   const inCat = (pid: number | null) => !q.category || byId.get(pid ?? -1)?.category === q.category

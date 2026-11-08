@@ -51,7 +51,7 @@ export async function boardAction(_prev: BoardState, fd: FormData): Promise<Boar
     return { done: `Released ${n} spot${n === 1 ? '' : 's'}.${n < chosen.length ? ' (Only unpaid selected players can be released.)' : ''}` }
   }
   if (op === 'remind') {
-    const { docs } = await p.find({ collection: 'selection-entries', where: { id: { in: chosen } }, limit: chosen.length, depth: 1, overrideAccess: true, showHiddenFields: true })
+    const { docs } = await p.find({ pagination: false, collection: 'selection-entries', where: { id: { in: chosen } }, limit: chosen.length, depth: 1, overrideAccess: true, showHiddenFields: true })
     const due = docs.filter(awaitingPayment)
     for (const e of due) await sendPaymentReminder(p, e, 'now')
     return { done: `Reminder sent to ${due.length} famil${due.length === 1 ? 'y' : 'ies'}.${due.length < chosen.length ? ' (Only unpaid selected players get reminders.)' : ''}` }

@@ -12,7 +12,7 @@ export async function toddlerTrialSessions(p: Payload, program: Program): Promis
   const tomorrow = Date.now() + 24 * 3_600_000
   const holdCutoff = new Date(Date.now() - 35 * 60_000).toISOString()
   const [{ docs: slots }, taken, { docs: trials }] = await Promise.all([
-    p.find({ collection: 'academy-term-slots', where: { program: { equals: program.id }, active: { not_equals: false } }, limit: 50, depth: 0, overrideAccess: true }),
+    p.find({ pagination: false, collection: 'academy-term-slots', where: { program: { equals: program.id }, active: { not_equals: false } }, limit: 50, depth: 0, overrideAccess: true }),
     slotTaken(p, program.id),
     p.find({
       collection: 'bookings',

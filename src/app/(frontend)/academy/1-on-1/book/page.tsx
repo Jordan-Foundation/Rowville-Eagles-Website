@@ -31,7 +31,7 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
   const p = await payload()
   if (q.cancelled) {
     // Came back from Stripe without paying — free that exact hold straight away
-    const held = (await p.find({ collection: 'academy-bookings', where: { reference: { equals: q.cancelled }, status: { equals: 'held' } }, limit: 1, depth: 0, overrideAccess: true })).docs[0]
+    const held = (await p.find({ pagination: false, collection: 'academy-bookings', where: { reference: { equals: q.cancelled }, status: { equals: 'held' } }, limit: 1, depth: 0, overrideAccess: true })).docs[0]
     const sameCoach = held && String(typeof held.coach === 'object' ? held.coach.id : held.coach) === q.coach
     const sameSlot = mode === 'term' ? held?.weekday === q.weekday && held?.startTime === q.time : held?.firstSessionAt && q.start && new Date(held.firstSessionAt).getTime() === new Date(q.start).getTime()
     if (sameCoach && sameSlot) await releaseAcademyHold(p, q.cancelled)
@@ -52,7 +52,7 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
   const casualOpen = Boolean(engine && mode === 'casual' && q.start && isCasualOpen({ ...engine, coachId, startsAt: q.start }))
   const open = mode === 'term' ? Boolean(termSlot) : casualOpen
   const coach = data?.coaches.find((c) => c.id === coachId)
-  const players = user ? (await p.find({ collection: 'participants', where: { account: { equals: user.id } }, depth: 0, limit: 20, overrideAccess: true })).docs.map((k) => ({ id: k.id, name: `${k.firstName} ${k.lastName}` })) : []
+  const players = user ? (await p.find({ pagination: false, collection: 'participants', where: { account: { equals: user.id } }, depth: 0, limit: 20, overrideAccess: true })).docs.map((k) => ({ id: k.id, name: `${k.firstName} ${k.lastName}` })) : []
 
   const sessions = termSlot?.sessions ?? (q.start ? [q.start] : [])
   const awayDates = new Set(termSlot?.awayDates[coachId] ?? [])

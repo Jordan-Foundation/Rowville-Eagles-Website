@@ -16,10 +16,10 @@ const typeName: Record<string, string> = { 'holiday-camp': 'Holiday camps', 'aca
 /** Everything on the website that costs money, for the "What it applies to" picker. */
 export async function loadPickables(p: Payload): Promise<Pickables> {
   const [terms, programs, products, rounds] = await Promise.all([
-    p.find({ collection: 'academy-terms', where: { status: { not_equals: 'closed' } }, sort: 'startDate', limit: 20, ...q }),
-    p.find({ collection: 'programs', where: { status: { not_equals: 'closed' }, type: { not_in: ['community', 'private-session', 'tournament'] } }, sort: 'startDate', limit: 200, ...q }),
-    p.find({ collection: 'products', where: { status: { equals: 'active' } }, sort: 'name', limit: 500, ...q }),
-    p.find({ collection: 'selection-rounds', where: { kind: { equals: 'tournament' }, status: { not_equals: 'closed' } }, sort: '-createdAt', limit: 50, ...q }),
+    p.find({ pagination: false, collection: 'academy-terms', where: { status: { not_equals: 'closed' } }, sort: 'startDate', limit: 20, ...q }),
+    p.find({ pagination: false, collection: 'programs', where: { status: { not_equals: 'closed' }, type: { not_in: ['community', 'private-session', 'tournament'] } }, sort: 'startDate', limit: 200, ...q }),
+    p.find({ pagination: false, collection: 'products', where: { status: { equals: 'active' } }, sort: 'name', limit: 500, ...q }),
+    p.find({ pagination: false, collection: 'selection-rounds', where: { kind: { equals: 'tournament' }, status: { not_equals: 'closed' } }, sort: '-createdAt', limit: 50, ...q }),
   ])
   const grouped = new Map<string, PickItem[]>()
   const known = new Set<string>(PROGRAM_GROUPS.map((g) => g.value))

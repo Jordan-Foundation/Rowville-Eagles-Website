@@ -25,7 +25,7 @@ export type Change = { reg: AcademyRegistration; lines: string[] }
 export async function coachNames(payload: Payload, ids: (number | AcademyCoach)[] | null | undefined) {
   const list = (ids ?? []).map((c) => (typeof c === 'object' ? c.id : c))
   if (!list.length) return [] as string[]
-  const { docs } = await payload.find({ collection: 'academy-coaches', where: { id: { in: list } }, limit: list.length, depth: 0, overrideAccess: true })
+  const { docs } = await payload.find({ pagination: false, collection: 'academy-coaches', where: { id: { in: list } }, limit: list.length, depth: 0, overrideAccess: true })
   return docs.map((d) => d.displayName)
 }
 
@@ -71,7 +71,7 @@ export type MoveResult = { moved: number; notified: number; needReason?: string[
 export async function moveToSlot(payload: Payload, ids: number[], slotId: number, o: { reason: string; actorId: number; notify: boolean; rules: AgeRules; preview?: boolean }): Promise<MoveResult> {
   const slot = await payload.findByID({ collection: 'academy-term-slots', id: slotId, depth: 0, overrideAccess: true })
   const program = await payload.findByID({ collection: 'programs', id: rel(slot.program)!, depth: 0, overrideAccess: true })
-  const { docs } = await payload.find({ collection: 'academy-registrations', where: { id: { in: ids } }, limit: ids.length, depth: 0, overrideAccess: true })
+  const { docs } = await payload.find({ pagination: false, collection: 'academy-registrations', where: { id: { in: ids } }, limit: ids.length, depth: 0, overrideAccess: true })
   const res: MoveResult = { moved: 0, notified: 0, blocked: [], skipped: [], warnings: [] }
   const plans: { r: AcademyRegistration; playing: number | null; moveNote?: string }[] = []
   const needReason: string[] = []
@@ -114,7 +114,7 @@ export async function setGroup(payload: Payload, ids: number[], slotId: number, 
   const slot = await payload.findByID({ collection: 'academy-term-slots', id: slotId, depth: 0, overrideAccess: true })
   if (groupId && !slot.groups?.some((g) => g.id === groupId)) throw new Error('That group isn’t part of this training time.')
   const program = await payload.findByID({ collection: 'programs', id: rel(slot.program)!, depth: 0, overrideAccess: true })
-  const { docs } = await payload.find({ collection: 'academy-registrations', where: { id: { in: ids }, slot: { equals: slot.id } }, limit: ids.length, depth: 0, overrideAccess: true })
+  const { docs } = await payload.find({ pagination: false, collection: 'academy-registrations', where: { id: { in: ids }, slot: { equals: slot.id } }, limit: ids.length, depth: 0, overrideAccess: true })
   const g = groupId ? slot.groups!.find((x) => x.id === groupId)! : null
   const coaches = g ? await coachNames(payload, g.coaches as number[]) : []
   const changes: Change[] = []
@@ -202,6 +202,6 @@ export async function notifySlotChange(payload: Payload, prev: AcademyTermSlot, 
   const program = await payload.findByID({ collection: 'programs', id: rel(next.program)!, depth: 0, overrideAccess: true })
   const lines = describeSlotChange(prev, next, program)
   if (!lines.length) return 0
-  const { docs } = await payload.find({ collection: 'academy-registrations', where: { slot: { equals: next.id }, status: { equals: 'paid' } }, limit: 500, depth: 0, overrideAccess: true })
+  const { docs } = await payload.find({ pagination: false, collection: 'academy-registrations', where: { slot: { equals: next.id }, status: { equals: 'paid' } }, limit: 500, depth: 0, overrideAccess: true })
   return notifyFamilies(payload, docs.map((r) => ({ reg: { ...r, program }, lines })), 'Training update')
 }

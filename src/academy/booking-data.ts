@@ -39,7 +39,7 @@ export async function releaseBooking(payload: Payload, booking: AcademyBooking, 
 }
 
 export async function openTerms(payload: Payload) {
-  const { docs } = await payload.find({ collection: 'academy-terms', where: { status: { equals: 'open' }, endDate: { greater_than: new Date().toISOString() } }, sort: 'startDate', depth: 0, limit: 6 })
+  const { docs } = await payload.find({ pagination: false, collection: 'academy-terms', where: { status: { equals: 'open' }, endDate: { greater_than: new Date().toISOString() } }, sort: 'startDate', depth: 0, limit: 6 })
   return docs
 }
 
@@ -48,8 +48,8 @@ export type PublicCoach = { id: number; name: string; photo: string | null; bio:
 /** Everything the slot engine needs for a term, plus the public coach cards. */
 export async function loadTermBookingData(payload: Payload, term: AcademyTerm, o: { ignoreBooking?: number | null } = {}) {
   const [{ docs: coaches }, { docs: avail }] = await Promise.all([
-    payload.find({ collection: 'academy-coaches', where: { active: { equals: true } }, depth: 1, limit: 200, sort: 'order' }),
-    payload.find({ collection: 'academy-availability', where: { term: { equals: term.id } }, depth: 0, limit: 500, overrideAccess: true }),
+    payload.find({ pagination: false, collection: 'academy-coaches', where: { active: { equals: true } }, depth: 1, limit: 200, sort: 'order' }),
+    payload.find({ pagination: false, collection: 'academy-availability', where: { term: { equals: term.id } }, depth: 0, limit: 500, overrideAccess: true }),
   ])
   const activeIds = new Set(coaches.map((c) => c.id))
   const { docs: live } = await payload.find({
@@ -120,7 +120,7 @@ export async function createHold(payload: Payload, input: HoldInput): Promise<{ 
 }
 
 async function findBooking(payload: Payload, reference: string) {
-  const { docs } = await payload.find({ collection: 'academy-bookings', where: { reference: { equals: reference } }, limit: 1, depth: 0, overrideAccess: true })
+  const { docs } = await payload.find({ pagination: false, collection: 'academy-bookings', where: { reference: { equals: reference } }, limit: 1, depth: 0, overrideAccess: true })
   return docs[0]
 }
 
@@ -219,7 +219,7 @@ async function afterConfirmed(payload: Payload, booking: AcademyBooking) {
     payload.findByID({ collection: 'academy-coaches', id: id(booking.coach)!, depth: 0, overrideAccess: true }),
     payload.findByID({ collection: 'academy-terms', id: id(booking.term)!, depth: 0 }),
   ])
-  const { docs: sessions } = await payload.find({ collection: 'academy-sessions', where: { booking: { equals: booking.id } }, sort: 'startsAt', limit: 60, depth: 0, overrideAccess: true })
+  const { docs: sessions } = await payload.find({ pagination: false, collection: 'academy-sessions', where: { booking: { equals: booking.id } }, sort: 'startsAt', limit: 60, depth: 0, overrideAccess: true })
   const when = (iso: string) => formatDate(iso, { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' })
   const link = await accountLink(payload, user)
   const coverDates = sessions.filter((x) => x.needsCover).map((x) => formatDate(x.startsAt, { weekday: 'short', day: 'numeric', month: 'short' }))

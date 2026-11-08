@@ -30,7 +30,7 @@ async function load(payload: Payload, bookingId: number) {
   const booking = await payload.findByID({ collection: 'academy-bookings', id: bookingId, depth: 0, overrideAccess: true, disableErrors: true })
   if (!booking) return null
   const [{ docs: sessions }, term] = await Promise.all([
-    payload.find({ collection: 'academy-sessions', where: { booking: { equals: bookingId } }, sort: 'startsAt', limit: 100, depth: 0, overrideAccess: true }),
+    payload.find({ pagination: false, collection: 'academy-sessions', where: { booking: { equals: bookingId } }, sort: 'startsAt', limit: 100, depth: 0, overrideAccess: true }),
     payload.findByID({ collection: 'academy-terms', id: rel(booking.term)!, depth: 0, overrideAccess: true }),
   ])
   return { booking, sessions, term }
@@ -61,7 +61,7 @@ export async function planReschedule(payload: Payload, r: RescheduleRequest, now
 
   const coachIds = [...new Set(moves.map((m) => m.coachId))]
   const [{ docs: avail }, { docs: taken }] = await Promise.all([
-    payload.find({ collection: 'academy-availability', where: { term: { equals: term.id }, coach: { in: coachIds } }, depth: 0, limit: 50, overrideAccess: true }),
+    payload.find({ pagination: false, collection: 'academy-availability', where: { term: { equals: term.id }, coach: { in: coachIds } }, depth: 0, limit: 50, overrideAccess: true }),
     payload.find({
       collection: 'academy-sessions',
       where: { coach: { in: coachIds }, status: { not_equals: 'cancelled' }, startsAt: { in: moves.map((m) => m.to) } },
@@ -106,7 +106,7 @@ export async function applyReschedule(payload: Payload, r: RescheduleRequest & {
         data: { startsAt: m.to, coach: m.coachId, needsCover, ...(needsCover ? {} : { coverCoach: null }), reminderSentAt: null },
       })
     }
-    const { docs: all } = await payload.find({ collection: 'academy-sessions', where: { booking: { equals: booking.id }, status: { not_equals: 'cancelled' } }, sort: 'startsAt', limit: 100, depth: 0, overrideAccess: true, req })
+    const { docs: all } = await payload.find({ pagination: false, collection: 'academy-sessions', where: { booking: { equals: booking.id }, status: { not_equals: 'cancelled' } }, sort: 'startsAt', limit: 100, depth: 0, overrideAccess: true, req })
     const slot = r.kind === 'term' ? localWeekdayTime(moves[0].to) : null
     await payload.update({
       collection: 'academy-bookings',

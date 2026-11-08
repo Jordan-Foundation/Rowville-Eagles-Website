@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { refreshAfterChange, refreshAfterDelete } from '../lib/revalidate'
 import { isStaff, publishedOrStaff } from '../access'
 
 /**
@@ -37,6 +38,8 @@ export const Programs: CollectionConfig = {
   },
   defaultSort: 'startDate',
   hooks: {
+    afterChange: [refreshAfterChange],
+    afterDelete: [refreshAfterDelete],
     beforeValidate: [
       async ({ data, req, originalDoc }) => {
         if (!data) return data
@@ -88,7 +91,7 @@ export const Programs: CollectionConfig = {
     {
       type: 'row',
       fields: [
-        { name: 'type', type: 'select', required: true, options: [...programTypes] },
+        { name: 'type', index: true, type: 'select', required: true, options: [...programTypes] },
         {
           name: 'brand',
           type: 'select',
@@ -100,7 +103,7 @@ export const Programs: CollectionConfig = {
           ],
         },
         {
-          name: 'status',
+          name: 'status', index: true,
           type: 'select',
           required: true,
           defaultValue: 'draft',

@@ -46,15 +46,25 @@ export async function sendAvailabilityReminders(payload: Payload, now = new Date
   if (!terms.length) return result
 
   // Everyone with the coach role, including coaches who haven't opened the portal yet
-  const { docs: coachUsers } = await payload.find({ collection: 'users', where: { roles: { contains: 'coach' } }, depth: 0, limit: 500, overrideAccess: true })
+  const { docs: coachUsers } = await payload.find({ pagination: false, collection: 'users', where: { roles: { contains: 'coach' } }, depth: 0, limit: 500, overrideAccess: true })
+  // Everything needed, fetched once (not per coach × term)
+  const termIds = terms.map((t) => t.id)
+  const [{ docs: profiles }, { docs: avails }, { docs: logs }] = await Promise.all([
+    payload.find({ pagination: false, collection: 'academy-coaches', where: { user: { in: coachUsers.map((u) => u.id) } }, limit: 1000, depth: 0, overrideAccess: true }),
+    payload.find({ pagination: false, collection: 'academy-availability', where: { term: { in: termIds }, submittedAt: { exists: true } }, limit: 5000, depth: 0, overrideAccess: true, select: { coach: true, term: true } }),
+    payload.find({ pagination: false, collection: 'academy-reminder-log', where: { term: { in: termIds } }, limit: 10000, depth: 0, overrideAccess: true, select: { coach: true, term: true, kind: true } }),
+  ])
+  const idOf = (v: unknown) => (v && typeof v === 'object' ? (v as { id: number }).id : (v as number))
+  const profileOf = new Map(profiles.map((c) => [idOf(c.user), c]))
+  const submitted = new Set(avails.map((a) => `${idOf(a.coach)}:${idOf(a.term)}`))
+  const sentKinds = new Map<string, Set<string>>()
+  for (const l of logs) { const k = `${idOf(l.coach)}:${idOf(l.term)}`; sentKinds.set(k, (sentKinds.get(k) ?? new Set()).add(l.kind)) }
   for (const user of coachUsers) {
-    const coach = await ensureCoachProfile(payload, user)
+    const coach = profileOf.get(user.id) ?? (await ensureCoachProfile(payload, user))
     for (const term of terms) {
       result.checked++
-      const { docs: avail } = await payload.find({ collection: 'academy-availability', where: { coach: { equals: coach.id }, term: { equals: term.id } }, limit: 1, depth: 0, overrideAccess: true })
-      if (avail[0]?.submittedAt) continue // stop once submitted
-      const { docs: log } = await payload.find({ collection: 'academy-reminder-log', where: { coach: { equals: coach.id }, term: { equals: term.id } }, limit: 10, depth: 0, overrideAccess: true })
-      const kind = dueReminder(daysUntil(new Date(term.availabilityDeadline), now), new Set(log.map((l) => l.kind)))
+      if (submitted.has(`${coach.id}:${term.id}`)) continue // stop once submitted
+      const kind = dueReminder(daysUntil(new Date(term.availabilityDeadline), now), sentKinds.get(`${coach.id}:${term.id}`) ?? new Set())
       if (!kind) continue
       // Claim first: the unique index makes a second (concurrent) run fail here instead of emailing twice
       try {
@@ -70,7 +80,7 @@ export async function sendAvailabilityReminders(payload: Payload, now = new Date
 }
 
 async function ensureCoachProfile(payload: Payload, user: User) {
-  const { docs } = await payload.find({ collection: 'academy-coaches', where: { user: { equals: user.id } }, limit: 1, depth: 0, overrideAccess: true })
+  const { docs } = await payload.find({ pagination: false, collection: 'academy-coaches', where: { user: { equals: user.id } }, limit: 1, depth: 0, overrideAccess: true })
   if (docs[0]) return docs[0]
   return payload.create({
     collection: 'academy-coaches',

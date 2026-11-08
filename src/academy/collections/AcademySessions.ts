@@ -28,7 +28,7 @@ export const AcademySessions: CollectionConfig = {
       { name: 'startsAt', type: 'date', required: true, index: true, admin: { date: { pickerAppearance: 'dayAndTime' } } },
     ] },
     {
-      name: 'status',
+      name: 'status', index: true,
       type: 'select',
       required: true,
       defaultValue: 'held',

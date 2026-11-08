@@ -23,7 +23,7 @@ export async function FoundationPlusView() {
     p.count({ collection: 'fplus-waitlist', where: { claimedAt: { exists: true } }, overrideAccess: true }),
     p.find({ collection: 'participants', where: { 'pdr.subscriptionStatus': { exists: true } }, depth: 0, limit: 5000, overrideAccess: true, pagination: false }),
     p.find({ collection: 'fplus-events', depth: 0, limit: 10000, overrideAccess: true, pagination: false, select: { type: true, createdAt: true } }),
-    p.find({ collection: 'fplus-events', depth: 1, limit: 15, sort: '-createdAt', overrideAccess: true }),
+    p.find({ pagination: false, collection: 'fplus-events', depth: 1, limit: 15, sort: '-createdAt', overrideAccess: true }),
   ])
   const rows = players.docs.map((d) => ({ id: d.id, account: typeof d.account === 'object' ? (d.account?.id ?? null) : (d.account ?? null), plan: d.pdr?.plan ?? null, status: d.pdr?.subscriptionStatus ?? null, cancelAtPeriodEnd: d.pdr?.cancelAtPeriodEnd }))
   const s = memberStats(rows, prices, settings.plans?.siblingDiscountPct ?? 25)

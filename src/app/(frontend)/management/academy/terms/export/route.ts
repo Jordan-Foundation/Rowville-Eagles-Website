@@ -20,9 +20,9 @@ export async function GET(req: Request) {
   if (!program) return new Response('Program not found', { status: 404 })
   const [slots, { docs }, rules, { docs: coachDocs }] = await Promise.all([
     programSlots(p, program.id),
-    p.find({ collection: 'academy-registrations', where: { program: { equals: program.id }, status: { not_equals: 'cancelled' } }, sort: 'player.lastName', limit: 5000, depth: 0, overrideAccess: true }),
+    p.find({ pagination: false, collection: 'academy-registrations', where: { program: { equals: program.id }, status: { not_equals: 'cancelled' } }, sort: 'player.lastName', limit: 5000, depth: 0, overrideAccess: true }),
     getAgeRules(p),
-    p.find({ collection: 'academy-coaches', limit: 300, depth: 0, overrideAccess: true }),
+    p.find({ pagination: false, collection: 'academy-coaches', limit: 300, depth: 0, overrideAccess: true }),
   ])
   const coachName = new Map(coachDocs.map((c) => [c.id, c.displayName]))
   const f = { year: q.get('year'), slot: q.get('slot'), group: q.get('group'), coach: q.get('coach'), status: q.get('status') }

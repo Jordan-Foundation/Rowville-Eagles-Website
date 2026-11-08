@@ -1,4 +1,5 @@
 import type { GlobalConfig } from 'payload'
+import { refreshGlobal } from '../../lib/revalidate'
 import { isStaff } from '../../access'
 
 export const PdrSettings: GlobalConfig = {
@@ -7,7 +8,7 @@ export const PdrSettings: GlobalConfig = {
   admin: { group: 'Foundation+' },
   access: { read: () => true, update: isStaff },
   hooks: {
-    afterChange: [
+    afterChange: [refreshGlobal, 
       async ({ doc, previousDoc, req }) => {
         // Switched on → everyone on the waitlist gets their "claim your free month" email (first batch now, rest by the daily job)
         if (doc.enabled && !previousDoc?.enabled) {

@@ -25,7 +25,7 @@ export default async function ChallengePage({ params }: { params: Promise<{ id: 
   if (!ch || (!ch.published && !staff) || (challengeState(ch.month) === 'upcoming' && !staff)) notFound()
   const state = challengeState(ch.month)
   const mine = await myPlayers(p, user.id)
-  const { docs: kids } = await p.find({ collection: 'participants', where: { account: { equals: user.id } }, limit: 20, depth: 0, overrideAccess: true })
+  const { docs: kids } = await p.find({ pagination: false, collection: 'participants', where: { account: { equals: user.id } }, limit: 20, depth: 0, overrideAccess: true })
   const [board, entries] = await Promise.all([challengeBoard(p, ch, mine), Promise.all(kids.map(async (k) => ({ kid: k as Participant, ...(await myEntries(p, ch, k.id)) })))])
   const demo = streamEmbed((ch.demoVideo as PdrVideo | null)?.streamUid)
   const path = `/foundation-plus/challenges/${ch.id}`

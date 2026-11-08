@@ -24,7 +24,7 @@ const safe = async (f: () => Promise<number>) => {
 /** Terms where availability is due and still open. */
 async function termsAwaitingAvailability(p: Payload) {
   const now = new Date().toISOString()
-  const { docs } = await p.find({ collection: 'academy-terms', where: { status: { in: ['availability', 'open'] }, availabilityDeadline: { greater_than: now } }, limit: 10, depth: 0, ...q })
+  const { docs } = await p.find({ pagination: false, collection: 'academy-terms', where: { status: { in: ['availability', 'open'] }, availabilityDeadline: { greater_than: now } }, limit: 10, depth: 0, ...q })
   return docs
 }
 
@@ -32,21 +32,27 @@ async function termsAwaitingAvailability(p: Payload) {
 export async function teamChatNew(p: Payload, user: User, teamIds: number[]) {
   if (!teamIds.length) return {} as Record<number, number>
   const seen = await seenAt(p, user.id, teamIds.map((t) => `team:${t}`))
-  const out: Record<number, number> = {}
-  for (const t of teamIds) {
-    const since = seen[`team:${t}`]
-    const { docs: threads } = await p.find({ collection: 'forum-threads', where: { team: { equals: t }, removedAt: { exists: false } }, limit: 500, depth: 0, ...q, select: { author: true, createdAt: true } })
-    const newThreads = threads.filter((x) => x.createdAt > since && rel(x.author) !== user.id).length
-    const replies = threads.length
-      ? (await p.count({ collection: 'forum-replies', where: { thread: { in: threads.map((x) => x.id) }, removedAt: { exists: false }, createdAt: { greater_than: since }, author: { not_equals: user.id } }, ...q })).totalDocs
-      : 0
-    out[t] = newThreads + replies
+  const out: Record<number, number> = Object.fromEntries(teamIds.map((t) => [t, 0]))
+  // Two queries for all teams together (not two per team)
+  const { docs: threads } = await p.find({ pagination: false, collection: 'forum-threads', where: { team: { in: teamIds }, removedAt: { exists: false } }, limit: 2000, depth: 0, ...q, select: { author: true, createdAt: true, team: true } })
+  const teamOf = new Map(threads.map((x) => [x.id, rel(x.team as never) as number]))
+  for (const x of threads) {
+    const t = teamOf.get(x.id)!
+    if (x.createdAt > seen[`team:${t}`] && rel(x.author) !== user.id) out[t]++
+  }
+  if (threads.length) {
+    const oldest = teamIds.map((t) => seen[`team:${t}`]).sort()[0]
+    const { docs: replies } = await p.find({ pagination: false, collection: 'forum-replies', where: { thread: { in: threads.map((x) => x.id) }, removedAt: { exists: false }, createdAt: { greater_than: oldest }, author: { not_equals: user.id } }, limit: 5000, depth: 0, ...q, select: { thread: true, createdAt: true } })
+    for (const r of replies) {
+      const t = teamOf.get(rel(r.thread as never) as number)
+      if (t != null && r.createdAt > seen[`team:${t}`]) out[t]++
+    }
   }
   return out
 }
 
 export async function coachTeams(p: Payload, user: User) {
-  const { docs } = await p.find({ collection: 'teams', where: { coaches: { in: [user.id] }, archived: { not_equals: true } }, limit: 50, depth: 0, ...q, select: { name: true, slug: true, type: true } })
+  const { docs } = await p.find({ pagination: false, collection: 'teams', where: { coaches: { in: [user.id] }, archived: { not_equals: true } }, limit: 50, depth: 0, ...q, select: { name: true, slug: true, type: true } })
   return docs
 }
 
@@ -62,7 +68,7 @@ export async function coachAttention(p: Payload, user: User, coach: AcademyCoach
     safe(async () => {
       const terms = await termsAwaitingAvailability(p)
       if (!terms.length) return 0
-      const { docs } = await p.find({ collection: 'academy-availability', where: { coach: { equals: coach.id }, term: { in: terms.map((t) => t.id) }, submittedAt: { exists: true } }, limit: 20, depth: 0, ...q })
+      const { docs } = await p.find({ pagination: false, collection: 'academy-availability', where: { coach: { equals: coach.id }, term: { in: terms.map((t) => t.id) }, submittedAt: { exists: true } }, limit: 20, depth: 0, ...q })
       return terms.length - docs.length
     }),
     // Training times / groups this coach was put on (or that changed) since they last opened My groups
@@ -102,12 +108,12 @@ export async function managementAttention(p: Payload, user: User): Promise<Manag
     }),
     // Academy terms: families waiting for a place + training times/groups with no coach
     safe(async () => {
-      const { docs: programs } = await p.find({ collection: 'programs', where: { type: { in: ['academy-term', 'toddler'] }, status: { in: ['open', 'full'] } }, limit: 30, depth: 0, ...q, select: { title: true } })
+      const { docs: programs } = await p.find({ pagination: false, collection: 'programs', where: { type: { in: ['academy-term', 'toddler'] }, status: { in: ['open', 'full'] } }, limit: 30, depth: 0, ...q, select: { title: true } })
       if (!programs.length) return 0
       const ids = programs.map((x) => x.id)
       const [waiting, slots] = await Promise.all([
         p.count({ collection: 'academy-registrations', where: { program: { in: ids }, or: [{ status: { equals: 'interest' } }, { and: [{ status: { equals: 'offered' } }, { slot: { exists: false } }] }] }, ...q }),
-        p.find({ collection: 'academy-term-slots', where: { program: { in: ids }, active: { not_equals: false } }, limit: 300, depth: 0, ...q, select: { coaches: true, groups: true } }),
+        p.find({ pagination: false, collection: 'academy-term-slots', where: { program: { in: ids }, active: { not_equals: false } }, limit: 300, depth: 0, ...q, select: { coaches: true, groups: true } }),
       ])
       const noCoach = slots.docs.reduce((n, s) => {
         const groups = s.groups ?? []
@@ -118,7 +124,7 @@ export async function managementAttention(p: Payload, user: User): Promise<Manag
     }),
     // Expressions of interest still waiting for a decision (tournaments + Rowville)
     safe(async () => {
-      const { docs: rounds } = await p.find({ collection: 'selection-rounds', where: { status: { in: ['open', 'selecting'] } }, limit: 50, depth: 0, ...q, select: { title: true } })
+      const { docs: rounds } = await p.find({ pagination: false, collection: 'selection-rounds', where: { status: { in: ['open', 'selecting'] } }, limit: 50, depth: 0, ...q, select: { title: true } })
       if (!rounds.length) return 0
       return (await p.count({ collection: 'selection-entries', where: { round: { in: rounds.map((r) => r.id) }, status: { in: ['interested', 'trial-booked', 'attended'] } }, ...q })).totalDocs
     }),

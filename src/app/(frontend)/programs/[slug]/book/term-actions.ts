@@ -24,7 +24,7 @@ export async function bookTerm(_prev: TermState, fd: FormData): Promise<TermStat
   const p = await payload()
   const limited = await rateLimit(p, 'term-booking', { perIp: 20 })
   if (limited) return fail(limited)
-  const { docs } = await p.find({ collection: 'programs', where: { slug: { equals: str(fd, 'program') }, type: { in: ['academy-term', 'toddler'] }, status: { equals: 'open' } }, limit: 1, depth: 0 })
+  const { docs } = await p.find({ pagination: false, collection: 'programs', where: { slug: { equals: str(fd, 'program') }, type: { in: ['academy-term', 'toddler'] }, status: { equals: 'open' } }, limit: 1, depth: 0 })
   const program = docs[0]
   if (!program) return fail('This program is no longer taking registrations.')
 

@@ -13,9 +13,9 @@ export default async function StageBoard({ params, searchParams }: { params: Pro
   const [{ area: slug, stage: code }, sp] = await Promise.all([params, searchParams])
   const { p, settings, user } = await foundationGate()
   if (!user) redirect(`/login?next=/foundation-plus/leaderboards/${slug}/${code}`)
-  const area = (await p.find({ collection: 'pdr-areas', where: { slug: { equals: slug }, hasLeaderboard: { equals: true } }, limit: 1, depth: 0, overrideAccess: true })).docs[0]
+  const area = (await p.find({ pagination: false, collection: 'pdr-areas', where: { slug: { equals: slug }, hasLeaderboard: { equals: true } }, limit: 1, depth: 0, overrideAccess: true })).docs[0]
   const [lv, st] = code.split('-').map(Number)
-  const stage = area && lv && st ? (await p.find({ collection: 'pdr-stages', where: { area: { equals: area.id }, levelNumber: { equals: lv }, stageNumber: { equals: st }, published: { equals: true }, scoring: { equals: 'scored' } }, limit: 1, depth: 0, overrideAccess: true })).docs[0] : null
+  const stage = area && lv && st ? (await p.find({ pagination: false, collection: 'pdr-stages', where: { area: { equals: area.id }, levelNumber: { equals: lv }, stageNumber: { equals: st }, published: { equals: true }, scoring: { equals: 'scored' } }, limit: 1, depth: 0, overrideAccess: true })).docs[0] : null
   if (!area || !stage) notFound()
   const period: Period = sp.period === 'month' ? 'month' : 'all'
   const age = Number(sp.age) || null

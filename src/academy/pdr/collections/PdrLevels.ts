@@ -18,7 +18,7 @@ export const PdrLevels: CollectionConfig = {
         const number = data.number ?? originalDoc?.number
         if (!areaId || !number) return data
         const area = await req.payload.findByID({ collection: 'pdr-areas', id: typeof areaId === 'object' ? areaId.id : areaId, depth: 0, req, overrideAccess: true })
-        const { docs } = await req.payload.find({ collection: 'pdr-levels', where: { area: { equals: area.id }, number: { equals: number } }, limit: 2, depth: 0, req, overrideAccess: true })
+        const { docs } = await req.payload.find({ pagination: false, collection: 'pdr-levels', where: { area: { equals: area.id }, number: { equals: number } }, limit: 2, depth: 0, req, overrideAccess: true })
         if (docs.some((d) => d.id !== originalDoc?.id)) throw new APIError(`${area.name} already has a Level ${number}.`, 400, undefined, true)
         data.displayName = levelTitle(area.name, number)
         return data

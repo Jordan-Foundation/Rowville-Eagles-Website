@@ -33,7 +33,7 @@ export default async function PromotionPage({ params, searchParams }: { params: 
       tournamentsAll: !!l.tournamentsAll, tournamentRounds: l.tournamentRounds ?? [], foundationPlus: !!l.foundationPlus,
       emails: (d.recipients ?? []).map((u) => (typeof u === 'object' ? u.email : '')).filter(Boolean).join('\n'),
     }
-    const { docs: uses } = await p.find({ collection: 'promotion-uses', where: { promotion: { equals: d.id }, status: { equals: 'paid' } }, limit: 5000, depth: 0, overrideAccess: true })
+    const { docs: uses } = await p.find({ pagination: false, collection: 'promotion-uses', where: { promotion: { equals: d.id }, status: { equals: 'paid' } }, limit: 5000, depth: 0, overrideAccess: true })
     stats = { uses: uses.length, off: uses.reduce((n, u) => n + u.amountOff, 0), paid: uses.reduce((n, u) => n + (u.paidAmount ?? 0), 0) }
   }
   return (

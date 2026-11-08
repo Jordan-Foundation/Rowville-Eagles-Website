@@ -26,7 +26,7 @@ export async function coachOrNull(): Promise<{ user: User; coach: AcademyCoach }
 
 async function coachFor(user: User): Promise<AcademyCoach> {
   const p = await payload()
-  const { docs } = await p.find({ collection: 'academy-coaches', where: { user: { equals: user.id } }, limit: 1, depth: 1, overrideAccess: true })
+  const { docs } = await p.find({ pagination: false, collection: 'academy-coaches', where: { user: { equals: user.id } }, limit: 1, depth: 1, overrideAccess: true })
   if (docs[0]) return docs[0]
   return p.create({
     collection: 'academy-coaches',

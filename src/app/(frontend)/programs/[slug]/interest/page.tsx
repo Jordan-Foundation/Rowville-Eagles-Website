@@ -13,11 +13,11 @@ export const metadata: Metadata = { title: 'Register interest', robots: { index:
 export default async function InterestPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const p = await payload()
-  const program = (await p.find({ collection: 'programs', where: { slug: { equals: slug }, type: { equals: 'tournament' } }, limit: 1, depth: 0 })).docs[0]
+  const program = (await p.find({ pagination: false, collection: 'programs', where: { slug: { equals: slug }, type: { equals: 'tournament' } }, limit: 1, depth: 0 })).docs[0]
   if (!program) notFound()
   const [user, rules] = await Promise.all([currentUser(), getAgeRules(p)])
   const players = user
-    ? (await p.find({ collection: 'participants', where: { account: { equals: user.id } }, depth: 0, limit: 20, overrideAccess: true })).docs.map((k) => ({ id: k.id, name: `${k.firstName} ${k.lastName}`, dob: k.dateOfBirth }))
+    ? (await p.find({ pagination: false, collection: 'participants', where: { account: { equals: user.id } }, depth: 0, limit: 20, overrideAccess: true })).docs.map((k) => ({ id: k.id, name: `${k.firstName} ${k.lastName}`, dob: k.dateOfBirth }))
     : []
   const years = miniRoosBirthYears(rules)
 

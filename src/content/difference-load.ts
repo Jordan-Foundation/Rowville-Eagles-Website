@@ -2,8 +2,8 @@ import type { Payload } from 'payload'
 import type { Media } from '@/payload-types'
 import { DIFFERENCE } from './difference'
 
-type Img = { url: string; alt: string } | null
-const img = (v: unknown, fallbackAlt: string): Img => (v && typeof v === 'object' && (v as Media).url ? { url: (v as Media).url!, alt: (v as Media).alt || fallbackAlt } : null)
+type Img = { url: string; alt: string; width?: number; height?: number } | null
+const img = (v: unknown, fallbackAlt: string): Img => (v && typeof v === 'object' && (v as Media).url ? { url: (v as Media).url!, alt: (v as Media).alt || fallbackAlt, width: (v as Media).width ?? undefined, height: (v as Media).height ?? undefined } : null)
 /** Draft types are literal; admin copy is any string. */
 type W<T> = T extends string ? string : T extends readonly (infer U)[] ? W<U>[] : { -readonly [K in keyof T]: W<T[K]> }
 const pick = <T,>(v: T | null | undefined, d: T): T => (v === null || v === undefined || (typeof v === 'string' && !v.trim()) || (Array.isArray(v) && v.length === 0) ? d : v)

@@ -11,7 +11,7 @@ export default async function CartPage({ searchParams }: { searchParams: Promise
   const { cancelled } = await searchParams
   const p = await payload()
   const settings = await p.findGlobal({ slug: 'site-settings' })
-  const { docs: products } = await p.find({ collection: 'products', where: { status: { equals: 'active' } }, limit: 500, depth: 0, select: { name: true } })
+  const { docs: products } = await p.find({ pagination: false, collection: 'products', where: { status: { equals: 'active' } }, limit: 500, depth: 0, select: { name: true } })
   let ready = false
   try {
     ready = Boolean(paymentsMode('academy'))

@@ -80,7 +80,7 @@ export const Participants: CollectionConfig = {
               access: { update: isAdminField },
             },
             { name: 'subscriptionId', label: 'Stripe subscription', type: 'text', index: true, admin: { readOnly: true } },
-            { name: 'subscriptionStatus', label: 'Subscription status', type: 'text', admin: { readOnly: true } },
+            { name: 'subscriptionStatus', index: true, label: 'Subscription status', type: 'text', admin: { readOnly: true } },
           ],
         },
         {

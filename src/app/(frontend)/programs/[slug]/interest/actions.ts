@@ -23,7 +23,7 @@ export async function registerTournamentInterest(_prev: InterestState, fd: FormD
   const p = await payload()
   const limited = await rateLimit(p, 'interest', { perIp: 20 })
   if (limited) return fail(limited)
-  const program = (await p.find({ collection: 'programs', where: { slug: { equals: s('slug') }, type: { equals: 'tournament' } }, limit: 1, depth: 0 })).docs[0]
+  const program = (await p.find({ pagination: false, collection: 'programs', where: { slug: { equals: s('slug') }, type: { equals: 'tournament' } }, limit: 1, depth: 0 })).docs[0]
   if (!program || program.status !== 'open') return fail('Registrations of interest for this tournament are closed.')
   const user = await currentUser()
 

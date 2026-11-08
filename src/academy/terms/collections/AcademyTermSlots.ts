@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { refreshAfterChange, refreshAfterDelete } from '../../../lib/revalidate'
 import { isStaff } from '../../../access'
 import { TIME_RE, weekdayOptions } from '../../constants'
 import { slotLabel, yearsLabel } from '../slots'
@@ -19,7 +20,8 @@ export const AcademyTermSlots: CollectionConfig = {
   access: { read: () => true, create: isStaff, update: isStaff, delete: isStaff },
   defaultSort: 'program',
   hooks: {
-    afterChange: [
+    afterDelete: [refreshAfterDelete],
+    afterChange: [refreshAfterChange, 
       async ({ doc, previousDoc, operation, req, context }) => {
         // Changed day/time/venue or a single week → email + text paid families once
         if (operation !== 'update' || context?.skipNotify || req.data?.notifyFamilies === false) return doc

@@ -19,7 +19,7 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
   const kind = rawKind === 'order' ? 'order' : 'booking'
   const p = await payload()
   const collection = kind === 'order' ? 'orders' : 'bookings'
-  const doc = ref ? (await p.find({ collection, where: { reference: { equals: ref } }, limit: 1, depth: 1 })).docs[0] : undefined
+  const doc = ref ? (await p.find({ pagination: false, collection, where: { reference: { equals: ref } }, limit: 1, depth: 1 })).docs[0] : undefined
   if (!doc) return <Shell title="Booking not found">We couldn’t find that reference. If you were charged, please contact the club.</Shell>
 
   // Confirm payment here as well as in the webhook, so the page is correct even if the webhook is delayed.

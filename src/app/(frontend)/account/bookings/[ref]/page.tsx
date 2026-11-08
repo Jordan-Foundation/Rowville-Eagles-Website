@@ -33,13 +33,13 @@ export default async function MyBookingPage({ params }: { params: Promise<{ ref:
   const p = await payload()
   const staff = hasRole(user, 'admin', 'committee')
 
-  const academy = (await p.find({ collection: 'academy-bookings', where: { reference: { equals: ref } }, limit: 1, depth: 1, overrideAccess: true })).docs[0]
+  const academy = (await p.find({ pagination: false, collection: 'academy-bookings', where: { reference: { equals: ref } }, limit: 1, depth: 1, overrideAccess: true })).docs[0]
   if (academy) {
     if (owner(academy.account) !== user.id && !staff) notFound()
     const b = academy
     const coach = b.coach as AcademyCoach
     const term = b.term as AcademyTerm
-    const { docs: sessions } = await p.find({ collection: 'academy-sessions', where: { booking: { equals: b.id }, status: { not_equals: 'held' } }, sort: 'startsAt', limit: 100, depth: 1, overrideAccess: true })
+    const { docs: sessions } = await p.find({ pagination: false, collection: 'academy-sessions', where: { booking: { equals: b.id }, status: { not_equals: 'held' } }, sort: 'startsAt', limit: 100, depth: 1, overrideAccess: true })
     const payUrl = b.status === 'payment_failed' ? (b.payments ?? []).filter((x) => x.status === 'failed').at(-1)?.payUrl : null
     const per = b.amount / (b.sessionsTotal || 1)
     const card = cashPaid({ ...b, sessionsTotal: b.sessionsTotal ?? 1 })
@@ -129,7 +129,7 @@ export default async function MyBookingPage({ params }: { params: Promise<{ ref:
   }
 
   // Club bookings: programs, camps, trials, registrations
-  const club = (await p.find({ collection: 'bookings', where: { reference: { equals: ref } }, limit: 1, depth: 1, overrideAccess: true })).docs[0]
+  const club = (await p.find({ pagination: false, collection: 'bookings', where: { reference: { equals: ref } }, limit: 1, depth: 1, overrideAccess: true })).docs[0]
   if (!club || (owner(club.account) !== user.id && !staff)) notFound()
   const prog = club.program as Program
   const clubPromo = await discountLine(p, club)

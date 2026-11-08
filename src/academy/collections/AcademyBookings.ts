@@ -20,7 +20,7 @@ export const AcademyBookings: CollectionConfig = {
   fields: [
     { name: 'reference', type: 'text', required: true, unique: true, admin: { readOnly: true } },
     {
-      name: 'status',
+      name: 'status', index: true,
       type: 'select',
       required: true,
       defaultValue: 'held',
@@ -60,7 +60,7 @@ export const AcademyBookings: CollectionConfig = {
       { name: 'startTime', type: 'text' },
       { name: 'firstSessionAt', type: 'date', admin: { date: { pickerAppearance: 'dayAndTime' } } },
     ] },
-    { name: 'holdExpiresAt', type: 'date', admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } } },
+    { name: 'holdExpiresAt', index: true, type: 'date', admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } } },
     {
       name: 'contact',
       label: 'Parent / guardian',

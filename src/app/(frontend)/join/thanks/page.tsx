@@ -12,7 +12,7 @@ export default async function ThanksPage({ searchParams }: { searchParams: Promi
   const { ref } = await searchParams
   const p = await payload()
   const reg = ref
-    ? (await p.find({ collection: 'selection-entries', where: { reference: { equals: ref } }, limit: 1, depth: 1, overrideAccess: true })).docs[0]
+    ? (await p.find({ pagination: false, collection: 'selection-entries', where: { reference: { equals: ref } }, limit: 1, depth: 1, overrideAccess: true })).docs[0]
     : undefined
   const session = reg?.trialSession as TrialSession | undefined
   const booked = reg?.status === 'trial-booked' && session

@@ -12,7 +12,7 @@ const LIVE = new Set(['active', 'trialing', 'past_due'])
 const rel = (v: unknown) => (v && typeof v === 'object' ? (v as { id: number }).id : (v as number))
 
 export async function familyPlayers(payload: Payload, user: User) {
-  const { docs } = await payload.find({ collection: 'participants', where: { account: { equals: user.id } }, sort: 'firstName', limit: 20, depth: 0, overrideAccess: true })
+  const { docs } = await payload.find({ pagination: false, collection: 'participants', where: { account: { equals: user.id } }, sort: 'firstName', limit: 20, depth: 0, overrideAccess: true })
   return docs as Participant[]
 }
 

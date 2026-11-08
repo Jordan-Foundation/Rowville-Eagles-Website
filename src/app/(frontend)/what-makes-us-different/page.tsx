@@ -1,3 +1,5 @@
+import Image from 'next/image'
+import { chakra } from '@/lib/fonts'
 /* eslint-disable @next/next/no-img-element */
 import Link from 'next/link'
 import type { Metadata } from 'next'
@@ -7,7 +9,7 @@ import { FoundationPlusLogo } from '@/components/FoundationPlusLogo'
 import { SubNav } from './SubNav'
 import { SampleReport } from './SampleReport'
 
-export const revalidate = 300
+export const revalidate = 3600
 export const metadata: Metadata = {
   title: 'What makes us different',
   description: 'Paid, professionally developed coaches, a real football curriculum, a five-stage lesson sequence, player reports and a year-round program — plus a free Friday Community Night.',
@@ -29,8 +31,8 @@ const Icon = ({ k }: { k: string }) => (
   <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>{ICONS[k]}</svg>
 )
 
-function Photo({ image, icon, tall }: { image: { url: string; alt: string } | null; icon: string; tall?: boolean }) {
-  if (image) return <img src={image.url} alt={image.alt} className={`w-full rounded-2xl object-cover ${tall ? 'aspect-[4/5]' : 'aspect-[4/3]'}`} loading="lazy" />
+function Photo({ image, icon, tall }: { image: { url: string; alt: string; width?: number; height?: number } | null; icon: string; tall?: boolean }) {
+  if (image) return <Image src={image.url} alt={image.alt} width={image.width ?? 1600} height={image.height ?? 1200} sizes="(min-width: 1024px) 45vw, 100vw" className={`w-full rounded-2xl object-cover ${tall ? 'aspect-[4/5]' : 'aspect-[4/3]'}`} />
   return (
     <div aria-hidden className={`grid w-full place-items-center rounded-2xl bg-gradient-to-br from-[#0f2a55] to-[#1d4e9e] text-white/80 ${tall ? 'aspect-[4/5]' : 'aspect-[4/3]'}`}>
       <span className="scale-[2.5]"><Icon k={icon} /></span>
@@ -76,7 +78,7 @@ export default async function DifferencePage() {
   ].map(([id, label]) => ({ id, label }))
 
   return (
-    <div>
+    <div className={chakra.variable}>
       <section className="pitch-lines relative overflow-hidden bg-[#0f2a55] text-white">
         <div className="container-x grid gap-10 py-16 sm:py-24 lg:grid-cols-[1.1fr_1fr] lg:items-center">
           <div>
@@ -135,7 +137,7 @@ export default async function DifferencePage() {
       </Section>
 
       <Section id="reports" icon="reports" eyebrow="Reports" headline={c.reports.headline} body={c.reports.body} more={c.reports.more} alt>
-        <div className="max-w-3xl">{c.reports.image ? <img src={c.reports.image.url} alt={c.reports.image.alt} className="w-full rounded-2xl border border-line" loading="lazy" /> : <SampleReport />}</div>
+        <div className="max-w-3xl">{c.reports.image ? <Image src={c.reports.image.url} alt={c.reports.image.alt} width={c.reports.image.width ?? 1600} height={c.reports.image.height ?? 1000} sizes="(min-width: 768px) 768px, 100vw" className="w-full rounded-2xl border border-line" /> : <SampleReport />}</div>
       </Section>
 
       <Section id="year-round" icon="year" eyebrow="All year" headline={c.year.headline} body={c.year.body} more={c.year.more}>
@@ -181,7 +183,7 @@ export default async function DifferencePage() {
             <p className="mt-5 font-[family-name:var(--font-barlow)] text-3xl font-extrabold uppercase">{c.community.welcome}</p>
           </dl>
           <div className="grid grid-cols-2 gap-3">
-            {c.community.photos.length ? c.community.photos.slice(0, 4).map((ph) => <img key={ph.url} src={ph.url} alt={ph.alt} className="aspect-square w-full rounded-xl object-cover" loading="lazy" />) : [0, 1, 2, 3].map((i) => <Photo key={i} image={null} icon="community" />)}
+            {c.community.photos.length ? c.community.photos.slice(0, 4).map((ph) => <Image key={ph.url} src={ph.url} alt={ph.alt} width={ph.width ?? 1200} height={ph.height ?? 1200} sizes="(min-width: 768px) 25vw, 50vw" className="aspect-square w-full rounded-xl object-cover" />) : [0, 1, 2, 3].map((i) => <Photo key={i} image={null} icon="community" />)}
           </div>
         </div>
       </Section>
