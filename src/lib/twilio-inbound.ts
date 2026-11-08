@@ -30,7 +30,10 @@ export async function rejectionDetail(req: Request) {
   const body = req.method === 'GET' ? '' : await req.text().catch(() => '')
   const keys = [...new URLSearchParams(req.method === 'GET' ? u.search : body).keys()]
   const dupes = [...new Set(keys.filter((k, i) => keys.indexOf(k) !== i))]
-  return `${req.method} ${req.headers.get('content-type') ?? '(no type)'} to ${req.headers.get('x-forwarded-host') ?? u.host}${u.pathname}${u.search ? ' (with query)' : ''}; ${keys.length} fields${dupes.length ? `, repeated: ${dupes.join(', ')}` : ''}: ${keys.join(', ')}; signature header ${req.headers.get('x-twilio-signature')?.length ?? 0} chars`
+  const sent = new URLSearchParams(req.method === 'GET' ? u.search : body).get('AccountSid')
+  const mine = process.env.TWILIO_ACCOUNT_SID
+  const account = !sent ? 'no AccountSid sent' : sent === mine ? 'same Twilio account as TWILIO_ACCOUNT_SID' : `DIFFERENT Twilio account (…${sent.slice(-6)}) from TWILIO_ACCOUNT_SID (…${(mine ?? '').slice(-6)}) — this number is in another (sub)account, so its calls are signed with that account’s Auth Token`
+  return `${account}. ${req.method} ${req.headers.get('content-type') ?? '(no type)'} to ${req.headers.get('x-forwarded-host') ?? u.host}${u.pathname}${u.search ? ' (with query)' : ''}; ${keys.length} fields${dupes.length ? `, repeated: ${dupes.join(', ')}` : ''}: ${keys.join(', ')}; signature header ${req.headers.get('x-twilio-signature')?.length ?? 0} chars`
 }
 
 /**
