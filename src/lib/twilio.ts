@@ -68,7 +68,16 @@ export const twiml = (inner = '') => new Response(`<?xml version="1.0" encoding=
 export const dialTwiml = (o: { to: string; callerId?: string; action: string; timeout?: number }) =>
   `<Dial${o.callerId ? ` callerId="${xmlEsc(o.callerId)}"` : ''} timeout="${o.timeout ?? 20}" action="${xmlEsc(o.action)}" method="POST"><Number>${xmlEsc(o.to)}</Number></Dial>`
 
-export const sayTwiml = (text: string) => `<Say voice="Polly.Olivia" language="en-AU">${xmlEsc(text)}</Say>`
+/** Amazon Polly's Australian voice (Twilio only accepts it by its neural name). */
+export const VOICE = 'Polly.Olivia-Neural'
+export const sayTwiml = (text: string) => `<Say voice="${VOICE}" language="en-AU">${xmlEsc(text)}</Say>`
+
+/**
+ * If anything goes wrong while answering a call, the caller still gets the voicemail (plain voice) instead of
+ * Twilio's "an application error has occurred".
+ */
+export const safeVoicemail = (greeting: string) =>
+  twiml(`<Say language="en-AU">${xmlEsc(greeting)}</Say><Record action="/twilio/voice/done" method="POST" maxLength="120" playBeep="true" timeout="5" transcribe="true" transcribeCallback="/twilio/voice/transcription"/>`)
 
 /** Greeting, then record up to 2 minutes; `action` gets the recording when they hang up, `transcribeCallback` the text later. */
 export const voicemailTwiml = (o: { greeting: string; action: string; transcribeCallback: string }) =>

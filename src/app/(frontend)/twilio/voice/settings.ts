@@ -34,3 +34,27 @@ export const minutes = (secs: string | number | undefined) => {
   const n = Number(secs ?? 0)
   return n < 60 ? `${n} sec` : `${Math.round(n / 60)} min`
 }
+
+/** A call webhook that looked like Twilio but failed the security check — logged so the setup problem is visible. */
+export async function rejectedWebhook(req: Request) {
+  if (!req.headers.has('x-twilio-signature')) return
+  const p = (await import('@/lib/payload')).payload
+  const u = new URL(req.url)
+  try {
+    await (await p()).create({
+      collection: 'message-log',
+      overrideAccess: true,
+      data: {
+        channel: 'call',
+        to: 'Twilio webhook',
+        subject: 'Incoming call rejected: security check failed',
+        kind: 'service',
+        sender: 'academy',
+        status: 'failed',
+        error: process.env.TWILIO_AUTH_TOKEN ? `Signature didn’t match. Site address ${process.env.NEXT_PUBLIC_SITE_URL || '(NEXT_PUBLIC_SITE_URL not set)'}; request came to ${u.host}${u.pathname}.` : 'TWILIO_AUTH_TOKEN is not set in Vercel',
+      },
+    })
+  } catch {
+    // logging must never stop the call
+  }
+}

@@ -1,13 +1,25 @@
 import { payload } from '@/lib/payload'
 import { toE164 } from '@/lib/sms'
-import { twiml, voicemailTwiml } from '@/lib/twilio'
+import { safeVoicemail, twiml, voicemailTwiml } from '@/lib/twilio'
 import { readTwilioRequest, usersByPhone } from '@/lib/twilio-inbound'
-import { logCall, minutes, voiceSettings } from '../settings'
+import { DEFAULT_GREETING, logCall, minutes, rejectedWebhook, voiceSettings } from '../settings'
 
 /** After the forwarded call: answered → done; no answer / busy / failed → voicemail. */
 export async function POST(req: Request) {
-  const params = await readTwilioRequest(req)
-  if (!params) return new Response('Forbidden', { status: 403 })
+  try {
+    return await handle(req)
+  } catch (e) {
+    ;(await payload()).logger.error({ err: e, msg: 'Answering a call failed — sent the caller to voicemail' })
+    return safeVoicemail(DEFAULT_GREETING)
+  }
+}
+
+async function handle(req: Request) {
+  const params = await readTwilioRequest(req.clone())
+  if (!params) {
+    await rejectedWebhook(req)
+    return new Response('Forbidden', { status: 403 })
+  }
   const p = await payload()
   const from = toE164(params.From) ?? params.From ?? 'unknown'
   const users = await usersByPhone(p, from)

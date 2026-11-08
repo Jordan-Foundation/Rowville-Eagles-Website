@@ -1,8 +1,8 @@
 import { payload } from '@/lib/payload'
 import { toE164 } from '@/lib/sms'
-import { dialTwiml, twiml, voicemailTwiml } from '@/lib/twilio'
+import { dialTwiml, safeVoicemail, twiml, voicemailTwiml } from '@/lib/twilio'
 import { readTwilioRequest, usersByPhone } from '@/lib/twilio-inbound'
-import { logCall, voiceSettings } from './settings'
+import { DEFAULT_GREETING, logCall, rejectedWebhook, voiceSettings } from './settings'
 
 /**
  * Calls to the Twilio number ("A call comes in" → POST https://<site>/twilio/voice).
@@ -10,8 +10,20 @@ import { logCall, voiceSettings } from './settings'
  * handles no answer (voicemail). With no forwarding number set, callers go straight to voicemail.
  */
 export async function POST(req: Request) {
-  const params = await readTwilioRequest(req)
-  if (!params) return new Response('Forbidden', { status: 403 })
+  try {
+    return await handle(req)
+  } catch (e) {
+    ;(await payload()).logger.error({ err: e, msg: 'Answering a call failed — sent the caller to voicemail' })
+    return safeVoicemail(DEFAULT_GREETING)
+  }
+}
+
+async function handle(req: Request) {
+  const params = await readTwilioRequest(req.clone())
+  if (!params) {
+    await rejectedWebhook(req)
+    return new Response('Forbidden', { status: 403 })
+  }
   const p = await payload()
   const { forwardTo, greeting } = await voiceSettings(p)
   const from = toE164(params.From)
