@@ -5,7 +5,7 @@ import { sendEmail } from './email'
 import { emailLayout, esc } from './email-templates'
 import { siteUrl } from './payments'
 import { toE164 } from './sms'
-import { validTwilioSignature } from './twilio'
+import { confirmCallWithTwilio, validTwilioSignature } from './twilio'
 
 /**
  * Webhooks from Twilio: check the signature and return the posted fields, or null if it isn't genuinely
@@ -21,7 +21,10 @@ export async function readTwilioRequest(req: Request): Promise<Record<string, st
   const pairs: [string, string][] = isGet ? [...new URL(req.url).searchParams.entries()] : [...new URLSearchParams(await req.text().catch(() => '')).entries()]
   const params: Record<string, string> = Object.fromEntries(pairs)
   const urls = signatureUrls(req.url, siteUrl(), req.headers.get('x-forwarded-host'))
-  return validTwilioSignature(token, req.headers.get('x-twilio-signature'), urls, isGet ? [] : pairs) ? params : null
+  if (validTwilioSignature(token, req.headers.get('x-twilio-signature'), urls, isGet ? [] : pairs)) return params
+  // Calls: if the signature doesn't match, confirm the call with Twilio directly
+  if (params.CallSid && req.headers.has('x-twilio-signature') && (await confirmCallWithTwilio(params))) return params
+  return null
 }
 
 /** For the Message log when a request is rejected: what arrived (field names only — no values, no secrets). */
@@ -44,7 +47,9 @@ export async function rejectionDetail(req: Request) {
 export function signatureUrls(requestUrl: string, site: string, forwardedHost?: string | null) {
   const u = new URL(requestUrl)
   const path = `${u.pathname}${u.search}`
-  const bases = [site.replace(/\/$/, ''), `${u.protocol}//${u.host}`, ...(forwardedHost ? [`https://${forwardedHost}`] : [])]
+  const hosts = [site.replace(/\/$/, ''), `${u.protocol}//${u.host}`, ...(forwardedHost ? [`https://${forwardedHost}`] : [])]
+  // …over https and http (an address entered as http:// is redirected to https by the host)
+  const bases = hosts.flatMap((h) => [h, h.replace(/^https:/, 'http:')])
   const out = new Set<string>()
   for (const b of bases) {
     const x = new URL(b)

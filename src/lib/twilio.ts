@@ -57,6 +57,29 @@ export async function sendTwilioSms(to: string, body: string, statusCallback?: s
   return { ok: true, sid: json.sid }
 }
 
+/**
+ * Second check for call webhooks: ask Twilio whether this call really exists on our account, from and to
+ * the numbers in the request. Used when the signature doesn't match (e.g. a small difference in the
+ * webhook address) — a forged request can't name a real, current call.
+ */
+export async function confirmCallWithTwilio(p: { CallSid?: string; From?: string; To?: string; AccountSid?: string }) {
+  const cfg = twilioConfig()
+  if (!cfg || !p.CallSid || !/^CA[0-9a-f]{32}$/i.test(p.CallSid)) return false
+  if (p.AccountSid && p.AccountSid !== cfg.sid) return false
+  try {
+    const res = await fetch(`${apiBase()}/2010-04-01/Accounts/${cfg.sid}/Calls/${p.CallSid}.json`, {
+      headers: { authorization: `Basic ${Buffer.from(`${cfg.sid}:${cfg.token}`).toString('base64')}` },
+      signal: AbortSignal.timeout(5000),
+    })
+    if (!res.ok) return false
+    const call = (await res.json()) as { from?: string; to?: string; start_time?: string | null; date_created?: string }
+    const recent = Date.now() - new Date(call.date_created ?? 0).getTime() < 2 * 3_600_000
+    return recent && (!p.From || call.from === p.From) && (!p.To || call.to === p.To || call.from === p.To)
+  } catch {
+    return false
+  }
+}
+
 /** Fetch a recording (Twilio media URLs can require the account's credentials). */
 export async function fetchRecording(recordingSid: string) {
   const cfg = twilioConfig()
