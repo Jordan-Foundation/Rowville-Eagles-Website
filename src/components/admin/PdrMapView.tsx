@@ -35,7 +35,7 @@ export async function PdrMapView({ initPageResult, params, searchParams }: Admin
       <Gutter>
         <h1 style={{ marginTop: 24 }}>Foundation+ — content map</h1>
         {!allowed ? (
-          <p>Only staff can see this page.</p>
+          <p>Only Management can see this page.</p>
         ) : (
           <>
             <p style={{ color: 'var(--theme-elevation-600)', maxWidth: 820 }}>

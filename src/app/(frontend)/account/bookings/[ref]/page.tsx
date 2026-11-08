@@ -119,7 +119,7 @@ export default async function MyBookingPage({ params }: { params: Promise<{ ref:
               </p>
             </section>
           )}
-          {staff && <p className="text-sm"><Link href={`/staff/academy/bookings/${b.id}`} className="underline">Open in staff tools (cancel, refund, credit) →</Link></p>}
+          {staff && <p className="text-sm"><Link href={`/management/academy/bookings/${b.id}`} className="underline">Open in Management (cancel, refund, credit) →</Link></p>}
         </div>
       </div>
     )

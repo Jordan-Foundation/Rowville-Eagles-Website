@@ -12,21 +12,23 @@ import { SelectionList } from '@/selections/SelectionList'
 import { TermList } from '@/academy/terms/TermList'
 import { myTeams } from '@/teams/service'
 import { TeamCards } from '@/teams/TeamCards'
-import { inbox, unreadCount } from '@/messaging/service'
-import { hasRole } from '@/access'
+import { inbox } from '@/messaging/service'
+import { homeFor } from '@/lib/home'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'My account', robots: { index: false } }
 
 const tagLabel = { rowville: 'Rowville player', rfa: 'RFA', 'foundation-plus': 'Foundation+ player' } as const
 
-export default async function AccountPage({ searchParams }: { searchParams: Promise<{ welcome?: string }> }) {
+export default async function AccountPage({ searchParams }: { searchParams: Promise<{ welcome?: string; view?: string }> }) {
   const user = await currentUser()
   if (!user) redirect('/login?next=/account')
-  const { welcome } = await searchParams
+  const { welcome, view } = await searchParams
+  // Management and coaches land on their own dashboard; their family page is one click away (?view=family)
+  const home = homeFor(user)
+  if (home !== '/account' && view !== 'family') redirect(home)
   const p = await payload()
   const familyUnread = (await inbox(p, { user, side: 'family' })).filter((x) => x.unread).length
-  const staffUnread = hasRole(user, 'admin', 'committee') ? await unreadCount(p, { user, side: 'staff' }) : 0
   const [participants, bookings, academy, plans] = await Promise.all([
     p.find({ collection: 'participants', where: { account: { equals: user.id } }, depth: 1, limit: 50, overrideAccess: true }),
     p.find({ collection: 'bookings', where: { account: { equals: user.id }, status: { equals: 'paid' } }, depth: 1, limit: 100, sort: '-createdAt', overrideAccess: true }),
@@ -84,6 +86,12 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
 
   return (
     <div className="container-x py-14">
+      {home !== '/account' && (
+        <p className="mb-8 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-surface-2 px-5 py-3 text-sm">
+          <span>You’re viewing your family’s page.</span>
+          <Link href={home} className="font-semibold underline">← Back to my {home === '/management' ? 'Management' : 'Coach'} dashboard</Link>
+        </p>
+      )}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="eyebrow !text-brand">My account</p>
@@ -209,25 +217,6 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
             <span className="mt-1 block text-sm font-normal text-muted">Message your Foundation Academy coach.</span>
           </Link>
           <Link href="/account/preferences" className="block rounded-2xl border border-line p-6 font-semibold hover:border-brand">Communication preferences →</Link>
-          {(user.roles?.includes('admin') || user.roles?.includes('committee')) && (
-            <div className="rounded-2xl border border-line p-6">
-              <p className="font-semibold">Staff tools</p>
-              <ul className="mt-2 space-y-1 text-sm">
-                <li><Link href="/admin" className="text-brand underline">Admin</Link></li>
-                <li><Link href="/staff/selections" className="text-brand underline">Selections (tournaments & trials)</Link></li>
-                <li><Link href="/staff/teams" className="text-brand underline">Team pages</Link></li>
-                <li><Link href="/staff/academy/dashboard" className="text-brand underline">Academy dashboard</Link></li>
-                <li><Link href="/staff/academy/terms" className="text-brand underline">Academy terms (training times & places)</Link></li>
-                <li><Link href="/staff/academy/bookings" className="text-brand underline">1-on-1 bookings & cancellations</Link></li>
-                <li><Link href="/staff/academy" className="text-brand underline">Academy coach availability</Link></li>
-                <li><Link href="/staff/messages" className="text-brand underline">Messages (all families){staffUnread > 0 ? ` — ${staffUnread} unread` : ''}</Link></li>
-                <li><Link href="/staff/consent" className="text-brand underline">Consent review</Link></li>
-              </ul>
-            </div>
-          )}
-          {user.roles?.includes('coach') && (
-            <Link href="/coach" className="block rounded-2xl bg-black p-6 font-semibold text-white hover:bg-black/85">Coach portal →</Link>
-          )}
         </aside>
       </div>
     </div>

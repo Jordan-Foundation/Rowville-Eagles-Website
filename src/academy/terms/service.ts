@@ -181,13 +181,13 @@ export async function emailInterest(payload: Payload, reg: AcademyRegistration, 
   const staff = emailLayout('academy', [
     {
       heading: 'New term interest',
-      intro: `${esc(reg.player.firstName)} ${esc(reg.player.lastName)} (${esc(by)}) registered interest in ${esc(program.title)} — ${reason === 'full' ? 'their training times are full' : 'no training time for their age group'}. Offer a place from the staff Academy terms page.`,
+      intro: `${esc(reg.player.firstName)} ${esc(reg.player.lastName)} (${esc(by)}) registered interest in ${esc(program.title)} — ${reason === 'full' ? 'their training times are full' : 'no training time for their age group'}. Offer a place from Management → Academy terms.`,
       rows: [
         ['Parent', `${reg.contact.firstName} ${reg.contact.lastName}`],
         ['Email', reg.contact.email],
         ['Mobile', reg.contact.phone],
       ],
-      cta: { label: 'Open Academy terms', href: `${siteUrl()}/staff/academy/terms?program=${program.id}` },
+      cta: { label: 'Open Academy terms', href: `${siteUrl()}/management/academy/terms?program=${program.id}` },
     },
   ])
   await sendEmail(payload, { to: academyBrand.email, subject: `Term interest: ${reg.player.firstName} ${reg.player.lastName} (${by})`, html: staff, sender: 'academy' })

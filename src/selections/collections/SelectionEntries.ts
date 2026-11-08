@@ -143,7 +143,7 @@ export const SelectionEntries: CollectionConfig = {
           { name: 'outcomeEmail', label: 'Email the family (unsuccessful)', type: 'checkbox', defaultValue: true },
         ] },
         { type: 'row', fields: [
-          { name: 'paymentDueAt', label: 'Pay by', type: 'date', admin: { date: { pickerAppearance: 'dayAndTime' }, description: 'Set when the outcome is sent; staff can extend it' } },
+          { name: 'paymentDueAt', label: 'Pay by', type: 'date', admin: { date: { pickerAppearance: 'dayAndTime' }, description: 'Set when the outcome is sent; Management can extend it' } },
           { name: 'remindersSent', label: 'Reminders sent (days before)', type: 'number', hasMany: true, admin: { readOnly: true } },
           { name: 'paidAt', type: 'date', admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } } },
           { name: 'releasedAt', type: 'date', admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } } },

@@ -108,7 +108,7 @@ export const AcademyBookings: CollectionConfig = {
     {
       type: 'collapsible',
       label: 'Refunds, credit & cancellations',
-      admin: { initCollapsed: false, description: 'Cancel or refund from Staff → Academy → Bookings, which applies the policy and talks to Stripe.' },
+      admin: { initCollapsed: false, description: 'Cancel or refund from Management → Academy → Bookings, which applies the policy and talks to Stripe.' },
       fields: [
         { type: 'row', fields: [
           { name: 'creditSessionsUsed', label: 'Session credits used', type: 'number', defaultValue: 0, admin: { readOnly: true } },

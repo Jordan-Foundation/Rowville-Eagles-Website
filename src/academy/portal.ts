@@ -3,6 +3,7 @@ import type { AcademyCoach, User } from '@/payload-types'
 import { hasRole } from '../access'
 import { currentUser } from '../lib/auth'
 import { payload } from '../lib/payload'
+import { homeFor } from '../lib/home'
 
 /**
  * Gate for every /coach page and action: the user must have the coach role.
@@ -11,7 +12,7 @@ import { payload } from '../lib/payload'
 export async function requireCoach(next = '/coach'): Promise<{ user: User; coach: AcademyCoach }> {
   const user = await currentUser()
   if (!user) redirect(`/login?next=${encodeURIComponent(next)}`)
-  if (!hasRole(user, 'coach')) redirect('/account')
+  if (!hasRole(user, 'coach')) redirect(homeFor(user))
   const coach = await coachFor(user)
   return { user, coach }
 }

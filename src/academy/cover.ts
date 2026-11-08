@@ -65,7 +65,7 @@ export async function alertCoverNeeded(payload: Payload, coach: AcademyCoach, se
       heading: `${sessions.length} session${sessions.length === 1 ? '' : 's'} need cover`,
       intro: `${esc(coach.displayName)} ${esc(reason)}. Please assign a replacement coach and make sure there’s a handover so the player’s progress continues.`,
       rows,
-      cta: { label: 'Open sessions needing cover', href: `${siteUrl()}/staff/academy#cover` },
+      cta: { label: 'Open sessions needing cover', href: `${siteUrl()}/management/academy#cover` },
     },
   ])
   await sendEmail(payload, { to: academyBrand.email, subject: `Cover needed: ${sessions.length} session${sessions.length === 1 ? '' : 's'} with ${coach.displayName}`, html, sender: 'academy' })
@@ -78,7 +78,7 @@ export async function alertBlockedRemoval(payload: Payload, coach: AcademyCoach,
       heading: 'Coach tried to remove a booked time',
       intro: `${esc(coach.displayName)} tried to remove availability for ${esc(termName)} that families have already booked. The change was blocked — please follow up with the coach.`,
       rows: blocked.map((b) => [b.slot, `${b.sessions.length} booked session${b.sessions.length === 1 ? '' : 's'} from ${when(b.sessions[0].startsAt)}`] as [string, string]),
-      cta: { label: 'Open Academy availability', href: `${siteUrl()}/staff/academy` },
+      cta: { label: 'Open Academy availability', href: `${siteUrl()}/management/academy` },
     },
   ])
   await sendEmail(payload, { to: academyBrand.email, subject: `Blocked change: ${coach.displayName} tried to remove booked times`, html, sender: 'academy' })

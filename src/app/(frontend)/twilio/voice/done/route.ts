@@ -26,7 +26,7 @@ export async function POST(req: Request) {
         ['Account', users.length ? users.map((u) => u.email).join(', ') : 'No account with this mobile'],
         ['Received', new Date().toLocaleString('en-AU', { timeZone: 'Australia/Sydney', dateStyle: 'medium', timeStyle: 'short' })],
       ],
-      cta: { label: 'Listen to the voicemail', href: `${siteUrl()}/staff/voicemail/${params.RecordingSid}` },
+      cta: { label: 'Listen to the voicemail', href: `${siteUrl()}/management/voicemail/${params.RecordingSid}` },
       after: `Log in as an admin to listen. To call back: ${esc(localNumber(from))}. ${users.length ? `Account: ${esc(accountLinks(users))}` : ''}`,
     })
   }

@@ -38,7 +38,7 @@ export const PdrSettings: GlobalConfig = {
       label: 'Show Foundation+ on the website',
       type: 'checkbox',
       defaultValue: false,
-      admin: { description: 'Off: families can’t see it anywhere (no pages, links or menu items). Staff and coaches can still preview it at /foundation-plus.' },
+      admin: { description: 'Off: families can’t see it anywhere (no pages, links or menu items). Management and coaches can still preview it at /foundation-plus.' },
     },
     {
       type: 'row',

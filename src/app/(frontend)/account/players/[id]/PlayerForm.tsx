@@ -21,7 +21,7 @@ export function PlayerForm({ id, values: v }: Props) {
       <Field label="Main goals" hint="Your coach sees this before each session.">
         <textarea name="goals" rows={2} className={inputCls} defaultValue={v.goals} />
       </Field>
-      <Field label="Medical or injury notes" hint="Shared only with your player’s coaches and Academy staff.">
+      <Field label="Medical or injury notes" hint="Shared only with your player’s coaches and Academy Management.">
         <textarea name="conditions" rows={2} className={inputCls} defaultValue={v.conditions} />
       </Field>
       <div className="grid gap-4 sm:grid-cols-2">

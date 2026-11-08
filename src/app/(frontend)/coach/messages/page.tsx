@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { requireCoach } from '@/academy/portal'
 import { payload } from '@/lib/payload'
 import { coachFamilies, inbox } from '@/messaging/service'
-import { startConversationAction } from '@/messaging/staff-actions'
+import { startConversationAction } from '@/messaging/management-actions'
 import { InboxList } from '@/components/messaging/InboxList'
 import { AutoRefresh } from '@/components/messaging/AutoRefresh'
 

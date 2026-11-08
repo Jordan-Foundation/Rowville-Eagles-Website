@@ -69,7 +69,7 @@ export const AcademyTermSlots: CollectionConfig = {
       ],
     },
     { name: 'active', label: 'Taking registrations', type: 'checkbox', defaultValue: true },
-    { name: 'coaches', label: 'Coaches (whole time)', type: 'relationship', relationTo: 'academy-coaches', hasMany: true, admin: { description: 'Or set coaches per group below. Easier from Staff → Academy terms.' } },
+    { name: 'coaches', label: 'Coaches (whole time)', type: 'relationship', relationTo: 'academy-coaches', hasMany: true, admin: { description: 'Or set coaches per group below. Easier from Management → Academy terms.' } },
     {
       name: 'notifyFamilies',
       label: 'Tell paid families about time/venue/week changes when I save',

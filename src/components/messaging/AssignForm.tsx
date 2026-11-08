@@ -1,7 +1,7 @@
 'use client'
 
 import { useActionState } from 'react'
-import { assignAction, type AssignState } from '@/messaging/staff-actions'
+import { assignAction, type AssignState } from '@/messaging/management-actions'
 
 export function AssignForm({ conversation }: { conversation: number }) {
   const [state, action, pending] = useActionState<AssignState, FormData>(assignAction, {})

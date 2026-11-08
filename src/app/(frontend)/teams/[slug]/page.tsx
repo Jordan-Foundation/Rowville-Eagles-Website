@@ -67,9 +67,9 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
         <Link href="/account" className="text-sm text-muted hover:text-ink">← My account</Link>
         <p className="eyebrow mt-6 !text-brand">{tournament ? 'Tournament team' : 'Team'}{team.season ? ` · ${team.season}` : ''}{team.ageGroup ? ` · ${team.ageGroup}` : ''}{team.archived ? ' · archived' : ''}</p>
         <h1 className="mt-2 font-[family-name:var(--font-barlow)] text-4xl font-extrabold uppercase sm:text-5xl">{teamTitle(team)}</h1>
-        {access.manage && <p className="mt-2 text-sm text-muted">You manage this team: post notices, edit {tournament ? 'fixtures' : 'training and fixtures'}{showForum ? ' and moderate the forum' : ''}. Details like venues and contacts are edited in the admin (Teams).</p>}
+        {access.manage && <p className="mt-2 text-sm text-muted">You manage this team: post notices, edit {tournament ? 'fixtures' : 'training and fixtures'}{showForum ? ' and moderate Team Chat' : ''}. Details like venues and contacts are edited in the admin (Teams).</p>}
         <nav aria-label="Sections" className="mt-6 flex flex-wrap gap-2 text-sm">
-          {[tournament && sections.info !== false && ['info', 'Tournament info'], sections.notices !== false && ['notices', tournament ? 'Message board' : 'Notice board'], sections.fixtures !== false && ['fixtures', 'Fixtures'], !tournament && sections.training !== false && ['training', 'Training'], showForum && ['forum', 'Parent forum'], access.manage && ['members', 'Players']]
+          {[tournament && sections.info !== false && ['info', 'Tournament info'], sections.notices !== false && ['notices', tournament ? 'Message board' : 'Notice board'], sections.fixtures !== false && ['fixtures', 'Fixtures'], !tournament && sections.training !== false && ['training', 'Training'], showForum && ['team-chat', 'Team Chat'], access.manage && ['members', 'Players']]
             .filter(Boolean)
             .map((x) => {
               const [id, label] = x as [string, string]
@@ -158,9 +158,10 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
             </Section>
           )}
 
+          {showForum && <span id="forum" aria-hidden className="block" /> /* old #forum links still land here */}
           {showForum && (
-            <Section id="forum" title="Parent forum">
-              <p className="mb-4 text-sm text-muted">Ask the team a question — coaches answer here. Be kind: the forum is moderated by coaches and the committee.</p>
+            <Section id="team-chat" title="Team Chat">
+              <p className="mb-4 text-sm text-muted">Ask the team a question — coaches answer here. Be kind: Team Chat is moderated by coaches and the committee.</p>
               <div className="mb-6 rounded-xl bg-surface-2 p-4"><ThreadForm slug={team.slug} /></div>
               {threadsOrdered.length === 0 ? (
                 <p className="text-muted">No questions yet.</p>

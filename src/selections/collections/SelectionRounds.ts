@@ -51,7 +51,7 @@ export const SelectionRounds: CollectionConfig = {
       name: 'templates',
       label: 'Outcome messages',
       type: 'group',
-      admin: { description: 'Placeholders: {parent} {player} {playerFull} {team} {ageGroup} {event} {link} {deadline}. Staff review every message before it is sent.' },
+      admin: { description: 'Placeholders: {parent} {player} {playerFull} {team} {ageGroup} {event} {link} {deadline}. Management reviews every message before it is sent.' },
       fields: [
         template('selected', 'Selected (tournament)', (d) => d?.kind !== 'rowville'),
         template('successful', 'Successful (Rowville trials)', (d) => d?.kind !== 'tournament'),

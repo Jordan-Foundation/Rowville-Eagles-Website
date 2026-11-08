@@ -5,7 +5,7 @@ const HOW: Record<string, string> = { sms: 'text', portal: 'portal', email: 'ema
 const DELIVERY: Record<string, string> = { sms: 'texted', email: 'emailed — couldn’t text', failed: 'not delivered' }
 
 /** Messages for the thread view. `mine` = written by the viewer's side (family, or coach/admin). */
-export function toThread(msgs: Message[], side: 'family' | 'staff'): ThreadMessage[] {
+export function toThread(msgs: Message[], side: 'family' | 'management'): ThreadMessage[] {
   return msgs.map((m) => ({
     id: m.id,
     note: m.direction === 'note',
@@ -13,6 +13,6 @@ export function toThread(msgs: Message[], side: 'family' | 'staff'): ThreadMessa
     author: m.authorName || (m.direction === 'in' ? 'Family' : 'Foundation Academy'),
     body: m.body,
     at: m.createdAt,
-    how: m.direction === 'out' ? (side === 'staff' ? DELIVERY[m.delivery ?? ''] ?? '' : '') : HOW[m.channel] ?? '',
+    how: m.direction === 'out' ? (side === 'management' ? DELIVERY[m.delivery ?? ''] ?? '' : '') : HOW[m.channel] ?? '',
   }))
 }

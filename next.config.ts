@@ -16,6 +16,9 @@ const nextConfig: NextConfig = {
     return [
       { source: '/fixtures', destination: '/account', permanent: true },
       { source: '/teams', destination: '/account', permanent: true },
+      // "Staff" is now "Management" — old links in emails and bookmarks keep working
+      { source: '/staff', destination: '/management', permanent: true },
+      { source: '/staff/:path*', destination: '/management/:path*', permanent: true },
     ]
   },
   images: {

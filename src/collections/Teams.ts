@@ -36,7 +36,7 @@ export const Teams: CollectionConfig = {
     { name: 'category', type: 'select', options: [...teamCategories], admin: { condition: (d) => !isTournament(d) } },
     { name: 'ageGroup', type: 'text', admin: { description: 'e.g. 2017s' } },
     { name: 'competition', type: 'text', admin: { description: 'League / division' } },
-    { name: 'coaches', type: 'relationship', relationTo: 'users', hasMany: true, admin: { description: 'Coaches/managers can post notices, edit training and fixtures, and moderate the forum' } },
+    { name: 'coaches', type: 'relationship', relationTo: 'users', hasMany: true, admin: { description: 'Coaches/managers can post notices, edit training and fixtures, and moderate Team Chat' } },
     {
       name: 'sections',
       label: 'Team page sections',
@@ -47,7 +47,7 @@ export const Teams: CollectionConfig = {
           { name: 'notices', label: 'Notice board', type: 'checkbox', defaultValue: true },
           { name: 'fixtures', label: 'Fixtures & results', type: 'checkbox', defaultValue: true },
           { name: 'training', label: 'Training schedule', type: 'checkbox', defaultValue: true },
-          { name: 'forum', label: 'Parent forum', type: 'checkbox', defaultValue: true },
+          { name: 'forum', label: 'Team Chat', type: 'checkbox', defaultValue: true },
         ] },
       ],
     },

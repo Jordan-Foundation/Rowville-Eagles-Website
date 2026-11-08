@@ -13,7 +13,7 @@ export const AcademyCredits: CollectionConfig = {
   admin: {
     group: 'Foundation Academy',
     defaultColumns: ['account', 'sessions', 'reason', 'status', 'expiresAt', 'booking'],
-    description: 'Session credits given for cancellations (and used at checkout). One credit = one 1-on-1. Give goodwill credits from a booking’s page in Staff → Academy.',
+    description: 'Session credits given for cancellations (and used at checkout). One credit = one 1-on-1. Give goodwill credits from a booking’s page in Management → Academy.',
   },
   access: { read: staffOrOwner('account'), create: isStaff, update: isStaff, delete: () => false },
   defaultSort: '-createdAt',

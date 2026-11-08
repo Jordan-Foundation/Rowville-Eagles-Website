@@ -57,7 +57,7 @@ export const AcademyRegistrations: CollectionConfig = {
     },
     { name: 'program', type: 'relationship', relationTo: 'programs', required: true, index: true },
     { name: 'slot', type: 'relationship', relationTo: 'academy-term-slots', index: true },
-    { name: 'groupId', label: 'Group', type: 'text', admin: { description: 'Group within the slot (set on the staff dashboard)' } },
+    { name: 'groupId', label: 'Group', type: 'text', admin: { description: 'Group within the slot (set on the Management dashboard)' } },
     {
       type: 'row',
       fields: [
@@ -115,7 +115,7 @@ export const AcademyRegistrations: CollectionConfig = {
         { name: 'paidAt', type: 'date', admin: { readOnly: true } },
       ],
     },
-    { name: 'notes', label: 'Staff notes', type: 'textarea' },
+    { name: 'notes', label: 'Management notes', type: 'textarea' },
     { name: 'token', type: 'text', admin: { hidden: true }, access: { read: () => false } },
   ],
 }

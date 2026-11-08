@@ -78,14 +78,14 @@ export type Viewer = { user: User; side: Side; coach?: AcademyCoach | null }
 
 export async function viewerFor(p: Payload, user: User | null): Promise<Viewer | null> {
   if (!user) return null
-  if (hasRole(user, 'admin', 'committee')) return { user, side: 'staff' }
+  if (hasRole(user, 'admin', 'committee')) return { user, side: 'management' }
   const { docs } = await p.find({ collection: 'academy-coaches', where: { user: { equals: user.id } }, limit: 1, depth: 0, ...q })
   if (docs[0]) return { user, side: 'coach', coach: docs[0] }
   return { user, side: 'family' }
 }
 
 export function canSee(v: Viewer, conv: Conversation) {
-  if (v.side === 'staff') return true
+  if (v.side === 'management') return true
   if (v.side === 'coach') return (conv.coaches ?? []).map(rel).includes(v.coach!.id)
   return rel(conv.account) === v.user.id
 }
@@ -93,11 +93,11 @@ export function canSee(v: Viewer, conv: Conversation) {
 /** Conversations this viewer can see, newest first, with unread flags. */
 export async function inbox(p: Payload, v: Viewer, o: { filter?: 'all' | 'unassigned' } = {}) {
   const where: Where =
-    v.side === 'staff'
+    v.side === 'management'
       ? o.filter === 'unassigned' ? { account: { exists: false } } : {}
       : v.side === 'coach' ? { coaches: { contains: v.coach!.id } } : { account: { equals: v.user.id } }
   const { docs } = await p.find({ collection: 'conversations', where: { ...where, lastMessageAt: { exists: true } }, sort: '-lastMessageAt', limit: 300, depth: 0, ...q })
-  return docs.map((c) => ({ conv: c, unread: isUnread(c, v.user.id, v.side === 'family' ? 'family' : 'staff') }))
+  return docs.map((c) => ({ conv: c, unread: isUnread(c, v.user.id, v.side === 'family' ? 'family' : 'management') }))
 }
 
 export async function unreadCount(p: Payload, v: Viewer | null) {
@@ -125,7 +125,7 @@ async function alertStaff(p: Payload, conv: Conversation, text: string, via: str
       sender: 'academy',
     })
   for (const email of to) await send(email, `${siteUrl()}/coach/messages/${conv.id}`)
-  if (!to.length) await send(academyBrand.email, `${siteUrl()}/staff/messages/${conv.id}`)
+  if (!to.length) await send(academyBrand.email, `${siteUrl()}/management/messages/${conv.id}`)
 }
 
 /** A text arrived on the Twilio number. */

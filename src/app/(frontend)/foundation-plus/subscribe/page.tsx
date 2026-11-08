@@ -38,7 +38,7 @@ export default async function SubscribePage({ searchParams }: { searchParams: Pr
       </div>
       <div className="container-x max-w-2xl py-12">
         {sp.cancelled && <p className="mb-6 border border-[#0b0b0c]/20 p-4 text-sm">Checkout was cancelled — nothing was charged.</p>}
-        {!settings.enabled && <p className="mb-6 border border-amber-500 bg-amber-50 p-4 text-sm">Staff preview — Foundation+ is switched off, so families can’t see this page yet.</p>}
+        {!settings.enabled && <p className="mb-6 border border-amber-500 bg-amber-50 p-4 text-sm">Management preview — Foundation+ is switched off, so families can’t see this page yet.</p>}
         {kids.length === 0 && <p className="mb-4 text-sm">First, add the player this plan is for:</p>}
         {kids.length > 0 && (
           <SubscribeForm

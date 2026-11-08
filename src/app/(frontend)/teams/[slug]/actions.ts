@@ -110,7 +110,7 @@ const name = (u: User) => [u.firstName, u.lastName].filter(Boolean).join(' ') ||
 export async function newThread(_prev: TeamState, fd: FormData): Promise<TeamState> {
   const g = await gate(fd, 'view')
   if ('error' in g) return { error: g.error }
-  if (g.team.type === 'tournament' || g.team.sections?.forum === false) return { error: 'This team doesn’t have a forum.' }
+  if (g.team.type === 'tournament' || g.team.sections?.forum === false) return { error: 'This team doesn’t have Team Chat.' }
   const title = s(fd, 'title').slice(0, 140)
   const body = s(fd, 'body').slice(0, 4000)
   if (!title || !body) return { error: 'Add a title and your question.' }
@@ -135,8 +135,8 @@ export async function replyThread(_prev: TeamState, fd: FormData): Promise<TeamS
     const html = emailLayout(brand, [
       {
         heading: 'A coach replied',
-        intro: `${esc(name(g.user))} answered your question “${esc(thread.title)}” on the ${esc(teamTitle(g.team))} forum:<br><br>${esc(body).replace(/\n/g, '<br>')}`,
-        cta: { label: 'Open the forum', href: `${siteUrl()}/teams/${g.team.slug}#forum` },
+        intro: `${esc(name(g.user))} answered your question “${esc(thread.title)}” on the ${esc(teamTitle(g.team))} Team Chat:<br><br>${esc(body).replace(/\n/g, '<br>')}`,
+        cta: { label: 'Open Team Chat', href: `${siteUrl()}/teams/${g.team.slug}#team-chat` },
       },
     ])
     await sendEmail(g.p, { to: starter.email, subject: `Reply: ${thread.title}`, html, sender: brand, userId: starter.id })

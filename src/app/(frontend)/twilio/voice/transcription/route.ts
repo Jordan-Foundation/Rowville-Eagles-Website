@@ -19,7 +19,7 @@ export async function POST(req: Request) {
       ? `${esc(name)} said:<br><br><strong style="white-space:pre-wrap">“${esc(params.TranscriptionText!.trim())}”</strong><br><br><em>Automatic transcript — names and numbers may be wrong, so listen to the recording to check.</em>`
       : `The voicemail from ${esc(name)} couldn’t be transcribed automatically. Please listen to the recording.`,
     rows: [['From', localNumber(from)]],
-    cta: params.RecordingSid ? { label: 'Listen to the voicemail', href: `${siteUrl()}/staff/voicemail/${params.RecordingSid}` } : undefined,
+    cta: params.RecordingSid ? { label: 'Listen to the voicemail', href: `${siteUrl()}/management/voicemail/${params.RecordingSid}` } : undefined,
     after: users.length ? `Account: ${esc(accountLinks(users))}` : undefined,
   })
   return new Response(null, { status: 204 })

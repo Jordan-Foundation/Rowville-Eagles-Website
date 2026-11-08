@@ -167,7 +167,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
 
           {showFoundation && (
             <Link href={`/foundation-plus/${kid.id}`} className="mt-10 block rounded-2xl border border-line bg-black p-6 text-white transition hover:brightness-125">
-              <p className="font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase">{foundation.name}{!foundation.enabled ? ' (staff preview)' : ''}</p>
+              <p className="font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase">{foundation.name}{!foundation.enabled ? ' (Management preview)' : ''}</p>
               <p className="mt-1 text-sm text-white/70">{foundation.tagline || 'Skills, challenges, badges and coach feedback.'}</p>
               <p className="mt-3 text-sm font-semibold">Open {kid.firstName}’s {foundation.name} player page →</p>
             </Link>

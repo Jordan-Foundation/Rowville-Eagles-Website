@@ -1,11 +1,11 @@
 /** Messaging rules (pure — unit tested). */
-export type Side = 'family' | 'coach' | 'staff'
+export type Side = 'family' | 'coach' | 'management'
 
 type ConvLike = { lastFamilyAt?: string | null; lastStaffAt?: string | null; reads?: { user: unknown; at: string }[] | null }
 const rel = (v: unknown) => (v && typeof v === 'object' ? (v as { id: number }).id : v)
 
 /** Unread for this person: the other side wrote after they last opened it. */
-export function isUnread(c: ConvLike, userId: number, side: 'family' | 'staff') {
+export function isUnread(c: ConvLike, userId: number, side: 'family' | 'management') {
   const latest = side === 'family' ? c.lastStaffAt : c.lastFamilyAt
   if (!latest) return false
   const read = (c.reads ?? []).find((r) => rel(r.user) === userId)?.at

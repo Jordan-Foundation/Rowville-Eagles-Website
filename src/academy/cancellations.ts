@@ -140,7 +140,7 @@ export async function cancelAcademy(payload: Payload, r: CancelRequest): Promise
             credit: creditValue,
             creditSessions,
             refundStatus: cash > 0 ? 'pending' : 'none',
-            rule: override ? `${quote.rule} Overridden by staff: ${r.outcome === 'refund' ? formatAUD(amount) : `${creditSessions} session credit${creditSessions === 1 ? '' : 's'}`}.` : quote.rule,
+            rule: override ? `${quote.rule} Overridden by Management: ${r.outcome === 'refund' ? formatAUD(amount) : `${creditSessions} session credit${creditSessions === 1 ? '' : 's'}`}.` : quote.rule,
             reason: r.reason,
             actor: r.actorId,
             at: now,
@@ -298,6 +298,6 @@ async function notifyCancellation(
 }
 
 async function alertAdmin(payload: Payload, booking: AcademyBooking, subject: string, intro: string) {
-  const html = emailLayout('academy', [{ heading: subject, intro, cta: { label: 'Open booking', href: `${siteUrl()}/staff/academy/bookings/${booking.id}` } }])
+  const html = emailLayout('academy', [{ heading: subject, intro, cta: { label: 'Open booking', href: `${siteUrl()}/management/academy/bookings/${booking.id}` } }])
   await sendEmail(payload, { to: academyBrand.email, subject, html, sender: 'academy' })
 }

@@ -592,7 +592,7 @@ export interface Team {
    */
   competition?: string | null;
   /**
-   * Coaches/managers can post notices, edit training and fixtures, and moderate the forum
+   * Coaches/managers can post notices, edit training and fixtures, and moderate Team Chat
    */
   coaches?: (number | User)[] | null;
   sections?: {
@@ -882,7 +882,7 @@ export interface AcademyTermSlot {
   capacity?: number | null;
   active?: boolean | null;
   /**
-   * Or set coaches per group below. Easier from Staff → Academy terms.
+   * Or set coaches per group below. Easier from Management → Academy terms.
    */
   coaches?: (number | AcademyCoach)[] | null;
   notifyFamilies?: boolean | null;
@@ -936,7 +936,7 @@ export interface AcademyRegistration {
   program: number | Program;
   slot?: (number | null) | AcademyTermSlot;
   /**
-   * Group within the slot (set on the staff dashboard)
+   * Group within the slot (set on the Management dashboard)
    */
   groupId?: string | null;
   nights?: ('1' | '2') | null;
@@ -1093,7 +1093,7 @@ export interface SelectionEntry {
   outcomeQueued?: ('selected' | 'successful' | 'unsuccessful') | null;
   outcomeEmail?: boolean | null;
   /**
-   * Set when the outcome is sent; staff can extend it
+   * Set when the outcome is sent; Management can extend it
    */
   paymentDueAt?: string | null;
   remindersSent?: number[] | null;
@@ -1152,7 +1152,7 @@ export interface SelectionRound {
   paymentDeadlineDays?: number | null;
   reminderDays?: number[] | null;
   /**
-   * Placeholders: {parent} {player} {playerFull} {team} {ageGroup} {event} {link} {deadline}. Staff review every message before it is sent.
+   * Placeholders: {parent} {player} {playerFull} {team} {ageGroup} {event} {link} {deadline}. Management reviews every message before it is sent.
    */
   templates?: {
     selectedSubject?: string | null;
@@ -1620,7 +1620,7 @@ export interface AcademyReminderLog {
   createdAt: string;
 }
 /**
- * Session credits given for cancellations (and used at checkout). One credit = one 1-on-1. Give goodwill credits from a booking’s page in Staff → Academy.
+ * Session credits given for cancellations (and used at checkout). One credit = one 1-on-1. Give goodwill credits from a booking’s page in Management → Academy.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "academy-credits".
@@ -3754,7 +3754,7 @@ export interface AcademySetting {
 export interface PdrSetting {
   id: number;
   /**
-   * Off: families can’t see it anywhere (no pages, links or menu items). Staff and coaches can still preview it at /foundation-plus.
+   * Off: families can’t see it anywhere (no pages, links or menu items). Management and coaches can still preview it at /foundation-plus.
    */
   enabled?: boolean | null;
   /**

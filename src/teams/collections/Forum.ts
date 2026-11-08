@@ -4,7 +4,7 @@ import { isStaff } from '../../access'
 /** Parent forum (Rowville teams): members ask, coaches answer; coaches/admins pin, lock and remove posts. */
 export const ForumThreads: CollectionConfig = {
   slug: 'forum-threads',
-  labels: { singular: 'Forum thread', plural: 'Forum threads' },
+  labels: { singular: 'Team Chat thread', plural: 'Team Chat threads' },
   admin: { group: 'Club', useAsTitle: 'title', defaultColumns: ['title', 'team', 'author', 'pinned', 'locked', 'lastActivityAt'] },
   access: { read: isStaff, create: isStaff, update: isStaff, delete: isStaff },
   defaultSort: '-lastActivityAt',
@@ -27,7 +27,7 @@ export const ForumThreads: CollectionConfig = {
 
 export const ForumReplies: CollectionConfig = {
   slug: 'forum-replies',
-  labels: { singular: 'Forum reply', plural: 'Forum replies' },
+  labels: { singular: 'Team Chat reply', plural: 'Team Chat replies' },
   admin: { group: 'Club', defaultColumns: ['thread', 'author', 'createdAt'] },
   access: { read: isStaff, create: isStaff, update: isStaff, delete: isStaff },
   defaultSort: 'createdAt',

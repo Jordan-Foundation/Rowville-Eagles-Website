@@ -3,12 +3,14 @@ import { payload, formatDate } from '@/lib/payload'
 import { requireCoach } from '@/academy/portal'
 import { attendanceDue, coachSessions } from '@/academy/coach-sessions'
 import { coachGroups, nextSession } from '@/academy/terms/coach-groups'
+import { RoleSwitch, myChildren } from '@/components/dashboard/RoleSwitch'
 
 export const dynamic = 'force-dynamic'
 
 export default async function CoachHome() {
-  const { coach } = await requireCoach('/coach')
+  const { coach, user } = await requireCoach('/coach')
   const p = await payload()
+  const kids = await myChildren(p, user)
   const [{ docs: terms }, { docs: mine }] = await Promise.all([
     p.find({ collection: 'academy-terms', where: { status: { in: ['availability', 'open'] } }, sort: 'startDate', depth: 0, limit: 10 }),
     p.find({ collection: 'academy-availability', where: { coach: { equals: coach.id } }, depth: 0, limit: 50, overrideAccess: true }),
@@ -22,9 +24,12 @@ export default async function CoachHome() {
 
   return (
     <div className="space-y-12">
-      <div>
-        <h1 className="font-display text-4xl font-semibold uppercase tracking-tight sm:text-5xl">Hi {coach.displayName}</h1>
-        <p className="mt-3 text-muted">Set your 1-on-1 availability for each term and keep your profile up to date — families see it when they book.</p>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="font-display text-4xl font-semibold uppercase tracking-tight sm:text-5xl">Hi {coach.displayName}</h1>
+          <p className="mt-3 text-muted">Set your 1-on-1 availability for each term and keep your profile up to date — families see it when they book.</p>
+        </div>
+        <RoleSwitch user={user} current="coach" kids={kids} />
       </div>
 
       <Link href="/coach/sessions" className="panel gloss-sheen group block border border-line p-6 transition hover:border-white/40">

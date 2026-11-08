@@ -257,7 +257,7 @@ async function notifyRecovered(payload: Payload, booking: AcademyBooking) {
 
 async function alertAdmin(payload: Payload, booking: AcademyBooking, a: { subject: string; heading: string; intro: string; rows?: [string, string][] }) {
   const html = emailLayout('academy', [
-    { heading: a.heading, intro: a.intro, rows: a.rows ?? [['Reference', booking.reference]], cta: { label: 'Open weekly payments', href: `${siteUrl()}/staff/academy#payments` } },
+    { heading: a.heading, intro: a.intro, rows: a.rows ?? [['Reference', booking.reference]], cta: { label: 'Open weekly payments', href: `${siteUrl()}/management/academy#payments` } },
   ])
   await sendEmail(payload, { to: academyBrand.email, subject: a.subject, html, sender: 'academy' })
 }
