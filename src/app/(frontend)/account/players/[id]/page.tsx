@@ -3,6 +3,8 @@ import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 import { payload, formatDate } from '@/lib/payload'
 import { currentUser } from '@/lib/auth'
+import { releasedFor, reportCard } from '@/academy/reports/family'
+import { PlayerReportView } from '@/components/reports/PlayerReportView'
 import { ageOn, sessionPayment } from '@/academy/session-view'
 import type { AcademyBooking, AcademyCoach, Program } from '@/payload-types'
 import { PlayerForm } from './PlayerForm'
@@ -28,6 +30,8 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
   if (!kid || (typeof kid.account === 'object' ? kid.account.id : kid.account) !== user.id) notFound()
 
   const teams = await myTeams(p, user, kid.id)
+  const reports = await releasedFor(p, kid.id)
+  const latest = reports[0] ? await reportCard(p, reports[0]) : null
   const foundation = await foundationSettings(p)
   const showFoundation = foundation.enabled || isStaffOrCoach(user)
   const [{ docs: selections }, rules, { docs: termRegs }] = await Promise.all([
@@ -109,6 +113,33 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
 
       <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_24rem]">
         <section>
+          {reports.length > 0 && latest && (
+            <div id="reports" className="mb-10">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <h2 className="font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase">Reports</h2>
+                <Link href={`/account/reports/${reports[0].id}`} className="text-sm font-semibold text-brand underline">Open · Print / Save as PDF</Link>
+              </div>
+              <div className="mt-4">
+                <PlayerReportView
+                  eyebrow={`Latest report · ${latest.cycleName}`}
+                  title={`${kid.firstName} · ${latest.level.name}`}
+                  rows={latest.rows}
+                  overall={reports[0].overall}
+                  footer={latest.coachName ? `Coach ${latest.coachName}` : null}
+                />
+              </div>
+              {reports.length > 1 && (
+                <>
+                  <h3 className="mt-6 text-sm font-semibold uppercase tracking-wider text-muted">All reports</h3>
+                  <ul className="mt-2 divide-y divide-line rounded-2xl border border-line">
+                    {reports.map((r) => (
+                      <li key={r.id}><Link href={`/account/reports/${r.id}`} className="flex justify-between gap-3 px-5 py-3 hover:bg-surface-2"><span className="font-semibold">{typeof r.cycle === 'object' ? r.cycle.name : 'Report'}</span><span className="text-sm text-muted">{r.releasedAt ? formatDate(r.releasedAt, { month: 'short', year: 'numeric' }) : ''}</span></Link></li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </div>
+          )}
           {teams.length > 0 && (
             <div className="mb-10">
               <h2 className="font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase">Teams</h2>

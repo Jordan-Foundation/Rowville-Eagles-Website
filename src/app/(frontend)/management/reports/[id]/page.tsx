@@ -3,17 +3,17 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { requireManagement } from '@/lib/management'
 import { payload, formatDate } from '@/lib/payload'
-import { levelName } from '@/academy/curriculum/levels'
+import { LEVELS, levelName } from '@/academy/curriculum/levels'
 import { REPORT_STATUSES, statusLabel } from '@/academy/reports/rules'
-import { CreateReportsButton } from '../Forms'
-import { reassignAction, setCycleStatusAction } from '../actions'
+import { CreateReportsButton, ReleaseButton } from '../Forms'
+import { approveSelectedAction, reassignAction, setCycleStatusAction } from '../actions'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Report round', robots: { index: false } }
 
 const idOf = (v: unknown) => (v && typeof v === 'object' ? (v as { id: number }).id : (v as number | null))
 
-export default async function CyclePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ coach?: string; status?: string }> }) {
+export default async function CyclePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ coach?: string; status?: string; level?: string; group?: string; approved?: string }> }) {
   const { id } = await params
   await requireManagement(`/management/reports/${id}`)
   const sp = await searchParams
@@ -28,7 +28,15 @@ export default async function CyclePage({ params, searchParams }: { params: Prom
   const byStatus = REPORT_STATUSES.map((s) => ({ ...s, n: reports.filter((r) => r.status === s.value).length }))
   const submitted = reports.filter((r) => ['submitted', 'approved', 'released'].includes(r.status)).length
   const coachFilter = sp.coach === 'none' ? 'none' : Number(sp.coach) || null
-  const shown = reports.filter((r) => (coachFilter === 'none' ? !r.coach : coachFilter ? idOf(r.coach) === coachFilter : true) && (sp.status ? r.status === sp.status : true))
+  const shown = reports.filter((r) =>
+    (coachFilter === 'none' ? !r.coach : coachFilter ? idOf(r.coach) === coachFilter : true) &&
+    (sp.status ? r.status === sp.status : true) &&
+    (sp.level ? r.level === sp.level : true) &&
+    (sp.group ? r.sourceLabel === sp.group : true))
+  const groupsList = [...new Set(reports.map((r) => r.sourceLabel ?? '').filter(Boolean))].sort()
+  const approvedCount = byStatus.find((s) => s.value === 'approved')!.n
+  const submittedShown = shown.filter((r) => r.status === 'submitted').length
+  const sel = 'mt-1 block rounded-lg border border-line px-3 py-2'
   const perCoach = [...new Set(reports.map((r) => idOf(r.coach)))].map((c) => ({ id: c, name: c ? (coachName.get(c) ?? `#${c}`) : 'No coach', total: reports.filter((r) => idOf(r.coach) === c).length, done: reports.filter((r) => idOf(r.coach) === c && ['submitted', 'approved', 'released'].includes(r.status)).length }))
   const scope = [...(cycle.programs ?? []).map((x) => (typeof x === 'object' ? x.title : `Program #${x}`)), ...(cycle.teams ?? []).map((t) => (typeof t === 'object' ? t.name : `Team #${t}`))]
   const h2 = 'font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase'
@@ -45,6 +53,7 @@ export default async function CyclePage({ params, searchParams }: { params: Prom
 
       <div className="mt-6 flex flex-wrap items-start gap-4">
         <CreateReportsButton cycle={cycle.id} first={reports.length === 0} />
+        {reports.length > 0 && <ReleaseButton cycle={cycle.id} count={approvedCount} />}
         <form action={setCycleStatusAction}>
           <input type="hidden" name="cycle" value={cycle.id} />
           <input type="hidden" name="status" value={cycle.status === 'open' ? 'closed' : 'open'} />
@@ -61,7 +70,7 @@ export default async function CyclePage({ params, searchParams }: { params: Prom
               <div className="bg-amber-400" style={{ width: `${(byStatus.find((s) => s.value === 'draft')!.n / reports.length) * 100}%` }} />
             </div>
             <ul className="mt-3 flex flex-wrap gap-2 text-sm">
-              {byStatus.map((s) => <li key={s.value}><Link href={`?status=${s.value}`} className="rounded-full border border-line px-3 py-1">{s.label}: <strong>{s.n}</strong></Link></li>)}
+              {byStatus.map((s) => <li key={s.value}><Link href={`?status=${s.value}#reports`} className="rounded-full border border-line px-3 py-1">{s.label}: <strong>{s.n}</strong></Link></li>)}
               <li><Link href="?" className="rounded-full border border-line px-3 py-1">All</Link></li>
             </ul>
             <table className="mt-5 w-full text-sm">
@@ -74,18 +83,32 @@ export default async function CyclePage({ params, searchParams }: { params: Prom
             </table>
           </section>
 
-          <section className="mt-10" aria-label="Reports">
+          <section id="reports" className="mt-10" aria-label="Reports">
             <h2 className={h2}>Reports ({shown.length})</h2>
+            {sp.approved && <p role="status" className="mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-900">{sp.approved} report{sp.approved === '1' ? '' : 's'} approved.</p>}
+            <form method="get" className="mt-3 flex flex-wrap items-end gap-3 text-sm">
+              <label>Status<select name="status" defaultValue={sp.status ?? ''} className={sel}><option value="">All</option>{REPORT_STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}</select></label>
+              <label>Coach<select name="coach" defaultValue={sp.coach ?? ''} className={sel}><option value="">All</option><option value="none">No coach</option>{perCoach.filter((c) => c.id).map((c) => <option key={String(c.id)} value={String(c.id)}>{c.name}</option>)}</select></label>
+              <label>Level<select name="level" defaultValue={sp.level ?? ''} className={sel}><option value="">All</option>{LEVELS.map((l) => <option key={l.key} value={l.key}>{l.name}</option>)}</select></label>
+              {groupsList.length > 1 && <label>Group / team<select name="group" defaultValue={sp.group ?? ''} className={`${sel} max-w-64`}><option value="">All</option>{groupsList.map((g) => <option key={g} value={g}>{g}</option>)}</select></label>}
+              <button className="rounded-full border border-line px-4 py-2 font-semibold">Filter</button>
+            </form>
+            <form id="bulk" action={approveSelectedAction} className="mt-4 flex flex-wrap items-center gap-3">
+              <input type="hidden" name="cycle" value={cycle.id} />
+              <button disabled={!submittedShown} className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40">Approve ticked</button>
+              <span className="text-xs text-muted">Tick submitted reports you’ve read. {submittedShown} submitted in this list.</span>
+            </form>
             <div className="mt-3 overflow-x-auto">
               <table className="w-full min-w-[640px] text-sm">
-                <thead><tr className="text-left text-muted"><th className="py-2">Player</th><th>Level</th><th>Group / team</th><th>Status</th><th>Written by</th></tr></thead>
+                <thead><tr className="text-left text-muted"><th className="w-8 py-2"><span className="sr-only">Select</span></th><th className="py-2">Player</th><th>Level</th><th>Group / team</th><th>Status</th><th>Written by</th></tr></thead>
                 <tbody className="divide-y divide-line">
                   {shown.map((r) => (
                     <tr key={r.id} className="align-top">
-                      <td className="py-2 font-semibold"><Link href={`/admin/collections/player-reports/${r.id}`} className="hover:underline">{r.playerName}</Link></td>
+                      <td className="py-2">{r.status === 'submitted' && <input type="checkbox" name="ids" value={r.id} form="bulk" aria-label={`Approve ${r.playerName}`} />}</td>
+                      <td className="py-2 font-semibold"><Link href={`/management/reports/r/${r.id}`} className="underline-offset-2 hover:underline">{r.playerName}</Link></td>
                       <td>{levelName(r.level)}</td>
                       <td className="max-w-56 text-muted">{r.sourceLabel}</td>
-                      <td>{statusLabel(r.status)}</td>
+                      <td className={r.status === 'submitted' ? 'font-semibold text-sky-800' : r.status === 'returned' ? 'text-red-700' : ''}>{statusLabel(r.status)}</td>
                       <td>
                         <form action={reassignAction} className="flex gap-1">
                           <input type="hidden" name="report" value={r.id} />

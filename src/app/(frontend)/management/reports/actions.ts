@@ -5,6 +5,8 @@ import { redirect } from 'next/navigation'
 import { managementOrNull } from '@/lib/management'
 import { payload } from '@/lib/payload'
 import { createCycleReports, reassignReport } from '@/academy/reports/service'
+import { approveReports, managementEdit, releaseCycle, returnReport } from '@/academy/reports/review'
+import { STRANDS } from '@/academy/curriculum/levels'
 
 export type CycleState = { error?: string; message?: string }
 const nums = (fd: FormData, k: string) => fd.getAll(k).map(Number).filter((n) => Number.isInteger(n) && n > 0)
@@ -56,4 +58,52 @@ export async function setCycleStatusAction(fd: FormData) {
   const id = Number(fd.get('cycle'))
   await (await payload()).update({ collection: 'report-cycles', id, overrideAccess: true, data: { status } })
   revalidatePath(`/management/reports/${id}`)
+}
+
+// ── Review & release (Stage 38) ──────────────────────────────────────────────
+
+export async function approveSelectedAction(fd: FormData) {
+  const user = await managementOrNull()
+  if (!user) return
+  const cycle = Number(fd.get('cycle'))
+  const n = await approveReports(await payload(), nums(fd, 'ids'), user.id)
+  revalidatePath(`/management/reports/${cycle}`)
+  redirect(`/management/reports/${cycle}?approved=${n}`)
+}
+
+export async function releaseAction(_prev: CycleState, fd: FormData): Promise<CycleState> {
+  const user = await managementOrNull()
+  if (!user) return { error: 'Management only.' }
+  const cycle = Number(fd.get('cycle'))
+  const r = await releaseCycle(await payload(), cycle, user.id)
+  revalidatePath(`/management/reports/${cycle}`)
+  return { message: `${r.released} report${r.released === 1 ? '' : 's'} released to ${r.families} famil${r.families === 1 ? 'y' : 'ies'} (email + text).${r.unreachable ? ` ${r.unreachable} had no contact details — they’ll see it when they log in.` : ''}` }
+}
+
+const reportInput = (fd: FormData) => ({
+  strands: STRANDS.map((s) => ({ strand: s.key, rating: (String(fd.get(`rating-${s.key}`) ?? '') || null) as never, comment: String(fd.get(`comment-${s.key}`) ?? '') })),
+  overall: String(fd.get('overall') ?? ''),
+  level: String(fd.get('level') ?? ''),
+})
+
+export async function reviewAction(_prev: CycleState, fd: FormData): Promise<CycleState> {
+  const user = await managementOrNull()
+  if (!user) return { error: 'Management only.' }
+  const id = Number(fd.get('id'))
+  const intent = String(fd.get('intent'))
+  const p = await payload()
+  try {
+    if (intent === 'save' || intent === 'approve') await managementEdit(p, id, reportInput(fd), user.id)
+    if (intent === 'approve') {
+      const n = await approveReports(p, [id], user.id)
+      if (!n) return { error: 'Only submitted reports can be approved.' }
+    }
+    if (intent === 'return') await returnReport(p, id, String(fd.get('note') ?? ''), user.id)
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'Could not save.' }
+  }
+  revalidatePath(`/management/reports/r/${id}`)
+  if (intent === 'save') return { message: 'Saved.' }
+  const next = String(fd.get('next') ?? '')
+  redirect(next.startsWith('/management/reports/') ? next : `/management/reports/r/${id}`)
 }

@@ -133,3 +133,10 @@ body:has([data-page-brand='fplus']) .site-header .bg-accent { background: #fff; 
 body:has([data-page-brand='fplus']) .site-footer { background: #0b0b0c; border-top: 1px solid #1c1c1f; }
 body:has([data-page-brand='fplus']) .site-footer .footer-accent { color: #fff; }
 body:has([data-page-brand='fplus']) .site-footer .footer-rule { border-color: #1c1c1f; }
+
+/* Printing (e.g. a player report → Save as PDF): just the page content */
+@media print {
+  .site-header, .site-footer, .no-print, nextjs-portal { display: none !important; }
+  body { background: #fff !important; }
+  @page { margin: 14mm; }
+}

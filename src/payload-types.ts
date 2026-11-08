@@ -2015,6 +2015,8 @@ export interface PlayerReport {
   returnNote?: string | null;
   savedAt?: string | null;
   submittedAt?: string | null;
+  approvedAt?: string | null;
+  releasedAt?: string | null;
   history?:
     | {
         action?: string | null;
@@ -3640,6 +3642,8 @@ export interface PlayerReportsSelect<T extends boolean = true> {
   returnNote?: T;
   savedAt?: T;
   submittedAt?: T;
+  approvedAt?: T;
+  releasedAt?: T;
   history?:
     | T
     | {

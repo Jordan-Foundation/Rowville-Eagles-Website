@@ -63,3 +63,36 @@ describe('report reminders', () => {
     expect(dueReminder(daysUntil(due, new Date('2027-06-20T01:00:00Z')), new Set())).toBeNull()
   })
 })
+
+import { canApprove, canReturn, groupByFamily, managementCanEdit, namesList } from '../../src/academy/reports/rules'
+
+describe('review & release rules', () => {
+  it('approve only submitted; return submitted or approved; no edits once released', () => {
+    expect(canApprove('submitted')).toBe(true)
+    expect(canApprove('draft')).toBe(false)
+    expect(canApprove('approved')).toBe(false)
+    expect(canReturn('submitted')).toBe(true)
+    expect(canReturn('approved')).toBe(true)
+    expect(canReturn('released')).toBe(false)
+    expect(managementCanEdit('approved')).toBe(true)
+    expect(managementCanEdit('released')).toBe(false)
+  })
+  it('one message per family: by account, else by email; no contact → unreachable', () => {
+    const { families, unreachable } = groupByFamily([
+      { id: 1, firstName: 'Ava', accountId: 7, email: 'mum@x.com', phone: '0400000000' },
+      { id: 2, firstName: 'Leo', accountId: 7, email: 'mum@x.com', phone: null },
+      { id: 3, firstName: 'Mia', accountId: null, email: 'Dad@Y.com', phone: null },
+      { id: 4, firstName: 'Zac', accountId: null, email: 'dad@y.com', phone: '0411111111' },
+      { id: 5, firstName: 'Kai', accountId: null, email: null, phone: null },
+    ])
+    expect(families.map((f) => f.items.map((i) => i.firstName))).toEqual([['Ava', 'Leo'], ['Mia', 'Zac']])
+    expect(families[1].phone).toBe('0411111111')
+    expect(unreachable.map((u) => u.firstName)).toEqual(['Kai'])
+  })
+  it('lists names naturally', () => {
+    expect(namesList(['Ava'])).toBe('Ava')
+    expect(namesList(['Ava', 'Leo'])).toBe('Ava & Leo')
+    expect(namesList(['Ava', 'Leo', 'Mia'])).toBe('Ava, Leo & Mia')
+    expect(namesList(['Ava', 'Ava'])).toBe('Ava')
+  })
+})

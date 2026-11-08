@@ -91,3 +91,34 @@ export function planReports(candidates: Candidate[], season: number, existingKey
   }
   return { create, skipped, already }
 }
+
+/** Management actions and the statuses they're allowed from. */
+export const canApprove = (s: string) => s === 'submitted'
+export const canReturn = (s: string) => s === 'submitted' || s === 'approved'
+/** Management can correct a report until it's released (after that, families may have read it). */
+export const managementCanEdit = (s: string) => s !== 'released'
+
+export type ReleaseItem = { id: number; firstName: string; accountId: number | null; email: string | null; phone: string | null }
+export type FamilyRelease = { key: string; accountId: number | null; email: string | null; phone: string | null; items: ReleaseItem[] }
+
+/** One message per family: reports grouped by account (or by email when there's no account yet). Families with neither are returned separately. */
+export function groupByFamily(items: ReleaseItem[]) {
+  const families = new Map<string, FamilyRelease>()
+  const unreachable: ReleaseItem[] = []
+  for (const it of items) {
+    const key = it.accountId ? `a:${it.accountId}` : it.email ? `e:${it.email.toLowerCase()}` : null
+    if (!key) { unreachable.push(it); continue }
+    const f = families.get(key) ?? { key, accountId: it.accountId, email: it.email, phone: it.phone, items: [] }
+    f.email ??= it.email
+    f.phone ??= it.phone
+    f.items.push(it)
+    families.set(key, f)
+  }
+  return { families: [...families.values()], unreachable }
+}
+
+/** "Ava", "Ava & Leo", "Ava, Leo & Mia" */
+export function namesList(names: string[]) {
+  const u = [...new Set(names)]
+  return u.length <= 1 ? (u[0] ?? '') : `${u.slice(0, -1).join(', ')} & ${u.at(-1)}`
+}

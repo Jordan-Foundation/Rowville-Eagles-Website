@@ -1,7 +1,7 @@
 'use client'
 
 import { useActionState } from 'react'
-import { createCycleAction, createReportsAction, type CycleState } from './actions'
+import { createCycleAction, createReportsAction, releaseAction, type CycleState } from './actions'
 
 const btn = 'rounded-full bg-brand px-5 py-2 text-sm font-semibold text-white hover:brightness-110 disabled:opacity-50'
 const input = 'mt-1 block w-full rounded-lg border border-line px-3 py-2'
@@ -46,6 +46,24 @@ export function CreateReportsButton({ cycle, first }: { cycle: number; first: bo
     <form action={action} className="space-y-2">
       <input type="hidden" name="cycle" value={cycle} />
       <button disabled={pending} className={btn}>{pending ? 'Creating…' : first ? 'Create reports' : 'Add reports for new players'}</button>
+      {state.message && <p role="status" className="text-sm">{state.message}</p>}
+      {state.error && <p role="alert" className="text-sm text-red-700">{state.error}</p>}
+    </form>
+  )
+}
+
+export function ReleaseButton({ cycle, count }: { cycle: number; count: number }) {
+  const [state, action, pending] = useActionState<CycleState, FormData>(releaseAction, {})
+  return (
+    <form
+      action={action}
+      onSubmit={(e) => { if (!confirm(`Release ${count} approved report${count === 1 ? '' : 's'}? They’ll appear on player profiles and each family gets an email and a text.`)) e.preventDefault() }}
+      className="space-y-2"
+    >
+      <input type="hidden" name="cycle" value={cycle} />
+      <button disabled={pending || count === 0} className="rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:brightness-110 disabled:opacity-50">
+        {pending ? 'Releasing…' : `Release ${count} approved report${count === 1 ? '' : 's'}`}
+      </button>
       {state.message && <p role="status" className="text-sm">{state.message}</p>}
       {state.error && <p role="alert" className="text-sm text-red-700">{state.error}</p>}
     </form>
