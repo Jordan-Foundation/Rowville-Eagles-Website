@@ -1,3 +1,4 @@
+import { markSeen } from '@/lib/seen'
 import type { Metadata } from 'next'
 import { payload, formatDate } from '@/lib/payload'
 import { requireCoach } from '@/academy/portal'
@@ -11,7 +12,8 @@ const day = (iso: string) => formatDate(iso, { weekday: 'short', day: 'numeric',
 const time = (iso: string) => formatDate(iso, { hour: 'numeric', minute: '2-digit' })
 
 export default async function CoachGroupsPage() {
-  const { coach } = await requireCoach('/coach/groups')
+  const { coach, user: me } = await requireCoach('/coach/groups')
+  void markSeen(await payload(), me.id, 'groups')
   const p = await payload()
   const groups = await coachGroups(p, coach.id)
   const now = Date.now()

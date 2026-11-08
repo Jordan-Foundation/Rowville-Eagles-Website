@@ -1,3 +1,4 @@
+import { markSeen } from '@/lib/seen'
 import { requireManagement } from '@/lib/management'
 import Link from 'next/link'
 import type { Metadata } from 'next'
@@ -14,6 +15,7 @@ const statuses = ['confirmed', 'payment_failed', 'completed', 'cancelled', 'refu
 
 export default async function StaffBookingsPage({ searchParams }: { searchParams: Promise<Q> }) {
   const user = await requireManagement('/management/academy/bookings')
+  void markSeen(await payload(), user.id, 'bookings')
   const q = await searchParams
   const p = await payload()
   const [{ docs: terms }, { docs: coaches }] = await Promise.all([

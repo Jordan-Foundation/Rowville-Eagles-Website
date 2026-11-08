@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 import { payload } from '@/lib/payload'
 import { requireManagement } from '@/lib/management'
-import { DashboardGrid } from '@/components/dashboard/DashboardGrid'
+import { LiveDashboard } from '@/components/dashboard/LiveDashboard'
+import { managementAttention } from '@/lib/attention'
 import { RoleSwitch, myChildren } from '@/components/dashboard/RoleSwitch'
 import { managementItems } from './items'
 
@@ -10,7 +11,8 @@ export const metadata: Metadata = { title: 'Management', robots: { index: false 
 
 export default async function ManagementHome() {
   const user = await requireManagement('/management')
-  const kids = await myChildren(await payload(), user)
+  const p = await payload()
+  const [kids, counts] = await Promise.all([myChildren(p, user), managementAttention(p, user)])
   return (
     <div data-brand="academy" data-page-brand="academy" className="min-h-[70vh]">
       <div className="container-x py-12">
@@ -22,7 +24,7 @@ export default async function ManagementHome() {
           <RoleSwitch user={user} current="management" kids={kids} />
         </div>
         <div className="mt-10">
-          <DashboardGrid items={managementItems} />
+          <LiveDashboard items={managementItems} initial={counts} role="management" />
         </div>
       </div>
     </div>

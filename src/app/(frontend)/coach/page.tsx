@@ -1,23 +1,25 @@
 import Link from 'next/link'
 import { payload, formatDate } from '@/lib/payload'
 import { requireCoach } from '@/academy/portal'
-import { attendanceDue, coachSessions } from '@/academy/coach-sessions'
+import { coachSessions } from '@/academy/coach-sessions'
 import { coachGroups, nextSession } from '@/academy/terms/coach-groups'
 import { RoleSwitch, myChildren } from '@/components/dashboard/RoleSwitch'
+import { LiveDashboard } from '@/components/dashboard/LiveDashboard'
+import { coachAttention } from '@/lib/attention'
+import { coachItems } from './items'
 
 export const dynamic = 'force-dynamic'
 
 export default async function CoachHome() {
   const { coach, user } = await requireCoach('/coach')
   const p = await payload()
-  const kids = await myChildren(p, user)
+  const [kids, counts] = await Promise.all([myChildren(p, user), coachAttention(p, user, coach)])
   const [{ docs: terms }, { docs: mine }] = await Promise.all([
     p.find({ collection: 'academy-terms', where: { status: { in: ['availability', 'open'] } }, sort: 'startDate', depth: 0, limit: 10 }),
     p.find({ collection: 'academy-availability', where: { coach: { equals: coach.id } }, depth: 0, limit: 50, overrideAccess: true }),
   ])
   const now = new Date()
-  const [next, due, groups] = await Promise.all([coachSessions(p, coach.id, { from: now, to: new Date(now.getTime() + 7 * 86_400_000) }), attendanceDue(p, coach.id, now), coachGroups(p, coach.id)])
-  const { totalDocs: toReview } = await p.count({ collection: 'pdr-submissions', where: { status: { equals: 'pending' } }, overrideAccess: true })
+  const [next, groups] = await Promise.all([coachSessions(p, coach.id, { from: now, to: new Date(now.getTime() + 7 * 86_400_000) }), coachGroups(p, coach.id)])
   const nextGroup = groups.map((g) => ({ g, s: nextSession(g, now) })).filter((x) => x.s).sort((a, b) => a.s!.startsAt.localeCompare(b.s!.startsAt))[0]
   const byTerm = new Map(mine.map((a) => [typeof a.term === 'object' ? a.term.id : a.term, a]))
   const profileGaps = [!coach.photo && 'a photo', !coach.bio && 'a short bio', !(coach.specialties?.length) && 'your specialties'].filter(Boolean) as string[]
@@ -32,37 +34,9 @@ export default async function CoachHome() {
         <RoleSwitch user={user} current="coach" kids={kids} />
       </div>
 
-      <Link href="/coach/sessions" className="panel gloss-sheen group block border border-line p-6 transition hover:border-white/40">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="font-display text-xl font-semibold uppercase">Sessions</p>
-            <p className="mt-1 text-sm text-muted">
-              {next.length ? `${next.length} in the next 7 days · next ${formatDate(next[0].session.startsAt, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })} with ${next[0].booking.player.firstName}` : 'Nothing booked in the next 7 days.'}
-            </p>
-          </div>
-          {due.length > 0 && <span className="bg-red-500/20 px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-red-300">{due.length} to mark</span>}
-        </div>
-        <p className="mt-4 text-xs font-semibold uppercase tracking-[0.2em] transition group-hover:translate-x-1">Open my sessions →</p>
-      </Link>
-
-      {toReview > 0 && (
-        <Link href="/coach/reviews" className="panel gloss-sheen group block border border-line p-6 transition hover:border-white/40">
-          <p className="font-display text-xl font-semibold uppercase">Foundation+ reviews</p>
-          <p className="mt-1 text-sm text-muted">{toReview} video{toReview === 1 ? '' : 's'} waiting for a coach</p>
-          <p className="mt-4 text-xs font-semibold uppercase tracking-[0.2em] transition group-hover:translate-x-1">Review now →</p>
-        </Link>
-      )}
-
-      {groups.length > 0 && (
-        <Link href="/coach/groups" className="panel gloss-sheen group block border border-line p-6 transition hover:border-white/40">
-          <p className="font-display text-xl font-semibold uppercase">My groups</p>
-          <p className="mt-1 text-sm text-muted">
-            {groups.length} group{groups.length === 1 ? '' : 's'} · {groups.reduce((n, g) => n + g.players.length, 0)} players
-            {nextGroup ? ` · next ${formatDate(nextGroup.s!.startsAt, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })} (${nextGroup.g.groupName ?? nextGroup.g.title})` : ''}
-          </p>
-          <p className="mt-4 text-xs font-semibold uppercase tracking-[0.2em] transition group-hover:translate-x-1">Open my groups →</p>
-        </Link>
-      )}
+      <LiveDashboard items={coachItems.map((it) =>
+        it.key === 'sessions' ? { ...it, hint: [counts.sessions ? `${counts.sessions} new booking${counts.sessions === 1 ? '' : 's'}` : '', next.length ? `${next.length} in the next 7 days` : 'none in the next 7 days'].filter(Boolean).join(' · ') } : it.key === 'groups' && groups.length ? { ...it, hint: `${groups.length} group${groups.length === 1 ? '' : 's'}${nextGroup ? ` · next ${formatDate(nextGroup.s!.startsAt, { weekday: 'short', hour: 'numeric', minute: '2-digit' })}` : ''}` } : it,
+      )} initial={counts} role="coach" />
 
       {(profileGaps.length > 0 || !coach.active) && (
         <div className="panel gloss-sheen border border-line p-6">
@@ -75,7 +49,7 @@ export default async function CoachHome() {
         </div>
       )}
 
-      <section>
+      <section id="availability" className="scroll-mt-24">
         <h2 className="font-display text-2xl font-semibold uppercase">Availability</h2>
         {terms.length === 0 ? (
           <p className="mt-4 text-muted">No terms are open for availability right now.</p>

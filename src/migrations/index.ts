@@ -39,6 +39,7 @@ import * as migration_20261107_205754_shop_item_access from './20261107_205754_s
 import * as migration_20261107_215132_monthly_challenges from './20261107_215132_monthly_challenges';
 import * as migration_20261108_034355_coach_share_links from './20261108_034355_coach_share_links';
 import * as migration_20261108_041303_messaging_inbox from './20261108_041303_messaging_inbox';
+import * as migration_20261108_084744_seen_markers from './20261108_084744_seen_markers';
 
 export const migrations = [
   {
@@ -244,6 +245,11 @@ export const migrations = [
   {
     up: migration_20261108_041303_messaging_inbox.up,
     down: migration_20261108_041303_messaging_inbox.down,
-    name: '20261108_041303_messaging_inbox'
+    name: '20261108_041303_messaging_inbox',
+  },
+  {
+    up: migration_20261108_084744_seen_markers.up,
+    down: migration_20261108_084744_seen_markers.down,
+    name: '20261108_084744_seen_markers'
   },
 ];

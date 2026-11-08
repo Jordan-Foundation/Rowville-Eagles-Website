@@ -1,6 +1,6 @@
 import type { DashItem } from '@/components/dashboard/DashboardGrid'
 
-/** Management dashboard sections (badge counts are added in the attention step). */
+/** Management dashboard sections; keys match the badge counts in src/lib/attention.ts. */
 export const managementItems: DashItem[] = [
   { key: 'programs', href: '/management/academy/dashboard', label: 'Programs Overview', icon: 'chart' },
   { key: 'bookings', href: '/management/academy/bookings', label: 'Bookings & cancellations', icon: 'booking' },

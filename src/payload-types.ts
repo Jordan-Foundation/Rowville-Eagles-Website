@@ -110,6 +110,7 @@ export interface Config {
     users: User;
     'consent-records': ConsentRecord;
     'message-log': MessageLog;
+    'seen-markers': SeenMarker;
     conversations: Conversation;
     messages: Message;
     'invite-tokens': InviteToken;
@@ -164,6 +165,7 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     'consent-records': ConsentRecordsSelect<false> | ConsentRecordsSelect<true>;
     'message-log': MessageLogSelect<false> | MessageLogSelect<true>;
+    'seen-markers': SeenMarkersSelect<false> | SeenMarkersSelect<true>;
     conversations: ConversationsSelect<false> | ConversationsSelect<true>;
     messages: MessagesSelect<false> | MessagesSelect<true>;
     'invite-tokens': InviteTokensSelect<false> | InviteTokensSelect<true>;
@@ -1914,6 +1916,18 @@ export interface MessageLog {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "seen-markers".
+ */
+export interface SeenMarker {
+  id: number;
+  user: number | User;
+  key: string;
+  at: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "conversations".
  */
 export interface Conversation {
@@ -2171,6 +2185,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'message-log';
         value: number | MessageLog;
+      } | null)
+    | ({
+        relationTo: 'seen-markers';
+        value: number | SeenMarker;
       } | null)
     | ({
         relationTo: 'conversations';
@@ -3412,6 +3430,17 @@ export interface MessageLogSelect<T extends boolean = true> {
   status?: T;
   providerId?: T;
   error?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "seen-markers_select".
+ */
+export interface SeenMarkersSelect<T extends boolean = true> {
+  user?: T;
+  key?: T;
+  at?: T;
   updatedAt?: T;
   createdAt?: T;
 }

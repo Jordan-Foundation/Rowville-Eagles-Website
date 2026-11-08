@@ -9,6 +9,7 @@ const items = [
   { href: '/coach/messages', label: 'Messages' },
   { href: '/coach/share', label: 'Share links' },
   { href: '/coach/groups', label: 'My groups' },
+  { href: '/coach/teams', label: 'Teams' },
   { href: '/coach/reviews', label: 'Reviews' },
   { href: '/coach/players', label: 'Players' },
   { href: '/coach/profile', label: 'My profile' },

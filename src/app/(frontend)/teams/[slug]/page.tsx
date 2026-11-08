@@ -1,3 +1,4 @@
+import { markSeen } from '@/lib/seen'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
@@ -37,6 +38,7 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
   if (!user) redirect(`/login?next=/teams/${slug}`)
   const p = await payload()
   const team = (await p.find({ collection: 'teams', where: { slug: { equals: slug } }, limit: 1, depth: 1, overrideAccess: true })).docs[0] as Team | undefined
+  if (team && user) void markSeen(p, user.id, `team:${team.id}`)
   if (!team) notFound()
   const access = await teamAccess(p, user, team)
   if (!access.view) notFound()

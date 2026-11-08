@@ -1,3 +1,4 @@
+import { markSeen } from '@/lib/seen'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { payload, formatDate } from '@/lib/payload'
@@ -14,7 +15,8 @@ const DAY = 86_400_000
 const roleNote = { coach: null, cover: 'You’re covering', covered: 'Being covered' } as const
 
 export default async function CoachSessionsPage({ searchParams }: { searchParams: Promise<{ weeks?: string }> }) {
-  const { coach } = await requireCoach('/coach/sessions')
+  const { coach, user: me } = await requireCoach('/coach/sessions')
+  void markSeen(await payload(), me.id, 'sessions')
   const weeks = Math.min(12, Math.max(1, Number((await searchParams).weeks) || 4))
   const p = await payload()
   const now = new Date()
