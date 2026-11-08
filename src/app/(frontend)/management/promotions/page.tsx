@@ -15,7 +15,7 @@ export default async function PromotionsPage() {
     const { docs: uses } = await p.find({ collection: 'promotion-uses', where: { promotion: { equals: d.id }, status: { equals: 'paid' } }, limit: 5000, depth: 0, overrideAccess: true, select: { amountOff: true, paidAmount: true } })
     return { uses: uses.length, paid: uses.reduce((n, u) => n + (u.paidAmount ?? 0), 0) }
   }))
-  const tone: Record<string, string> = { live: 'bg-emerald-100 text-emerald-900', draft: 'bg-surface-2 text-muted', ended: 'bg-surface-2 text-muted line-through' }
+  const tone: Record<string, string> = { scheduled: 'bg-sky-100 text-sky-900', live: 'bg-emerald-100 text-emerald-900', draft: 'bg-surface-2 text-muted', ended: 'bg-surface-2 text-muted line-through' }
   return (
     <div className="container-x max-w-4xl py-14">
       <Link href="/management" className="text-sm text-muted hover:text-ink">← Management</Link>
@@ -31,7 +31,7 @@ export default async function PromotionsPage() {
               <Link href={`/management/promotions/${d.id}`} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 hover:bg-surface-2">
                 <span>
                   <span className="font-semibold">{d.name}</span> <span className="text-sm text-muted">· {discountLabel(d)}{d.endsAt ? ` · until ${formatDate(d.endsAt, { day: 'numeric', month: 'short' })}` : ''} · {(d.recipients ?? []).length} famil{(d.recipients ?? []).length === 1 ? 'y' : 'ies'}</span>
-                  <span className="block text-sm text-muted">Used {stats[i].uses} time{stats[i].uses === 1 ? '' : 's'} · {formatAUD(stats[i].paid)} paid</span>
+                  <span className="block text-sm text-muted">{d.sentAt ? `Sent ${formatDate(d.sentAt, { day: 'numeric', month: 'short' })} · ` : d.status === 'scheduled' && d.scheduledFor ? `Sends ${formatDate(d.scheduledFor, { day: 'numeric', month: 'short' })} · ` : ''}Used {stats[i].uses} time{stats[i].uses === 1 ? '' : 's'} · {formatAUD(stats[i].paid)} paid</span>
                 </span>
                 <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${tone[d.status] ?? ''}`}>{d.status}</span>
               </Link>

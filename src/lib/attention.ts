@@ -131,7 +131,7 @@ export async function managementAttention(p: Payload, user: User): Promise<Manag
   // Reports submitted by coaches, waiting for Management review
   const reports = await safe(async () => (await p.count({ collection: 'player-reports', where: { status: { equals: 'submitted' } }, ...q })).totalDocs)
   const dates = await safe(async () => (await loadDateIssues(p)).length)
-  // Live promotions ending within a week
-  const promotions = await safe(async () => (await p.count({ collection: 'promotions', where: { status: { equals: 'live' }, endsAt: { less_than: new Date(Date.now() + 7 * 86_400_000).toISOString(), greater_than: new Date().toISOString() } }, ...q })).totalDocs)
+  // Promotions scheduled to send, or live and ending within a week
+  const promotions = await safe(async () => (await p.count({ collection: 'promotions', where: { or: [{ status: { equals: 'scheduled' } }, { and: [{ status: { equals: 'live' } }, { endsAt: { less_than: new Date(Date.now() + 7 * 86_400_000).toISOString(), greater_than: new Date().toISOString() } }] }] }, ...q })).totalDocs)
   return { bookings, payments, cover, availability, terms, selections, messages, store, foundation, consent, reports, dates, promotions }
 }

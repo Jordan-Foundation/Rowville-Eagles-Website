@@ -116,15 +116,15 @@ export function PromotionForm({ v, pick }: { v: PromoValues; pick: Pickables }) 
       </fieldset>
 
       <fieldset>
-        <legend className="font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase">Families</legend>
-        <p className="mt-1 text-sm text-muted">Only these accounts get the discount. Paste their account emails (one per line). Choosing an audience and sending the email/text comes in the next step.</p>
+        <legend className="font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase">Families who have it</legend>
+        <p className="mt-1 text-sm text-muted">Only these accounts get the discount. Usually filled in by <strong>Choose families &amp; send</strong> (above, after saving) — you can also add or remove accounts here by email.</p>
         <textarea name="emails" rows={4} defaultValue={v.emails} placeholder={'parent@example.com\nanother@example.com'} className={input} aria-label="Family account emails" />
       </fieldset>
 
       {state.error && <p role="alert" className="text-sm text-red-700">{state.error}</p>}
       <div className="flex flex-wrap gap-3">
-        <button name="intent" value={v.status === 'live' ? 'save' : 'draft'} disabled={pending} className={`${btn} border border-line`}>{pending ? 'Saving…' : v.status === 'live' ? 'Save changes' : 'Save draft'}</button>
-        {v.status !== 'live' && <button name="intent" value="live" disabled={pending} className={`${btn} bg-emerald-600 text-white`}>Make live</button>}
+        <button name="intent" value={v.status === 'draft' ? 'draft' : 'save'} disabled={pending} className={`${btn} border border-line`}>{pending ? 'Saving…' : v.status === 'draft' ? 'Save draft' : 'Save changes'}</button>
+        {(v.status === 'draft' || v.status === 'ended') && <button name="intent" value="live" title="Give these families the discount now, without sending a message" disabled={pending} className={`${btn} bg-emerald-600 text-white`}>Make live (no message)</button>}
         {v.status === 'live' && <button name="intent" value="end" disabled={pending} className={`${btn} bg-red-600 text-white`}>End now</button>}
       </div>
     </form>

@@ -16,7 +16,7 @@ export const Promotions: CollectionConfig = {
   fields: [
     { type: 'row', fields: [
       { name: 'name', type: 'text', required: true, admin: { description: 'Shown to families, e.g. “Winter special”' } },
-      { name: 'status', type: 'select', required: true, defaultValue: 'draft', index: true, options: [{ label: 'Draft', value: 'draft' }, { label: 'Live', value: 'live' }, { label: 'Ended', value: 'ended' }] },
+      { name: 'status', type: 'select', required: true, defaultValue: 'draft', index: true, options: [{ label: 'Draft', value: 'draft' }, { label: 'Scheduled to send', value: 'scheduled' }, { label: 'Live', value: 'live' }, { label: 'Ended', value: 'ended' }] },
     ] },
     { type: 'row', fields: [
       { name: 'type', label: 'Discount', type: 'select', required: true, defaultValue: 'percent', options: [{ label: '% off', value: 'percent' }, { label: '$ off', value: 'amount' }] },
@@ -56,6 +56,10 @@ export const Promotions: CollectionConfig = {
       admin: { initCollapsed: true },
       fields: [
         { name: 'channels', type: 'select', hasMany: true, defaultValue: ['email'], options: [{ label: 'Email', value: 'email' }, { label: 'Text message', value: 'sms' }] },
+        { type: 'row', fields: [
+          { name: 'brand', label: 'Sent as', type: 'select', defaultValue: 'academy', options: [{ label: 'Foundation Academy', value: 'academy' }, { label: 'Rowville Eagles FC', value: 'club' }] },
+          { name: 'ctaPath', label: 'Button goes to', type: 'text', admin: { description: 'A page on this website, e.g. /programs' } },
+        ] },
         { name: 'subject', type: 'text' },
         { name: 'message', type: 'textarea' },
         { name: 'smsText', label: 'Text message', type: 'textarea' },

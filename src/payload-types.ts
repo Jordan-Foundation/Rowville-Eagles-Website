@@ -346,7 +346,7 @@ export interface Promotion {
    * Shown to families, e.g. “Winter special”
    */
   name: string;
-  status: 'draft' | 'live' | 'ended';
+  status: 'draft' | 'scheduled' | 'live' | 'ended';
   type: 'percent' | 'amount';
   /**
    * e.g. 20 (%) or 15 ($) — per booking / order
@@ -373,6 +373,11 @@ export interface Promotion {
    */
   recipients?: (number | User)[] | null;
   channels?: ('email' | 'sms')[] | null;
+  brand?: ('academy' | 'club') | null;
+  /**
+   * A page on this website, e.g. /programs
+   */
+  ctaPath?: string | null;
   subject?: string | null;
   message?: string | null;
   smsText?: string | null;
@@ -3807,6 +3812,8 @@ export interface PromotionsSelect<T extends boolean = true> {
   foundationPlus?: T;
   recipients?: T;
   channels?: T;
+  brand?: T;
+  ctaPath?: T;
   subject?: T;
   message?: T;
   smsText?: T;

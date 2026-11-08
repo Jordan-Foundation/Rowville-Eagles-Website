@@ -11,6 +11,7 @@ import { graceSweep } from '../academy/pdr/billing/sync'
 import { sendLaunchEmails, trialReminders } from '../academy/pdr/billing/trial'
 import { announceChallenges, finaliseChallenges } from '../academy/pdr/challenges'
 import { sendReportReminders } from '../academy/reports/service'
+import { runScheduledPromotions } from '../promotions/send'
 
 type Job = (payload: Payload) => Promise<Record<string, unknown>>
 
@@ -34,5 +35,6 @@ export const cronJobs: Record<string, Record<string, Job>> = {
     foundationChallengeStart: (payload) => announceChallenges(payload),
     foundationChallengeResults: (payload) => finaliseChallenges(payload),
     reportReminders: (payload) => sendReportReminders(payload),
+    scheduledPromotions: (payload) => runScheduledPromotions(payload),
   },
 }

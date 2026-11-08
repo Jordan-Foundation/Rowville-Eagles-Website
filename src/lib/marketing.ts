@@ -36,3 +36,24 @@ export async function sendMarketingEmail(
   }
   return result
 }
+
+/**
+ * The ONLY way to send a marketing text. Consent (marketing texts on, not replied STOP) is re-read for every
+ * recipient at send time, and the body must already end with the opt-out wording.
+ */
+export async function sendMarketingSms(payload: Payload, opts: { userIds: number[]; body: string }) {
+  const { sendSms } = await import('./sms')
+  const result = { sent: 0, skipped: 0 }
+  if (!/Reply STOP to opt out$/.test(opts.body)) throw new Error('Marketing texts must end with “Reply STOP to opt out”.')
+  for (const id of Array.from(new Set(opts.userIds))) {
+    const user = await payload.findByID({ collection: 'users', id, depth: 0, overrideAccess: true, disableErrors: true })
+    if (!user || !canMarket(user, 'sms') || !user.phone) {
+      result.skipped++
+      continue
+    }
+    const r = await sendSms(payload, { to: user.phone, body: opts.body, kind: 'marketing', optedOut: user.smsOptOut, userId: user.id })
+    if (r.sent || r.reason === 'not_configured') result.sent++
+    else result.skipped++
+  }
+  return result
+}
