@@ -7,6 +7,7 @@ import { nightRate } from '@/academy/terms/service'
 import { AcademyBackdrop } from '@/components/AcademyBackdrop'
 import { loadTermRegistration } from './load'
 import { PayButton } from './PayButton'
+import { PromoNotice } from '@/promotions/PromoNotice'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Confirm your place', robots: { index: false } }
@@ -44,6 +45,7 @@ export default async function TermPayPage({ params, searchParams }: { params: Pr
       <div>
         <p className="eyebrow">{program.title}</p>
         <h1 className="mt-2 font-display text-4xl font-bold uppercase sm:text-5xl">{reg.player.firstName} {reg.player.lastName}</h1>
+      <div className="mt-6"><PromoNotice tone={club ? 'light' : 'dark'} targets={[{ kind: 'program', programId: program.id, programType: program.type }]} /></div>
         {cancelled && <p className="mt-6 rounded-lg border border-line bg-surface-2 px-4 py-3 text-sm">Payment was cancelled — nothing was charged.</p>}
         {reg.status === 'paid' ? (
           <p className="mt-6 rounded-sm border border-line bg-surface-2 p-6">All done — {reg.player.firstName}’s place is paid. <Link href="/account" className="font-semibold underline">Go to your account</Link></p>

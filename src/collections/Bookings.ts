@@ -58,6 +58,14 @@ export const Bookings: CollectionConfig = {
       admin: { position: 'sidebar', description: 'AUD. Defaults to the program price (e.g. for cash bookings).' },
     },
     {
+      type: 'row',
+      admin: { position: 'sidebar' },
+      fields: [
+        { name: 'discount', label: 'Promotion discount (AUD)', type: 'number', admin: { readOnly: true, description: 'Already taken off the amount' } },
+        { name: 'promotion', type: 'relationship', relationTo: 'promotions', admin: { readOnly: true } },
+      ],
+    },
+    {
       name: 'bookingType',
       type: 'select',
       defaultValue: 'enrolment',

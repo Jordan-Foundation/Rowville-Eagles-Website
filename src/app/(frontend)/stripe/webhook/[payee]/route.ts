@@ -1,6 +1,7 @@
 import type Stripe from 'stripe'
 import { payload } from '@/lib/payload'
 import { cancelPending, confirmPayment } from '@/lib/payments'
+import { settleUses } from '@/promotions/service'
 import { isPayee, stripeFor, webhookSecretFor } from '@/lib/stripe-accounts'
 import { activateWeeklyPlan, recordWeeklyFailed, recordWeeklyPaid, weeklyPlanEnded } from '@/academy/weekly-payments'
 import { applySubscription } from '@/academy/pdr/billing/sync'
@@ -49,6 +50,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ payee: 
       const sub = await stripeFor('academy').subscriptions.retrieve(idOf(session.subscription)!, { expand: ['items.data.price'] })
       const blocked = await guardTrialCard(p, sub as never)
       await applySubscription(p, (blocked ? { ...sub, status: 'canceled' } : sub) as never)
+      if (session.metadata?.promoRef) await settleUses(p, session.metadata.promoRef, 'paid')
     }
   }
   if (payee === 'academy' && (event.type === 'customer.subscription.created' || event.type === 'customer.subscription.updated' || event.type === 'customer.subscription.deleted')) {

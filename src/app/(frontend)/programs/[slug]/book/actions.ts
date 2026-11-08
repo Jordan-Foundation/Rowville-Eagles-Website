@@ -6,6 +6,7 @@ import { payload } from '@/lib/payload'
 import { confirmPayment, newReference, placesTaken, startCheckout } from '@/lib/payments'
 import { defaultPayee } from '@/collections/Programs'
 import { isPayee } from '@/lib/stripe-accounts'
+import { findDiscount, recordUse } from '@/promotions/service'
 
 export type BookingState = { error?: string; values?: Record<string, string> }
 
@@ -92,6 +93,10 @@ export async function bookProgram(_prev: BookingState, fd: FormData): Promise<Bo
 
   const payee = isPayee(program.payee) ? program.payee : defaultPayee(program.type)
   const reference = newReference(payee)
+  // Promotion for this family (worked out on the server)
+  const price = program.price ?? 0
+  const promo = await findDiscount(p, accountId, [{ target: { kind: 'program', programId: program.id, programType: program.type }, amount: price }])
+  const due = Math.round((price - (promo?.off ?? 0)) * 100) / 100
   const booking = await p.create({
     collection: 'bookings',
     data: {
@@ -99,7 +104,9 @@ export async function bookProgram(_prev: BookingState, fd: FormData): Promise<Bo
       program: program.id,
       status: 'pending',
       payee,
-      amount: program.price ?? 0,
+      amount: due,
+      discount: promo?.off,
+      promotion: promo?.promotion,
       sessionStart,
       account: accountId,
       participant: offeredParticipant?.id,
@@ -108,8 +115,9 @@ export async function bookProgram(_prev: BookingState, fd: FormData): Promise<Bo
     },
   })
 
+  if (promo && accountId) await recordUse(p, { applied: promo, account: accountId, kind: 'program', reference, paidAmount: due })
   let url: string
-  if (program.price === 0) {
+  if (due === 0) {
     await confirmPayment(p, 'booking', reference)
     url = `/checkout/success?kind=booking&ref=${reference}`
   } else {
@@ -120,7 +128,8 @@ export async function bookProgram(_prev: BookingState, fd: FormData): Promise<Bo
         kind: 'booking',
         reference,
         email: contact.email,
-        items: [{ name: program.title, description: who, unitAmount: program.price ?? 0, quantity: 1 }],
+        items: [{ name: program.title, description: who, unitAmount: price, quantity: 1 }],
+        discount: promo ? { amount: promo.off, label: promo.label } : null,
         cancelPath: `/programs/${program.slug}/book?cancelled=1`,
       })
       if (checkout.sessionId) await p.update({ collection: 'bookings', id: booking.id, data: { stripeCheckoutId: checkout.sessionId } })

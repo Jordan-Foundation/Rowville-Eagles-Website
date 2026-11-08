@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { PromoNotice } from '@/promotions/PromoNotice'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { payload, formatAUD, formatDate } from '@/lib/payload'
@@ -122,6 +123,7 @@ export default async function BookPage({
           <Link href={`/programs/${program.slug}`} className="text-sm text-muted hover:text-ink">← Back to program</Link>
           <p className="eyebrow mt-6">{programTypes.find((t) => t.value === program.type)?.label}</p>
           <h1 className="mt-2 font-display text-4xl font-bold uppercase leading-none tracking-tight sm:text-5xl">{program.type === 'registration' ? 'Register' : 'Book'}: {program.title}</h1>
+          <div className="mt-6"><PromoNotice targets={[{ kind: 'program', programId: program.id, programType: program.type }]} /></div>
           {cancelled && (
             <p className="mt-6 rounded-lg border border-line bg-surface-2 px-4 py-3 text-sm">Payment was cancelled — nothing was charged. You can try again below.</p>
           )}

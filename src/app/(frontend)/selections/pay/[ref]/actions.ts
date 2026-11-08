@@ -5,6 +5,7 @@ import { newReference, startCheckout, confirmPayment } from '@/lib/payments'
 import { paymentsMode } from '@/lib/stripe-accounts'
 import { awaitingPayment } from '@/selections/payment'
 import { loadPayable } from './load'
+import { findDiscount, recordUse } from '@/promotions/service'
 
 export type PayState = { error?: string; values?: Record<string, string> }
 
@@ -28,6 +29,9 @@ export async function payForSelection(_prev: PayState, fd: FormData): Promise<Pa
   }
 
   const reference = newReference(payee)
+  const accountId = (typeof entry.account === 'object' ? entry.account?.id : entry.account) ?? undefined
+  const promo = await findDiscount(p, accountId, [{ target: round.kind === 'tournament' ? { kind: 'tournament', roundId: round.id } : { kind: 'program', programId: program.id, programType: program.type }, amount: fee }])
+  const due = Math.round((fee - (promo?.off ?? 0)) * 100) / 100
   const booking = await p.create({
     collection: 'bookings',
     overrideAccess: true,
@@ -36,7 +40,9 @@ export async function payForSelection(_prev: PayState, fd: FormData): Promise<Pa
       program: program.id,
       status: 'pending',
       payee,
-      amount: fee,
+      amount: due,
+      discount: promo?.off,
+      promotion: promo?.promotion,
       bookingType: 'enrolment',
       birthYear: entry.playingBirthYear ?? entry.birthYear,
       account: typeof entry.account === 'object' ? entry.account?.id : entry.account,
@@ -55,7 +61,8 @@ export async function payForSelection(_prev: PayState, fd: FormData): Promise<Pa
       },
     },
   })
-  if (fee <= 0) {
+  if (promo && accountId) await recordUse(p, { applied: promo, account: accountId, kind: round.kind === 'tournament' ? 'tournament' : 'program', reference, paidAmount: due })
+  if (due <= 0) {
     await confirmPayment(p, 'booking', reference)
     redirect(`/checkout/success?kind=booking&ref=${reference}`)
   }
@@ -67,6 +74,7 @@ export async function payForSelection(_prev: PayState, fd: FormData): Promise<Pa
       reference,
       email: entry.contact.email,
       items: [{ name: round.kind === 'tournament' ? `${program.title} — ${squad?.name ?? 'registration'}` : program.title, description: `${entry.player.firstName} ${entry.player.lastName}`, unitAmount: fee, quantity: 1 }],
+      discount: promo ? { amount: promo.off, label: promo.label } : null,
       cancelPath: `/selections/pay/${entry.reference}${s('t') ? `?t=${s('t')}` : ''}`,
     })
     if (checkout.sessionId) await p.update({ collection: 'bookings', id: booking.id, data: { stripeCheckoutId: checkout.sessionId }, overrideAccess: true })

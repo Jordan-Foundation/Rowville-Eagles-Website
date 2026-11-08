@@ -38,6 +38,14 @@ export const AcademyBookings: CollectionConfig = {
     { name: 'type', type: 'select', required: true, options: [{ label: 'Casual session', value: 'casual' }, { label: 'Term (weekly)', value: 'term' }], admin: { position: 'sidebar' } },
     { name: 'paymentMode', type: 'select', required: true, options: ['casual', 'upfront', 'weekly'], admin: { position: 'sidebar' } },
     { name: 'amount', type: 'number', required: true, admin: { position: 'sidebar', description: 'AUD (calculated on the server)' } },
+    {
+      type: 'row',
+      admin: { position: 'sidebar' },
+      fields: [
+        { name: 'discount', label: 'Promotion discount (AUD)', type: 'number', admin: { readOnly: true, description: 'Already taken off the amount' } },
+        { name: 'promotion', type: 'relationship', relationTo: 'promotions', admin: { readOnly: true } },
+      ],
+    },
     { name: 'termMemberPrice', label: 'Term member price', type: 'checkbox', admin: { readOnly: true, position: 'sidebar', description: 'Casual session at the term-member price' } },
     { type: 'row', fields: [
       { name: 'sessionsTotal', type: 'number', defaultValue: 1 },

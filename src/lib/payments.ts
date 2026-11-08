@@ -3,6 +3,7 @@ import { paymentsMode, stripeAccounts, stripeFor, type Payee } from './stripe-ac
 import { onBookingPaid, onOrderPaid } from './notifications'
 import { makeReference } from './reference'
 import { confirmAcademyBooking, releaseAcademyHold } from '../academy/booking-data'
+import { settleUses } from '../promotions/service'
 
 export const siteUrl = () =>
   process.env.NEXT_PUBLIC_SITE_URL ||
@@ -35,6 +36,8 @@ export async function startCheckout(opts: {
    * so Stripe's checkout never shows a subscription or "free trial". `note` is shown above the pay button.
    */
   saveCardFor?: { note: string }
+  /** Promotion discount already worked out on the server: shown in Stripe as its own line (e.g. "Winter special — 20% off"). */
+  discount?: { amount: number; label: string } | null
 }): Promise<{ url: string; sessionId?: string; simulated: boolean }> {
   const success = `${siteUrl()}${opts.successPath ?? '/checkout/success'}?kind=${opts.kind}&ref=${opts.reference}`
 
@@ -53,11 +56,17 @@ export async function startCheckout(opts: {
     },
   }))
   const save = opts.saveCardFor
-  const session = await stripeFor(opts.payee).checkout.sessions.create({
+  const stripe = stripeFor(opts.payee)
+  // A single-use coupon for exactly this discount (Stripe then shows it as a discount line and charges the rest)
+  const coupon = opts.discount && opts.discount.amount > 0
+    ? await stripe.coupons.create({ amount_off: toCents(opts.discount.amount), currency: 'aud', duration: 'once', max_redemptions: 1, name: opts.discount.label.slice(0, 40) })
+    : null
+  const session = await stripe.checkout.sessions.create({
     mode: 'payment',
     customer_email: opts.email,
     metadata,
     line_items: lineItems,
+    ...(coupon ? { discounts: [{ coupon: coupon.id }] } : {}),
     payment_intent_data: { metadata, description, ...(save ? { setup_future_usage: 'off_session' as const } : {}) },
     ...(save ? { customer_creation: 'always' as const, custom_text: { submit: { message: save.note } } } : {}),
     success_url: `${success}&session_id={CHECKOUT_SESSION_ID}`,
@@ -70,6 +79,12 @@ export async function startCheckout(opts: {
 
 /** Idempotently confirm payment for a booking or order (called by webhook, success page and simulate mode). */
 export async function confirmPayment(payload: Payload, kind: CheckoutKind, reference: string) {
+  const result = await confirmPaymentInner(payload, kind, reference)
+  if (['paid', 'confirmed', 'completed'].includes((result as { status?: string } | undefined)?.status ?? '')) await settleUses(payload, reference, 'paid')
+  return result
+}
+
+async function confirmPaymentInner(payload: Payload, kind: CheckoutKind, reference: string) {
   if (kind === 'academy') return confirmAcademyBooking(payload, reference)
   if (kind === 'booking') {
     const { docs } = await payload.find({ collection: 'bookings', where: { reference: { equals: reference } }, limit: 1, depth: 0 })
@@ -108,6 +123,7 @@ export async function confirmPayment(payload: Payload, kind: CheckoutKind, refer
 
 /** Release an unpaid booking/order when its Stripe session expires. */
 export async function cancelPending(payload: Payload, kind: CheckoutKind, reference: string) {
+  await settleUses(payload, reference, 'cancelled')
   if (kind === 'academy') return releaseAcademyHold(payload, reference)
   const collection = kind === 'booking' ? 'bookings' : 'orders'
   const { docs } = await payload.find({ collection, where: { reference: { equals: reference } }, limit: 1, depth: 0 })

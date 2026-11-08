@@ -13,6 +13,7 @@ export const managementItems: DashItem[] = [
   { key: 'selections', href: '/management/selections', label: 'Selections', icon: 'flag' },
   { key: 'teams', href: '/management/teams', label: 'Teams', icon: 'users' },
   { key: 'messages', href: '/management/messages', label: 'Messages', icon: 'chat' },
+  { key: 'promotions', href: '/management/promotions', label: 'Promotions', icon: 'megaphone' },
   { key: 'foundation', href: '/management/foundation-plus', label: 'Foundation+', icon: 'star' },
   { key: 'store', href: '/admin/collections/orders', label: 'Store', icon: 'bag' },
   { key: 'reports', href: '/management/reports', label: 'Reports', icon: 'report', hint: 'Player reports' },

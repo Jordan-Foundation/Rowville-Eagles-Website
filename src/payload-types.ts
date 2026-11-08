@@ -114,6 +114,8 @@ export interface Config {
     'report-cycles': ReportCycle;
     'player-reports': PlayerReport;
     'report-reminder-log': ReportReminderLog;
+    promotions: Promotion;
+    'promotion-uses': Promotionus;
     'seen-markers': SeenMarker;
     conversations: Conversation;
     messages: Message;
@@ -173,6 +175,8 @@ export interface Config {
     'report-cycles': ReportCyclesSelect<false> | ReportCyclesSelect<true>;
     'player-reports': PlayerReportsSelect<false> | PlayerReportsSelect<true>;
     'report-reminder-log': ReportReminderLogSelect<false> | ReportReminderLogSelect<true>;
+    promotions: PromotionsSelect<false> | PromotionsSelect<true>;
+    'promotion-uses': PromotionUsesSelect<false> | PromotionUsesSelect<true>;
     'seen-markers': SeenMarkersSelect<false> | SeenMarkersSelect<true>;
     conversations: ConversationsSelect<false> | ConversationsSelect<true>;
     messages: MessagesSelect<false> | MessagesSelect<true>;
@@ -245,6 +249,11 @@ export interface AcademyBooking {
    * AUD (calculated on the server)
    */
   amount: number;
+  /**
+   * Already taken off the amount
+   */
+  discount?: number | null;
+  promotion?: (number | null) | Promotion;
   /**
    * Casual session at the term-member price
    */
@@ -329,356 +338,65 @@ export interface AcademyBooking {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "academy-coaches".
+ * via the `definition` "promotions".
  */
-export interface AcademyCoach {
-  id: number;
-  user: number | User;
-  /**
-   * Name shown to families, e.g. "Coach Sam"
-   */
-  displayName: string;
-  photo?: (number | null) | Media;
-  /**
-   * Short description shown in the booking carousel (max 400 characters)
-   */
-  bio?: string | null;
-  specialties?:
-    | {
-        label: string;
-        id?: string | null;
-      }[]
-    | null;
-  /**
-   * Inactive coaches are hidden from families
-   */
-  active?: boolean | null;
-  order?: number | null;
-  organisation?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users".
- */
-export interface User {
-  id: number;
-  firstName?: string | null;
-  lastName?: string | null;
-  phone?: string | null;
-  stripeCustomerAcademy?: string | null;
-  phoneE164?: string | null;
-  serviceConsentAt?: string | null;
-  marketingEmail?: boolean | null;
-  marketingSms?: boolean | null;
-  smsOptOut?: boolean | null;
-  consentReviewStatus?: ('new' | 'pending' | 'sent' | 'confirmed') | null;
-  /**
-   * Has set their own password / logged in
-   */
-  activated?: boolean | null;
-  reviewRequestSentAt?: string | null;
-  /**
-   * The one reminder sent to a guest who hasn’t set up their account yet
-   */
-  accountReminderSentAt?: string | null;
-  roles?: ('admin' | 'committee' | 'coach' | 'parent' | 'player')[] | null;
-  wwcc?: {
-    number?: string | null;
-    expiry?: string | null;
-  };
-  updatedAt: string;
-  createdAt: string;
-  email: string;
-  resetPasswordToken?: string | null;
-  resetPasswordExpiration?: string | null;
-  salt?: string | null;
-  hash?: string | null;
-  resetPasswordRequestedAt?: string | null;
-  loginAttempts?: number | null;
-  lockUntil?: string | null;
-  sessions?:
-    | {
-        id: string;
-        createdAt?: string | null;
-        expiresAt: string;
-      }[]
-    | null;
-  password?: string | null;
-  collection: 'users';
-}
-/**
- * Photos and logos. JPG or WebP is best for photos; PNG for logos. Large photos are fine — they upload directly to storage.
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "media".
- */
-export interface Media {
+export interface Promotion {
   id: number;
   /**
-   * Short description of the image for screen readers and Google, e.g. "U9 players at the January holiday camp".
-   */
-  alt: string;
-  updatedAt: string;
-  createdAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "academy-terms".
- */
-export interface AcademyTerm {
-  id: number;
-  /**
-   * e.g. "Term 1 2027"
+   * Shown to families, e.g. “Winter special”
    */
   name: string;
-  status: 'draft' | 'availability' | 'open' | 'closed';
+  status: 'draft' | 'live' | 'ended';
+  type: 'percent' | 'amount';
   /**
-   * First day of the school term
+   * e.g. 20 (%) or 15 ($) — per booking / order
    */
-  startDate: string;
+  value: number;
   /**
-   * Last day of the school term
+   * Leave empty for no limit
    */
-  endDate: string;
+  usesPerFamily?: number | null;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  everything?: boolean | null;
+  programGroups?: ('holiday-camp' | 'academy-term' | 'toddler' | 'academy-trial' | 'registration' | 'other')[] | null;
+  programs?: (number | Program)[] | null;
+  oneOnOneAll?: boolean | null;
+  oneOnOneTerms?: (number | AcademyTerm)[] | null;
+  shopAll?: boolean | null;
+  products?: (number | Product)[] | null;
+  tournamentsAll?: boolean | null;
+  tournamentRounds?: (number | SelectionRound)[] | null;
+  foundationPlus?: boolean | null;
   /**
-   * Number of sessions and dates for each weekday — this sets the term price per weekday (save to refresh)
+   * Only these accounts get the discount (set when the promotion is sent).
    */
-  schedulePreview?: string | null;
-  /**
-   * Coaches must submit their 1-on-1 availability by this date. Reminders go out 2 weeks, 1 week, 3 days and 1 day before.
-   */
-  availabilityDeadline: string;
-  /**
-   * Where 1-on-1 sessions are held (shown in confirmations and reminders)
-   */
-  location?: string | null;
-  pricePerSession: number;
-  casualPrice: number;
-  /**
-   * Casual price for families with an active term booking
-   */
-  termMemberPrice: number;
-  /**
-   * Only for sessions starting within this many days of booking
-   */
-  termMemberWindowDays: number;
-  sessionMinutes: number;
-  /**
-   * 24-hour, e.g. 17:00. Default 3pm–9pm.
-   */
-  slotStartTimes?:
+  recipients?: (number | User)[] | null;
+  channels?: ('email' | 'sms')[] | null;
+  subject?: string | null;
+  message?: string | null;
+  smsText?: string | null;
+  audience?:
     | {
-        time: string;
-        id?: string | null;
-      }[]
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
     | null;
-  /**
-   * 24-hour. Default 8am–5pm (last session starts 4pm).
-   */
-  weekendStartTimes?:
+  scheduledFor?: string | null;
+  sentAt?: string | null;
+  sentCounts?:
     | {
-        time: string;
-        id?: string | null;
-      }[]
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
     | null;
-  bookingCutoffHours?: number | null;
-  minTermSessions?: number | null;
-  /**
-   * Stripe checkout links last at least 30 minutes
-   */
-  holdMinutes?: number | null;
-  shareLinkHoldHours?: number | null;
-  accountReminderDays?: number | null;
-  organisation?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "participants".
- */
-export interface Participant {
-  id: number;
-  fullName?: string | null;
-  firstName: string;
-  lastName: string;
-  dateOfBirth: string;
-  gender?: ('female' | 'male' | 'non-binary' | 'prefer-not-to-say') | null;
-  account: number | User;
-  team?: (number | null) | Team;
-  ffaNumber?: string | null;
-  /**
-   * Shared with the player’s coaches. Filled in from their first 1-on-1 booking; families can update it in their account.
-   */
-  football?: {
-    currentClub?: string | null;
-    position?: string | null;
-    goals?: string | null;
-  };
-  medical?: {
-    conditions?: string | null;
-    emergencyContact?: string | null;
-    emergencyPhone?: string | null;
-  };
-  photoConsent?: boolean | null;
-  /**
-   * Foundation+ plan, leaderboard privacy and parental consent.
-   */
-  pdr?: {
-    tier?: ('free' | 'standard' | 'premium') | null;
-    subscriptionId?: string | null;
-    subscriptionStatus?: string | null;
-    /**
-     * e.g. premium_month
-     */
-    plan?: string | null;
-    trialEndsAt?: string | null;
-    currentPeriodEnd?: string | null;
-    cancelAtPeriodEnd?: boolean | null;
-    pastDueSince?: string | null;
-    trialUsedAt?: string | null;
-    trialReminderSentAt?: string | null;
-    pastDueReminderAt?: string | null;
-    leaderboardOptOut?: boolean | null;
-    /**
-     * Default: first name + last initial, e.g. Mia T.
-     */
-    leaderboardName?: string | null;
-    consentAt?: string | null;
-  };
-  /**
-   * Added automatically when registration / Academy term is paid. Edit by hand for players registered outside the website.
-   */
-  memberships?: ('rowville' | 'rfa' | 'foundation-plus')[] | null;
-  /**
-   * Set automatically when the committee offers a place after trials.
-   */
-  registrationOffer?: {
-    program?: (number | null) | Program;
-    status?: ('offered' | 'paid') | null;
-  };
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "teams".
- */
-export interface Team {
-  id: number;
-  name: string;
-  slug: string;
-  type: 'rowville' | 'tournament';
-  season?: number | null;
-  /**
-   * Hides the team page from families after the season / tournament
-   */
-  archived?: boolean | null;
-  /**
-   * Look and sender of team emails
-   */
-  brand?: ('club' | 'academy') | null;
-  /**
-   * Shown as “[Tournament] – [Team]”
-   */
-  event?: string | null;
-  category?: ('miniroos' | 'junior-boys' | 'junior-girls' | 'senior-women' | 'senior-men') | null;
-  /**
-   * e.g. 2017s
-   */
-  ageGroup?: string | null;
-  /**
-   * League / division
-   */
-  competition?: string | null;
-  /**
-   * Coaches/managers can post notices, edit training and fixtures, and moderate Team Chat
-   */
-  coaches?: (number | User)[] | null;
-  sections?: {
-    info?: boolean | null;
-    notices?: boolean | null;
-    fixtures?: boolean | null;
-    training?: boolean | null;
-    forum?: boolean | null;
-  };
-  info?: {
-    /**
-     * e.g. Sat 20 – Sun 21 March 2027
-     */
-    dates?: string | null;
-    venues?: string | null;
-    /**
-     * Arrival times, game times, presentations…
-     */
-    schedule?: string | null;
-    whatToBring?: string | null;
-    costs?: string | null;
-    /**
-     * Team manager / coach names and phone numbers
-     */
-    contacts?: string | null;
-  };
-  externalUrl?: string | null;
-  /**
-   * Families see “Fixtures not yet released” until this or fixtures below are added
-   */
-  driblUrl?: string | null;
-  /**
-   * Upcoming fixtures and results (coaches can also edit these on the team page)
-   */
-  fixtures?:
-    | {
-        startsAt: string;
-        opponent: string;
-        venue?: string | null;
-        /**
-         * e.g. W 3–1
-         */
-        result?: string | null;
-        id?: string | null;
-      }[]
-    | null;
-  training?:
-    | {
-        day: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
-        /**
-         * 24h, e.g. 17:00
-         */
-        start: string;
-        /**
-         * 24h, e.g. 18:00
-         */
-        end?: string | null;
-        location?: string | null;
-        id?: string | null;
-      }[]
-    | null;
-  /**
-   * Changes are highlighted on the team page for 14 days
-   */
-  trainingChangedAt?: string | null;
-  /**
-   * Short text for the public Fixtures page, e.g. “Tue & Thu 5:00pm”
-   */
-  trainingTimes?: string | null;
-  /**
-   * Dribl team identifier (future automatic fixtures)
-   */
-  driblTeamId?: string | null;
-  photo?: (number | null) | Media;
-  order?: number | null;
+  approvedBy?: (number | null) | User;
   updatedAt: string;
   createdAt: string;
 }
@@ -796,6 +514,454 @@ export interface Program {
    */
   trialPrice?: number | null;
   heroImage?: (number | null) | Media;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "academy-terms".
+ */
+export interface AcademyTerm {
+  id: number;
+  /**
+   * e.g. "Term 1 2027"
+   */
+  name: string;
+  status: 'draft' | 'availability' | 'open' | 'closed';
+  /**
+   * First day of the school term
+   */
+  startDate: string;
+  /**
+   * Last day of the school term
+   */
+  endDate: string;
+  /**
+   * Number of sessions and dates for each weekday — this sets the term price per weekday (save to refresh)
+   */
+  schedulePreview?: string | null;
+  /**
+   * Coaches must submit their 1-on-1 availability by this date. Reminders go out 2 weeks, 1 week, 3 days and 1 day before.
+   */
+  availabilityDeadline: string;
+  /**
+   * Where 1-on-1 sessions are held (shown in confirmations and reminders)
+   */
+  location?: string | null;
+  pricePerSession: number;
+  casualPrice: number;
+  /**
+   * Casual price for families with an active term booking
+   */
+  termMemberPrice: number;
+  /**
+   * Only for sessions starting within this many days of booking
+   */
+  termMemberWindowDays: number;
+  sessionMinutes: number;
+  /**
+   * 24-hour, e.g. 17:00. Default 3pm–9pm.
+   */
+  slotStartTimes?:
+    | {
+        time: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * 24-hour. Default 8am–5pm (last session starts 4pm).
+   */
+  weekendStartTimes?:
+    | {
+        time: string;
+        id?: string | null;
+      }[]
+    | null;
+  bookingCutoffHours?: number | null;
+  minTermSessions?: number | null;
+  /**
+   * Stripe checkout links last at least 30 minutes
+   */
+  holdMinutes?: number | null;
+  shareLinkHoldHours?: number | null;
+  accountReminderDays?: number | null;
+  organisation?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Photos and logos. JPG or WebP is best for photos; PNG for logos. Large photos are fine — they upload directly to storage.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media".
+ */
+export interface Media {
+  id: number;
+  /**
+   * Short description of the image for screen readers and Google, e.g. "U9 players at the January holiday camp".
+   */
+  alt: string;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "products".
+ */
+export interface Product {
+  id: number;
+  name: string;
+  /**
+   * Fills itself in from the name — /shop/<this>. Only change it if you need to.
+   */
+  slug?: string | null;
+  category: 'kit' | 'training' | 'apparel' | 'accessories';
+  brand?: ('club' | 'academy') | null;
+  status?: ('active' | 'hidden') | null;
+  audiences?: ('everyone' | 'rowville' | 'rfa' | 'foundation-plus')[] | null;
+  /**
+   * Players on these teams (and their coaches), e.g. a team hoodie.
+   */
+  teams?: (number | Team)[] | null;
+  /**
+   * Hand-picked families (search by name or email).
+   */
+  accounts?: (number | User)[] | null;
+  /**
+   * Ignored for “Everyone” items.
+   */
+  othersSee?: ('locked' | 'hidden') | null;
+  /**
+   * AUD incl. GST
+   */
+  price: number;
+  description?: string | null;
+  images?: (number | Media)[] | null;
+  /**
+   * Leave stock empty for unlimited / made-to-order.
+   */
+  variants?:
+    | {
+        size: string;
+        stock?: number | null;
+        id?: string | null;
+      }[]
+    | null;
+  order?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "teams".
+ */
+export interface Team {
+  id: number;
+  name: string;
+  slug: string;
+  type: 'rowville' | 'tournament';
+  season?: number | null;
+  /**
+   * Hides the team page from families after the season / tournament
+   */
+  archived?: boolean | null;
+  /**
+   * Look and sender of team emails
+   */
+  brand?: ('club' | 'academy') | null;
+  /**
+   * Shown as “[Tournament] – [Team]”
+   */
+  event?: string | null;
+  category?: ('miniroos' | 'junior-boys' | 'junior-girls' | 'senior-women' | 'senior-men') | null;
+  /**
+   * e.g. 2017s
+   */
+  ageGroup?: string | null;
+  /**
+   * League / division
+   */
+  competition?: string | null;
+  /**
+   * Coaches/managers can post notices, edit training and fixtures, and moderate Team Chat
+   */
+  coaches?: (number | User)[] | null;
+  sections?: {
+    info?: boolean | null;
+    notices?: boolean | null;
+    fixtures?: boolean | null;
+    training?: boolean | null;
+    forum?: boolean | null;
+  };
+  info?: {
+    /**
+     * e.g. Sat 20 – Sun 21 March 2027
+     */
+    dates?: string | null;
+    venues?: string | null;
+    /**
+     * Arrival times, game times, presentations…
+     */
+    schedule?: string | null;
+    whatToBring?: string | null;
+    costs?: string | null;
+    /**
+     * Team manager / coach names and phone numbers
+     */
+    contacts?: string | null;
+  };
+  externalUrl?: string | null;
+  /**
+   * Families see “Fixtures not yet released” until this or fixtures below are added
+   */
+  driblUrl?: string | null;
+  /**
+   * Upcoming fixtures and results (coaches can also edit these on the team page)
+   */
+  fixtures?:
+    | {
+        startsAt: string;
+        opponent: string;
+        venue?: string | null;
+        /**
+         * e.g. W 3–1
+         */
+        result?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  training?:
+    | {
+        day: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
+        /**
+         * 24h, e.g. 17:00
+         */
+        start: string;
+        /**
+         * 24h, e.g. 18:00
+         */
+        end?: string | null;
+        location?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Changes are highlighted on the team page for 14 days
+   */
+  trainingChangedAt?: string | null;
+  /**
+   * Short text for the public Fixtures page, e.g. “Tue & Thu 5:00pm”
+   */
+  trainingTimes?: string | null;
+  /**
+   * Dribl team identifier (future automatic fixtures)
+   */
+  driblTeamId?: string | null;
+  photo?: (number | null) | Media;
+  order?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "users".
+ */
+export interface User {
+  id: number;
+  firstName?: string | null;
+  lastName?: string | null;
+  phone?: string | null;
+  stripeCustomerAcademy?: string | null;
+  phoneE164?: string | null;
+  serviceConsentAt?: string | null;
+  marketingEmail?: boolean | null;
+  marketingSms?: boolean | null;
+  smsOptOut?: boolean | null;
+  consentReviewStatus?: ('new' | 'pending' | 'sent' | 'confirmed') | null;
+  /**
+   * Has set their own password / logged in
+   */
+  activated?: boolean | null;
+  reviewRequestSentAt?: string | null;
+  /**
+   * The one reminder sent to a guest who hasn’t set up their account yet
+   */
+  accountReminderSentAt?: string | null;
+  roles?: ('admin' | 'committee' | 'coach' | 'parent' | 'player')[] | null;
+  wwcc?: {
+    number?: string | null;
+    expiry?: string | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+  email: string;
+  resetPasswordToken?: string | null;
+  resetPasswordExpiration?: string | null;
+  salt?: string | null;
+  hash?: string | null;
+  resetPasswordRequestedAt?: string | null;
+  loginAttempts?: number | null;
+  lockUntil?: string | null;
+  sessions?:
+    | {
+        id: string;
+        createdAt?: string | null;
+        expiresAt: string;
+      }[]
+    | null;
+  password?: string | null;
+  collection: 'users';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "selection-rounds".
+ */
+export interface SelectionRound {
+  id: number;
+  title: string;
+  kind: 'tournament' | 'rowville';
+  season: number;
+  status: 'open' | 'selecting' | 'closed';
+  /**
+   * Tournament: the tournament. Rowville: the season registration players pay once successful.
+   */
+  program?: (number | null) | Program;
+  /**
+   * Tournament fee. Rowville uses the registration program’s price.
+   */
+  fee?: number | null;
+  paymentDeadlineDays?: number | null;
+  reminderDays?: number[] | null;
+  /**
+   * Placeholders: {parent} {player} {playerFull} {team} {ageGroup} {event} {link} {deadline}. Management reviews every message before it is sent.
+   */
+  templates?: {
+    selectedSubject?: string | null;
+    selectedBody?: string | null;
+    /**
+     * Leave blank to send no text
+     */
+    selectedSms?: string | null;
+    successfulSubject?: string | null;
+    successfulBody?: string | null;
+    /**
+     * Leave blank to send no text
+     */
+    successfulSms?: string | null;
+    unsuccessfulSubject?: string | null;
+    unsuccessfulBody?: string | null;
+    /**
+     * Leave blank to send no text
+     */
+    unsuccessfulSms?: string | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "academy-coaches".
+ */
+export interface AcademyCoach {
+  id: number;
+  user: number | User;
+  /**
+   * Name shown to families, e.g. "Coach Sam"
+   */
+  displayName: string;
+  photo?: (number | null) | Media;
+  /**
+   * Short description shown in the booking carousel (max 400 characters)
+   */
+  bio?: string | null;
+  specialties?:
+    | {
+        label: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Inactive coaches are hidden from families
+   */
+  active?: boolean | null;
+  order?: number | null;
+  organisation?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "participants".
+ */
+export interface Participant {
+  id: number;
+  fullName?: string | null;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
+  gender?: ('female' | 'male' | 'non-binary' | 'prefer-not-to-say') | null;
+  account: number | User;
+  team?: (number | null) | Team;
+  ffaNumber?: string | null;
+  /**
+   * Shared with the player’s coaches. Filled in from their first 1-on-1 booking; families can update it in their account.
+   */
+  football?: {
+    currentClub?: string | null;
+    position?: string | null;
+    goals?: string | null;
+  };
+  medical?: {
+    conditions?: string | null;
+    emergencyContact?: string | null;
+    emergencyPhone?: string | null;
+  };
+  photoConsent?: boolean | null;
+  /**
+   * Foundation+ plan, leaderboard privacy and parental consent.
+   */
+  pdr?: {
+    tier?: ('free' | 'standard' | 'premium') | null;
+    subscriptionId?: string | null;
+    subscriptionStatus?: string | null;
+    /**
+     * e.g. premium_month
+     */
+    plan?: string | null;
+    trialEndsAt?: string | null;
+    currentPeriodEnd?: string | null;
+    cancelAtPeriodEnd?: boolean | null;
+    pastDueSince?: string | null;
+    trialUsedAt?: string | null;
+    trialReminderSentAt?: string | null;
+    pastDueReminderAt?: string | null;
+    leaderboardOptOut?: boolean | null;
+    /**
+     * Default: first name + last initial, e.g. Mia T.
+     */
+    leaderboardName?: string | null;
+    consentAt?: string | null;
+  };
+  /**
+   * Added automatically when registration / Academy term is paid. Edit by hand for players registered outside the website.
+   */
+  memberships?: ('rowville' | 'rfa' | 'foundation-plus')[] | null;
+  /**
+   * Set automatically when the committee offers a place after trials.
+   */
+  registrationOffer?: {
+    program?: (number | null) | Program;
+    status?: ('offered' | 'paid') | null;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -1025,6 +1191,11 @@ export interface Booking {
    * AUD. Defaults to the program price (e.g. for cash bookings).
    */
   amount: number;
+  /**
+   * Already taken off the amount
+   */
+  discount?: number | null;
+  promotion?: (number | null) | Promotion;
   bookingType?: ('enrolment' | 'trial') | null;
   birthYear?: number | null;
   sessionStart?: string | null;
@@ -1147,52 +1318,6 @@ export interface SelectionEntry {
    * Trial announcements already emailed
    */
   notifiedSessions?: (number | TrialSession)[] | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "selection-rounds".
- */
-export interface SelectionRound {
-  id: number;
-  title: string;
-  kind: 'tournament' | 'rowville';
-  season: number;
-  status: 'open' | 'selecting' | 'closed';
-  /**
-   * Tournament: the tournament. Rowville: the season registration players pay once successful.
-   */
-  program?: (number | null) | Program;
-  /**
-   * Tournament fee. Rowville uses the registration program’s price.
-   */
-  fee?: number | null;
-  paymentDeadlineDays?: number | null;
-  reminderDays?: number[] | null;
-  /**
-   * Placeholders: {parent} {player} {playerFull} {team} {ageGroup} {event} {link} {deadline}. Management reviews every message before it is sent.
-   */
-  templates?: {
-    selectedSubject?: string | null;
-    selectedBody?: string | null;
-    /**
-     * Leave blank to send no text
-     */
-    selectedSms?: string | null;
-    successfulSubject?: string | null;
-    successfulBody?: string | null;
-    /**
-     * Leave blank to send no text
-     */
-    successfulSms?: string | null;
-    unsuccessfulSubject?: string | null;
-    unsuccessfulBody?: string | null;
-    /**
-     * Leave blank to send no text
-     */
-    unsuccessfulSms?: string | null;
-  };
   updatedAt: string;
   createdAt: string;
 }
@@ -1707,53 +1832,6 @@ export interface Post {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "products".
- */
-export interface Product {
-  id: number;
-  name: string;
-  /**
-   * Fills itself in from the name — /shop/<this>. Only change it if you need to.
-   */
-  slug?: string | null;
-  category: 'kit' | 'training' | 'apparel' | 'accessories';
-  brand?: ('club' | 'academy') | null;
-  status?: ('active' | 'hidden') | null;
-  audiences?: ('everyone' | 'rowville' | 'rfa' | 'foundation-plus')[] | null;
-  /**
-   * Players on these teams (and their coaches), e.g. a team hoodie.
-   */
-  teams?: (number | Team)[] | null;
-  /**
-   * Hand-picked families (search by name or email).
-   */
-  accounts?: (number | User)[] | null;
-  /**
-   * Ignored for “Everyone” items.
-   */
-  othersSee?: ('locked' | 'hidden') | null;
-  /**
-   * AUD incl. GST
-   */
-  price: number;
-  description?: string | null;
-  images?: (number | Media)[] | null;
-  /**
-   * Leave stock empty for unlimited / made-to-order.
-   */
-  variants?:
-    | {
-        size: string;
-        stock?: number | null;
-        id?: string | null;
-      }[]
-    | null;
-  order?: number | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "orders".
  */
 export interface Order {
@@ -1781,6 +1859,11 @@ export interface Order {
   subtotal?: number | null;
   postage?: number | null;
   total: number;
+  /**
+   * Already taken off the amount
+   */
+  discount?: number | null;
+  promotion?: (number | null) | Promotion;
   fulfilment: 'pickup' | 'post';
   shippingAddress?: string | null;
   stripeCheckoutId?: string | null;
@@ -2040,6 +2123,22 @@ export interface ReportReminderLog {
   coach: number | User;
   kind: '14d' | '7d' | '3d' | '1d';
   outstanding?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "promotion-uses".
+ */
+export interface Promotionus {
+  id: number;
+  promotion: number | Promotion;
+  account: number | User;
+  kind: 'program' | '1on1' | 'shop' | 'tournament' | 'fplus';
+  reference: string;
+  status: 'pending' | 'paid' | 'cancelled';
+  amountOff: number;
+  paidAmount?: number | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -2332,6 +2431,14 @@ export interface PayloadLockedDocument {
         value: number | ReportReminderLog;
       } | null)
     | ({
+        relationTo: 'promotions';
+        value: number | Promotion;
+      } | null)
+    | ({
+        relationTo: 'promotion-uses';
+        value: number | Promotionus;
+      } | null)
+    | ({
         relationTo: 'seen-markers';
         value: number | SeenMarker;
       } | null)
@@ -2403,6 +2510,8 @@ export interface AcademyBookingsSelect<T extends boolean = true> {
   type?: T;
   paymentMode?: T;
   amount?: T;
+  discount?: T;
+  promotion?: T;
   termMemberPrice?: T;
   sessionsTotal?: T;
   sessionsPaid?: T;
@@ -3210,6 +3319,8 @@ export interface BookingsSelect<T extends boolean = true> {
   status?: T;
   payee?: T;
   amount?: T;
+  discount?: T;
+  promotion?: T;
   bookingType?: T;
   birthYear?: T;
   sessionStart?: T;
@@ -3299,6 +3410,8 @@ export interface OrdersSelect<T extends boolean = true> {
   subtotal?: T;
   postage?: T;
   total?: T;
+  discount?: T;
+  promotion?: T;
   fulfilment?: T;
   shippingAddress?: T;
   stripeCheckoutId?: T;
@@ -3667,6 +3780,56 @@ export interface ReportReminderLogSelect<T extends boolean = true> {
   coach?: T;
   kind?: T;
   outstanding?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "promotions_select".
+ */
+export interface PromotionsSelect<T extends boolean = true> {
+  name?: T;
+  status?: T;
+  type?: T;
+  value?: T;
+  usesPerFamily?: T;
+  startsAt?: T;
+  endsAt?: T;
+  everything?: T;
+  programGroups?: T;
+  programs?: T;
+  oneOnOneAll?: T;
+  oneOnOneTerms?: T;
+  shopAll?: T;
+  products?: T;
+  tournamentsAll?: T;
+  tournamentRounds?: T;
+  foundationPlus?: T;
+  recipients?: T;
+  channels?: T;
+  subject?: T;
+  message?: T;
+  smsText?: T;
+  audience?: T;
+  scheduledFor?: T;
+  sentAt?: T;
+  sentCounts?: T;
+  approvedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "promotion-uses_select".
+ */
+export interface PromotionUsesSelect<T extends boolean = true> {
+  promotion?: T;
+  account?: T;
+  kind?: T;
+  reference?: T;
+  status?: T;
+  amountOff?: T;
+  paidAmount?: T;
   updatedAt?: T;
   createdAt?: T;
 }

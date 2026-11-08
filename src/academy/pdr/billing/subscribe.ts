@@ -28,7 +28,21 @@ export async function startSubscription(payload: Payload, user: User, o: { playe
   const s = await payload.findGlobal({ slug: 'pdr-settings', depth: 0, overrideAccess: true })
   const others = kids.filter((k) => k.id !== kid.id && LIVE.has(k.pdr?.subscriptionStatus ?? '')).length
   const pct = s.plans?.siblingDiscountPct ?? 25
-  const siblingPct = siblingDiscountApplies(others, pct) ? pct : 0
+  let siblingPct = siblingDiscountApplies(others, pct) ? pct : 0
+  // Promotion on the first payment (not during a free trial); the bigger of it and the sibling discount applies
+  const planDef = PLANS.find((x) => x.key === o.plan)!
+  const price = Number((s.plans as Record<string, number | null | undefined> | undefined)?.[planDef.setting] ?? 0)
+  const { findDiscount, recordUse, settleUses } = await import('../../../promotions/service')
+  const promo = o.trialDays ? null : await findDiscount(payload, user.id, [{ target: { kind: 'fplus' }, amount: price }])
+  const usePromo = promo && promo.off > (price * siblingPct) / 100 ? promo : null
+  let promoArg: { type: 'percent' | 'amount'; value: number; name: string; ref: string } | null = null
+  if (usePromo) {
+    const d = await payload.findByID({ collection: 'promotions', id: usePromo.promotion, depth: 0, overrideAccess: true })
+    const ref = `FP-${kid.id}-${Date.now().toString(36).toUpperCase()}`
+    promoArg = { type: d.type, value: d.value, name: usePromo.label, ref }
+    siblingPct = 0
+    await recordUse(payload, { applied: usePromo, account: user.id, kind: 'fplus', reference: ref, paidAmount: Math.round((price - usePromo.off) * 100) / 100 })
+  }
   const mode = billingMode()
   if (mode === 'stripe') {
     return subscriptionCheckout(payload, {
@@ -37,6 +51,7 @@ export async function startSubscription(payload: Payload, user: User, o: { playe
       plan: o.plan,
       trialDays: o.trialDays,
       siblingPct,
+      promo: promoArg,
       successUrl: `${siteUrl()}/foundation-plus/subscribe/done?player=${kid.id}&session_id={CHECKOUT_SESSION_ID}`,
       cancelUrl: `${siteUrl()}/foundation-plus/subscribe?player=${kid.id}&plan=${o.plan}&cancelled=1`,
     })
@@ -52,6 +67,7 @@ export async function startSubscription(payload: Payload, user: User, o: { playe
       current_period_end: now + (o.trialDays ?? (o.plan.endsWith('year') ? 365 : 30)) * 86400,
       cancel_at_period_end: false,
     })
+    if (promoArg) await settleUses(payload, promoArg.ref, 'paid')
     return `/foundation-plus/subscribe/done?player=${kid.id}`
   }
   throw new BillingError('Online payments aren’t set up yet — please try again soon.')
@@ -66,6 +82,7 @@ export async function confirmCheckout(payload: Payload, sessionId: string) {
   const sub = await stripe.subscriptions.retrieve(typeof session.subscription === 'string' ? session.subscription : session.subscription.id, { expand: ['items.data.price'] })
   const { guardTrialCard } = await import('./trial')
   const blocked = await guardTrialCard(payload, sub as never)
+  if (session.metadata?.promoRef && session.payment_status === 'paid') await (await import('../../../promotions/service')).settleUses(payload, session.metadata.promoRef, 'paid')
   return applySubscription(payload, (blocked ? { ...sub, status: 'canceled' } : sub) as never)
 }
 

@@ -49,6 +49,7 @@ import * as migration_20261108_100300_curriculum_import from './20261108_100300_
 import * as migration_20261108_101940_player_reports from './20261108_101940_player_reports';
 import * as migration_20261108_104206_report_release from './20261108_104206_report_release';
 import * as migration_20261108_110430_fplus_reminder from './20261108_110430_fplus_reminder';
+import * as migration_20261108_112644_promotions from './20261108_112644_promotions';
 
 export const migrations = [
   {
@@ -304,6 +305,11 @@ export const migrations = [
   {
     up: migration_20261108_110430_fplus_reminder.up,
     down: migration_20261108_110430_fplus_reminder.down,
-    name: '20261108_110430_fplus_reminder'
+    name: '20261108_110430_fplus_reminder',
+  },
+  {
+    up: migration_20261108_112644_promotions.up,
+    down: migration_20261108_112644_promotions.down,
+    name: '20261108_112644_promotions'
   },
 ];

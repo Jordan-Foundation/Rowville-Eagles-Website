@@ -65,6 +65,14 @@ export const Orders: CollectionConfig = {
         { name: 'total', type: 'number', required: true, admin: { readOnly: true } },
       ],
     },
+    {
+      type: 'row',
+      admin: { position: 'sidebar' },
+      fields: [
+        { name: 'discount', label: 'Promotion discount (AUD)', type: 'number', admin: { readOnly: true, description: 'Already taken off the amount' } },
+        { name: 'promotion', type: 'relationship', relationTo: 'promotions', admin: { readOnly: true } },
+      ],
+    },
     { name: 'fulfilment', type: 'select', required: true, options: [{ label: 'Pick up at club', value: 'pickup' }, { label: 'Post', value: 'post' }] },
     { name: 'shippingAddress', type: 'textarea', admin: { condition: (d) => d?.fulfilment === 'post' } },
     { name: 'stripeCheckoutId', type: 'text', admin: { readOnly: true } },

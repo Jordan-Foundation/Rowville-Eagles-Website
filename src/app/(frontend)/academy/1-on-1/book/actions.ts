@@ -5,6 +5,7 @@ import { payload } from '@/lib/payload'
 import { currentUser } from '@/lib/auth'
 import { makeReference } from '@/lib/reference'
 import { startCheckout } from '@/lib/payments'
+import { findDiscount, recordUse, settleUses } from '@/promotions/service'
 import { paymentsMode } from '@/lib/stripe-accounts'
 import { findTermSlot, isCasualOpen } from '@/academy/slots'
 import { confirmAcademyBooking, createHold, holdMinutesFor, loadTermBookingData, releaseAcademyHold, releaseExpiredHolds } from '@/academy/booking-data'
@@ -101,6 +102,12 @@ export async function bookSession(_prev: BookState, fd: FormData): Promise<BookS
     return fail('Online payments aren’t set up yet — please contact the Academy to book.')
   }
 
+  // Promotion for this family: taken off the booking total, so every session (and each weekly charge,
+  // credit and refund, which are all worked out per session) uses the discounted price
+  const promo = await findDiscount(p, user?.id, [{ target: { kind: '1on1', termId: term.id }, amount }])
+  const fullAmount = amount
+  if (promo) amount = Math.round((amount - promo.off) * 100) / 100
+
   // Session credits (logged-in families; not with weekly plans, which charge week by week).
   // One credit covers one session: the casual session, or one week of an upfront term.
   const perSession = amount / sessions.length
@@ -120,6 +127,8 @@ export async function bookSession(_prev: BookState, fd: FormData): Promise<BookS
     creditApplied: creditUse,
     creditSessionsUsed,
     termMemberPrice: memberPrice,
+    discount: promo?.off,
+    promotion: promo?.promotion,
     chargeAnchorAt: plan ? new Date(plan.anchor * 1000).toISOString() : undefined,
     amount,
     sessionsTotal: sessions.length,
@@ -149,6 +158,7 @@ export async function bookSession(_prev: BookState, fd: FormData): Promise<BookS
   })
   if (!hold.ok) return fail('Sorry — someone booked that time a moment ago. Please choose another.')
   if (share) await p.update({ collection: 'academy-share-links', id: share.id, overrideAccess: true, data: { booking: hold.booking.id } })
+  if (promo && user) await recordUse(p, { applied: promo, account: user.id, kind: '1on1', reference, paidAmount: amount })
   if (creditUse > 0) {
     await reserveCredit(p, { account: user!.id, sessions: creditSessionsUsed, value: creditUse, booking: hold.booking.id })
     // Two checkouts at once could both see the same credit — the second one backs off
@@ -159,6 +169,7 @@ export async function bookSession(_prev: BookState, fd: FormData): Promise<BookS
     if (charge <= 0) {
       // Fully covered by credit — no card payment needed
       await confirmAcademyBooking(p, reference)
+      await settleUses(p, reference, 'paid')
       redirect(`/academy/1-on-1/booked?kind=academy&ref=${reference}&credit=1`)
     }
   }
@@ -176,17 +187,19 @@ export async function bookSession(_prev: BookState, fd: FormData): Promise<BookS
       ...(plan
         ? {
             saveCardFor: {
-              note: `Today you pay for the first session. Your card is then saved and ${formatPrice(term.pricePerSession)} is charged automatically 2 days before each later session — ${plan.recurringCharges} payments, ${formatDate(plan.chargeDates[1], { day: 'numeric', month: 'short' })} to ${formatDate(plan.chargeDates.at(-1)!, { day: 'numeric', month: 'short' })}. Total ${formatPrice(amount)}.`,
+              note: `Today you pay for the first session. Your card is then saved and ${formatPrice(Math.round(perSession * 100) / 100)} is charged automatically 2 days before each later session — ${plan.recurringCharges} payments, ${formatDate(plan.chargeDates[1], { day: 'numeric', month: 'short' })} to ${formatDate(plan.chargeDates.at(-1)!, { day: 'numeric', month: 'short' })}. Total ${formatPrice(amount)}.`,
             },
           }
         : {}),
       items: plan
-        ? [{ name: `First session — ${formatDate(first, { weekday: 'short', day: 'numeric', month: 'short' })}`, description: `Term of 1-on-1s with ${coach.displayName} · ${sessions.length} sessions, paid weekly`, unitAmount: term.pricePerSession, quantity: 1 }]
+        ? [{ name: `First session — ${formatDate(first, { weekday: 'short', day: 'numeric', month: 'short' })}`, description: `Term of 1-on-1s with ${coach.displayName} · ${sessions.length} sessions, paid weekly${promo ? ` · ${promo.label}` : ''}`, unitAmount: Math.round(perSession * 100) / 100, quantity: 1 }]
         : creditUse > 0
           ? [{ name: mode === 'term' ? `Term of 1-on-1s with ${coach.displayName}` : `1-on-1 with ${coach.displayName}`, description: `${player.firstName} ${player.lastName} · ${sessions.length} session${sessions.length === 1 ? '' : 's'} from ${formatDate(first, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })} · ${formatPrice(amount)} less ${creditSessionsUsed} session credit${creditSessionsUsed === 1 ? '' : 's'}`, unitAmount: charge, quantity: 1 }]
           : mode === 'term'
           ? [{ name: `Term of 1-on-1s with ${coach.displayName}`, description: `${player.firstName} ${player.lastName} · ${weekday}s ${formatDate(first, { hour: 'numeric', minute: '2-digit' })} · ${sessions.length} sessions, ${formatDate(first, { day: 'numeric', month: 'short' })} – ${formatDate(last, { day: 'numeric', month: 'short' })}`, unitAmount: term.pricePerSession, quantity: sessions.length }]
-          : [{ name: `1-on-1 with ${coach.displayName}${memberPrice ? ' (term member price)' : ''}`, description: `${player.firstName} ${player.lastName} · ${formatDate(first, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}`, unitAmount: amount, quantity: 1 }],
+          : [{ name: `1-on-1 with ${coach.displayName}${memberPrice ? ' (term member price)' : ''}`, description: `${player.firstName} ${player.lastName} · ${formatDate(first, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}`, unitAmount: fullAmount, quantity: 1 }],
+      // Upfront (no credit) bookings show the promotion as its own discount line; weekly and credit lines are already discounted
+      discount: promo && !plan && creditUse <= 0 ? { amount: promo.off, label: promo.label } : null,
       cancelPath: `/academy/1-on-1/book?${back}&cancelled=${reference}`,
       successPath: '/academy/1-on-1/booked',
       expiresInMinutes: holdMinutes,

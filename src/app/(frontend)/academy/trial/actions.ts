@@ -1,6 +1,8 @@
 'use server'
 
+import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
+import { findDiscount, recordUse } from '@/promotions/service'
 import { payload } from '@/lib/payload'
 import { birthYearOf, groupLabel } from '@/lib/age-groups'
 import { confirmPayment, newReference, startCheckout } from '@/lib/payments'
@@ -58,14 +60,19 @@ export async function bookRfaTrial(_prev: RfaTrialState, fd: FormData): Promise<
 
   const price = term.trialPrice ?? 0
   const reference = newReference('academy')
+  const { user } = await p.auth({ headers: await headers() })
+  const accountId = user?.collection === 'users' ? user.id : undefined
+  const promo = await findDiscount(p, accountId, [{ target: { kind: 'program', programId: term.id, programType: 'academy-trial' }, amount: price }])
+  const due = Math.round((price - (promo?.off ?? 0)) * 100) / 100
   const booking = await p.create({
     collection: 'bookings',
     overrideAccess: true,
-    data: { reference, program: term.id, bookingType: 'trial', birthYear, sessionStart: night.start, status: 'pending', payee: 'academy', amount: price, contact, player },
+    data: { reference, program: term.id, bookingType: 'trial', birthYear, sessionStart: night.start, status: 'pending', payee: 'academy', amount: due, discount: promo?.off, promotion: promo?.promotion, account: accountId, contact, player },
   })
+  if (promo && accountId) await recordUse(p, { applied: promo, account: accountId, kind: 'program', reference, paidAmount: due })
 
   let url = `/checkout/success?kind=booking&ref=${reference}`
-  if (price === 0) {
+  if (due === 0) {
     await confirmPayment(p, 'booking', reference)
   } else {
     try {
@@ -75,6 +82,7 @@ export async function bookRfaTrial(_prev: RfaTrialState, fd: FormData): Promise<
         reference,
         email: contact.email,
         items: [{ name: `RFA trial — ${term.title}`, description: `${player.firstName} ${player.lastName} · ${night.label}`, unitAmount: price, quantity: 1 }],
+        discount: promo ? { amount: promo.off, label: promo.label } : null,
         cancelPath: '/academy/trial?cancelled=1',
       })
       if (checkout.sessionId) await p.update({ collection: 'bookings', id: booking.id, data: { stripeCheckoutId: checkout.sessionId }, overrideAccess: true })

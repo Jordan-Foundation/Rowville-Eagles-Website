@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { PromoNotice } from '@/promotions/PromoNotice'
 import type { Metadata } from 'next'
 import { formatAUD, formatDate } from '@/lib/payload'
 import { getAgeRules } from '@/lib/age-rules'
@@ -33,6 +34,7 @@ export default async function PayPage({ params, searchParams }: { params: Promis
       <div>
         <p className="eyebrow !text-brand">{entry.status === 'registered' ? 'Registered' : awaitingPayment(entry) ? `${round.kind === 'tournament' ? 'Selected' : 'Successful'} · complete registration` : 'Registration'}</p>
         <h1 className="mt-2 font-[family-name:var(--font-barlow)] text-4xl font-extrabold uppercase sm:text-5xl">{entry.player.firstName} {entry.player.lastName}</h1>
+        {program && <div className="mt-6"><PromoNotice targets={[round.kind === 'tournament' ? { kind: 'tournament', roundId: round.id } : { kind: 'program', programId: program.id, programType: program.type }]} /></div>}
         {entry.status === 'registered' ? (
           <p className="mt-6 rounded-2xl border border-emerald-600/40 bg-emerald-50 p-6 text-emerald-900">All done — {entry.player.firstName}’s registration is paid. <Link href="/account" className="font-semibold underline">Go to your account</Link></p>
         ) : !awaitingPayment(entry) ? (

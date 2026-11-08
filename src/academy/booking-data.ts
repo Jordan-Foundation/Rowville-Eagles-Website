@@ -126,6 +126,16 @@ async function findBooking(payload: Payload, reference: string) {
 
 /** Payment confirmed (webhook, success page or simulate mode). Idempotent. */
 export async function confirmAcademyBooking(payload: Payload, reference: string): Promise<AcademyBooking | undefined> {
+  const booking = await confirmAcademyBookingInner(payload, reference)
+  // A promotion used at this checkout now counts as used
+  if (booking && (booking.status === 'confirmed' || booking.status === 'completed')) {
+    const { settleUses } = await import('../promotions/service')
+    await settleUses(payload, reference, 'paid')
+  }
+  return booking
+}
+
+async function confirmAcademyBookingInner(payload: Payload, reference: string): Promise<AcademyBooking | undefined> {
   const booking = await findBooking(payload, reference)
   if (!booking || booking.status === 'confirmed' || booking.status === 'completed') return booking
   if (booking.status === 'expired' || booking.status === 'cancelled') {

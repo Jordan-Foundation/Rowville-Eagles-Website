@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import { PromoNotice } from '@/promotions/PromoNotice'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { payload, formatAUD, formatDate } from '@/lib/payload'
@@ -72,6 +73,7 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
         <div>
           <Link href={`/academy/1-on-1${mode === 'term' ? '?mode=term' : ''}`} className="text-sm text-muted hover:text-ink">← All times</Link>
           <h1 className="mt-4 font-display text-4xl font-semibold uppercase tracking-tight">{mode === 'term' ? 'Book your term of 1-on-1s' : 'Book your 1-on-1'}</h1>
+          {term && <div className="mt-6"><PromoNotice tone="dark" targets={[{ kind: '1on1', termId: term.id }]} /></div>}
           {q.cancelled && <p className="panel mt-6 border border-line px-4 py-3 text-sm">Payment was cancelled — nothing was charged.</p>}
           {share && open && coach && (
             <div role="note" className="panel mt-6 border border-white/40 p-5 text-sm">

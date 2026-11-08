@@ -109,6 +109,8 @@ export type CheckoutOpts = {
   plan: PlanKey
   trialDays?: number
   siblingPct?: number
+  /** A promotion's discount on the first payment (used instead of the sibling discount when it's bigger). */
+  promo?: { type: 'percent' | 'amount'; value: number; name: string; ref: string } | null
   successUrl: string
   cancelUrl: string
 }
@@ -118,7 +120,10 @@ export async function subscriptionCheckout(payload: Payload, o: CheckoutOpts) {
   const stripe = stripeFor('academy')
   const ids = (await syncPlanPrices(payload))!
   const customer = await customerFor(payload, o.user)
-  const metadata = { kind: 'fplus', player: String(o.playerId), account: String(o.user.id), plan: o.plan }
+  const metadata: Record<string, string> = { kind: 'fplus', player: String(o.playerId), account: String(o.user.id), plan: o.plan, ...(o.promo ? { promoRef: o.promo.ref } : {}) }
+  const promoCoupon = o.promo
+    ? await stripe.coupons.create({ ...(o.promo.type === 'percent' ? { percent_off: Math.min(o.promo.value, 100) } : { amount_off: Math.round(o.promo.value * 100), currency: 'aud' }), duration: 'once', max_redemptions: 1, name: o.promo.name.slice(0, 40) })
+    : null
   const params: Stripe.Checkout.SessionCreateParams = {
     mode: 'subscription',
     customer,
@@ -126,7 +131,7 @@ export async function subscriptionCheckout(payload: Payload, o: CheckoutOpts) {
     payment_method_collection: 'always',
     subscription_data: { metadata, ...(o.trialDays ? { trial_period_days: o.trialDays, trial_settings: { end_behavior: { missing_payment_method: 'cancel' } } } : {}) },
     metadata,
-    ...(o.siblingPct ? { discounts: [{ coupon: await siblingCoupon(o.siblingPct) }] } : { allow_promotion_codes: true }),
+    ...(promoCoupon ? { discounts: [{ coupon: promoCoupon.id }] } : o.siblingPct ? { discounts: [{ coupon: await siblingCoupon(o.siblingPct) }] } : { allow_promotion_codes: true }),
     success_url: o.successUrl,
     cancel_url: o.cancelUrl,
   }

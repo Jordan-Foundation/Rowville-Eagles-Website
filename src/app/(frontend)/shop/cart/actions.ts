@@ -3,7 +3,8 @@
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { payload } from '@/lib/payload'
-import { newReference, startCheckout } from '@/lib/payments'
+import { confirmPayment, newReference, startCheckout } from '@/lib/payments'
+import { findDiscount, recordUse } from '@/promotions/service'
 import { canBuy, shopViewer } from '@/lib/shop-access'
 
 export type CartState = { error?: string }
@@ -55,6 +56,9 @@ export async function checkoutCart(_prev: CartState, fd: FormData): Promise<Cart
   const subtotal = items.reduce((n, i) => n + i.unitPrice * i.quantity, 0)
   const postage = fulfilment === 'post' ? (settings.shop?.postageFee ?? 0) : 0
   const reference = newReference(SHOP_PAYEE)
+  // Promotion: only on the items it covers (not postage)
+  const promo = await findDiscount(p, userId, items.map((i) => ({ target: { kind: 'shop' as const, productId: i.product }, amount: i.unitPrice * i.quantity })))
+  const total = Math.round((subtotal + postage - (promo?.off ?? 0)) * 100) / 100
 
   const order = await p.create({
     collection: 'orders',
@@ -67,12 +71,19 @@ export async function checkoutCart(_prev: CartState, fd: FormData): Promise<Cart
       items,
       subtotal,
       postage,
-      total: subtotal + postage,
+      total,
+      discount: promo?.off,
+      promotion: promo?.promotion,
       fulfilment,
       shippingAddress: fulfilment === 'post' ? shippingAddress : undefined,
     },
   })
 
+  if (promo && userId) await recordUse(p, { applied: promo, account: userId, kind: 'shop', reference, paidAmount: total })
+  if (total <= 0) {
+    await confirmPayment(p, 'order', reference)
+    redirect(`/checkout/success?kind=order&ref=${reference}`)
+  }
   let url: string
   try {
     const checkout = await startCheckout({
@@ -84,6 +95,7 @@ export async function checkoutCart(_prev: CartState, fd: FormData): Promise<Cart
         ...items.map((i) => ({ name: i.name, description: `Size: ${i.size}`, unitAmount: i.unitPrice, quantity: i.quantity })),
         ...(postage ? [{ name: 'Postage', unitAmount: postage, quantity: 1 }] : []),
       ],
+      discount: promo ? { amount: promo.off, label: promo.label } : null,
       cancelPath: '/shop/cart?cancelled=1',
     })
     if (checkout.sessionId) await p.update({ collection: 'orders', id: order.id, data: { stripeCheckoutId: checkout.sessionId } })

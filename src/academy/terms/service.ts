@@ -86,10 +86,17 @@ export async function checkoutRegistrations(payload: Payload, items: { reg: Acad
   const rate = nightRate(program, nights)
   const quotes = items.map((i) => ({ ...i, quote: termQuote(i.slot, program, rate) }))
   if (quotes.some((q) => !q.quote.bookable)) throw new TermClosedError()
-  const amount = Math.round(quotes.reduce((n, q) => n + q.quote.total, 0) * 100) / 100
+  const full = Math.round(quotes.reduce((n, q) => n + q.quote.total, 0) * 100) / 100
   const primary = quotes[0].reg
   const payee = payeeOf(program)
   const reference = newReference(payee)
+  // Promotion for this family (group terms and Mini Ballers), spread over both nights of a 2-nights place
+  const { findDiscount, recordUse } = await import('../../promotions/service')
+  const { spread } = await import('../../promotions/rules')
+  const accountId = rel(primary.account)
+  const promo = await findDiscount(payload, accountId, [{ target: { kind: 'program', programId: program.id, programType: program.type }, amount: full }])
+  const amount = Math.round((full - (promo?.off ?? 0)) * 100) / 100
+  const shares = spread(promo?.off ?? 0, quotes.map((q) => q.quote.total))
   const booking = await payload.create({
     collection: 'bookings',
     overrideAccess: true,
@@ -99,6 +106,8 @@ export async function checkoutRegistrations(payload: Payload, items: { reg: Acad
       status: 'pending',
       payee,
       amount,
+      discount: promo?.off,
+      promotion: promo?.promotion,
       birthYear: primary.playingBirthYear ?? primary.birthYear ?? undefined,
       account: rel(primary.account) ?? undefined,
       participant: rel(primary.participant) ?? undefined,
@@ -113,9 +122,10 @@ export async function checkoutRegistrations(payload: Payload, items: { reg: Acad
       collection: 'academy-registrations',
       id: q.reg.id,
       overrideAccess: true,
-      data: { status: 'pending_payment', slot: q.slot.id, booking: booking.id, amount: q.quote.total, nights: String(nights) as '1' | '2', pairedWith: nights === 2 ? other.reg.id : null },
+      data: { status: 'pending_payment', slot: q.slot.id, booking: booking.id, amount: Math.round((q.quote.total - shares[n]) * 100) / 100, nights: String(nights) as '1' | '2', pairedWith: nights === 2 ? other.reg.id : null },
     })
   }
+  if (promo && accountId) await recordUse(payload, { applied: promo, account: accountId, kind: 'program', reference, paidAmount: amount })
   if (!amount) {
     await confirmPayment(payload, 'booking', reference)
     return `/checkout/success?kind=booking&ref=${reference}`
@@ -132,6 +142,7 @@ export async function checkoutRegistrations(payload: Payload, items: { reg: Acad
           ? { name: `${program.title} — ${slotLabel(q.slot)}`, description: `${who} · ${q.quote.count} sessions${nights === 2 ? ' (2 nights a week)' : ''}`, unitAmount: q.quote.perSession, quantity: q.quote.count }
           : { name: program.title, description: `${who} · ${slotLabel(q.slot)}`, unitAmount: q.quote.total, quantity: 1 },
       ),
+      discount: promo ? { amount: promo.off, label: promo.label } : null,
       cancelPath,
     })
     if (checkout.sessionId) await payload.update({ collection: 'bookings', id: booking.id, overrideAccess: true, data: { stripeCheckoutId: checkout.sessionId } })
