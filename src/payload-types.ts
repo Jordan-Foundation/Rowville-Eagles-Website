@@ -549,6 +549,7 @@ export interface Participant {
     pastDueSince?: string | null;
     trialUsedAt?: string | null;
     trialReminderSentAt?: string | null;
+    pastDueReminderAt?: string | null;
     leaderboardOptOut?: boolean | null;
     /**
      * Default: first name + last initial, e.g. Mia T.
@@ -3485,6 +3486,7 @@ export interface ParticipantsSelect<T extends boolean = true> {
         pastDueSince?: T;
         trialUsedAt?: T;
         trialReminderSentAt?: T;
+        pastDueReminderAt?: T;
         leaderboardOptOut?: T;
         leaderboardName?: T;
         consentAt?: T;

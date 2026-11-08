@@ -2,7 +2,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { payload, formatDate } from '@/lib/payload'
-import { requireCoach } from '@/academy/portal'
+import { requireReviewer } from '@/academy/portal'
 import { birthYearOf, groupLabel } from '@/lib/age-groups'
 import { criteriaSummary } from '@/academy/pdr/content'
 import { getVideo, playbackUrl, streamConfigured } from '@/academy/pdr/stream'
@@ -15,7 +15,7 @@ export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Review video', robots: { index: false } }
 
 export default async function ReviewPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireCoach('/coach/reviews')
+  await requireReviewer('/coach/reviews')
   const { id } = await params
   const p = await payload()
   const sub = await p.findByID({ collection: 'pdr-submissions', id: Number(id), depth: 2, overrideAccess: true, disableErrors: true })

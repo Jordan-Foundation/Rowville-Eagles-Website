@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { payload, formatDate } from '@/lib/payload'
-import { requireCoach } from '@/academy/portal'
+import { requireReviewer } from '@/academy/portal'
 import { groupLabel, birthYearOf } from '@/lib/age-groups'
 import type { Participant, PdrChallenge, PdrStage } from '@/payload-types'
 import { monthLabel } from '@/academy/pdr/challenge-rules'
@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Reviews', robots: { index: false } }
 
 export default async function ReviewQueue({ searchParams }: { searchParams: Promise<{ area?: string; level?: string; type?: string; q?: string; done?: string }> }) {
-  await requireCoach('/coach/reviews')
+  await requireReviewer('/coach/reviews')
   const f = await searchParams
   const p = await payload()
   const { docs: areas } = await p.find({ collection: 'pdr-areas', sort: 'order', depth: 0, limit: 20, overrideAccess: true })

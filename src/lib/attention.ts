@@ -5,6 +5,7 @@ import { unreadCount } from '../messaging/service'
 import { seenAt } from './seen'
 import { outstandingFor } from '../academy/reports/service'
 import { loadDateIssues } from './dates-data'
+import { foundationAttention } from '../academy/pdr/manage'
 
 /**
  * "Needs attention" counts for the dashboard badges. Every count is a cheap database count, worked out on
@@ -123,13 +124,8 @@ export async function managementAttention(p: Payload, user: User): Promise<Manag
     }),
     safe(() => unreadCount(p, { user, side: 'management' })),
     safe(async () => (await p.count({ collection: 'orders', where: { status: { equals: 'paid' } }, ...q })).totalDocs),
-    safe(async () => {
-      const [reviews, pastDue] = await Promise.all([
-        p.count({ collection: 'pdr-submissions', where: { status: { equals: 'pending' } }, ...q }),
-        p.count({ collection: 'participants', where: { 'pdr.subscriptionStatus': { equals: 'past_due' } }, ...q }),
-      ])
-      return reviews.totalDocs + pastDue.totalDocs
-    }),
+    // Foundation+: videos waiting, past-due players, next month's challenge not ready
+    safe(() => foundationAttention(p)),
     safe(async () => (await p.count({ collection: 'users', where: { consentReviewStatus: { equals: 'pending' } }, ...q })).totalDocs),
   ])
   // Reports submitted by coaches, waiting for Management review

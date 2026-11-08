@@ -34,3 +34,19 @@ async function coachFor(user: User): Promise<AcademyCoach> {
     data: { user: user.id, displayName: [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email.split('@')[0], active: false },
   })
 }
+
+/**
+ * Video reviews: coaches, and Management (who may not have the coach role). Returns the reviewer's account;
+ * Management doesn't get a coach profile created just for reviewing.
+ */
+export async function requireReviewer(next = '/coach/reviews'): Promise<User> {
+  const user = await currentUser()
+  if (!user) redirect(`/login?next=${encodeURIComponent(next)}`)
+  if (!hasRole(user, 'coach') && !hasRole(user, 'admin') && !hasRole(user, 'committee')) redirect(homeFor(user))
+  return user
+}
+
+export async function reviewerOrNull(): Promise<User | null> {
+  const user = await currentUser()
+  return user && (hasRole(user, 'coach') || hasRole(user, 'admin') || hasRole(user, 'committee')) ? user : null
+}

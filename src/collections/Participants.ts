@@ -98,6 +98,7 @@ export const Participants: CollectionConfig = {
             { name: 'pastDueSince', label: 'Payment failing since', type: 'date', admin: { readOnly: true } },
             { name: 'trialUsedAt', label: 'Free month used', type: 'date', admin: { readOnly: true } },
             { name: 'trialReminderSentAt', label: '7-day reminder sent', type: 'date', admin: { readOnly: true } },
+            { name: 'pastDueReminderAt', label: 'Payment reminder sent', type: 'date', admin: { readOnly: true } },
           ],
         },
         {
