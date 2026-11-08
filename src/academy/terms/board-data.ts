@@ -17,7 +17,7 @@ export function coachesFor(slot: AcademyTermSlot, groupId?: string | null) {
 
 /** Every coach assignment across open Academy term programs: what each coach is doing, and when. */
 async function assignments(payload: Payload) {
-  const { docs: programs } = await payload.find({ collection: 'programs', where: { type: { equals: 'academy-term' }, status: { not_equals: 'closed' } }, limit: 50, depth: 0, overrideAccess: true })
+  const { docs: programs } = await payload.find({ collection: 'programs', where: { type: { in: ['academy-term', 'toddler'] }, status: { not_equals: 'closed' } }, limit: 50, depth: 0, overrideAccess: true })
   const byId = new Map(programs.map((p) => [p.id, p]))
   const { docs: slots } = await payload.find({ collection: 'academy-term-slots', where: { program: { in: programs.map((p) => p.id) } }, limit: 500, depth: 0, overrideAccess: true })
   const out: { coach: number; slotId: number; groupId: string | null; label: string; sessions: ReturnType<typeof slotSessions> }[] = []

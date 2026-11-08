@@ -6,7 +6,6 @@ import { AcademyView } from './_views/Academy'
 import { RowvilleView, TournamentsView } from './_views/Selections'
 import { FoundationPlusView } from './_views/FoundationPlus'
 import { StoreView } from './_views/Store'
-import { Heading } from './_ui'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Programs Overview', robots: { index: false } }
@@ -62,12 +61,7 @@ export default async function ProgramsOverview({ searchParams }: { searchParams:
         {current === 'rowville' && <RowvilleView q={q} />}
         {current === 'tournaments' && <TournamentsView q={q} />}
         {current === 'foundation-plus' && <FoundationPlusView />}
-        {current === 'toddler' && (
-          <div className="space-y-4">
-            <Heading title="Mini Ballers" sub="Ages 2–5 · 30-minute sessions · $20 / session" />
-            <p className="border border-line p-6 text-muted">Mini Ballers is set up in the next stage — registrations, sessions, attendance, places filled and revenue will show here.</p>
-          </div>
-        )}
+        {current === 'toddler' && <AcademyView q={q} type="toddler" program="toddler" />}
         {current === 'store' && <StoreView q={q} />}
       </div>
     </div>

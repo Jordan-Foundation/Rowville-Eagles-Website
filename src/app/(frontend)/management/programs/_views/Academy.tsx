@@ -1,6 +1,6 @@
 import { payload, formatAUD } from '@/lib/payload'
 import { programSlots } from '@/academy/terms/service'
-import { slotLabel, yearsLabel } from '@/academy/terms/slots'
+import { slotLabel, slotSessions, yearsLabel } from '@/academy/terms/slots'
 import { Bar, FilterBar, Heading, KpiTiles, selectCls, thCls } from '../_ui'
 
 const rel = (v: unknown) => (v && typeof v === 'object' ? (v as { id: number }).id : (v as number | null))
@@ -36,6 +36,11 @@ export async function AcademyView({ q, type = 'academy-term', program: key = 'ac
     return n + (s.coaches?.length ? 0 : 1)
   }, 0)
   const capacity = shown.reduce((n, s) => n + (s.capacity ?? 0), 0)
+  const toddler = type === 'toddler'
+  const trials = toddler ? (await p.find({ collection: 'bookings', where: { program: { equals: program.id }, bookingType: { equals: 'trial' }, status: { equals: 'paid' } }, limit: 2000, depth: 0, overrideAccess: true, select: { sessionStart: true } })).docs : []
+  const now = Date.now()
+  const allSessions = shown.flatMap((s) => slotSessions(s, program).filter((x) => !x.cancelled))
+  const done = allSessions.filter((x) => new Date(x.startsAt).getTime() < now).length
   const tiles: [string, string, string?][] = [
     ['Registrations', String(live.length), `${paid.length} paid · ${unpaid.length} unpaid · ${waiting.length} waiting for a place`],
     ['Paid / unpaid', `${paid.length} / ${unpaid.length}`, unpaid.length ? `${formatAUD(owed)} still to come in` : 'everyone has paid'],
@@ -43,6 +48,12 @@ export async function AcademyView({ q, type = 'academy-term', program: key = 'ac
     ['Waitlist', String(waiting.length), waiting.length ? 'offer places from Academy terms' : 'nobody waiting'],
     ['Groups without a coach', String(noCoach), noCoach ? 'set coaches on Academy terms' : 'all covered'],
     ['Net revenue', formatAUD(revenue), `${program.title}`],
+    ...(toddler
+      ? ([
+          ['Sessions this term', String(allSessions.length), `${done} run · ${allSessions.length - done} to go`],
+          ['Free trials', String(trials.length), `${trials.filter((t) => t.sessionStart && new Date(t.sessionStart).getTime() > now).length} upcoming`],
+        ] as [string, string, string?][])
+      : []),
   ]
   return (
     <div className="space-y-10">
@@ -68,7 +79,7 @@ export async function AcademyView({ q, type = 'academy-term', program: key = 'ac
                 return (
                   <tr key={s.id}>
                     <td className="py-3 pr-4 font-medium">{slotLabel(s)}</td>
-                    <td className="pr-4">{yearsLabel(s.birthYears)}</td>
+                    <td className="pr-4">{toddler ? 'Ages 2–5' : yearsLabel(s.birthYears)}</td>
                     <td className="pr-4"><Bar value={pd} max={s.capacity ?? 0} label={`${pd} of ${s.capacity ?? 'unlimited'} places paid`} /></td>
                     <td className="pr-4 tabular-nums">{r.filter((x) => x.status === 'pending_payment' || x.status === 'offered').length}</td>
                     <td className={coachIds.length ? '' : 'text-amber-300'}>{coachIds.length ? coachIds.map(coachName).join(', ') : 'No coach'}</td>

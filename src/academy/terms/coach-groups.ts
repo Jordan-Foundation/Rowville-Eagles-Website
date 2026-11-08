@@ -33,7 +33,7 @@ export async function coachGroups(payload: Payload, coachId: number): Promise<Co
     const { docs: players } = await payload.find({ collection: 'academy-registrations', where: { slot: { equals: slot.id }, status: { equals: 'paid' } }, sort: 'player.firstName', limit: 500, depth: 0, overrideAccess: true })
     const sessions = slotSessions(slot, program)
     const base = { program, slot: { ...slot, program: rel(slot.program as never)! } as AcademyTermSlot, sessions }
-    if (whole) out.push({ ...base, key: String(slot.id), title: `${slotLabel(slot)} · ${yearsLabel(slot.birthYears)}`, groupName: null, players })
+    if (whole) out.push({ ...base, key: String(slot.id), title: `${slotLabel(slot)} · ${program.type === 'toddler' ? `${program.title} · Ages 2–5` : yearsLabel(slot.birthYears)}`, groupName: null, players })
     else for (const g of mine) out.push({ ...base, key: `${slot.id}:${g.id}`, title: `${g.name} · ${slotLabel(slot)}`, groupName: g.name, players: players.filter((p) => p.groupId === g.id) })
   }
   return out.sort((a, b) => (a.sessions.find((s) => !s.cancelled && new Date(s.endsAt) > new Date())?.startsAt ?? 'z').localeCompare(b.sessions.find((s) => !s.cancelled && new Date(s.endsAt) > new Date())?.startsAt ?? 'z'))

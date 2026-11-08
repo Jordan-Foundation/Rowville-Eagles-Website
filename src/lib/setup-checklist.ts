@@ -34,7 +34,7 @@ export async function setupChecklist(payload: Payload, ticked: Record<string, bo
   const [academy, fplus, programs, slots, placeholders, badges, noArt, stagesLive] = await Promise.all([
     payload.findGlobal({ slug: 'academy-settings', depth: 0, ...q }).catch(() => null),
     payload.findGlobal({ slug: 'pdr-settings', depth: 0, ...q }).catch(() => null),
-    payload.find({ collection: 'programs', where: { type: { equals: 'academy-term' }, status: { in: ['open', 'full'] } }, limit: 50, depth: 0, ...q }),
+    payload.find({ collection: 'programs', where: { type: { in: ['academy-term', 'toddler'] }, status: { in: ['open', 'full'] } }, limit: 50, depth: 0, ...q }),
     payload.find({ collection: 'academy-term-slots', limit: 500, depth: 0, ...q, select: { program: true } }),
     payload.count({ collection: 'pdr-stages', where: { placeholder: { equals: true } }, ...q }),
     payload.count({ collection: 'pdr-badges', where: { placeholder: { equals: true } }, ...q }),
@@ -92,6 +92,7 @@ export async function setupChecklist(payload: Payload, ticked: Record<string, bo
         auto('google-review', 'Google review link', 'Admin → Academy settings → Google review link (from your Google Business Profile → “Ask for reviews”).', Boolean(academy?.googleReviewUrl), { href: '/admin/globals/academy-settings' }),
         auto('term-slots', 'Training times added to open Academy term programs', 'Management → Academy terms → Add a training time.', termsWithout.length === 0, { note: termsWithout.length ? `Missing: ${termsWithout.map((p) => p.title).join(', ')}` : undefined, href: '/management/academy/terms' }),
         manual('prices-reviewed', 'Prices checked', 'Admin → Prices: 1-on-1 ($80/$85/$70), group terms ($25 per session, $20 on 2 nights a week), camps, registrations, tournaments, shop.', { href: '/admin/prices' }),
+        manual('mini-ballers', 'Mini Ballers set up and opened', 'Admin → Programs → Mini Ballers: link the Academy term, check the $20 per session price and photo, then set it to Open. Management → Academy terms → add the session time (capacity 10) and two coaches.', { href: '/admin/collections/programs?where[type][equals]=toddler' }),
         manual('six-pillars', 'Six Pillars wording checked', 'The Academy page now shows six pillars (Attacking, Defending, Physical, Passing & Receiving, Tactical, Character) with drafted one-line descriptions. Check them and send any changes.', { href: '/academy' }),
         manual('trial-years', 'Trial-night years of birth checked', 'Admin → Programs → each Academy term → Weekly training nights. For the 2027 season MiniRoos are born 2016–2021.'),
       ],

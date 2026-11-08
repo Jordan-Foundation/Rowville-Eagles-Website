@@ -109,6 +109,7 @@ const programs = [
       { day: 'Tuesday', startTime: '17:30', durationMinutes: 75, birthYears: [2017, 2018, 2019, 2020], trialSpots: 3 },
       { day: 'Thursday', startTime: '17:30', durationMinutes: 75, birthYears: [2014, 2015, 2016], trialSpots: 3 },
     ] },
+  { title: 'Mini Ballers', slug: 'mini-ballers-term-1-2027', type: 'toddler', brand: 'academy', status: 'open', price: 0, pricePerSession: 20, trialPlacesPerNight: 2, trialPrice: 0, ageRange: 'Ages 2–5', scheduleNote: 'Saturdays · 30 minutes', location: '208 Dandelion Drive, Rowville', startDate: '2027-02-01T13:00:00.000Z', endDate: '2027-04-01T12:00:00.000Z', summary: 'Fun first football for 2–5 year olds: 30-minute small-group sessions that introduce the ball through games. Parents stay to supervise.' },
   { title: '1-on-1 Coaching', slug: 'private-coaching', type: 'private-session', brand: 'academy', status: 'open', price: 75, ageRange: 'All ages', scheduleNote: '60 minutes · choose your time', summary: 'Personalised technical sessions with an Academy coach, focused on your player’s individual goals.' },
 ] as const
 
@@ -131,6 +132,12 @@ const slotsFor: Record<string, ReturnType<typeof slotsFrom>> = {
 for (const p of programs) {
   const weeklySessions = 'weeklySessions' in p ? p.weeklySessions.map((w) => ({ ...w, birthYears: [...w.birthYears] })) : undefined
   await payload.create({ collection: 'programs', data: { ...p, weeklySessions, slots: slotsFor[p.slug], description: para(`${p.summary}\n\nThis is sample copy — replace it in the admin with the full program details, what to bring, and cancellation policy.`) } })
+}
+
+// Mini Ballers: one Saturday-morning session, 10 children with two coaches
+{
+  const mini = (await payload.find({ collection: 'programs', where: { slug: { equals: 'mini-ballers-term-1-2027' } }, limit: 1 })).docs[0]
+  if (mini) await payload.create({ collection: 'academy-term-slots', data: { program: mini.id, weekday: 'Saturday', startTime: '08:30', endTime: '09:00', venue: 'Rowville Reserve', capacity: 10, active: true } as never })
 }
 
 // Club trial dates: MiniRoos published (open for booking); juniors/seniors not yet set → expressions of interest

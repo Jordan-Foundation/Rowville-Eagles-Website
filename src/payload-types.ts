@@ -685,7 +685,8 @@ export interface Program {
   payee?: ('club' | 'academy') | null;
   title: string;
   slug: string;
-  type: 'registration' | 'holiday-camp' | 'tournament' | 'academy-term' | 'academy-trial' | 'private-session';
+  type:
+    'registration' | 'holiday-camp' | 'tournament' | 'academy-term' | 'toddler' | 'academy-trial' | 'private-session';
   brand: 'club' | 'academy';
   status: 'draft' | 'open' | 'full' | 'closed';
   /**
@@ -728,7 +729,7 @@ export interface Program {
    */
   twoNightPricePerSession?: number | null;
   /**
-   * Families pay this × the sessions left in their training time (like 1-on-1 terms), e.g. $25.
+   * Families pay this × the sessions left in their training time (like 1-on-1 terms), e.g. $25 (Academy) or $20 (Mini Ballers).
    */
   pricePerSession?: number | null;
   capacity?: number | null;
@@ -771,7 +772,7 @@ export interface Program {
       }[]
     | null;
   /**
-   * Trials are offered on every night the academy runs (its training times). Each player can only book one trial.
+   * Trials are offered on every session (its training times). Each player can only book one trial. Mini Ballers: trial places count towards the session’s capacity.
    */
   trialPlacesPerNight?: number | null;
   /**
@@ -875,7 +876,7 @@ export interface AcademyTermSlot {
   endTime: string;
   venue?: string | null;
   /**
-   * e.g. 2017, 2018
+   * e.g. 2017, 2018. Mini Ballers: leave empty — filled in for ages 2–5 (age is checked from the date of birth when booking).
    */
   birthYears: number[];
   /**

@@ -6,6 +6,7 @@ import { payload } from '@/lib/payload'
 import { birthYearOf } from '@/lib/age-groups'
 import { checkoutRegistrations, emailInterest, existingRegistration, nightRate, programSlots, slotTaken, TermClosedError } from '@/academy/terms/service'
 import { slotChoice, termQuote } from '@/academy/terms/slots'
+import { toddlerAgeOk } from '@/academy/terms/toddler'
 
 export type TermState = { error?: string; interest?: { reference: string; reason: 'no_slot' | 'full'; email: string }; values?: Record<string, string> }
 
@@ -20,7 +21,7 @@ export async function bookTerm(_prev: TermState, fd: FormData): Promise<TermStat
   const values = Object.fromEntries([...fd.entries()].filter(([k]) => !k.startsWith('$')).map(([k, v]) => [k, String(v)]))
   const fail = (error: string): TermState => ({ error, values })
   const p = await payload()
-  const { docs } = await p.find({ collection: 'programs', where: { slug: { equals: str(fd, 'program') }, type: { equals: 'academy-term' }, status: { equals: 'open' } }, limit: 1, depth: 0 })
+  const { docs } = await p.find({ collection: 'programs', where: { slug: { equals: str(fd, 'program') }, type: { in: ['academy-term', 'toddler'] }, status: { equals: 'open' } }, limit: 1, depth: 0 })
   const program = docs[0]
   if (!program) return fail('This program is no longer taking registrations.')
 
@@ -46,6 +47,12 @@ export async function bookTerm(_prev: TermState, fd: FormData): Promise<TermStat
 
   const [slots, taken] = await Promise.all([programSlots(p, program.id), slotTaken(p, program.id)])
   const choice = slotChoice(slots, birthYear, taken, (s) => termQuote(s, program, program).bookable)
+  // Mini Ballers: aged 2–5 on the day of their first session (from the date of birth, not the MiniRoos age groups)
+  if (program.type === 'toddler') {
+    const firstSession = (choice.slots.length ? termQuote(choice.slots.find((x) => x.id === Number(str(fd, 'slot'))) ?? choice.slots[0], program, program).sessions[0]?.startsAt : null) ?? program.startDate ?? new Date().toISOString()
+    const age = toddlerAgeOk(player.dateOfBirth, firstSession)
+    if (!age.ok) return fail(age.reason)
+  }
   const existing = await existingRegistration(p, program.id, player)
   if (existing && existing.status === 'paid') return fail(`${player.firstName} is already registered for this term. Check your account for the details.`)
   if (existing && (existing.status === 'interest' || existing.status === 'offered')) {
@@ -63,7 +70,7 @@ export async function bookTerm(_prev: TermState, fd: FormData): Promise<TermStat
   }
 
   // 1 night: one time (picked for them if only one fits). 2 nights: two times at the 2-night rate.
-  const twoNights = str(fd, 'nights') === '2' && program.twoNightPricePerSession != null
+  const twoNights = program.type === 'academy-term' && str(fd, 'nights') === '2' && program.twoNightPricePerSession != null
   const open = slotChoice(slots, birthYear, taken, (s) => termQuote(s, program, nightRate(program, twoNights ? 2 : 1)).bookable).slots
   let picked: typeof open
   if (twoNights) {

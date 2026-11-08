@@ -33,10 +33,19 @@ export const AcademyTermSlots: CollectionConfig = {
       },
     ],
     beforeValidate: [
-      ({ data, originalDoc }) => {
+      async ({ data, originalDoc, req }) => {
         if (!data) return data
+        // Mini Ballers: ages 2–5 — fill the years of birth from the program's dates (age is checked from the DOB when booking)
+        const programId = (v: unknown) => (v && typeof v === 'object' ? (v as { id: number }).id : (v as number | undefined))
+        const pid = programId(data.program ?? originalDoc?.program)
+        const program = pid ? await req.payload.findByID({ collection: 'programs', id: pid, depth: 0, overrideAccess: true, req, disableErrors: true }) : null
+        const toddler = program?.type === 'toddler'
+        if (toddler && !((data.birthYears ?? originalDoc?.birthYears ?? []) as number[]).length) {
+          const { toddlerYears } = await import('../toddler')
+          data.birthYears = toddlerYears(program.startDate ?? new Date())
+        }
         const m = { ...originalDoc, ...data }
-        if (m.weekday && m.startTime && m.endTime) data.title = `${slotLabel(m)} · ${yearsLabel(m.birthYears)}`
+        if (m.weekday && m.startTime && m.endTime) data.title = `${slotLabel(m)} · ${toddler ? 'Ages 2–5' : yearsLabel(m.birthYears)}`
         return data
       },
     ],
@@ -49,7 +58,7 @@ export const AcademyTermSlots: CollectionConfig = {
       relationTo: 'programs',
       required: true,
       index: true,
-      filterOptions: { type: { equals: 'academy-term' } },
+      filterOptions: { type: { in: ['academy-term', 'toddler'] } },
       admin: { description: 'The Academy term program (its dates come from the linked Academy term).' },
     },
     {
@@ -64,7 +73,7 @@ export const AcademyTermSlots: CollectionConfig = {
     {
       type: 'row',
       fields: [
-        { name: 'birthYears', label: 'Years of birth', type: 'number', hasMany: true, required: true, admin: { description: 'e.g. 2017, 2018' } },
+        { name: 'birthYears', label: 'Years of birth', type: 'number', hasMany: true, required: true, admin: { description: 'e.g. 2017, 2018. Mini Ballers: leave empty — filled in for ages 2–5 (age is checked from the date of birth when booking).' } },
         { name: 'capacity', label: 'Places', type: 'number', min: 1, admin: { description: 'Leave empty for no limit' } },
       ],
     },

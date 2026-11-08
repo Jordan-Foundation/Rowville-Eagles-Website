@@ -98,7 +98,7 @@ export async function managementAttention(p: Payload, user: User): Promise<Manag
     }),
     // Academy terms: families waiting for a place + training times/groups with no coach
     safe(async () => {
-      const { docs: programs } = await p.find({ collection: 'programs', where: { type: { equals: 'academy-term' }, status: { in: ['open', 'full'] } }, limit: 30, depth: 0, ...q, select: { title: true } })
+      const { docs: programs } = await p.find({ collection: 'programs', where: { type: { in: ['academy-term', 'toddler'] }, status: { in: ['open', 'full'] } }, limit: 30, depth: 0, ...q, select: { title: true } })
       if (!programs.length) return 0
       const ids = programs.map((x) => x.id)
       const [waiting, slots] = await Promise.all([

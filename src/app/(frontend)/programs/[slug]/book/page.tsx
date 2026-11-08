@@ -65,7 +65,7 @@ export default async function BookPage({
   // Academy terms with training times: the player's year of birth picks the slot
   let termSlots: TermSlotOption[] | null = null
   let prefill: Record<string, string> | undefined
-  if (program.type === 'academy-term') {
+  if (program.type === 'academy-term' || program.type === 'toddler') {
     const slots = (await programSlots(p, program.id)).filter((s) => s.active !== false)
     if (slots.length) {
       const taken = await slotTaken(p, program.id)
@@ -78,7 +78,7 @@ export default async function BookPage({
         return {
           id: s.id,
           label: termSlotLabel(s),
-          years: yearsLabel(s.birthYears),
+          years: program.type === 'toddler' ? 'Ages 2–5' : yearsLabel(s.birthYears),
           birthYears: (s.birthYears ?? []) as number[],
           remaining: spotsLeft(s, taken.get(s.id) ?? 0),
           sessions: q.count ? `${q.count} sessions left, from ${formatDate(q.sessions[0].startsAt, { day: 'numeric', month: 'short' })}` : 'Term finished',
@@ -102,7 +102,7 @@ export default async function BookPage({
         remaining: Math.max(0, (s.capacity ?? 1) - (await placesTaken(p, program.id, s.start))),
       })),
   )
-  let paymentsReady = program.price === 0 && !(program.type === 'academy-term' && program.pricePerSession)
+  let paymentsReady = program.price === 0 && !((program.type === 'academy-term' || program.type === 'toddler') && program.pricePerSession)
   try {
     paymentsReady ||= Boolean(paymentsMode(payee))
   } catch {

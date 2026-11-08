@@ -24,7 +24,7 @@ export default async function StaffTermsPage({ searchParams }: { searchParams: P
   const user = await requireManagement('/management/academy/terms')
   const { program: programParam } = await searchParams
   const p = await payload()
-  const { docs: programs } = await p.find({ collection: 'programs', where: { type: { equals: 'academy-term' } }, sort: '-startDate', limit: 30, depth: 0, overrideAccess: true })
+  const { docs: programs } = await p.find({ collection: 'programs', where: { type: { in: ['academy-term', 'toddler'] } }, sort: '-startDate', limit: 30, depth: 0, overrideAccess: true })
   const program = programs.find((x) => String(x.id) === programParam) ?? programs.find((x) => x.status === 'open') ?? programs[0]
   if (!program) return <div className="container-x py-14"><p>No Academy term programs yet — create one in the admin (Programs → type “Academy term”).</p></div>
 

@@ -10,6 +10,7 @@ export const programTypes = [
   { label: 'Holiday camp', value: 'holiday-camp' },
   { label: 'Tournament', value: 'tournament' },
   { label: 'Academy term', value: 'academy-term' },
+  { label: 'Mini Ballers (ages 2–5)', value: 'toddler' },
   { label: 'Academy trial session', value: 'academy-trial' },
   { label: '1-on-1 session', value: 'private-session' },
 ] as const
@@ -39,7 +40,8 @@ export const Programs: CollectionConfig = {
         // Partial updates (e.g. from the Prices page) only carry the changed fields
         const type = data.type ?? originalDoc?.type
         const termId = typeof data.academyTerm === 'object' ? data.academyTerm?.id : data.academyTerm
-        if (type === 'academy-term' && termId) {
+        const termProgram = type === 'academy-term' || type === 'toddler'
+        if (termProgram && termId) {
           const term = await req.payload.findByID({ collection: 'academy-terms', id: termId, depth: 0, req, disableErrors: true })
           if (term) {
             data.startDate = term.startDate
@@ -49,6 +51,9 @@ export const Programs: CollectionConfig = {
         // Academy group terms are priced per session (default $25)
         if (type === 'academy-term' && data.pricePerSession == null && !originalDoc?.id) data.pricePerSession = 25
         if (type === 'academy-term' && data.twoNightPricePerSession === undefined && !originalDoc?.id) data.twoNightPricePerSession = 20
+        // Mini Ballers: $20 a session, one night a week
+        if (type === 'toddler' && data.pricePerSession == null && !originalDoc?.id) data.pricePerSession = 20
+        if (type === 'toddler') data.twoNightPricePerSession = null
         // The flat price isn't used for per-session terms; keep the column filled
         if (data.price == null || (data.price as unknown) === '') data.price = originalDoc?.price ?? 0
         return {
@@ -135,7 +140,7 @@ export const Programs: CollectionConfig = {
           defaultValue: 0,
           admin: {
             // Academy terms priced per session don't need a flat price
-            condition: (d) => !(d?.type === 'academy-term' && d?.pricePerSession != null),
+            condition: (d) => !((d?.type === 'academy-term' || d?.type === 'toddler') && d?.pricePerSession != null),
             description: 'AUD incl. GST.',
           },
         },
@@ -151,12 +156,12 @@ export const Programs: CollectionConfig = {
         },
         {
           name: 'pricePerSession',
-          label: '1 night a week — price per session (AUD)',
+          label: 'Price per session (AUD) — 1 night a week',
           type: 'number',
           min: 0,
           admin: {
-            condition: (d) => d?.type === 'academy-term',
-            description: 'Families pay this × the sessions left in their training time (like 1-on-1 terms), e.g. $25.',
+            condition: (d) => d?.type === 'academy-term' || d?.type === 'toddler',
+            description: 'Families pay this × the sessions left in their training time (like 1-on-1 terms), e.g. $25 (Academy) or $20 (Mini Ballers).',
           },
         },
         { name: 'capacity', type: 'number', min: 0 },
@@ -192,7 +197,7 @@ export const Programs: CollectionConfig = {
       type: 'relationship',
       relationTo: 'academy-terms',
       admin: {
-        condition: (d) => d?.type === 'academy-term',
+        condition: (d) => d?.type === 'academy-term' || d?.type === 'toddler',
         description: 'Start and end dates are taken from this term automatically.',
       },
     },
@@ -223,7 +228,7 @@ export const Programs: CollectionConfig = {
       defaultValue: 2,
       min: 0,
       max: 20,
-      admin: { condition: (d) => d?.type === 'academy-term', description: 'Trials are offered on every night the academy runs (its training times). Each player can only book one trial.' },
+      admin: { condition: (d) => d?.type === 'academy-term' || d?.type === 'toddler', description: 'Trials are offered on every session (its training times). Each player can only book one trial. Mini Ballers: trial places count towards the session’s capacity.' },
     },
     {
       name: 'trialPrice',
@@ -231,7 +236,7 @@ export const Programs: CollectionConfig = {
       type: 'number',
       defaultValue: 0,
       min: 0,
-      admin: { condition: (d) => d?.type === 'academy-term', description: '0 = free trial' },
+      admin: { condition: (d) => d?.type === 'academy-term' || d?.type === 'toddler', description: '0 = free trial' },
     },
     { name: 'heroImage', type: 'upload', relationTo: 'media' },
   ],

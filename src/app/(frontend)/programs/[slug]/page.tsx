@@ -72,6 +72,14 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
               </Link>
               <p className="text-center text-xs text-muted">No payment now — coaches select teams by age group, and selected players are invited to register.</p>
             </div>
+          ) : p.type === 'toddler' && (p.status === 'open' || p.status === 'full') ? (
+            <div className="mt-7 space-y-3">
+              {p.status === 'open' && (
+                <Link href={`/programs/${p.slug}/book`} className="block w-full bg-accent px-6 py-3 text-center font-semibold uppercase tracking-[0.18em] text-accent-ink transition hover:brightness-110">Book the term</Link>
+              )}
+              <Link href={`/programs/${p.slug}/trial`} className="block w-full border border-line px-6 py-3 text-center font-semibold uppercase tracking-[0.18em] transition hover:border-ink">Book a free trial</Link>
+              <p className="text-center text-xs text-muted">{p.status === 'full' ? 'The term is full — book a trial or join the waitlist from the booking page.' : 'Ages 2–5 · 30-minute sessions · parents stay to supervise'}</p>
+            </div>
           ) : p.status === 'open' ? (
             <Link
               href={`/programs/${p.slug}/book`}

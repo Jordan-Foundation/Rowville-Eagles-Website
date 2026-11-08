@@ -40,6 +40,8 @@ import * as migration_20261107_215132_monthly_challenges from './20261107_215132
 import * as migration_20261108_034355_coach_share_links from './20261108_034355_coach_share_links';
 import * as migration_20261108_041303_messaging_inbox from './20261108_041303_messaging_inbox';
 import * as migration_20261108_084744_seen_markers from './20261108_084744_seen_markers';
+import * as migration_20261108_093014_mini_ballers_type from './20261108_093014_mini_ballers_type';
+import * as migration_20261108_093100_mini_ballers_draft from './20261108_093100_mini_ballers_draft';
 
 export const migrations = [
   {
@@ -250,6 +252,16 @@ export const migrations = [
   {
     up: migration_20261108_084744_seen_markers.up,
     down: migration_20261108_084744_seen_markers.down,
-    name: '20261108_084744_seen_markers'
+    name: '20261108_084744_seen_markers',
+  },
+  {
+    up: migration_20261108_093014_mini_ballers_type.up,
+    down: migration_20261108_093014_mini_ballers_type.down,
+    name: '20261108_093014_mini_ballers_type'
+  },
+  {
+    up: migration_20261108_093100_mini_ballers_draft.up,
+    down: migration_20261108_093100_mini_ballers_draft.down,
+    name: '20261108_093100_mini_ballers_draft',
   },
 ];
