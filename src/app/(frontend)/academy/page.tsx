@@ -42,8 +42,8 @@ export default async function AcademyPage() {
   const oneTerm = oneOnOneTerms[0]
   const oneFrom = oneTerm ? Math.min(...[oneTerm.pricePerSession, oneTerm.casualPrice].filter((x): x is number => typeof x === 'number')) : null
   const choices = [
-    ...terms.map((t) => ({ key: 'term', eyebrow: 'Academy term', title: t.title, summary: t.summary ?? '', meta: [t.ageRange, t.scheduleNote, t.startDate && formatDate(t.startDate)], price: <PriceTag p={t} big="font-display text-3xl" />, href: t.status === 'open' ? `/programs/${t.slug}/book` : `/programs/${t.slug}`, cta: t.status === 'full' ? 'Waitlist →' : 'Book →' })),
-    ...camps.map((c) => ({ key: 'camp', eyebrow: 'Holiday camp', title: c.title, summary: c.summary ?? '', meta: [c.ageRange, c.scheduleNote, c.startDate && formatDate(c.startDate)], price: <PriceTag p={c} big="font-display text-3xl" />, href: c.status === 'open' ? `/programs/${c.slug}/book` : `/programs/${c.slug}`, cta: c.status === 'full' ? 'Waitlist →' : 'Book →' })),
+    ...terms.map((t) => ({ key: 'term', eyebrow: 'Academy term', title: t.title, summary: t.summary ?? '', meta: [t.ageRange, t.scheduleNote, t.startDate && formatDate(t.startDate)], price: <PriceTag p={t} big="font-display text-3xl" />, href: `/programs/${t.slug}`, cta: t.status === 'full' ? 'Details & waitlist →' : 'Details & book →' })),
+    ...camps.map((c) => ({ key: 'camp', eyebrow: 'Holiday camp', title: c.title, summary: c.summary ?? '', meta: [c.ageRange, c.scheduleNote, c.startDate && formatDate(c.startDate)], price: <PriceTag p={c} big="font-display text-3xl" />, href: `/programs/${c.slug}`, cta: c.status === 'full' ? 'Details & waitlist →' : 'Details & book →' })),
     {
       key: '1on1',
       eyebrow: '1-on-1 coaching',
@@ -54,7 +54,7 @@ export default async function AcademyPage() {
         <span className="inline-flex items-baseline gap-1"><span className="text-xs font-medium uppercase tracking-wider opacity-70">from</span><span className="font-display text-3xl font-semibold leading-none">{formatAUD(oneFrom)}</span><span className="text-xs font-medium opacity-70">/ session</span></span>
       ) : null,
       href: '/academy/1-on-1',
-      cta: 'Book →',
+      cta: 'Details & book →',
     },
   ]
 
