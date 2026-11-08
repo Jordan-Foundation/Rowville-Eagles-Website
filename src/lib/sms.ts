@@ -37,7 +37,7 @@ export async function logSms(payload: Payload, o: { to: string; body: string; ki
         userId: o.userId ?? undefined,
         status: o.status,
         providerId: o.sid,
-        error: o.error?.slice(0, 300),
+        error: o.error?.slice(0, 900),
       },
     })
   } catch (e) {

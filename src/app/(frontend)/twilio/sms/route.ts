@@ -2,7 +2,7 @@ import { payload } from '@/lib/payload'
 import { recordConsent } from '@/lib/consent'
 import { logSms, toE164 } from '@/lib/sms'
 import { smsKeyword, twiml } from '@/lib/twilio'
-import { readTwilioRequest, usersByPhone } from '@/lib/twilio-inbound'
+import { readTwilioRequest, rejectionDetail, usersByPhone } from '@/lib/twilio-inbound'
 import { receiveSms, systemNote } from '@/messaging/service'
 
 /**
@@ -18,8 +18,7 @@ export async function POST(req: Request) {
   if (!params) {
     // Looks like Twilio but the security check failed — record it so the setup problem is visible (Admin → Message log)
     if (signed) {
-      const u = new URL(req.url)
-      await logSms(p, { to: 'Twilio webhook', body: 'Incoming text rejected: security check failed', kind: 'service', status: 'failed', inbound: true, error: process.env.TWILIO_AUTH_TOKEN ? `Signature didn’t match (${req.method}). Site address ${process.env.NEXT_PUBLIC_SITE_URL || '(NEXT_PUBLIC_SITE_URL not set)'}; request came to ${u.host}${u.pathname}. Set the webhook to exactly ${process.env.NEXT_PUBLIC_SITE_URL || 'https://' + u.host}/twilio/sms` : 'TWILIO_AUTH_TOKEN is not set in Vercel' })
+      await logSms(p, { to: 'Twilio webhook', body: 'Incoming text rejected: security check failed', kind: 'service', status: 'failed', inbound: true, error: (process.env.TWILIO_AUTH_TOKEN ? `Signature didn’t match. ${await rejectionDetail(req)}` : 'TWILIO_AUTH_TOKEN is not set in Vercel').slice(0, 900) })
     }
     return new Response('Forbidden', { status: 403 })
   }

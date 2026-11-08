@@ -24,11 +24,19 @@ export function twilioSignature(authToken: string, url: string, params: Record<s
   return createHmac('sha1', authToken).update(Buffer.from(data, 'utf-8')).digest('base64')
 }
 
-export function validTwilioSignature(authToken: string, signature: string | null, urls: string[], params: Record<string, string>) {
+/** Same as twilioSignature, from the raw list of fields (keeps repeated fields, as Twilio does: sorted by name, then value). */
+export function twilioSignaturePairs(authToken: string, url: string, pairs: [string, string][]) {
+  const sorted = [...pairs].sort(([a, x], [b, y]) => (a < b ? -1 : a > b ? 1 : x < y ? -1 : x > y ? 1 : 0))
+  const data = url + sorted.map(([k, v]) => k + v).join('')
+  return createHmac('sha1', authToken).update(Buffer.from(data, 'utf-8')).digest('base64')
+}
+
+export function validTwilioSignature(authToken: string, signature: string | null, urls: string[], params: Record<string, string> | [string, string][]) {
   if (!signature) return false
   const given = Buffer.from(signature)
+  const pairs = Array.isArray(params) ? params : Object.entries(params)
   return urls.some((url) => {
-    const expected = Buffer.from(twilioSignature(authToken, url, params))
+    const expected = Buffer.from(twilioSignaturePairs(authToken, url, pairs))
     return expected.length === given.length && timingSafeEqual(expected, given)
   })
 }

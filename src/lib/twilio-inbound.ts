@@ -15,20 +15,22 @@ import { validTwilioSignature } from './twilio'
 export async function readTwilioRequest(req: Request): Promise<Record<string, string> | null> {
   const token = process.env.TWILIO_AUTH_TOKEN
   if (!token) return null
-  const params: Record<string, string> = {}
-  // POST (the default): fields in the body. GET (if chosen in Twilio): fields in the address, which is signed as a whole.
+  // POST (the default): fields in the body, read raw so every field is signed exactly as Twilio sent it.
+  // GET (if chosen in Twilio): fields in the address, which is signed as a whole.
   const isGet = req.method === 'GET'
-  if (isGet) {
-    new URL(req.url).searchParams.forEach((v, k) => (params[k] = v))
-  } else {
-    const form = await req.formData().catch(() => null)
-    if (!form) return null
-    form.forEach((v, k) => {
-      if (typeof v === 'string') params[k] = v
-    })
-  }
+  const pairs: [string, string][] = isGet ? [...new URL(req.url).searchParams.entries()] : [...new URLSearchParams(await req.text().catch(() => '')).entries()]
+  const params: Record<string, string> = Object.fromEntries(pairs)
   const urls = signatureUrls(req.url, siteUrl(), req.headers.get('x-forwarded-host'))
-  return validTwilioSignature(token, req.headers.get('x-twilio-signature'), urls, isGet ? {} : params) ? params : null
+  return validTwilioSignature(token, req.headers.get('x-twilio-signature'), urls, isGet ? [] : pairs) ? params : null
+}
+
+/** For the Message log when a request is rejected: what arrived (field names only — no values, no secrets). */
+export async function rejectionDetail(req: Request) {
+  const u = new URL(req.url)
+  const body = req.method === 'GET' ? '' : await req.text().catch(() => '')
+  const keys = [...new URLSearchParams(req.method === 'GET' ? u.search : body).keys()]
+  const dupes = [...new Set(keys.filter((k, i) => keys.indexOf(k) !== i))]
+  return `${req.method} ${req.headers.get('content-type') ?? '(no type)'} to ${req.headers.get('x-forwarded-host') ?? u.host}${u.pathname}${u.search ? ' (with query)' : ''}; ${keys.length} fields${dupes.length ? `, repeated: ${dupes.join(', ')}` : ''}: ${keys.join(', ')}; signature header ${req.headers.get('x-twilio-signature')?.length ?? 0} chars`
 }
 
 /**

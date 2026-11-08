@@ -39,7 +39,6 @@ export const minutes = (secs: string | number | undefined) => {
 export async function rejectedWebhook(req: Request) {
   if (!req.headers.has('x-twilio-signature')) return
   const p = (await import('@/lib/payload')).payload
-  const u = new URL(req.url)
   try {
     await (await p()).create({
       collection: 'message-log',
@@ -51,7 +50,7 @@ export async function rejectedWebhook(req: Request) {
         kind: 'service',
         sender: 'academy',
         status: 'failed',
-        error: process.env.TWILIO_AUTH_TOKEN ? `Signature didn’t match. ${req.method} ${req.headers.get('content-type') ?? ''} to ${req.headers.get('x-forwarded-host') ?? u.host}${u.pathname}${u.search ? ' (with query)' : ''}; site address ${process.env.NEXT_PUBLIC_SITE_URL || '(NEXT_PUBLIC_SITE_URL not set)'}. If this keeps happening, check TWILIO_AUTH_TOKEN in Vercel matches Twilio → Account → API keys & tokens → Auth Token (primary).` : 'TWILIO_AUTH_TOKEN is not set in Vercel',
+        error: (process.env.TWILIO_AUTH_TOKEN ? `Signature didn’t match. ${await (await import('@/lib/twilio-inbound')).rejectionDetail(req)}` : 'TWILIO_AUTH_TOKEN is not set in Vercel').slice(0, 900),
       },
     })
   } catch {
