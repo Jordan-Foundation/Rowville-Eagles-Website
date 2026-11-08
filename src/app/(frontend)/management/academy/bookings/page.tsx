@@ -49,7 +49,7 @@ export default async function StaffBookingsPage({ searchParams }: { searchParams
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted">Management · Foundation Academy</p>
             <h1 className="mt-2 font-display text-4xl font-semibold uppercase tracking-tight">1-on-1 bookings</h1>
           </div>
-          <div className="flex gap-4 text-sm"><Link href="/management/academy/dashboard" className="underline">Dashboard</Link><Link href="/management/academy" className="underline">Availability & cover</Link></div>
+          <div className="flex gap-4 text-sm"><Link href="/management/programs" className="underline">Programs Overview</Link><Link href="/management/academy" className="underline">Availability & cover</Link></div>
         </div>
         <form className="flex flex-wrap gap-2">
           <input name="q" defaultValue={q.q} placeholder="Reference, family or player" className={`${select} min-w-56 flex-1`} />

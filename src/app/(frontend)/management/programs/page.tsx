@@ -1,0 +1,75 @@
+import Link from 'next/link'
+import type { Metadata } from 'next'
+import { requireManagement } from '@/lib/management'
+import { OneOnOneView } from './_views/OneOnOne'
+import { AcademyView } from './_views/Academy'
+import { RowvilleView, TournamentsView } from './_views/Selections'
+import { FoundationPlusView } from './_views/FoundationPlus'
+import { StoreView } from './_views/Store'
+import { Heading } from './_ui'
+
+export const dynamic = 'force-dynamic'
+export const metadata: Metadata = { title: 'Programs Overview', robots: { index: false } }
+
+const PROGRAMS = [
+  { key: '1on1', label: '1-on-1s' },
+  { key: 'academy', label: 'Foundation Academy' },
+  { key: 'rowville', label: 'Rowville Eagles' },
+  { key: 'tournaments', label: 'Tournaments' },
+  { key: 'foundation-plus', label: 'Foundation+' },
+  { key: 'toddler', label: 'Mini Ballers' },
+  { key: 'store', label: 'Store' },
+] as const
+type Key = (typeof PROGRAMS)[number]['key']
+
+export default async function ProgramsOverview({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
+  const q = await searchParams
+  await requireManagement(`/management/programs${q.program ? `?program=${q.program}` : ''}`)
+  const current: Key = (PROGRAMS.find((x) => x.key === q.program)?.key ?? '1on1') as Key
+  const i = PROGRAMS.findIndex((x) => x.key === current)
+  const prev = PROGRAMS[(i - 1 + PROGRAMS.length) % PROGRAMS.length]
+  const next = PROGRAMS[(i + 1) % PROGRAMS.length]
+  return (
+    <div data-brand="academy" data-page-brand="academy">
+      <div className="container-x space-y-10 py-14">
+        <div>
+          <Link href="/management" className="text-sm text-muted hover:text-ink">← Management</Link>
+          <p className="mt-4 text-xs font-semibold uppercase tracking-[0.3em] text-muted">Management</p>
+          <h1 className="mt-2 font-display text-4xl font-semibold uppercase tracking-tight sm:text-5xl">Programs Overview</h1>
+        </div>
+
+        {/* Switcher: real links, so the address can be bookmarked and Back works */}
+        <nav aria-label="Programs" className="flex items-stretch gap-2">
+          <Link href={`/management/programs?program=${prev.key}`} aria-label={`Previous: ${prev.label}`} className="grid w-10 shrink-0 place-items-center border border-line text-lg hover:border-ink">‹</Link>
+          <ul className="flex min-w-0 flex-1 snap-x gap-1 overflow-x-auto border border-line p-1">
+            {PROGRAMS.map((x) => (
+              <li key={x.key} className="snap-start">
+                <Link
+                  href={`/management/programs?program=${x.key}`}
+                  aria-current={x.key === current ? 'page' : undefined}
+                  className={`block whitespace-nowrap px-4 py-2 text-sm font-semibold transition ${x.key === current ? 'bg-white text-black' : 'text-muted hover:text-ink'}`}
+                >
+                  {x.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <Link href={`/management/programs?program=${next.key}`} aria-label={`Next: ${next.label}`} className="grid w-10 shrink-0 place-items-center border border-line text-lg hover:border-ink">›</Link>
+        </nav>
+
+        {current === '1on1' && <OneOnOneView q={q} />}
+        {current === 'academy' && <AcademyView q={q} />}
+        {current === 'rowville' && <RowvilleView q={q} />}
+        {current === 'tournaments' && <TournamentsView q={q} />}
+        {current === 'foundation-plus' && <FoundationPlusView />}
+        {current === 'toddler' && (
+          <div className="space-y-4">
+            <Heading title="Mini Ballers" sub="Ages 2–5 · 30-minute sessions · $20 / session" />
+            <p className="border border-line p-6 text-muted">Mini Ballers is set up in the next stage — registrations, sessions, attendance, places filled and revenue will show here.</p>
+          </div>
+        )}
+        {current === 'store' && <StoreView q={q} />}
+      </div>
+    </div>
+  )
+}
