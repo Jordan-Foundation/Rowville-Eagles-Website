@@ -675,7 +675,17 @@ export interface Product {
    */
   price: number;
   description?: string | null;
+  /**
+   * The first photo is the main one. Add front, back and close-ups — families can flick through them.
+   */
   images?: (number | Media)[] | null;
+  /**
+   * One size per line, with measurements separated by | — the first line is the heading. e.g.
+   * Size | Chest (cm) | Length (cm)
+   * 8 | 76 | 56
+   * 10 | 81 | 60
+   */
+  sizeGuide?: string | null;
   /**
    * Leave stock empty for unlimited / made-to-order.
    */
@@ -811,6 +821,17 @@ export interface User {
   lastName?: string | null;
   phone?: string | null;
   stripeCustomerAcademy?: string | null;
+  loginLinkHash?: string | null;
+  loginLinkExpires?: string | null;
+  savedCart?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   phoneE164?: string | null;
   serviceConsentAt?: string | null;
   marketingEmail?: boolean | null;
@@ -1211,6 +1232,10 @@ export interface Booking {
    * Created automatically when saved
    */
   reference?: string | null;
+  /**
+   * Brothers and sisters booked together: the reference of the shared checkout.
+   */
+  checkoutGroup?: string | null;
   program: number | Program;
   status: 'pending' | 'paid' | 'waitlisted' | 'cancelled' | 'refunded';
   /**
@@ -3350,6 +3375,7 @@ export interface ProgramsSelect<T extends boolean = true> {
  */
 export interface BookingsSelect<T extends boolean = true> {
   reference?: T;
+  checkoutGroup?: T;
   program?: T;
   status?: T;
   payee?: T;
@@ -3405,6 +3431,7 @@ export interface ProductsSelect<T extends boolean = true> {
   price?: T;
   description?: T;
   images?: T;
+  sizeGuide?: T;
   variants?:
     | T
     | {
@@ -3658,6 +3685,9 @@ export interface UsersSelect<T extends boolean = true> {
   lastName?: T;
   phone?: T;
   stripeCustomerAcademy?: T;
+  loginLinkHash?: T;
+  loginLinkExpires?: T;
+  savedCart?: T;
   phoneE164?: T;
   serviceConsentAt?: T;
   marketingEmail?: T;

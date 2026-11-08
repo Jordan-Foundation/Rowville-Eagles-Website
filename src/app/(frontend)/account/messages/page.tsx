@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import { currentUser } from '@/lib/auth'
 import { payload } from '@/lib/payload'
 import { academyBrand } from '@/academy/brand'
-import { conversationFor, markRead, thread } from '@/messaging/service'
+import { conversationFor, markRead, receiptFor, replyTimeHint, thread } from '@/messaging/service'
 import { toThread } from '@/messaging/view'
 import { Thread } from '@/components/messaging/Thread'
 import { familySendAction } from './actions'
@@ -19,6 +19,7 @@ export default async function FamilyMessages() {
   const conv = await conversationFor(p, { account: user })
   const msgs = await thread(p, conv)
   await markRead(p, conv, user.id)
+  const [seen, replyHint] = await Promise.all([receiptFor(p, conv, msgs, 'family'), replyTimeHint(p)])
   const number = process.env.TWILIO_FROM
   return (
     <div className="container-x max-w-3xl py-14">
@@ -27,9 +28,10 @@ export default async function FamilyMessages() {
       <p className="mt-2 text-muted">
         Your conversation with Foundation Academy coaches and staff. {number ? `Texts you send to ${number.replace(/^\+61/, '0').replace(/(\d{4})(\d{3})(\d{3})/, '$1 $2 $3')} appear here too, and replies come by text.` : 'Replies come by text or email.'}
       </p>
+      {replyHint && <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-surface-2 px-3 py-1 text-sm"><span aria-hidden className="h-2 w-2 rounded-full bg-emerald-500" />{replyHint}</p>}
       {user.smsOptOut && <p className="mt-4 rounded-xl border border-line px-4 py-3 text-sm">You’ve turned texts off, so replies will be emailed to you. <Link href="/account/preferences" className="underline">Change this</Link>.</p>}
       <div className="mt-8">
-        <Thread messages={toThread(msgs, 'family')} action={familySendAction} placeholder="Write to your coach…" hint={`Urgent? Call ${academyBrand.phone}.`} empty="No messages yet. Send one below and your coach will reply." />
+        <Thread seen={seen} messages={toThread(msgs, 'family')} action={familySendAction} placeholder="Write to your coach…" hint={`Urgent? Call ${academyBrand.phone}.`} empty="No messages yet. Send one below and your coach will reply." />
       </div>
     </div>
   )

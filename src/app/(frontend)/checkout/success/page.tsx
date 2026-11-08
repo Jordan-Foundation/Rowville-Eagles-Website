@@ -48,6 +48,12 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
 
   if ('program' in doc) {
     const program = doc.program as Program
+    // Brothers and sisters booked in the same checkout
+    const group = doc.checkoutGroup
+      ? (await p.find({ pagination: false, collection: 'bookings', where: { checkoutGroup: { equals: doc.checkoutGroup } }, sort: 'id', limit: 10, depth: 0, overrideAccess: true })).docs
+      : [doc]
+    const names = group.map((b) => b.player?.firstName).filter(Boolean).join(', ')
+    const paidTotal = group.reduce((n, b) => n + (b.amount ?? 0), 0)
     const academy = program.brand === 'academy'
     const settings = await p.findGlobal({ slug: 'site-settings' })
     return (
@@ -56,12 +62,12 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
         <Shell title={paid ? (doc.bookingType === 'trial' ? 'Trial booked!' : 'You’re booked in!') : 'Payment processing'} reference={doc.reference ?? undefined}>
           <dl className={`panel mt-8 space-y-3 border border-line bg-surface-2 p-6 text-left text-sm ${academy ? 'gloss-sheen rounded-sm' : 'rounded-2xl'}`}>
             <Row k="Program" v={program.title} />
-            <Row k={doc.player?.teamName ? 'Team' : 'Player'} v={doc.player?.teamName || doc.player?.firstName || ''} />
+            <Row k={doc.player?.teamName ? 'Team' : group.length > 1 ? 'Players' : 'Player'} v={doc.player?.teamName || names} />
             {doc.birthYear && <Row k="Age group" v={groupLabel(doc.birthYear)} />}
             {doc.sessionStart && <Row k="Time" v={formatDate(doc.sessionStart, { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' })} />}
             {!doc.sessionStart && program.startDate && <Row k="Starts" v={formatDate(program.startDate)} />}
             {promoLine && <Row k={promoLine[0]} v={promoLine[1]} />}
-            {doc.amount > 0 && <Row k="Paid" v={`${formatAUD(doc.amount)} to ${payeeLabel}`} />}
+            {paidTotal > 0 && <Row k="Paid" v={`${formatAUD(paidTotal)} to ${payeeLabel}`} />}
           </dl>
           {paid && doc.reference && (
             <BookingNextSteps

@@ -4,6 +4,7 @@ import { Barlow_Condensed, Inter, Space_Grotesk } from 'next/font/google'
 import { Header } from '@/components/Header'
 import { Footer } from '@/components/Footer'
 import { payload } from '@/lib/payload'
+import { foundationSettings } from '@/academy/pdr/load'
 import './styles.css'
 import { siteBase } from '@/lib/seo'
 
@@ -21,7 +22,8 @@ export const metadata: Metadata = {
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const settings = await (await payload()).findGlobal({ slug: 'site-settings' })
+  const p = await payload()
+  const [settings, fplus] = await Promise.all([p.findGlobal({ slug: 'site-settings' }), foundationSettings(p)])
   return (
     <html lang="en-AU" data-scroll-behavior="smooth" className={`${inter.variable} ${barlow.variable} ${grotesk.variable}`}>
       <body>
@@ -48,7 +50,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             }).replace(/</g, '\\u003c'),
           }}
         />
-        <Header />
+        <Header fplusLive={fplus.enabled} />
         <main id="main">{children}</main>
         <Footer settings={settings} />
       </body>

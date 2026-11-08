@@ -131,7 +131,15 @@ export const Products: CollectionConfig = {
     },
     { name: 'price', type: 'number', required: true, min: 0, admin: { description: 'AUD incl. GST' } },
     { name: 'description', type: 'textarea' },
-    { name: 'images', type: 'upload', relationTo: 'media', hasMany: true },
+    { name: 'images', label: 'Photos', type: 'upload', relationTo: 'media', hasMany: true, admin: { description: 'The first photo is the main one. Add front, back and close-ups — families can flick through them.' } },
+    {
+      name: 'sizeGuide',
+      label: 'Size guide',
+      type: 'textarea',
+      admin: {
+        description: 'One size per line, with measurements separated by | — the first line is the heading. e.g.\nSize | Chest (cm) | Length (cm)\n8 | 76 | 56\n10 | 81 | 60',
+      },
+    },
     {
       name: 'variants',
       label: 'Sizes & stock',

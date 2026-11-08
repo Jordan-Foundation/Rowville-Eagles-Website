@@ -43,6 +43,7 @@ export async function setupChecklist(payload: Payload, ticked: Record<string, bo
     payload.find({ pagination: false, collection: 'pdr-stages', where: { published: { equals: true } }, limit: 500, depth: 1, ...q, select: { code: true, tutorialVideo: true, demoVideo: true } }),
   ])
   const sample = await findSampleText(payload).catch(() => [])
+  const noPhoto = await payload.find({ pagination: false, collection: 'products', where: { status: { equals: 'active' } }, limit: 200, depth: 0, ...q, select: { name: true, images: true } }).then((r) => r.docs.filter((d) => !d.images?.length)).catch(() => [])
   const pol = (await payload.findGlobal({ slug: 'policies', depth: 0, overrideAccess: true }).catch(() => null)) as unknown as Record<string, string | null> | null
   const { POLICIES } = await import('./policies')
   const missingPolicies = POLICIES.filter((x) => !pol?.[`${x.key}Text`]?.trim() && !pol?.[`${x.key}Link`]?.trim())
@@ -107,6 +108,7 @@ export async function setupChecklist(payload: Payload, ticked: Record<string, bo
       title: 'Website content',
       items: [
         auto('policies', 'Policies added', 'Admin → Club → Policies: paste each policy, or link to the document (e.g. Football Victoria’s Member Protection / Code of Conduct). Every booking form links to them.', missingPolicies.length === 0, { note: missingPolicies.length ? `Missing: ${missingPolicies.map((x) => x.title).join(', ')}` : undefined, href: '/admin/globals/policies' }),
+        auto('shop-photos', 'Shop items have real photos', 'Admin → Shop → Products → each item → Photos: add a front photo first, then back and close-ups. Add a size guide to clothing too.', noPhoto.length === 0, { note: noPhoto.length ? `No photo: ${noPhoto.slice(0, 6).map((d) => d.name).join(', ')}${noPhoto.length > 6 ? '…' : ''}` : undefined, href: '/admin/collections/products' }),
         auto('sample-text', 'No sample or placeholder text left on the website', 'Programs, news, coach bios and shop items written for testing say “Sample… replace in the admin”. Rewrite or delete each one before launch.', sample.length === 0, { note: sample.length ? `${sample.length} left: ${sample.slice(0, 6).map((h) => h.where).join(' · ')}${sample.length > 6 ? '…' : ''}` : undefined, href: sample[0]?.href }),
         manual('wmud-copy', '“What Makes Us Different” copy checked', 'Admin → Club → What Makes Us Different: read each section (drafted from your notes) and adjust anything — especially the lesson-stage one-liners, curriculum strands and term months.', { href: '/admin/globals/difference-page' }),
         auto('wmud-photos', '“What Makes Us Different” photos added', 'Hero (2400×1350), coaches (1600×1200), pathways (1600×1200) and 3–4 Community Night photos (1200×1200). Only children with photo consent.', diffPhotos >= 4, { note: `${diffPhotos} of 4 added`, href: '/admin/globals/difference-page' }),

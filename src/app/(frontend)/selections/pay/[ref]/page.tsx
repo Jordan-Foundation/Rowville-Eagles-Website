@@ -1,3 +1,4 @@
+import { stripeAccounts } from '@/lib/stripe-accounts'
 import Link from 'next/link'
 import { PromoNotice } from '@/promotions/PromoNotice'
 import type { Metadata } from 'next'
@@ -23,7 +24,7 @@ export default async function PayPage({ params, searchParams }: { params: Promis
       </div>
     )
   }
-  const { p, entry, round, program, squad, fee } = data
+  const { p, entry, round, program, squad, fee, payee } = data
   const rules = await getAgeRules(p)
   const by = entry.playingBirthYear ?? entry.birthYear
   const kid = entry.participant && typeof entry.participant === 'object' ? (entry.participant as Participant) : null
@@ -46,7 +47,7 @@ export default async function PayPage({ params, searchParams }: { params: Promis
               <strong className={isOverdue(entry) ? 'text-red-600' : 'text-ink'}>{entry.paymentDueAt ? formatDate(entry.paymentDueAt, { weekday: 'long', day: 'numeric', month: 'long' }) : 'soon'}</strong> to confirm it.
             </p>
             <div className="mt-8">
-              <PayForm refCode={entry.reference!} token={t} price={formatAUD(fee)} defaults={{ medical: kid?.medical?.conditions ?? '', emergencyName: kid?.medical?.emergencyContact ?? '', emergencyPhone: kid?.medical?.emergencyPhone ?? '', photoConsent: Boolean(kid?.photoConsent) }} />
+              <PayForm payeeLabel={payee ? stripeAccounts[payee].label : ''} refCode={entry.reference!} token={t} price={formatAUD(fee)} defaults={{ medical: kid?.medical?.conditions ?? '', emergencyName: kid?.medical?.emergencyContact ?? '', emergencyPhone: kid?.medical?.emergencyPhone ?? '', photoConsent: Boolean(kid?.photoConsent) }} />
             </div>
           </>
         )}

@@ -55,6 +55,7 @@ import * as migration_20261108_201445_policies from './20261108_201445_policies'
 import * as migration_20261108_204924_resumable_sends from './20261108_204924_resumable_sends';
 import * as migration_20261108_212256_status_indexes from './20261108_212256_status_indexes';
 import * as migration_20261108_220051_program_details from './20261108_220051_program_details';
+import * as migration_20261108_232239_parents_two from './20261108_232239_parents_two';
 
 export const migrations = [
   {
@@ -340,6 +341,11 @@ export const migrations = [
   {
     up: migration_20261108_220051_program_details.up,
     down: migration_20261108_220051_program_details.down,
-    name: '20261108_220051_program_details'
+    name: '20261108_220051_program_details',
+  },
+  {
+    up: migration_20261108_232239_parents_two.up,
+    down: migration_20261108_232239_parents_two.down,
+    name: '20261108_232239_parents_two'
   },
 ];

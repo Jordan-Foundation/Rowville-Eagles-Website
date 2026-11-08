@@ -11,7 +11,7 @@ const fmt = (iso: string) =>
   new Date(iso).toLocaleString('en-AU', { timeZone: 'Australia/Melbourne', weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })
 
 /** A conversation: messages oldest → newest, a reply box, and a quiet refresh every 15 seconds. */
-export function Thread({ messages, action, hidden, placeholder, hint, empty }: { messages: ThreadMessage[]; action: Action; hidden?: Record<string, string | number>; placeholder: string; hint?: string; empty: string }) {
+export function Thread({ messages, action, hidden, placeholder, hint, empty, seen }: { seen?: { id: number; text: string; at: string } | null; messages: ThreadMessage[]; action: Action; hidden?: Record<string, string | number>; placeholder: string; hint?: string; empty: string }) {
   const router = useRouter()
   const [state, send, pending] = useActionState<SendState, FormData>(action, {})
   const [text, setText] = useState('')
@@ -38,6 +38,7 @@ export function Thread({ messages, action, hidden, placeholder, hint, empty }: {
               <div className={`max-w-[85%] border px-4 py-3 text-sm ${m.mine ? 'border-line bg-surface-2' : 'border-line'}`}>
                 <p className="whitespace-pre-wrap break-words">{m.body}</p>
                 <p className="mt-1.5 text-[11px] text-muted">{m.author} · {fmt(m.at)}{m.how ? ` · ${m.how}` : ''}</p>
+                {seen?.id === m.id && <p className="mt-1 text-right text-[11px] font-semibold text-muted" data-testid="seen">✓✓ {seen.text} · {fmt(seen.at)}</p>}
               </div>
             </li>
           ),

@@ -1,3 +1,4 @@
+import { Crest } from '@/components/Logos'
 import { RATINGS, RATING_LABEL, type Rating } from '@/academy/curriculum/levels'
 
 export type ReportRow = { strand: string; standard?: string | null; rating: Rating | null; comment?: string | null }
@@ -19,9 +20,12 @@ export function PlayerReportView({ eyebrow, title, badge, rows, overall, footer,
   return (
     <figure className="report-card overflow-hidden rounded-2xl border border-line bg-surface shadow-xl print:shadow-none" aria-label={`${eyebrow}: ${title}`}>
       <div className="flex flex-wrap items-baseline justify-between gap-2 bg-[#0f2a55] px-5 py-4 text-white print:[-webkit-print-color-adjust:exact] print:[print-color-adjust:exact]">
-        <div>
+        <div className="flex items-center gap-3">
+          <Crest className="hidden h-12 w-auto print:block" preload />
+          <div>
           <p className="text-xs uppercase tracking-[0.2em] text-white/70">{eyebrow}</p>
           <p className="font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase">{title}</p>
+          </div>
         </div>
         {badge && <span className="rounded-full bg-white/15 px-2.5 py-1 text-xs">{badge}</span>}
       </div>
@@ -41,7 +45,16 @@ export function PlayerReportView({ eyebrow, title, badge, rows, overall, footer,
               <tr key={row.strand} className="break-inside-avoid align-top">
                 <th scope="row" className="px-4 py-3 font-semibold">
                   {row.strand}
-                  {showStandards && row.standard && <p className="mt-1 text-xs font-normal italic text-muted">{row.standard}</p>}
+                  {showStandards && row.standard && (
+                    <>
+                      <p className="mt-1 hidden text-xs font-normal italic text-muted sm:block print:block">{row.standard}</p>
+                      {/* Phones: the long standard folds away */}
+                      <details className="mt-1 text-xs font-normal text-muted sm:hidden print:hidden">
+                        <summary className="cursor-pointer py-1 font-semibold text-brand [[data-brand=academy]_&]:text-ink">What this means</summary>
+                        <p className="italic">{row.standard}</p>
+                      </details>
+                    </>
+                  )}
                   {row.comment && <p className="mt-1.5 text-sm font-normal">{row.comment}</p>}
                 </th>
                 {RATINGS.map((r, i) => (

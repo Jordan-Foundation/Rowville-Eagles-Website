@@ -1,7 +1,9 @@
 'use client'
 
+import { PayeeChip } from '@/components/PayeeChip'
+
 import { PolicyLink } from '@/components/PolicyLink'
-import { useActionState } from 'react'
+import { useActionState, useState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { bookProgram, type BookingState } from './actions'
 import { Field, Fieldset, Input, inputCls } from '@/components/forms/Field'
@@ -23,11 +25,20 @@ export function BookingForm(props: {
   kids?: KidOption[]
   prefill?: Record<string, string>
   bounds?: { min: number | null; max: number | null }
+  /** Book brothers and sisters in the same checkout (camps, programs) */
+  maxChildren?: number
+  unitPrice?: number
 }) {
   const offer = (props.offeredPlayers?.length ?? 0) > 0
   const [state, action] = useActionState<BookingState, FormData>(bookProgram, {})
   const v = state.values ?? {}
   const c = { ...(props.prefill ?? {}), ...v }
+  // Extra children (2, 3, 4) — restored after a failed submit
+  const restored = Math.max(1, ...Object.keys(v).map((k) => Number(/^(?:playerFirstName|participant)_(\d)$/.exec(k)?.[1] ?? 1)))
+  const [children, setChildren] = useState(restored)
+  const maxKids = props.maxChildren ?? 1
+  const kidIds = (props.kids ?? []).map((k) => String(k.id))
+  const total = props.unitPrice != null && children > 1 ? `${children} children · ${new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(props.unitPrice * children)}` : props.priceLabel
 
   return (
     <form action={action} className="space-y-6">
@@ -88,7 +99,26 @@ export function BookingForm(props: {
           <Input label="Club" name="playerLastName" placeholder="e.g. Rowville Eagles" defaultValue={v.playerLastName} />
         </Fieldset>
       ) : (
-        <PlayerFields kids={props.kids ?? []} values={v} bounds={props.bounds} />
+        <>
+          <PlayerFields kids={props.kids ?? []} values={v} bounds={props.bounds} legend={children > 1 ? 'Child 1' : 'Player'} />
+          {Array.from({ length: children - 1 }, (_, i) => i + 2).map((k) => (
+            <PlayerFields
+              key={k}
+              suffix={`_${k}`}
+              legend={`Child ${k}`}
+              kids={props.kids ?? []}
+              values={v}
+              bounds={props.bounds}
+              defaultWho={kidIds[k - 1] ?? 'new'}
+              action={k === children ? <button type="button" onClick={() => setChildren(k - 1)} className="text-sm font-semibold text-muted underline hover:text-ink">Remove child {k}</button> : undefined}
+            />
+          ))}
+          {children < maxKids && (
+            <button type="button" onClick={() => setChildren((n) => n + 1)} className="w-full rounded-2xl border-2 border-dashed border-line px-4 py-3 text-sm font-semibold transition hover:border-ink [[data-brand=academy]_&]:rounded-none">
+              + Add another child to this booking
+            </button>
+          )}
+        </>
       )}
 
       <label className="flex items-start gap-3 text-sm">
@@ -104,10 +134,8 @@ export function BookingForm(props: {
         </p>
       )}
 
-      <Submit priceLabel={props.priceLabel} />
-      <p className="text-center text-xs text-muted">
-        Secure payment by Stripe · Paid to {props.payeeLabel}
-      </p>
+      <PayeeChip label={props.payeeLabel} />
+      <Submit priceLabel={total} />
     </form>
   )
 }

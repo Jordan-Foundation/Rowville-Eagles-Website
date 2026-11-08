@@ -7,6 +7,7 @@ import { Crest, RfaLogo } from './Logos'
 import { useCart } from '@/lib/cart'
 import { useMe } from '@/lib/use-me'
 import { FoundationPlusLogo } from './FoundationPlusLogo'
+import { CartSync } from './CartSync'
 
 const nav = [
   { href: '/join', label: 'Join us' },
@@ -18,7 +19,7 @@ const nav = [
   { href: '/news', label: 'News' },
 ]
 
-export function Header() {
+export function Header({ fplusLive = true }: { fplusLive?: boolean }) {
   const path = usePathname() ?? ''
   const { count } = useCart()
   const me = useMe()
@@ -46,6 +47,7 @@ export function Header() {
   return (
     /* Club vs RFA styling is switched in CSS by any page that renders data-page-brand="academy" (see styles.css) */
     <header className="site-header sticky top-0 z-50 border-b border-white/10 bg-[#0f2a55]/95 text-white backdrop-blur">
+      <CartSync />
       <div className="container-x flex h-16 items-center justify-between gap-4">
         <Link href="/" className="flex items-center gap-3" aria-label="Rowville Eagles home">
           <Crest className="h-10 w-auto" preload />
@@ -73,12 +75,13 @@ export function Header() {
         <div className="flex items-center gap-4">
         <Link
           href="/foundation-plus"
-          aria-label="Foundation+ — online training"
+          aria-label={fplusLive ? 'Foundation+ — online training' : 'Foundation+ — online training, coming soon'}
           aria-current={path.startsWith('/foundation-plus') ? 'page' : undefined}
-          className="group flex items-center rounded-sm border border-white/25 px-2 py-1 transition hover:border-white hover:shadow-[0_0_18px_rgba(255,255,255,0.28)] focus-visible:border-white aria-[current=page]:border-white"
+          className="group relative flex items-center rounded-sm border border-white/25 px-2 py-1 transition hover:border-white hover:shadow-[0_0_18px_rgba(255,255,255,0.28)] focus-visible:border-white aria-[current=page]:border-white"
         >
           <span className="hidden xl:block"><FoundationPlusLogo variant="horizontal" tone="white" height={32} alt="" /></span>
           <span className="xl:hidden"><FoundationPlusLogo variant="mark" tone="white" height={24} alt="" /></span>
+          {!fplusLive && <span aria-hidden className="absolute -bottom-2 -right-2 rounded-sm bg-white px-1 text-[9px] font-bold uppercase leading-[14px] tracking-wider text-black">Soon</span>}
         </Link>
         {count > 0 && (
           <Link href="/shop/cart" className="text-sm font-medium opacity-90 hover:opacity-100" aria-label={`Cart, ${count} items`}>
@@ -121,7 +124,7 @@ export function Header() {
                 </Link>
               </li>
             ))}
-            <li><Link href="/foundation-plus" className="flex items-center justify-between py-4 text-lg font-semibold">Foundation+ online training<span aria-hidden className="opacity-50">›</span></Link></li>
+            <li><Link href="/foundation-plus" className="flex items-center justify-between py-4 text-lg font-semibold">Foundation+ online training{!fplusLive && <span className="ml-2 rounded-sm bg-white/15 px-1.5 py-0.5 text-xs uppercase tracking-wider">Coming soon</span>}<span aria-hidden className="ml-auto pl-2 opacity-50">›</span></Link></li>
             {count > 0 && <li><Link href="/shop/cart" className="flex items-center justify-between py-4 text-lg font-semibold">Cart ({count})<span aria-hidden className="opacity-50">›</span></Link></li>}
           </ul>
           <div className="container-x mt-4 grid gap-3">

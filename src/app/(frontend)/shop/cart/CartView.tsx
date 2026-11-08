@@ -1,5 +1,7 @@
 'use client'
 
+import { PayeeChip } from '@/components/PayeeChip'
+
 import Link from 'next/link'
 import { useActionState, useState } from 'react'
 import { useFormStatus } from 'react-dom'
@@ -81,8 +83,8 @@ export function CartView({ postageFee, pickupNote, cancelled }: { postageFee: nu
           <div className="flex justify-between pt-2 text-lg font-bold"><dt>Total</dt><dd>{formatAUD(cart.subtotal + postage)}</dd></div>
         </dl>
         {state.error && <p role="alert" className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-700">{state.error}</p>}
+        <PayeeChip label="Rowville Foundation Academy" />
         <Pay />
-        <p className="text-center text-xs text-muted">Secure payment by Stripe · Paid to Rowville Foundation Academy</p>
       </form>
     </div>
   )

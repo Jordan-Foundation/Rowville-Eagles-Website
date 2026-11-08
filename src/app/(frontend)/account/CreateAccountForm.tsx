@@ -1,7 +1,7 @@
 'use client'
 
 import { useActionState } from 'react'
-import { Input } from '@/components/forms/Field'
+import { Input, PasswordInput } from '@/components/forms/Field'
 import { CONSENT_WORDING } from '@/lib/consent-wording'
 import { createAccountFromInvite, type ConsentFormState } from './consent-actions'
 
@@ -18,8 +18,8 @@ export function CreateAccountForm(props: { invite: string; email: string; firstN
         <Input label="Last name" name="lastName" autoComplete="family-name" required defaultValue={props.lastName ?? ''} />
       </div>
       <Input label="Mobile" name="mobile" type="tel" autoComplete="tel" placeholder="0412 345 678" defaultValue={props.mobile ?? ''} hint="For session reminders and messages from your coach." />
-      <Input label="Password" name="password" type="password" autoComplete="new-password" minLength={8} required />
-      <Input label="Confirm password" name="confirm" type="password" autoComplete="new-password" minLength={8} required />
+      <PasswordInput label="Password" name="password" autoComplete="new-password" minLength={8} required />
+      <PasswordInput label="Confirm password" name="confirm" autoComplete="new-password" minLength={8} required />
 
       <fieldset className="space-y-3 rounded-2xl border border-line p-5">
         <legend className="px-1 text-sm font-semibold">Messages from us</legend>

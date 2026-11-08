@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { requireCoach } from '@/academy/portal'
 import { payload } from '@/lib/payload'
-import { canSee, markRead, thread } from '@/messaging/service'
+import { canSee, markRead, receiptFor, thread } from '@/messaging/service'
 import { toThread } from '@/messaging/view'
 import { staffSendAction } from '@/messaging/management-actions'
 import { Thread } from '@/components/messaging/Thread'
@@ -20,6 +20,7 @@ export default async function CoachThread({ params }: { params: Promise<{ id: st
   if (!conv || !canSee({ user, side: 'coach', coach }, conv)) notFound()
   const msgs = await thread(p, conv)
   await markRead(p, conv, user.id)
+  const seen = await receiptFor(p, conv, msgs, 'management')
   const family = conv.account as User | null
   return (
     <div className="max-w-3xl space-y-6">
@@ -28,7 +29,7 @@ export default async function CoachThread({ params }: { params: Promise<{ id: st
         <h1 className="font-display text-4xl font-semibold uppercase">{conv.title}</h1>
         <p className="mt-1 text-sm text-muted">{family?.smsOptOut ? 'This family has turned texts off — replies are emailed.' : family?.phone ? 'Replies are texted to the parent’s mobile.' : 'No mobile on file — replies are emailed.'}</p>
       </div>
-      <Thread messages={toThread(msgs, 'management')} action={staffSendAction} hidden={{ conversation: conv.id }} placeholder={`Reply to ${conv.title}…`} hint="Signed with your name. Keep it about training — admins can see every message." empty="No messages yet." />
+      <Thread seen={seen} messages={toThread(msgs, 'management')} action={staffSendAction} hidden={{ conversation: conv.id }} placeholder={`Reply to ${conv.title}…`} hint="Signed with your name. Keep it about training — admins can see every message." empty="No messages yet." />
     </div>
   )
 }

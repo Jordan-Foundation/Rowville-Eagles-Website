@@ -1,5 +1,7 @@
 'use client'
 
+import { PayeeChip } from '@/components/PayeeChip'
+
 import { AgeHint } from '@/components/forms/PlayerFields'
 import type { KidOption } from '@/lib/family-kids'
 import { PolicyLink } from '@/components/PolicyLink'
@@ -188,8 +190,8 @@ export function TermBookingForm(props: { slug: string; slots: TermSlotOption[]; 
           {state.error}
         </p>
       )}
+      {!interest && <PayeeChip label={props.payeeLabel} />}
       <Submit label={interest ? 'Register interest · no charge' : total != null ? `Continue to payment · ${aud(total)}` : 'Continue to payment'} />
-      {!interest && <p className="text-center text-xs text-muted">Secure payment by Stripe · Paid to {props.payeeLabel}</p>}
     </form>
   )
 }

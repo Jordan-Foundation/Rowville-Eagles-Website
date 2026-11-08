@@ -67,95 +67,120 @@ export async function bookProgram(_prev: BookingState, fd: FormData): Promise<Bo
   if (!emailOk(contact.email)) return fail('Please enter a valid email address.')
   if (!phoneOk(contact.phone)) return fail('Please enter an Australian phone number, e.g. 0412 345 678.')
 
-  const player = {
-    firstName: offeredParticipant?.firstName ?? str(fd, 'playerFirstName'),
-    lastName: offeredParticipant?.lastName ?? str(fd, 'playerLastName'),
-    dateOfBirth: offeredParticipant?.dateOfBirth ?? (str(fd, 'playerDob') || undefined),
-    teamName: str(fd, 'teamName') || undefined,
-    medical: str(fd, 'medical') || undefined,
-    emergencyName: str(fd, 'emergencyName'),
-    emergencyPhone: str(fd, 'emergencyPhone'),
-    photoConsent: fd.get('photoConsent') === 'on',
+  // One or more children (brothers and sisters can be booked in the same checkout: fields end _2, _3, _4)
+  const suffixes = ['', ...(isRegistration ? [] : ['_2', '_3', '_4'].filter((x) => fd.has(`playerFirstName${x}`) || fd.has(`participant${x}`)))]
+  const players = suffixes.map((x) => ({
+    suffix: x,
+    participantId: x === '' ? offeredParticipant?.id ?? (Number(str(fd, 'participant')) || null) : Number(str(fd, `participant${x}`)) || null,
+    firstName: x === '' && offeredParticipant ? offeredParticipant.firstName : str(fd, `playerFirstName${x}`),
+    lastName: x === '' && offeredParticipant ? offeredParticipant.lastName : str(fd, `playerLastName${x}`),
+    dateOfBirth: x === '' && offeredParticipant ? offeredParticipant.dateOfBirth : str(fd, `playerDob${x}`) || undefined,
+    teamName: x === '' ? str(fd, 'teamName') || undefined : undefined,
+    medical: str(fd, `medical${x}`) || undefined,
+    emergencyName: str(fd, `emergencyName${x}`),
+    emergencyPhone: str(fd, `emergencyPhone${x}`),
+    photoConsent: fd.get(`photoConsent${x}`) === 'on',
+  }))
+  for (const [i, pl] of players.entries()) {
+    const who = players.length > 1 ? ` for child ${i + 1}` : ''
+    if (isTeamEntry) {
+      if (!pl.teamName) return fail('Please enter the team name.')
+      continue
+    }
+    if (!pl.firstName || !pl.lastName || !pl.dateOfBirth) return fail(`Please complete the player’s name and date of birth${who}.`)
+    if (dobProblem(pl.dateOfBirth)) return fail(dobProblem(pl.dateOfBirth)! + (who ? ` (child ${i + 1})` : ''))
+    if (!pl.emergencyName || !pl.emergencyPhone) return fail(`Please add an emergency contact${who}.`)
   }
-  if (isTeamEntry) {
-    if (!player.teamName) return fail('Please enter the team name.')
-  } else {
-    if (!player.firstName || !player.lastName || !player.dateOfBirth) return fail('Please complete the player’s name and date of birth.')
-    if (dobProblem(player.dateOfBirth)) return fail(dobProblem(player.dateOfBirth)!)
-    if (!player.emergencyName || !player.emergencyPhone) return fail('Please add an emergency contact.')
-  }
+  const keyOf = (pl: (typeof players)[number]) => pl.participantId ? `id:${pl.participantId}` : `${pl.firstName.toLowerCase()}|${pl.dateOfBirth}`
+  if (new Set(players.map(keyOf)).size < players.length) return fail('The same child is in this booking twice — remove one.')
   if (fd.get('terms') !== 'on') return fail('Please accept the terms to continue.')
 
-  // Capacity
+  // Capacity (for every child in the booking)
   let sessionStart: string | undefined
   if (usesSlots) {
     const slot = program.slots!.find((s) => s.start === str(fd, 'slot'))
     if (!slot) return fail('Please choose a time.')
     if (new Date(slot.start) < new Date()) return fail('That time has passed — please choose another.')
     sessionStart = slot.start
-    if ((await placesTaken(p, program.id, sessionStart)) >= (slot.capacity ?? 1)) return fail('Sorry, that time was just booked. Please choose another.')
+    const left = (slot.capacity ?? 1) - (await placesTaken(p, program.id, sessionStart))
+    if (left < players.length) return fail(left <= 0 ? 'Sorry, that time was just booked. Please choose another.' : `Sorry, that time only has ${left} place${left === 1 ? '' : 's'} left.`)
   }
-  if (program.capacity && (await placesTaken(p, program.id)) >= program.capacity) return fail('Sorry, this program has just filled up.')
+  if (program.capacity) {
+    const left = program.capacity - (await placesTaken(p, program.id))
+    if (left < players.length) return fail(left <= 0 ? 'Sorry, this program has just filled up.' : `Sorry, there ${left === 1 ? 'is only 1 place' : `are only ${left} places`} left.`)
+  }
 
   const payee = isPayee(program.payee) ? program.payee : defaultPayee(program.type)
-  const reference = newReference(payee)
-  // Promotion for this family (worked out on the server)
   const price = program.price ?? 0
-  const promo = await findDiscount(p, accountId, [{ target: { kind: 'program', programId: program.id, programType: program.type }, amount: price }])
-  const due = Math.round((price - (promo?.off ?? 0)) * 100) / 100
-  const booking = await p.create({
-    collection: 'bookings',
-    data: {
-      reference,
-      program: program.id,
-      status: 'pending',
-      payee,
-      amount: due,
-      discount: promo?.off,
-      promotion: promo?.promotion,
-      sessionStart,
-      account: accountId,
-      participant: offeredParticipant?.id,
-      contact,
-      player,
-    },
-  })
-
-  if (promo && accountId) await recordUse(p, { applied: promo, account: accountId, kind: 'program', reference, paidAmount: due })
-  // Logged-in family: keep this child (and their medical / emergency details) on the account for next time
-  if (accountId && !isTeamEntry && player.firstName && player.dateOfBirth) {
-    const kidId = await rememberKid(p, accountId, {
-      participantId: offeredParticipant?.id ?? (Number(str(fd, 'participant')) || null),
-      firstName: player.firstName,
-      lastName: player.lastName,
-      dateOfBirth: player.dateOfBirth,
-      medical: player.medical,
-      emergencyName: player.emergencyName,
-      emergencyPhone: player.emergencyPhone,
-      photoConsent: player.photoConsent,
+  const bookings: { id: number; reference: string; due: number; promo: Awaited<ReturnType<typeof findDiscount>>; pl: (typeof players)[number] }[] = []
+  let lead = ''
+  for (const pl of players) {
+    const reference = newReference(payee)
+    lead ||= reference
+    // Promotion for this family (worked out on the server, per child — usage limits count each one)
+    const promo = await findDiscount(p, accountId, [{ target: { kind: 'program', programId: program.id, programType: program.type }, amount: price }])
+    const due = Math.round((price - (promo?.off ?? 0)) * 100) / 100
+    const { suffix: _s, participantId: _pid, ...player } = pl
+    const booking = await p.create({
+      collection: 'bookings',
+      data: {
+        reference,
+        checkoutGroup: players.length > 1 ? lead : undefined,
+        program: program.id,
+        status: 'pending',
+        payee,
+        amount: due,
+        discount: promo?.off,
+        promotion: promo?.promotion,
+        sessionStart,
+        account: accountId,
+        participant: offeredParticipant?.id,
+        contact,
+        player,
+      },
     })
-    if (kidId && !offeredParticipant) await p.update({ collection: 'bookings', id: booking.id, data: { participant: kidId }, overrideAccess: true, depth: 0 })
+    if (promo && accountId) await recordUse(p, { applied: promo, account: accountId, kind: 'program', reference, paidAmount: due })
+    bookings.push({ id: booking.id, reference, due, promo, pl })
   }
+  const reference = lead
+  // Logged-in family: keep each child (and their medical / emergency details) on the account for next time
+  if (accountId && !isTeamEntry) {
+    for (const b of bookings) {
+      if (!b.pl.firstName || !b.pl.dateOfBirth) continue
+      const kidId = await rememberKid(p, accountId, {
+        participantId: b.pl.participantId,
+        firstName: b.pl.firstName,
+        lastName: b.pl.lastName,
+        dateOfBirth: b.pl.dateOfBirth,
+        medical: b.pl.medical,
+        emergencyName: b.pl.emergencyName,
+        emergencyPhone: b.pl.emergencyPhone,
+        photoConsent: b.pl.photoConsent,
+      })
+      if (kidId && !offeredParticipant) await p.update({ collection: 'bookings', id: b.id, data: { participant: kidId }, overrideAccess: true, depth: 0 })
+    }
+  }
+  const due = Math.round(bookings.reduce((n, b) => n + b.due, 0) * 100) / 100
+  const off = Math.round(bookings.reduce((n, b) => n + (b.promo?.off ?? 0), 0) * 100) / 100
   let url: string
   if (due === 0) {
     await confirmPayment(p, 'booking', reference)
     url = `/checkout/success?kind=booking&ref=${reference}`
   } else {
     try {
-      const who = isTeamEntry ? player.teamName : `${player.firstName} ${player.lastName}`
       const checkout = await startCheckout({
         payee,
         kind: 'booking',
         reference,
         email: contact.email,
-        items: [{ name: program.title, description: who, unitAmount: price, quantity: 1 }],
-        discount: promo ? { amount: promo.off, label: promo.label } : null,
+        items: bookings.map((b) => ({ name: program.title, description: isTeamEntry ? b.pl.teamName : `${b.pl.firstName} ${b.pl.lastName}`, unitAmount: price, quantity: 1 })),
+        discount: off > 0 ? { amount: off, label: bookings.find((b) => b.promo)!.promo!.label } : null,
         cancelPath: `/programs/${program.slug}/book?cancelled=1`,
       })
-      if (checkout.sessionId) await p.update({ collection: 'bookings', id: booking.id, data: { stripeCheckoutId: checkout.sessionId } })
+      if (checkout.sessionId) for (const b of bookings) await p.update({ collection: 'bookings', id: b.id, data: { stripeCheckoutId: checkout.sessionId } })
       url = checkout.url
     } catch (e) {
-      await p.update({ collection: 'bookings', id: booking.id, data: { status: 'cancelled' } })
+      for (const b of bookings) await p.update({ collection: 'bookings', id: b.id, data: { status: 'cancelled' } })
       p.logger.error(e)
       return fail('We couldn’t start the payment. Please try again, or contact the club if this keeps happening.')
     }

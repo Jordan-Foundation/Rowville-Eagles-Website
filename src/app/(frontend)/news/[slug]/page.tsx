@@ -1,3 +1,6 @@
+import Image from 'next/image'
+import Link from 'next/link'
+import { ShareButtons } from '@/components/ShareButtons'
 import { notFound } from 'next/navigation'
 import { RichText } from '@payloadcms/richtext-lexical/react'
 import type { Metadata } from 'next'
@@ -29,13 +32,22 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
   const { slug } = await params
   const post = await getPost(slug)
   if (!post) notFound()
+  const hero = post.heroImage && typeof post.heroImage === 'object' ? post.heroImage : null
   return (
     <article className="container-x max-w-3xl py-16">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd({ '@context': 'https://schema.org', '@type': 'NewsArticle', headline: post.title, description: post.excerpt, datePublished: post.publishedAt, image: mediaUrl(post.heroImage), url: `${siteBase()}/news/${post.slug}`, publisher: { '@id': `${siteBase()}/#club` } }) }} />
-      <p className="text-xs font-semibold uppercase tracking-wider text-brand">{post.category} · {formatDate(post.publishedAt)}</p>
+      <Link href="/news" className="text-sm text-muted hover:text-ink">← All news</Link>
+      <p className="mt-6 text-xs font-semibold uppercase tracking-wider text-brand">{post.category} · {formatDate(post.publishedAt)}</p>
       <h1 className="mt-3 font-[family-name:var(--font-barlow)] text-5xl font-extrabold uppercase leading-none">{post.title}</h1>
       <p className="mt-6 text-xl text-muted">{post.excerpt}</p>
+      {hero?.url && (
+        <Image src={hero.url} alt={hero.alt || ''} width={hero.width ?? 1200} height={hero.height ?? 675} sizes="(min-width: 768px) 48rem, 100vw" preload className="mt-8 w-full rounded-2xl object-cover" />
+      )}
       <div className="mt-10 [&_p]:mb-5 [&_p]:text-lg [&_p]:leading-relaxed">{post.content && <RichText data={post.content} />}</div>
+      <div className="mt-12 flex flex-wrap items-center justify-between gap-4 border-t border-line pt-6">
+        <ShareButtons url={`${siteBase()}/news/${post.slug}`} title={post.title} />
+        <Link href="/news" className="text-sm font-semibold underline">More club news</Link>
+      </div>
     </article>
   )
 }

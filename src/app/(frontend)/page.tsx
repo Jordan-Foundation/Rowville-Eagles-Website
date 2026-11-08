@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { payload, formatDate } from '@/lib/payload'
+import { foundationSettings } from '@/academy/pdr/load'
 import { ProgramCard } from '@/components/ProgramCard'
 import { Crest, RfaLogo } from '@/components/Logos'
 import { AcademyBackdrop } from '@/components/AcademyBackdrop'
@@ -15,6 +16,13 @@ const pathway = [
   { stage: 'Seniors', ages: '18+', copy: 'Senior Men, Men’s Reserves and Senior Women representing Rowville every weekend.' },
 ]
 
+/** Friday this week (today if it's Friday), at midday Melbourne time. */
+function nextFriday(now: Date) {
+  const d = new Date(now.toLocaleString('en-US', { timeZone: 'Australia/Melbourne' }))
+  d.setDate(d.getDate() + ((5 - d.getDay() + 7) % 7))
+  return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), 2))
+}
+
 export default async function Home() {
   const p = await payload()
   const [settings, others, posts, sponsors] = await Promise.all([
@@ -25,6 +33,7 @@ export default async function Home() {
   ])
   const programs = others
   const diff = await differenceContent(p)
+  const fplus = await foundationSettings(p)
   const teaser = [
     { id: 'coaches', t: diff.coaches.headline, d: diff.coaches.body },
     { id: 'curriculum', t: diff.curriculum.headline, d: diff.curriculum.body },
@@ -32,6 +41,24 @@ export default async function Home() {
     { id: 'community-night', t: diff.community.headline, d: diff.community.body },
   ]
   const season = currentSeason(settings.season)
+
+  // NEXT UP: the next camp, the next trial night and this week's Community Night
+  const nowIso = new Date().toISOString()
+  const [camp, trial, community, terms] = await Promise.all([
+    p.find({ pagination: false, collection: 'programs', where: { type: { equals: 'holiday-camp' }, status: { in: ['open', 'full'] }, startDate: { greater_than: nowIso } }, sort: 'startDate', limit: 1, depth: 0 }),
+    p.find({ pagination: false, collection: 'trial-sessions', where: { status: { equals: 'published' }, start: { greater_than: nowIso } }, sort: 'start', limit: 1, depth: 0 }),
+    p.find({ pagination: false, collection: 'programs', where: { type: { equals: 'community' }, status: { equals: 'open' } }, limit: 1, depth: 0 }),
+    p.find({ pagination: false, collection: 'academy-terms', where: { endDate: { greater_than: nowIso } }, sort: 'startDate', limit: 4, depth: 0 }),
+  ])
+  const friday = nextFriday(new Date())
+  const inTerm = terms.docs.some((t) => t.startDate <= friday.toISOString() && friday.toISOString() <= t.endDate)
+  const nextUp = [
+    camp.docs[0] && { href: `/programs/${camp.docs[0].slug}`, k: 'Next camp', t: camp.docs[0].title, d: formatDate(camp.docs[0].startDate!, { weekday: 'short', day: 'numeric', month: 'short' }) },
+    trial.docs[0]
+      ? { href: '/join', k: 'Next trial night', t: trial.docs[0].title, d: formatDate(trial.docs[0].start, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) }
+      : { href: '/academy/trial', k: 'Trials', t: 'Academy trial sessions', d: 'Book a free trial' },
+    community.docs[0] && { href: `/programs/${community.docs[0].slug}`, k: inTerm ? 'This Friday' : 'Fridays in term', t: community.docs[0].title, d: inTerm ? `${formatDate(friday.toISOString(), { day: 'numeric', month: 'short' })} · ${community.docs[0].scheduleNote ?? ''}`.replace(/ · $/, '') : community.docs[0].scheduleNote ?? 'Every Friday' },
+  ].filter(Boolean) as { href: string; k: string; t: string; d: string }[]
 
   return (
     <>
@@ -74,13 +101,33 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* NEXT UP */}
+      {nextUp.length > 0 && (
+        <section aria-labelledby="next-up" className="border-b border-line bg-[#0f2a55] text-white">
+          <div className="container-x flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:gap-6">
+            <h2 id="next-up" className="shrink-0 text-xs font-bold uppercase tracking-[0.25em] text-accent">Next up</h2>
+            <ul className="grid flex-1 gap-2 sm:grid-cols-3 sm:gap-4">
+              {nextUp.map((n) => (
+                <li key={n.k}>
+                  <Link href={n.href} className="block rounded-xl bg-white/5 px-4 py-2.5 transition hover:bg-white/10">
+                    <span className="block text-[11px] uppercase tracking-[0.2em] text-white/60">{n.k}</span>
+                    <span className="block font-semibold">{n.t}</span>
+                    <span className="block text-sm text-white/70">{n.d}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
+
       {/* QUICK ACTIONS */}
       <section className="border-b border-line bg-surface">
         <div className="container-x grid divide-y divide-line sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-4">
           {[
             { href: '/join', t: `Join us for ${season}`, d: 'Book a trial or register interest' },
             { href: '/programs?type=holiday-camp', t: 'Holiday camps', d: 'School holiday clinics' },
-            { href: '/foundation-plus', t: 'Foundation+', d: 'Online training — drills, badges, leaderboards' },
+            { href: '/foundation-plus', t: fplus.enabled ? 'Foundation+' : 'Foundation+ · Coming soon', d: fplus.enabled ? 'Online training — drills, badges, leaderboards' : 'Online training is on its way — join the waitlist' },
             { href: '/academy', t: 'Academy trials', d: 'Rowville Foundation Academy' },
           ].map((a) => (
             <Link key={a.t} href={a.href} className="group px-2 py-6 sm:px-6">

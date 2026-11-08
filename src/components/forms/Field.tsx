@@ -29,3 +29,4 @@ export function Fieldset({ legend, children }: { legend: string; children: React
     </fieldset>
   )
 }
+export { PasswordInput } from './PasswordInput'

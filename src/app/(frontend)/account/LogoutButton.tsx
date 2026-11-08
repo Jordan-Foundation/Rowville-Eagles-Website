@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { replaceCart } from '@/lib/cart'
 
 export function LogoutButton() {
   const router = useRouter()
@@ -9,6 +10,7 @@ export function LogoutButton() {
       type="button"
       onClick={async () => {
         await fetch('/api/users/logout', { method: 'POST', credentials: 'include' })
+        replaceCart([]) // the cart is saved in the account — don't leave it on a shared device
         window.dispatchEvent(new Event('refc-auth'))
         router.push('/')
         router.refresh()

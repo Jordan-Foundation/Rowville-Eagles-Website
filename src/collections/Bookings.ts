@@ -35,6 +35,7 @@ export const Bookings: CollectionConfig = {
   },
   fields: [
     { name: 'reference', type: 'text', unique: true, admin: { readOnly: true, description: 'Created automatically when saved' } },
+    { name: 'checkoutGroup', type: 'text', index: true, admin: { readOnly: true, position: 'sidebar', description: 'Brothers and sisters booked together: the reference of the shared checkout.' } },
     { name: 'program', type: 'relationship', relationTo: 'programs', required: true },
     {
       name: 'status', index: true,

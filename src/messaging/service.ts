@@ -211,3 +211,34 @@ export async function coachFamilies(p: Payload, coachId: number) {
   const { docs } = await p.find({ pagination: false, collection: 'users', where: { id: { in: ids } }, limit: ids.length, depth: 0, ...q, select: { firstName: true, lastName: true, email: true } })
   return docs.map((u) => ({ id: u.id, name: nameOf(u as User) })).sort((a, b) => a.name.localeCompare(b.name))
 }
+
+/** "Seen" under the viewer's latest message (see receipts.ts). Family view names who read it. */
+export async function receiptFor(p: Payload, conv: Conversation, msgs: { id: number; direction: string; createdAt: string }[], side: 'family' | 'management') {
+  const reads = (conv.reads ?? []).map((r) => ({ user: rel(r.user)!, at: r.at }))
+  const familyUserId = rel(conv.account)
+  let names: Record<number, string> = {}
+  if (side === 'family') {
+    const ids = reads.map((r) => r.user).filter((id) => id !== familyUserId)
+    if (ids.length) {
+      const [{ docs: users }, { docs: coaches }] = await Promise.all([
+        p.find({ pagination: false, collection: 'users', where: { id: { in: ids } }, depth: 0, limit: 50, ...q, select: { firstName: true } }),
+        p.find({ pagination: false, collection: 'academy-coaches', where: { user: { in: ids } }, depth: 0, limit: 50, ...q, select: { displayName: true, user: true } }),
+      ])
+      names = Object.fromEntries(users.map((u) => [u.id, u.firstName || 'the Academy']))
+      for (const c of coaches) if (rel(c.user)) names[rel(c.user)!] = c.displayName
+    }
+  }
+  const { seenReceipt } = await import('./receipts')
+  return seenReceipt(msgs, reads, { side, familyUserId, names })
+}
+
+let replyMemo: { at: number; label: string | null } | null = null
+/** "Usually replies within 3 hours", from the last 90 days of replies (worked out at most once an hour). */
+export async function replyTimeHint(p: Payload) {
+  if (replyMemo && Date.now() - replyMemo.at < 3_600_000) return replyMemo.label
+  const since = new Date(Date.now() - 90 * 86_400_000).toISOString()
+  const { docs } = await p.find({ pagination: false, collection: 'messages', where: { createdAt: { greater_than: since }, direction: { in: ['in', 'out'] } }, sort: 'createdAt', limit: 5000, depth: 0, ...q, select: { direction: true, createdAt: true, conversation: true } })
+  const { replyTimeLabel, typicalReplyMinutes } = await import('./receipts')
+  replyMemo = { at: Date.now(), label: replyTimeLabel(typicalReplyMinutes(docs as never)) }
+  return replyMemo.label
+}

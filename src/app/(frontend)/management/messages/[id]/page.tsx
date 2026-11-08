@@ -3,7 +3,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 import { payload } from '@/lib/payload'
-import { markRead, thread } from '@/messaging/service'
+import { markRead, receiptFor, thread } from '@/messaging/service'
 import { toThread } from '@/messaging/view'
 import { staffSendAction } from '@/messaging/management-actions'
 import { Thread } from '@/components/messaging/Thread'
@@ -21,6 +21,7 @@ export default async function StaffThread({ params }: { params: Promise<{ id: st
   if (!conv) notFound()
   const msgs = await thread(p, conv)
   await markRead(p, conv, user.id)
+  const seen = await receiptFor(p, conv, msgs, 'management')
   const family = conv.account as User | null
   const coaches = (conv.coaches ?? []).filter((c): c is AcademyCoach => typeof c === 'object').map((c) => c.displayName)
   return (
@@ -34,7 +35,7 @@ export default async function StaffThread({ params }: { params: Promise<{ id: st
         </p>
       </div>
       {!family && <AssignForm conversation={conv.id} />}
-      <Thread messages={toThread(msgs, 'management')} action={staffSendAction} hidden={{ conversation: conv.id }} placeholder={`Reply to ${conv.title}…`} hint="Signed with your first name." empty="No messages yet." />
+      <Thread seen={seen} messages={toThread(msgs, 'management')} action={staffSendAction} hidden={{ conversation: conv.id }} placeholder={`Reply to ${conv.title}…`} hint="Signed with your first name." empty="No messages yet." />
     </div>
   )
 }

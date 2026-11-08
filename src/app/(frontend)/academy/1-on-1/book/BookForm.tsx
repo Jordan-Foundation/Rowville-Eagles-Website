@@ -1,5 +1,7 @@
 'use client'
 
+import { PayeeChip } from '@/components/PayeeChip'
+
 import { PolicyLink } from '@/components/PolicyLink'
 import { useActionState, useState } from 'react'
 import { useFormStatus } from 'react-dom'
@@ -166,6 +168,7 @@ export function BookForm({ coach, slot, term, price, weekly, credit, loginHref, 
       )}
 
       {state.error && <p role="alert" className="border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300">{state.error}</p>}
+      {price !== 'covered by credit' && <PayeeChip label="Rowville Foundation Academy" />}
       <Submit
         price={
           slot.mode === 'term' && payMode === 'weekly' && weekly

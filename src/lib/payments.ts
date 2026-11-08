@@ -87,16 +87,22 @@ export async function confirmPayment(payload: Payload, kind: CheckoutKind, refer
 async function confirmPaymentInner(payload: Payload, kind: CheckoutKind, reference: string) {
   if (kind === 'academy') return confirmAcademyBooking(payload, reference)
   if (kind === 'booking') {
-    const { docs } = await payload.find({ pagination: false, collection: 'bookings', where: { reference: { equals: reference } }, limit: 1, depth: 0 })
-    const b = docs[0]
-    if (!b || b.status !== 'pending') return b
-    const paid = await payload.update({ collection: 'bookings', id: b.id, data: { status: 'paid' } })
-    try {
-      await onBookingPaid(payload, paid)
-    } catch (e) {
-      payload.logger.error({ err: e, msg: `Post-payment steps failed for ${reference}` })
+    // One checkout can cover several children (one booking each, sharing the lead booking's reference)
+    const { docs } = await payload.find({ pagination: false, collection: 'bookings', where: { or: [{ reference: { equals: reference } }, { checkoutGroup: { equals: reference } }] }, limit: 10, depth: 0 })
+    const lead = docs.find((d) => d.reference === reference)
+    let leadResult = lead
+    for (const b of [...docs].sort((a, c) => (a.reference === reference ? -1 : c.reference === reference ? 1 : a.id - c.id))) {
+      if (b.status !== 'pending') continue
+      const paid = await payload.update({ collection: 'bookings', id: b.id, data: { status: 'paid' } })
+      if (b.reference !== reference && b.reference) await settleUses(payload, b.reference, 'paid')
+      if (b.id === lead?.id) leadResult = paid
+      try {
+        await onBookingPaid(payload, paid)
+      } catch (e) {
+        payload.logger.error({ err: e, msg: `Post-payment steps failed for ${b.reference}` })
+      }
     }
-    return paid
+    return leadResult
   }
 
   const { docs } = await payload.find({ pagination: false, collection: 'orders', where: { reference: { equals: reference } }, limit: 1, depth: 0 })
@@ -125,10 +131,18 @@ async function confirmPaymentInner(payload: Payload, kind: CheckoutKind, referen
 export async function cancelPending(payload: Payload, kind: CheckoutKind, reference: string) {
   await settleUses(payload, reference, 'cancelled')
   if (kind === 'academy') return releaseAcademyHold(payload, reference)
-  const collection = kind === 'booking' ? 'bookings' : 'orders'
-  const { docs } = await payload.find({ pagination: false, collection, where: { reference: { equals: reference } }, limit: 1, depth: 0 })
+  if (kind === 'booking') {
+    const { docs } = await payload.find({ pagination: false, collection: 'bookings', where: { or: [{ reference: { equals: reference } }, { checkoutGroup: { equals: reference } }] }, limit: 10, depth: 0 })
+    for (const b of docs) {
+      if (b.status !== 'pending') continue
+      await payload.update({ collection: 'bookings', id: b.id, data: { status: 'cancelled' } })
+      if (b.reference && b.reference !== reference) await settleUses(payload, b.reference, 'cancelled')
+    }
+    return
+  }
+  const { docs } = await payload.find({ pagination: false, collection: 'orders', where: { reference: { equals: reference } }, limit: 1, depth: 0 })
   const doc = docs[0]
-  if (doc?.status === 'pending') await payload.update({ collection, id: doc.id, data: { status: 'cancelled' } })
+  if (doc?.status === 'pending') await payload.update({ collection: 'orders', id: doc.id, data: { status: 'cancelled' } })
 }
 
 /** Places taken: paid + pending bookings still inside their 35-minute checkout window. */

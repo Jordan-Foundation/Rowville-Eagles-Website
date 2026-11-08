@@ -39,6 +39,22 @@ function subscribe(cb: () => void) {
   }
 }
 
+/** For the account sync (CartSync): read and replace the whole cart. */
+export const readCart = () => (typeof window === 'undefined' ? EMPTY : read())
+export const replaceCart = (items: CartItem[]) => write(items)
+export const CART_EVENT = EVENT
+
+/** Two carts as one: same item and size → the larger quantity. */
+export function mergeCarts(a: CartItem[], b: CartItem[]): CartItem[] {
+  const out = [...a]
+  for (const item of b) {
+    const i = out.findIndex((x) => x.productId === item.productId && x.size === item.size)
+    if (i === -1) out.push(item)
+    else out[i] = { ...out[i], quantity: Math.min(20, Math.max(out[i].quantity, item.quantity)) }
+  }
+  return out
+}
+
 export function useCart() {
   const items = useSyncExternalStore(subscribe, read, () => EMPTY)
   const same = (a: CartItem, b: Pick<CartItem, 'productId' | 'size'>) => a.productId === b.productId && a.size === b.size

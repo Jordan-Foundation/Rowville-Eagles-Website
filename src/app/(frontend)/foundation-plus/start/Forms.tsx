@@ -1,5 +1,7 @@
 'use client'
 
+import { PasswordInput } from '@/components/forms/PasswordInput'
+
 import { useActionState, useState } from 'react'
 import { createAccountAction, startTrialAction, type StartState } from './actions'
 
@@ -18,8 +20,8 @@ export function CreateAccount({ token, email, service, marketing }: { token: str
       </div>
       <label className="block text-sm">Mobile<input name="phone" type="tel" required autoComplete="tel" placeholder="04xx xxx xxx" className={field} /></label>
       <div className="grid gap-3 sm:grid-cols-2">
-        <label className="text-sm">Password<input name="password" type="password" required minLength={8} autoComplete="new-password" className={field} /></label>
-        <label className="text-sm">Confirm password<input name="confirm" type="password" required minLength={8} autoComplete="new-password" className={field} /></label>
+        <label className="text-sm">Password<PasswordInput name="password" required minLength={8} autoComplete="new-password" className={field} /></label>
+        <label className="text-sm">Confirm password<PasswordInput name="confirm" required minLength={8} autoComplete="new-password" className={field} /></label>
       </div>
       <label className="flex items-start gap-2 text-sm"><input type="checkbox" name="service" required className="mt-1" /> <span>{service}</span></label>
       <label className="flex items-start gap-2 text-sm"><input type="checkbox" name="marketing" className="mt-1" /> <span>{marketing}</span></label>
