@@ -2,7 +2,7 @@ import { requireManagement } from '@/lib/management'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
-import { payload, formatAUD, formatDate } from '@/lib/payload'
+import { payload, formatMoney, formatDate } from '@/lib/payload'
 import { cashPaid } from '@/academy/cancellation'
 import { creditStateFor } from '@/academy/credits'
 import { sessionPayment } from '@/academy/session-view'
@@ -13,8 +13,8 @@ import { ReschedulePanel } from './ReschedulePanel'
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Booking', robots: { index: false } }
 
-/** Money with $0 (formatAUD shows 0 as “Free”, which reads oddly here) */
-const aud0 = (n: number) => (n > 0 ? formatAUD(n) : '$0')
+/** Money with $0 (formatMoney shows 0 as “Free”, which reads oddly here) */
+const aud0 = (n: number) => (n > 0 ? formatMoney(n) : '$0')
 const statusTone: Record<string, string> = { cancelled: 'text-muted line-through', completed: 'text-muted', no_show: 'text-red-300' }
 const sessionLabel: Record<string, string> = { held: 'Held', scheduled: 'Booked', completed: 'Attended', no_show: 'No-show', cancelled: 'Cancelled' }
 
@@ -161,8 +161,8 @@ export default async function StaffBookingPage({ params, searchParams }: { param
                     {a.outcome === 'none'
                       ? 'No refund or credit'
                       : [
-                          a.cash ? `Refund ${formatAUD(a.cash)} (${a.refundStatus})` : null,
-                          a.creditSessions ? `${a.creditSessions} session credit${a.creditSessions === 1 ? '' : 's'}` : a.credit ? `Credit ${formatAUD(a.credit)}` : null,
+                          a.cash ? `Refund ${formatMoney(a.cash)} (${a.refundStatus})` : null,
+                          a.creditSessions ? `${a.creditSessions} session credit${a.creditSessions === 1 ? '' : 's'}` : a.credit ? `Credit ${formatMoney(a.credit)}` : null,
                           a.outcome === 'makeup' ? 'Make-up booked' : null,
                         ].filter(Boolean).join(' · ')}
                   </p>

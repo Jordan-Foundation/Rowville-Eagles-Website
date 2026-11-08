@@ -20,7 +20,7 @@ export async function loadFamilies(p: Payload): Promise<Family[]> {
     p.find({ collection: 'bookings', where: { status: { equals: 'paid' } }, limit: BIG, ...q, select: { account: true, program: true } }),
     p.find({ collection: 'academy-registrations', where: { status: { equals: 'paid' } }, limit: BIG, ...q, select: { account: true, program: true } }),
     p.find({ collection: 'academy-bookings', where: { status: { in: ['confirmed', 'completed'] } }, limit: BIG, ...q, select: { account: true } }),
-    p.find({ collection: 'orders', where: { status: { in: ['paid', 'fulfilled'] } }, limit: BIG, ...q, select: { account: true } }),
+    p.find({ collection: 'orders', where: { status: { in: ['paid', 'ready', 'completed'] } }, limit: BIG, ...q, select: { account: true } }),
     p.find({ collection: 'team-members', where: { active: { equals: true } }, limit: BIG, ...q, select: { account: true, team: true } }),
   ])
   const fams = new Map<number, Family>(users.docs.map((u) => [u.id, { userId: u.id, email: u.email, memberships: new Set(), history: new Set(), birthYears: new Set(), teams: new Set() }]))

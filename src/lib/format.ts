@@ -1,5 +1,8 @@
 import { TZ } from './time'
 
+/** Money amounts in reports and totals: $0 shows as "$0" (not "Free", which is for prices families see). */
+export const formatMoney = (n: number) => new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: n % 1 ? 2 : 0 }).format(n || 0)
+
 export const formatAUD = (n: number) =>
   n === 0 ? 'Free' : new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: n % 1 ? 2 : 0 }).format(n)
 

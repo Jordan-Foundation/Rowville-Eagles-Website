@@ -231,11 +231,13 @@ async function afterConfirmed(payload: Payload, booking: AcademyBooking) {
     ? `<br><br><strong>${esc(coach.displayName)} will be away for ${coverDates.length} of these sessions (${esc(coverDates.join(', '))}).</strong> A suitable replacement coach will be allocated for those sessions, with a detailed handover from ${esc(coach.displayName)} to make sure progress continues while they’re away.`
     : ''
   if (coverDates.length) await alertCoverNeeded(payload, coach, sessions.filter((x) => x.needsCover), `is away for part of a new term booking (${booking.reference})`)
+  const promoLine = await (await import('../promotions/service')).discountLine(payload, booking)
   const html = emailLayout('academy', [
     {
       heading: booking.type === 'casual' ? 'Your 1-on-1 is booked' : 'Your term of 1-on-1s is booked',
       intro: `Thanks ${esc(booking.contact.firstName)} — ${esc(booking.player.firstName)} is booked in with ${esc(coach.displayName)}.`,
       rows: [
+        ...(promoLine ? [promoLine] : []),
         ['Coach', coach.displayName],
         [booking.type === 'casual' ? 'When' : 'First session', when(sessions[0]?.startsAt ?? booking.firstSessionAt ?? '')],
         ...(sessions.length > 1

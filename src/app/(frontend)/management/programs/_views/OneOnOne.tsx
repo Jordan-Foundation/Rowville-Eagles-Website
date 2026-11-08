@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { payload, formatAUD, formatDate } from '@/lib/payload'
+import { payload, formatMoney, formatDate } from '@/lib/payload'
 import { loadTermBookingData } from '@/academy/booking-data'
 import { cashPaid } from '@/academy/cancellation'
 import { coachCapacity, utilisation } from '@/academy/dashboard'
@@ -79,11 +79,11 @@ export async function OneOnOneView({ q }: { q: Q }) {
   const booked = coachRows.reduce((n, r) => n + r.booked, 0)
   const select = 'border border-line bg-surface px-3 py-2 text-sm'
   const tiles: [string, string, string?][] = [
-    ['Net revenue', formatAUD(collected - refunded), `${formatAUD(collected)} collected · ${formatAUD(refunded)} refunded`],
+    ['Net revenue', formatMoney(collected - refunded), `${formatMoney(collected)} collected · ${formatMoney(refunded)} refunded`],
     ['Bookings', String(active.length), `${active.filter((b) => b.type === 'term').length} term · ${active.filter((b) => b.type === 'casual').length} casual · ${active.filter((b) => b.paymentMode === 'weekly').length} on weekly payments`],
     ['Sessions booked', `${booked} / ${capacity}`, `${utilisation(booked, capacity)}% of offered hours · ${cancelled.length} cancelled`],
     ['Open in next 14 days', String(soon.length), 'bookable times, all coaches'],
-    ['Weekly payments overdue', overdue.length ? `${overdue.length} · ${formatAUD(overdueAmount)}` : '0', overdue.length ? 'see Weekly payments' : 'all on track'],
+    ['Weekly payments overdue', overdue.length ? `${overdue.length} · ${formatMoney(overdueAmount)}` : '0', overdue.length ? 'see Weekly payments' : 'all on track'],
     ['Session credits', `${creditOutstanding}`, `outstanding across ${creditFamilies} famil${creditFamilies === 1 ? 'y' : 'ies'} · this term: ${creditGiven} given, ${creditUsed} used`],
   ]
 
@@ -147,7 +147,7 @@ export async function OneOnOneView({ q }: { q: Q }) {
                     <td className="pr-4 text-right tabular-nums">{r.open14}</td>
                     <td className="pr-4 text-right tabular-nums">{r.terms} · {r.casuals}</td>
                     <td className="pr-4 text-right tabular-nums">{r.cancelled}</td>
-                    <td className="text-right tabular-nums">{formatAUD(r.revenue)}</td>
+                    <td className="text-right tabular-nums">{formatMoney(r.revenue)}</td>
                   </tr>
                 ))}
                 {coachRows.length === 0 && <tr><td colSpan={7} className="py-4 text-muted">No active coaches.</td></tr>}
@@ -159,7 +159,11 @@ export async function OneOnOneView({ q }: { q: Q }) {
         <section>
           <h2 className="font-display text-2xl font-semibold uppercase">Open times in the next 14 days</h2>
           {soon.length === 0 ? (
-            <p className="mt-3 text-sm text-muted">Fully booked — nothing open in the next two weeks.</p>
+            <p className="mt-3 text-sm text-muted">
+              {Date.parse(term.startDate) > Date.now()
+                ? `${term.name} hasn’t started yet — it starts ${formatDate(term.startDate, { weekday: 'long', day: 'numeric', month: 'long' })}.`
+                : 'Nothing open in the next two weeks — every coach’s times are booked (or no availability has been set).'}
+            </p>
           ) : (
             <ul className="mt-4 grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-3">
               {soon.slice(0, 60).map((s) => (

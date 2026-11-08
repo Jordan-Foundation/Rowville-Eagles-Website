@@ -8,6 +8,8 @@ const dirname = path.dirname(__filename)
 
 const nextConfig: NextConfig = {
   experimental: {
+    // Branded 404 for addresses that match no page (the app has two root layouts: website and admin)
+    globalNotFound: true,
     // Coach profile photos are resized in the browser first; this leaves headroom for the form data
     serverActions: { bodySizeLimit: '3mb' },
   },
@@ -19,6 +21,8 @@ const nextConfig: NextConfig = {
       // "Staff" is now "Management" — old links in emails and bookmarks keep working
       { source: '/staff', destination: '/management', permanent: true },
       { source: '/staff/:path*', destination: '/management/:path*', permanent: true },
+      // Old "register interest" address → the Join page
+      { source: '/interest', destination: '/join', permanent: true },
     ]
   },
   images: {

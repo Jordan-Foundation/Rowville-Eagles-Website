@@ -17,14 +17,23 @@ const roleNote = { coach: null, cover: 'You’re covering', covered: 'Being cove
 export default async function CoachSessionsPage({ searchParams }: { searchParams: Promise<{ weeks?: string }> }) {
   const { coach, user: me } = await requireCoach('/coach/sessions')
   void markSeen(await payload(), me.id, 'sessions')
-  const weeks = Math.min(12, Math.max(1, Number((await searchParams).weeks) || 4))
+  const asked = (await searchParams).weeks
+  let weeks = asked === 'all' ? 52 : Math.min(52, Math.max(1, Number(asked) || 4))
   const p = await payload()
   const now = new Date()
   const startOfToday = localToUtc(toYmd(now.toISOString()), '00:00') // Sydney midnight
-  const [upcoming, due] = await Promise.all([
+  const [soon, due] = await Promise.all([
     coachSessions(p, coach.id, { from: startOfToday, to: new Date(now.getTime() + weeks * 7 * DAY) }),
     attendanceDue(p, coach.id, now),
   ])
+  let upcoming = soon
+  // Nothing soon (e.g. before term starts)? Show everything that's booked, so a new booking is never hidden.
+  let widened = false
+  if (!asked && !upcoming.length) {
+    weeks = 52
+    upcoming = await coachSessions(p, coach.id, { from: startOfToday, to: new Date(now.getTime() + weeks * 7 * DAY) })
+    widened = upcoming.length > 0
+  }
   const dueIds = new Set(due.map((d) => d.session.id))
   const future = upcoming.filter((x) => !dueIds.has(x.session.id))
   const days = new Map<string, typeof future>()
@@ -88,10 +97,12 @@ export default async function CoachSessionsPage({ searchParams }: { searchParams
             {[2, 4, 8].map((w) => (
               <Link key={w} href={`/coach/sessions?weeks=${w}`} className={`px-3 py-1.5 ${w === weeks ? 'bg-white text-black' : 'text-muted hover:text-ink'}`}>{w} weeks</Link>
             ))}
+            <Link href="/coach/sessions?weeks=all" className={`px-3 py-1.5 ${weeks === 52 ? 'bg-white text-black' : 'text-muted hover:text-ink'}`}>All upcoming</Link>
           </div>
         </div>
+        {widened && <p className="mt-3 text-sm text-muted">Nothing in the next 4 weeks — here’s everything that’s booked.</p>}
         {days.size === 0 ? (
-          <p className="mt-4 text-muted">No sessions in the next {weeks} weeks.</p>
+          <p className="mt-4 text-muted">{weeks === 52 ? 'No upcoming sessions booked yet.' : <>No sessions in the next {weeks} weeks. <Link href="/coach/sessions?weeks=all" className="underline">Show all upcoming</Link></>}</p>
         ) : (
           <div className="mt-4 space-y-6">
             {[...days.entries()].map(([day, list]) => (

@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 import { payload, formatDate } from '@/lib/payload'
 import { currentUser } from '@/lib/auth'
+import { graceDaysLeft } from '@/academy/pdr/manage-rules'
 import { releasedFor, reportCard } from '@/academy/reports/family'
 import { PlayerReportView } from '@/components/reports/PlayerReportView'
 import { ageOn, sessionPayment } from '@/academy/session-view'
@@ -90,6 +91,12 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
   return (
     <div className="container-x py-14">
       <Link href="/account" className="text-sm text-muted hover:text-ink">← My account</Link>
+      {['past_due', 'unpaid'].includes(kid.pdr?.subscriptionStatus ?? '') && kid.pdr?.tier && kid.pdr.tier !== 'free' && (
+        <div role="alert" className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border-2 border-red-500/60 bg-red-500/5 p-5">
+          <p className="text-sm"><strong>{kid.firstName}’s Foundation+ payment didn’t go through.</strong> Update your card so they keep their plan — {graceDaysLeft(kid.pdr?.pastDueSince) === 0 ? 'it moves to Free today' : `it moves to Free in ${graceDaysLeft(kid.pdr?.pastDueSince)} days`}.</p>
+          <a href={`/foundation-plus/billing?player=${kid.id}`} className="rounded-full bg-black px-5 py-2.5 text-sm font-semibold text-white">Update card →</a>
+        </div>
+      )}
       <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="eyebrow !text-brand">Player</p>

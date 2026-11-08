@@ -19,6 +19,7 @@ const when = (iso: string) => formatDate(iso, { weekday: 'long', day: 'numeric',
  *  - email confirmation (+ "create your account" link for new families)
  */
 export async function onBookingPaid(payload: Payload, booking: Booking) {
+  const promoLine = await (await import('../promotions/service')).discountLine(payload, booking)
   const programId = typeof booking.program === 'object' ? booking.program.id : booking.program
   const program = (await payload.findByID({ collection: 'programs', id: programId, depth: 0 })) as Program
   const academy = booking.payee === 'academy'
@@ -95,6 +96,7 @@ export async function onBookingPaid(payload: Payload, booking: Booking) {
       rows: [
         ['Program', program.title],
         ...(termRows.length ? [...termRows, ['Player', who] as [string, string]] : booking.sessionStart ? ([['Time', when(booking.sessionStart)]] as [string, string][]) : program.startDate ? ([['Starts', formatDate(program.startDate)]] as [string, string][]) : []),
+        ...(promoLine ? [promoLine] : []),
         ['Paid', formatAUD(booking.amount)],
         ['Reference', booking.reference ?? ''],
       ],
@@ -115,6 +117,7 @@ export async function onBookingPaid(payload: Payload, booking: Booking) {
 }
 
 export async function onOrderPaid(payload: Payload, order: Order) {
+  const orderPromo = await (await import('../promotions/service')).discountLine(payload, order)
   const settings = await payload.findGlobal({ slug: 'site-settings', depth: 0 })
   const html = emailLayout('academy', [
     {
@@ -123,6 +126,7 @@ export async function onOrderPaid(payload: Payload, order: Order) {
       rows: [
         ...order.items.map((i) => [`${i.quantity} × ${i.name} (${i.size})`, formatAUD((i.unitPrice ?? 0) * (i.quantity ?? 0))] as [string, string]),
         ...(order.postage ? ([['Postage', formatAUD(order.postage)]] as [string, string][]) : []),
+        ...(orderPromo ? [orderPromo] : []),
         ['Total', formatAUD(order.total)],
         ['Reference', order.reference ?? ''],
       ],

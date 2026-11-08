@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { payload } from '@/lib/payload'
 import { teamTitle } from '@/teams/service'
 import { toggleArchive } from './actions'
+import { ConfirmButton } from '@/components/ConfirmButton'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Team pages', robots: { index: false } }
@@ -37,7 +38,7 @@ export default async function StaffTeams({ searchParams }: { searchParams: Promi
               <td>{(t.coaches ?? []).length}</td>
               <td className="flex gap-2 py-2">
                 <a href={`/admin/collections/teams/${t.id}`} className="rounded-full border border-line px-3 py-1 font-semibold">Edit details</a>
-                <form action={toggleArchive}><input type="hidden" name="id" value={t.id} /><button className="rounded-full border border-line px-3 py-1 font-semibold">{t.archived ? 'Restore' : 'Archive'}</button></form>
+                <form action={toggleArchive}><input type="hidden" name="id" value={t.id} />{t.archived ? <button className="rounded-full border border-line px-3 py-1 font-semibold">Restore</button> : <ConfirmButton message={`Archive ${t.name}? Families stop seeing the team page (you can restore it later).`} className="rounded-full border border-line px-3 py-1 font-semibold">Archive</ConfirmButton>}</form>
               </td>
             </tr>
           ))}

@@ -96,7 +96,7 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
 
           {sections.notices !== false && (
             <Section id="notices" title={tournament ? 'Message board' : 'Notice board'}>
-              {access.manage && <div className="mb-6 rounded-xl bg-surface-2 p-4"><NoticeForm slug={team.slug} /></div>}
+              {access.manage && <div className="mb-6 rounded-xl bg-surface-2 p-4"><NoticeForm slug={team.slug} families={new Set(members.map((m) => (typeof m.account === 'object' ? m.account?.id : m.account))).size} /></div>}
               {ordered.length === 0 ? (
                 <p className="text-muted">No notices yet.</p>
               ) : (

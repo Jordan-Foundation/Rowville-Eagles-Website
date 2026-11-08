@@ -42,7 +42,7 @@ export default async function ReportsPage() {
             <li key={c.id}>
               <Link href={`/management/reports/${c.id}`} className="flex flex-wrap items-center justify-between gap-2 px-5 py-4 hover:bg-surface-2">
                 <span><span className="font-semibold">{c.name}</span> <span className="text-sm text-muted">· due {formatDate(c.dueDate, { day: 'numeric', month: 'short', year: 'numeric' })}{c.status === 'closed' ? ' · closed' : ''}</span></span>
-                <span className="text-sm">{counts[i].total ? `${counts[i].done} / ${counts[i].total} submitted` : 'No reports yet'}</span>
+                <span className="text-sm">{counts[i].total ? `${counts[i].done} / ${counts[i].total} finished` : 'No reports yet'}</span>
               </Link>
             </li>
           ))}

@@ -1,4 +1,4 @@
-import { payload, formatAUD, formatDate } from '@/lib/payload'
+import { payload, formatMoney, formatDate } from '@/lib/payload'
 import { PLANS } from '@/academy/pdr/billing/plans'
 import { displayPrices } from '@/academy/pdr/billing/stripe'
 import { conversionRate, memberStats, monthlyActivity } from '@/academy/pdr/billing/stats'
@@ -36,12 +36,12 @@ export async function FoundationPlusView() {
     ['On a free month', String(s.trialing), `${waitlist.totalDocs} on the waitlist · ${claimed.totalDocs} claimed`],
     ['Free month → paid', conv ? `${conv.pct}%` : '—', conv ? `${conv.converted} of ${conv.ended} finished free months` : 'no free months finished yet'],
     ['Cancellations', String(cancels), `${s.cancelling} cancelling at period end`],
-    ['Monthly revenue (est.)', formatAUD(s.mrr), `≈ ${formatAUD(s.mrr * 12)} a year`],
+    ['Monthly revenue (est.)', formatMoney(s.mrr), `≈ ${formatMoney(s.mrr * 12)} a year`],
     ['Launch emails', `${notified.totalDocs} / ${waitlist.totalDocs}`, settings.enabled ? 'Foundation+ is on' : 'sent when you switch Foundation+ on'],
   ]
   return (
     <div className="space-y-10">
-      <Heading title={settings.programName || 'Foundation+'} sub={settings.enabled ? 'Switched on for families' : 'Switched off — collecting a waitlist'} links={[{ href: '/admin/globals/pdr-settings', label: 'Foundation+ settings' }, { href: '/admin/collections/fplus-events', label: 'All activity' }]} />
+      <Heading title={settings.programName || 'Foundation+'} sub={settings.enabled ? 'Switched on for families' : 'Hidden from families (waitlist only) — the figures below are test or early-access members Management signed up'} links={[{ href: '/admin/globals/pdr-settings', label: 'Foundation+ settings' }, { href: '/admin/collections/fplus-events', label: 'All activity' }]} />
       <KpiTiles tiles={tiles} />
       <section className="grid gap-10 lg:grid-cols-2">
         <div>
@@ -50,7 +50,7 @@ export async function FoundationPlusView() {
             <thead className="border-b border-line text-xs uppercase tracking-wider text-muted"><tr><th className={thCls}>Plan</th><th className={thCls}>Price</th><th className={thCls}>Paying</th><th className={thCls}>Free month</th></tr></thead>
             <tbody className="divide-y divide-line">
               {PLANS.map((pl) => (
-                <tr key={pl.key}><td className="py-3 pr-4">{pl.name.replace('Foundation+ ', '')} · {pl.interval === 'year' ? 'yearly' : 'monthly'}</td><td className="pr-4">{formatAUD(prices[pl.key])}</td><td className="pr-4 tabular-nums">{s.byPlan[pl.key].paying}</td><td className="tabular-nums">{s.byPlan[pl.key].trialing || '—'}</td></tr>
+                <tr key={pl.key}><td className="py-3 pr-4">{pl.name.replace('Foundation+ ', '')} · {pl.interval === 'year' ? 'yearly' : 'monthly'}</td><td className="pr-4">{formatMoney(prices[pl.key])}</td><td className="pr-4 tabular-nums">{s.byPlan[pl.key].paying}</td><td className="tabular-nums">{s.byPlan[pl.key].trialing || '—'}</td></tr>
               ))}
             </tbody>
           </table>

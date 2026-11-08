@@ -2,6 +2,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 import { payload, formatAUD, formatDate } from '@/lib/payload'
+import { discountLine } from '@/promotions/service'
 import { currentUser } from '@/lib/auth'
 import { hasRole } from '@/access'
 import { academyBrand } from '@/academy/brand'
@@ -42,7 +43,9 @@ export default async function MyBookingPage({ params }: { params: Promise<{ ref:
     const payUrl = b.status === 'payment_failed' ? (b.payments ?? []).filter((x) => x.status === 'failed').at(-1)?.payUrl : null
     const per = b.amount / (b.sessionsTotal || 1)
     const card = cashPaid({ ...b, sessionsTotal: b.sessionsTotal ?? 1 })
+    const promoLine = await discountLine(p, b)
     const money: [string, string][] = [
+      ...(promoLine ? [promoLine] : []),
       ['Price', b.type === 'term' ? `${formatAUD(b.amount)} (${b.sessionsTotal} × ${formatAUD(per)})` : formatAUD(b.amount)],
       ...(b.paymentMode === 'weekly' ? ([['Weekly payments', `${b.sessionsPaid ?? 0} of ${b.sessionsTotal} paid${b.nextChargeAt ? ` · next ${formatDate(b.nextChargeAt, { weekday: 'short', day: 'numeric', month: 'short' })}` : ''}`]] as [string, string][]) : []),
       ...((b.creditSessionsUsed ?? 0) > 0 ? ([['Session credits used', String(b.creditSessionsUsed)]] as [string, string][]) : []),
@@ -129,6 +132,7 @@ export default async function MyBookingPage({ params }: { params: Promise<{ ref:
   const club = (await p.find({ collection: 'bookings', where: { reference: { equals: ref } }, limit: 1, depth: 1, overrideAccess: true })).docs[0]
   if (!club || (owner(club.account) !== user.id && !staff)) notFound()
   const prog = club.program as Program
+  const clubPromo = await discountLine(p, club)
   const rows: [string, string][] = [
     ['Player', [club.player?.firstName, club.player?.lastName].filter(Boolean).join(' ') || club.player?.teamName || '—'],
     ...(club.sessionStart
@@ -138,6 +142,7 @@ export default async function MyBookingPage({ params }: { params: Promise<{ ref:
         : []),
     ...(prog.scheduleNote ? ([['Schedule', prog.scheduleNote]] as [string, string][]) : []),
     ...(prog.location ? ([['Where', prog.location]] as [string, string][]) : []),
+    ...(clubPromo ? [clubPromo] : []),
     ['Paid', formatAUD(club.amount ?? 0)],
     ['Reference', club.reference ?? ''],
   ]

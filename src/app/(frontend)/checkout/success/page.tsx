@@ -2,6 +2,7 @@ import { groupLabel } from '@/lib/age-groups'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { payload, formatAUD, formatDate } from '@/lib/payload'
+import { discountLine } from '@/promotions/service'
 import { confirmPayment } from '@/lib/payments'
 import { isPayee, paymentsMode, stripeAccounts, stripeFor } from '@/lib/stripe-accounts'
 import type { Program } from '@/payload-types'
@@ -40,6 +41,7 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
   }
 
   const paid = status === 'paid'
+  const promoLine = await discountLine(p, doc as { discount?: number | null; promotion?: unknown })
   const payeeLabel = isPayee(doc.payee) ? stripeAccounts[doc.payee].label : ''
 
   if ('program' in doc) {
@@ -56,6 +58,7 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
             {doc.birthYear && <Row k="Age group" v={groupLabel(doc.birthYear)} />}
             {doc.sessionStart && <Row k="Time" v={formatDate(doc.sessionStart, { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' })} />}
             {!doc.sessionStart && program.startDate && <Row k="Starts" v={formatDate(program.startDate)} />}
+            {promoLine && <Row k={promoLine[0]} v={promoLine[1]} />}
             {doc.amount > 0 && <Row k="Paid" v={`${formatAUD(doc.amount)} to ${payeeLabel}`} />}
           </dl>
           {!paid && <p className="mt-6 text-sm text-muted">Your payment is still being confirmed. This page will update shortly — refresh in a minute.</p>}
@@ -89,6 +92,8 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
             <span>{formatAUD((i.unitPrice ?? 0) * (i.quantity ?? 0))}</span>
           </li>
         ))}
+        {doc.postage ? <li className="flex justify-between gap-4 py-3"><span>Postage</span><span>{formatAUD(doc.postage)}</span></li> : null}
+        {promoLine && <li className="flex justify-between gap-4 py-3 text-emerald-700"><span>{promoLine[0]}</span><span>{promoLine[1]}</span></li>}
         <li className="flex justify-between py-3 font-semibold"><span>Total</span><span>{formatAUD(doc.total)}</span></li>
       </ul>
       <p className="mt-6 text-sm text-muted">

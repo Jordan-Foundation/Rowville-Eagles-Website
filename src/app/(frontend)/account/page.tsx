@@ -1,3 +1,4 @@
+import { academyBrand } from '@/academy/brand'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
@@ -14,10 +15,12 @@ import { myTeams } from '@/teams/service'
 import { TeamCards } from '@/teams/TeamCards'
 import { inbox } from '@/messaging/service'
 import { homeFor } from '@/lib/home'
+import { graceDaysLeft } from '@/academy/pdr/manage-rules'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'My account', robots: { index: false } }
 
+const orderStatus: Record<string, string> = { paid: 'Being prepared', ready: 'Ready to collect', completed: 'Collected / sent', cancelled: 'Cancelled', refunded: 'Refunded' }
 const tagLabel = { rowville: 'Rowville player', rfa: 'RFA', 'foundation-plus': 'Foundation+ player' } as const
 
 export default async function AccountPage({ searchParams }: { searchParams: Promise<{ welcome?: string; view?: string }> }) {
@@ -38,6 +41,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
     p.find({ collection: 'academy-bookings', where: { account: { equals: user.id }, paymentMode: { equals: 'weekly' }, status: { equals: 'payment_failed' } }, depth: 1, limit: 20, overrideAccess: true }),
   ])
 
+  const { docs: orders } = await p.find({ collection: 'orders', where: { account: { equals: user.id }, status: { not_equals: 'pending' } }, sort: '-createdAt', limit: 20, depth: 0, overrideAccess: true })
   const credits = await creditStateFor(p, user.id)
   const teams = await myTeams(p, user)
   const [{ docs: selections }, rules, { docs: termRegs }] = await Promise.all([
@@ -49,6 +53,8 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   // Rowville offers that came through selections show in "Trials & selections" with their own button
   const offeredBySelection = new Set(selections.filter((e) => e.status === 'offered').map((e) => (typeof e.participant === 'object' ? e.participant?.id : e.participant)))
   const pendingOffers = participants.docs.filter((x) => x.registrationOffer?.status === 'offered' && x.registrationOffer.program && !offeredBySelection.has(x.id))
+  // Foundation+ plans whose card payment failed (still in the grace period)
+  const fplusPastDue = participants.docs.filter((x) => ['past_due', 'unpaid'].includes(x.pdr?.subscriptionStatus ?? '') && x.pdr?.tier && x.pdr.tier !== 'free')
   const now = Date.now()
   type Item = { key: string; date: string | null; title: string; detail: string; badge: 'RFA' | 'Club'; status?: string; href?: string }
   const clubItems: Item[] = bookings.docs
@@ -101,9 +107,23 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
       </div>
       {welcome && <p className="mt-6 rounded-xl border border-accent bg-accent/10 px-5 py-4">Your account is ready. Welcome to the Eagles!</p>}
 
-      {plans.docs.length > 0 && (
+      {(plans.docs.length > 0 || fplusPastDue.length > 0) && (
         <section className="mt-10 space-y-3">
           <h2 className="font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase">Payment needed</h2>
+          {fplusPastDue.map((x) => {
+            const left = graceDaysLeft(x.pdr?.pastDueSince)
+            return (
+              <div key={`fp${x.id}`} role="alert" className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border-2 border-red-500/60 bg-red-500/5 p-6">
+                <div>
+                  <p className="font-semibold">{x.firstName}’s Foundation+ payment didn’t go through</p>
+                  <p className="text-sm text-muted">
+                    Please update your card so {x.firstName} keeps their {x.pdr?.tier === 'premium' ? 'Premium' : 'Standard'} plan — {left === 0 ? 'it moves to Free today' : `it moves to Free in ${left} day${left === 1 ? '' : 's'}`}. Their progress is always kept.
+                  </p>
+                </div>
+                <a href={`/foundation-plus/billing?player=${x.id}`} className="rounded-full bg-black px-6 py-3 font-semibold text-white hover:bg-black/85">Update card →</a>
+              </div>
+            )
+          })}
           {plans.docs.map((b) => {
             const failed = (b.payments ?? []).filter((x) => x.status === 'failed')
             const payUrl = failed.at(-1)?.payUrl
@@ -119,7 +139,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
                 {payUrl ? (
                   <a href={payUrl} className="rounded-full bg-black px-6 py-3 font-semibold text-white hover:bg-black/85">Pay now →</a>
                 ) : (
-                  <span className="text-sm text-muted">We’ll retry automatically — or call 0451 525 684</span>
+                  <span className="text-sm text-muted">We’ll retry automatically — or call {academyBrand.phone}</span>
                 )}
               </div>
             )
@@ -182,6 +202,26 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
               <h2 className="mt-10 font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase">Past sessions</h2>
               <ItemList items={past} muted />
             </>
+          )}
+          {orders.length > 0 && (
+            <section aria-labelledby="h-orders" className="mt-10">
+              <h2 id="h-orders" className="font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase">Shop orders</h2>
+              <ul className="mt-4 divide-y divide-line rounded-2xl border border-line">
+                {orders.map((o) => (
+                  <li key={o.id} className="flex flex-wrap items-center justify-between gap-3 p-5">
+                    <div>
+                      <p className="font-semibold">{(o.items ?? []).map((i) => `${i.quantity}× ${i.name}${i.size && i.size !== 'One size' ? ` (${i.size})` : ''}`).join(', ')}</p>
+                      <p className="text-sm text-muted">
+                        {formatDate(o.createdAt, { day: 'numeric', month: 'short', year: 'numeric' })} · {formatAUD(o.total)}{o.discount ? ` (incl. ${formatAUD(o.discount)} off)` : ''} · {o.fulfilment === 'post' ? 'Posted to you' : 'Pick up at the club'} · {o.reference}
+                      </p>
+                    </div>
+                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${o.status === 'ready' ? 'bg-emerald-100 text-emerald-900' : o.status === 'paid' ? 'bg-amber-100 text-amber-900' : 'bg-surface-2 text-muted'}`}>
+                      {orderStatus[o.status] ?? o.status}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
           )}
         </section>
         <aside className="space-y-4">

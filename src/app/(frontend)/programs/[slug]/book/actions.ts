@@ -1,5 +1,6 @@
 'use server'
 
+import { dobProblem, phoneOk } from '@/lib/validate'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { payload } from '@/lib/payload'
@@ -60,6 +61,7 @@ export async function bookProgram(_prev: BookingState, fd: FormData): Promise<Bo
   }
   if (!contact.firstName || !contact.lastName || !contact.phone) return fail('Please complete your contact details.')
   if (!emailOk(contact.email)) return fail('Please enter a valid email address.')
+  if (!phoneOk(contact.phone)) return fail('Please enter an Australian phone number, e.g. 0412 345 678.')
 
   const player = {
     firstName: offeredParticipant?.firstName ?? str(fd, 'playerFirstName'),
@@ -75,7 +77,7 @@ export async function bookProgram(_prev: BookingState, fd: FormData): Promise<Bo
     if (!player.teamName) return fail('Please enter the team name.')
   } else {
     if (!player.firstName || !player.lastName || !player.dateOfBirth) return fail('Please complete the player’s name and date of birth.')
-    if (Number.isNaN(Date.parse(player.dateOfBirth))) return fail('Please enter a valid date of birth.')
+    if (dobProblem(player.dateOfBirth)) return fail(dobProblem(player.dateOfBirth)!)
     if (!player.emergencyName || !player.emergencyPhone) return fail('Please add an emergency contact.')
   }
   if (fd.get('terms') !== 'on') return fail('Please accept the terms to continue.')

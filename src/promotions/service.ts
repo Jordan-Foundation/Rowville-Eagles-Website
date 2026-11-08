@@ -82,3 +82,12 @@ export async function settleUses(p: Payload, reference: string, status: 'paid' |
     p.logger.error({ err: e, msg: `Could not mark promotion use ${reference} ${status}` })
   }
 }
+
+/** ["Discount", "Winter special −$33.00"] for a paid booking/order that used a promotion, or null. */
+export async function discountLine(p: Payload, d: { discount?: number | null; promotion?: unknown }): Promise<[string, string] | null> {
+  if (!d.discount || d.discount <= 0) return null
+  const id = d.promotion && typeof d.promotion === 'object' ? (d.promotion as { id: number }).id : (d.promotion as number | null | undefined)
+  const promo = id ? await p.findByID({ collection: 'promotions', id, depth: 0, overrideAccess: true, disableErrors: true }) : null
+  const { formatAUD } = await import('../lib/format')
+  return ['Discount', `${promo?.name ?? 'Promotion'} −${formatAUD(d.discount)}`]
+}

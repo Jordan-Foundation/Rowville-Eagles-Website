@@ -124,8 +124,8 @@ export function PromotionForm({ v, pick }: { v: PromoValues; pick: Pickables }) 
       {state.error && <p role="alert" className="text-sm text-red-700">{state.error}</p>}
       <div className="flex flex-wrap gap-3">
         <button name="intent" value={v.status === 'draft' ? 'draft' : 'save'} disabled={pending} className={`${btn} border border-line`}>{pending ? 'Saving…' : v.status === 'draft' ? 'Save draft' : 'Save changes'}</button>
-        {(v.status === 'draft' || v.status === 'ended') && <button name="intent" value="live" title="Give these families the discount now, without sending a message" disabled={pending} className={`${btn} bg-emerald-600 text-white`}>Make live (no message)</button>}
-        {v.status === 'live' && <button name="intent" value="end" disabled={pending} className={`${btn} bg-red-600 text-white`}>End now</button>}
+        {(v.status === 'draft' || v.status === 'ended') && <button name="intent" value="live" onClick={(e) => { if (!confirm('Make this live now? The families listed get the discount straight away, without a message.')) e.preventDefault() }} title="Give these families the discount now, without sending a message" disabled={pending} className={`${btn} bg-emerald-600 text-white`}>Make live (no message)</button>}
+        {v.status === 'live' && <button name="intent" value="end" onClick={(e) => { if (!confirm('End this promotion now? Nobody gets the discount any more.')) e.preventDefault() }} disabled={pending} className={`${btn} bg-red-600 text-white`}>End now</button>}
       </div>
     </form>
   )

@@ -1,5 +1,6 @@
 'use client'
 
+import { PolicyLink } from '@/components/PolicyLink'
 import { useActionState, useState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { Field, Fieldset, Input, inputCls } from '@/components/forms/Field'
@@ -139,7 +140,7 @@ export function BookForm({ coach, slot, term, price, weekly, credit, loginHref, 
         <label className="flex items-start gap-3">
           <input type="checkbox" name="terms" required defaultChecked={v.terms === 'on'} className="mt-1" />
           <span>
-            I agree to the Foundation Academy terms, Code of Conduct and Child Safe policy.{' '}
+            I agree to the <PolicyLink k="academyTerms">Foundation Academy terms</PolicyLink>, <PolicyLink k="codeOfConduct">Code of Conduct</PolicyLink> and <PolicyLink k="childSafe">Child Safe policy</PolicyLink>.{' '}
             {slot.mode === 'casual'
               ? 'Casual sessions cancelled 24 hours or more before the start can be credited or refunded.'
               : 'Term bookings can be cancelled any time; unplayed future sessions are credited or refunded, less one session.'}

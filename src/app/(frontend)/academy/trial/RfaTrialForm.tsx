@@ -1,5 +1,6 @@
 'use client'
 
+import { PolicyLink } from '@/components/PolicyLink'
 import { useActionState, useMemo, useState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { fullLabel, groupFor, groupLabel, type AgeRules } from '@/lib/age-groups'
@@ -78,7 +79,7 @@ export function RfaTrialForm({ rules, nights, priceLabel }: { rules: AgeRules; n
 
       <label className="flex items-start gap-3 text-sm">
         <input type="checkbox" name="terms" required defaultChecked={v.terms === 'on'} className="mt-1" />
-        <span>I agree to the Academy’s Code of Conduct, Child Safe policy and terms.</span>
+        <span>I agree to the Academy’s <PolicyLink k="codeOfConduct">Code of Conduct</PolicyLink>, <PolicyLink k="childSafe">Child Safe policy</PolicyLink> and <PolicyLink k="academyTerms">terms</PolicyLink>.</span>
       </label>
       {state.error && <p role="alert" className="border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300">{state.error}</p>}
       <Submit priceLabel={priceLabel} />

@@ -1,5 +1,6 @@
 'use server'
 
+import { dobProblem, phoneOk } from '@/lib/validate'
 import { redirect } from 'next/navigation'
 import { payload } from '@/lib/payload'
 import { birthYearOf } from '@/lib/age-groups'
@@ -32,6 +33,8 @@ export async function joinUs(_prev: JoinState, fd: FormData): Promise<JoinState>
   }
   if (!player.firstName || !player.lastName || !player.dateOfBirth) return fail('Please complete the player’s name and date of birth.')
   if (!contact.firstName || !contact.lastName || !contact.phone) return fail('Please complete your contact details.')
+  if (dobProblem(player.dateOfBirth)) return fail(dobProblem(player.dateOfBirth)!)
+  if (!phoneOk(contact.phone)) return fail('Please enter an Australian phone number, e.g. 0412 345 678.')
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email)) return fail('Please enter a valid email address.')
   if (fd.get('consent') !== 'on') return fail('Please agree to be contacted about trials.')
 

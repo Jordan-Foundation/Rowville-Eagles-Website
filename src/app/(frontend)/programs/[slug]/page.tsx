@@ -10,17 +10,22 @@ import { RfaLogo } from '@/components/Logos'
 
 export default async function ProgramPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const { docs } = await (await payload()).find({ collection: 'programs', where: { slug: { equals: slug } }, limit: 1, depth: 1 })
+  const pl = await payload()
+  const { docs } = await pl.find({ collection: 'programs', where: { slug: { equals: slug } }, limit: 1, depth: 1 })
   const p = docs[0]
   if (!p) notFound()
   if (p.type === 'private-session') redirect('/academy/1-on-1')
   const academy = p.brand === 'academy'
+  // A location like "Home ground" gets the ground's full address and a directions link
+  const settings = await pl.findGlobal({ slug: 'site-settings', depth: 0 })
+  const place = p.location && /\d/.test(p.location) ? p.location : [p.location, settings.ground?.address].filter(Boolean).join(' · ') || null
+  const directions = place ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.location && /\d/.test(p.location) ? p.location : settings.ground?.address || place)}` : null
 
   const facts = [
     ['When', [formatDate(p.startDate), p.endDate && formatDate(p.endDate)].filter(Boolean).join(' – ')],
     ['Schedule', p.scheduleNote],
     ['Ages', p.ageRange],
-    ['Where', p.location],
+    ['Where', place],
     ['Places', p.capacity ? `${p.capacity} total` : null],
   ].filter(([, v]) => v) as [string, string][]
 
@@ -59,6 +64,10 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
               </div>
             ))}
           </dl>
+          <p className="mt-3 flex flex-wrap justify-end gap-x-4 gap-y-1 text-sm">
+            {directions && <a href={directions} target="_blank" rel="noopener" className="font-semibold underline">Get directions</a>}
+            {p.type !== 'community' && <a href="/policies/refunds" target="_blank" rel="noopener" className="underline">Refunds &amp; cancellations</a>}
+          </p>
           {p.type === 'community' ? (
             <div className="mt-7 space-y-2 rounded-xl border border-line bg-surface p-4 text-sm">
               <p className="font-semibold">No booking needed — just come along.</p>

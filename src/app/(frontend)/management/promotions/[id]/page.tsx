@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { requireManagement } from '@/lib/management'
-import { payload, formatAUD } from '@/lib/payload'
+import { payload, formatMoney } from '@/lib/payload'
 import { DATE_FIELDS, formatDateInput } from '@/lib/dates-edit'
 import { loadPickables } from '@/promotions/pickables'
 import { toLive } from '@/promotions/service'
@@ -40,7 +40,7 @@ export default async function PromotionPage({ params, searchParams }: { params: 
     <div className="container-x max-w-5xl py-14">
       <Link href="/management/promotions" className="text-sm text-muted hover:text-ink">← Promotions</Link>
       <h1 className="mt-4 font-[family-name:var(--font-barlow)] text-5xl font-extrabold uppercase">{id === 'new' ? 'New promotion' : v.name}</h1>
-      {id !== 'new' && <p className="mt-2 text-muted"><strong className="text-ink">{v.status === 'live' ? 'Live' : v.status === 'ended' ? 'Ended' : v.status === 'scheduled' ? 'Scheduled' : 'Draft'}</strong>{stats ? ` · used ${stats.uses} time${stats.uses === 1 ? '' : 's'} · ${formatAUD(stats.off)} discount given · ${formatAUD(stats.paid)} paid` : ''}</p>}
+      {id !== 'new' && <p className="mt-2 text-muted"><strong className="text-ink">{v.status === 'live' ? 'Live' : v.status === 'ended' ? 'Ended' : v.status === 'scheduled' ? 'Scheduled' : 'Draft'}</strong>{stats ? ` · used ${stats.uses} time${stats.uses === 1 ? '' : 's'} · ${formatMoney(stats.off)} discount given · ${formatMoney(stats.paid)} paid` : ''}</p>}
       {sp.saved && <p role="status" className="mt-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-900">{sp.saved === 'live' ? 'Live — these families now get the discount automatically when they pay.' : sp.saved === 'ended' ? 'Ended — nobody gets this discount any more.' : 'Saved.'}</p>}
       {id !== 'new' && (
         <div className="mt-6 flex flex-wrap items-center gap-3 rounded-2xl border border-line p-4">

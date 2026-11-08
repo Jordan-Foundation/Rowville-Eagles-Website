@@ -1,4 +1,4 @@
-import { payload, formatAUD } from '@/lib/payload'
+import { payload, formatMoney } from '@/lib/payload'
 import { programSlots } from '@/academy/terms/service'
 import { slotLabel, slotSessions, yearsLabel } from '@/academy/terms/slots'
 import { Bar, FilterBar, Heading, KpiTiles, selectCls, thCls } from '../_ui'
@@ -43,11 +43,11 @@ export async function AcademyView({ q, type = 'academy-term', program: key = 'ac
   const done = allSessions.filter((x) => new Date(x.startsAt).getTime() < now).length
   const tiles: [string, string, string?][] = [
     ['Registrations', String(live.length), `${paid.length} paid · ${unpaid.length} unpaid · ${waiting.length} waiting for a place`],
-    ['Paid / unpaid', `${paid.length} / ${unpaid.length}`, unpaid.length ? `${formatAUD(owed)} still to come in` : 'everyone has paid'],
+    ['Paid / unpaid', `${paid.length} / ${unpaid.length}`, unpaid.length ? `${formatMoney(owed)} still to come in` : 'everyone has paid'],
     ['Places filled', capacity ? `${paid.length} / ${capacity}` : String(paid.length), capacity ? `${Math.round((paid.length / capacity) * 100)}% of capacity across ${shown.length} time${shown.length === 1 ? '' : 's'}` : 'no capacity set'],
     ['Waitlist', String(waiting.length), waiting.length ? 'offer places from Academy terms' : 'nobody waiting'],
     ['Groups without a coach', String(noCoach), noCoach ? 'set coaches on Academy terms' : 'all covered'],
-    ['Net revenue', formatAUD(revenue), `${program.title}`],
+    ['Net revenue', formatMoney(revenue), `${program.title}`],
     ...(toddler
       ? ([
           ['Sessions this term', String(allSessions.length), `${done} run · ${allSessions.length - done} to go`],

@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { payload, formatAUD, formatDate } from '@/lib/payload'
+import { payload, formatMoney, formatDate } from '@/lib/payload'
 import type { Product } from '@/payload-types'
 import { FilterBar, Heading, KpiTiles, selectCls, thCls } from '../_ui'
 
@@ -28,9 +28,9 @@ export async function StoreView({ q }: { q: Record<string, string | undefined> }
     .flatMap((x) => (x.variants ?? []).filter((v) => typeof v.stock === 'number' && v.stock <= LOW).map((v) => ({ product: x, size: v.size, stock: v.stock! })))
   const tiles: [string, string, string?][] = [
     ['Orders', String(new Set(kept.map((l) => l.o.id)).size), `${formatDate(from)} – ${formatDate(to)}`],
-    ['Revenue', formatAUD(revenue), `${kept.reduce((n, l) => n + (l.i.quantity ?? 0), 0)} items sold`],
+    ['Revenue', formatMoney(revenue), `${kept.reduce((n, l) => n + (l.i.quantity ?? 0), 0)} items sold`],
     ['To fulfil', String(toFulfil.length), toFulfil.length ? 'paid, not yet ready' : 'all caught up'],
-    ['Foundation+-only sales', String(fplus.reduce((n, l) => n + (l.i.quantity ?? 0), 0)), formatAUD(fplus.reduce((n, l) => n + (l.i.unitPrice ?? 0) * (l.i.quantity ?? 0), 0))],
+    ['Foundation+-only sales', String(fplus.reduce((n, l) => n + (l.i.quantity ?? 0), 0)), formatMoney(fplus.reduce((n, l) => n + (l.i.unitPrice ?? 0) * (l.i.quantity ?? 0), 0))],
     ['Low stock', String(low.length), `sizes with ${LOW} or fewer left`],
     ['Refunded', String(orders.filter((o) => o.status === 'refunded').length), 'orders in this period'],
   ]
@@ -49,7 +49,7 @@ export async function StoreView({ q }: { q: Record<string, string | undefined> }
           {toFulfil.length === 0 ? <p className="mt-3 text-sm text-muted">Nothing waiting.</p> : (
             <ul className="mt-4 divide-y divide-line border border-line text-sm">
               {toFulfil.slice(0, 30).map((o) => (
-                <li key={o.id}><Link href={`/admin/collections/orders/${o.id}`} className="flex justify-between gap-3 px-4 py-3 hover:bg-white/5"><span>{o.reference} · {o.contact.name} · {o.fulfilment === 'post' ? 'post' : 'pick up'}</span><span className="tabular-nums">{formatAUD(o.total)}</span></Link></li>
+                <li key={o.id}><Link href={`/admin/collections/orders/${o.id}`} className="flex justify-between gap-3 px-4 py-3 hover:bg-white/5"><span>{o.reference} · {o.contact.name} · {o.fulfilment === 'post' ? 'post' : 'pick up'}</span><span className="tabular-nums">{formatMoney(o.total)}</span></Link></li>
               ))}
             </ul>
           )}

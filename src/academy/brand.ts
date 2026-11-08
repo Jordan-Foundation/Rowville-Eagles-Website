@@ -7,7 +7,7 @@ export const academyBrand = {
   localName: 'Rowville Foundation Academy',
   legalName: 'Foundation Sports Australia Pty Ltd',
   abn: '51 685 528 143',
-  phone: '0451 525 684',
+  phone: '0495 101 515',
   address: '208 Dandelion Drive, Rowville VIC 3178',
   email: process.env.ACADEMY_CONTACT_EMAIL || 'academy@rowvilleeagles.com.au',
   smsSignOff: '– Foundation Academy',
@@ -17,7 +17,11 @@ export const clubBrand = {
   name: 'Rowville Eagles Football Club',
   address: '208 Dandelion Drive, Rowville VIC 3178',
   email: process.env.CLUB_CONTACT_EMAIL || 'refc.secretary@outlook.com',
+  phone: '0495 101 515',
 } as const
+
+/** "0495 101 515" → "tel:+61495101515" */
+export const telHref = (n: string) => `tel:${n.replace(/\s+/g, '').replace(/^0/, '+61')}`
 
 export type Brand = 'club' | 'academy'
 
@@ -25,5 +29,5 @@ export type Brand = 'club' | 'academy'
 export function senderIdentity(brand: Brand) {
   return brand === 'academy'
     ? `${academyBrand.name} — ${academyBrand.legalName} · ABN ${academyBrand.abn} · ${academyBrand.address} · ${academyBrand.phone} · ${academyBrand.email}`
-    : `${clubBrand.name} · ${clubBrand.address} · ${clubBrand.email}`
+    : `${clubBrand.name} · ${clubBrand.address} · ${clubBrand.phone} · ${clubBrand.email}`
 }

@@ -13,7 +13,7 @@ const Msg = ({ s }: { s: TeamState }) => (
   </>
 )
 
-export function NoticeForm({ slug, edit }: { slug: string; edit?: { id: number; title: string; body: string; pinned: boolean } }) {
+export function NoticeForm({ slug, edit, families }: { slug: string; edit?: { id: number; title: string; body: string; pinned: boolean }; families?: number }) {
   const [state, action, pending] = useActionState<TeamState, FormData>(saveNotice, {})
   const [title, setTitle] = useState(edit?.title ?? '')
   const [body, setBody] = useState(edit?.body ?? '')
@@ -25,14 +25,22 @@ export function NoticeForm({ slug, edit }: { slug: string; edit?: { id: number; 
     }
   }, [state, edit])
   return (
-    <form action={action} className="space-y-3">
+    <form
+      action={action}
+      onSubmit={(e) => {
+        const send = (e.currentTarget.elements.namedItem('send') as HTMLInputElement | null)?.checked
+        const who = families != null ? `${families} famil${families === 1 ? 'y' : 'ies'}` : 'every family on the team'
+        if (send && !confirm(`Email and text this to ${who} now?`)) e.preventDefault()
+      }}
+      className="space-y-3"
+    >
       <input type="hidden" name="slug" value={slug} />
       {edit && <input type="hidden" name="id" value={edit.id} />}
       <input name="title" required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title, e.g. Saturday’s game moved to 9am" className={inputCls} />
       <textarea name="body" required rows={4} value={body} onChange={(e) => setBody(e.target.value)} placeholder="The full message for families" className={inputCls} />
       <div className="flex flex-wrap items-center gap-4 text-sm">
         <label className="flex items-center gap-2"><input type="checkbox" name="pinned" defaultChecked={edit?.pinned} /> Pin to top</label>
-        <label className="flex items-center gap-2"><input type="checkbox" name="send" defaultChecked={!edit} /> {edit ? 'Send the update to families again' : 'Email (and text) all families now'}</label>
+        <label className="flex items-center gap-2"><input type="checkbox" name="send" /> {edit ? 'Send the update to families again' : `Also email and text ${families != null ? `all ${families} famil${families === 1 ? 'y' : 'ies'}` : 'all families'}`}</label>
         <button disabled={pending} className={btn}>{pending ? 'Saving…' : edit ? 'Save changes' : 'Post notice'}</button>
       </div>
       <Msg s={state} />

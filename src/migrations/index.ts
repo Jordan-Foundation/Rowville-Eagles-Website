@@ -51,6 +51,7 @@ import * as migration_20261108_104206_report_release from './20261108_104206_rep
 import * as migration_20261108_110430_fplus_reminder from './20261108_110430_fplus_reminder';
 import * as migration_20261108_112644_promotions from './20261108_112644_promotions';
 import * as migration_20261108_114556_promotion_sending from './20261108_114556_promotion_sending';
+import * as migration_20261108_201445_policies from './20261108_201445_policies';
 
 export const migrations = [
   {
@@ -316,6 +317,11 @@ export const migrations = [
   {
     up: migration_20261108_114556_promotion_sending.up,
     down: migration_20261108_114556_promotion_sending.down,
-    name: '20261108_114556_promotion_sending'
+    name: '20261108_114556_promotion_sending',
+  },
+  {
+    up: migration_20261108_201445_policies.up,
+    down: migration_20261108_201445_policies.down,
+    name: '20261108_201445_policies'
   },
 ];

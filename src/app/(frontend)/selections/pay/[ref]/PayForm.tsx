@@ -1,5 +1,6 @@
 'use client'
 
+import { PolicyLink } from '@/components/PolicyLink'
 import { useActionState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { Field, Fieldset, Input, inputCls } from '@/components/forms/Field'
@@ -27,7 +28,7 @@ export function PayForm({ refCode, token, price, defaults }: { refCode: string; 
       </Fieldset>
       <label className="flex items-start gap-3 text-sm">
         <input type="checkbox" name="terms" required className="mt-1" />
-        <span>I agree to the club’s Code of Conduct, Child Safe policy and registration terms.</span>
+        <span>I agree to the club’s <PolicyLink k="codeOfConduct">Code of Conduct</PolicyLink>, <PolicyLink k="childSafe">Child Safe policy</PolicyLink> and <PolicyLink k="refunds">registration and refund terms</PolicyLink>.</span>
       </label>
       {state.error && <p role="alert" className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-700">{state.error}</p>}
       <Submit price={price} />

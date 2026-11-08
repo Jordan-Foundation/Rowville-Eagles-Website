@@ -4,7 +4,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import type { Where } from 'payload'
 import { redirect } from 'next/navigation'
-import { payload, formatAUD, formatDate } from '@/lib/payload'
+import { payload, formatMoney, formatDate } from '@/lib/payload'
 import type { AcademyCoach, Participant } from '@/payload-types'
 
 export const dynamic = 'force-dynamic'
@@ -73,7 +73,7 @@ export default async function StaffBookingsPage({ searchParams }: { searchParams
                   <td className="pr-4">{b.player.firstName} {b.player.lastName}<span className="block text-xs text-muted">{b.contact.firstName} {b.contact.lastName} · {b.contact.email}</span></td>
                   <td className="pr-4">{(b.coach as AcademyCoach).displayName}</td>
                   <td className="pr-4">{b.firstSessionAt ? formatDate(b.firstSessionAt, { weekday: 'short', day: 'numeric', month: 'short' }) : '—'}</td>
-                  <td className="pr-4">{formatAUD(b.amount)}{(b.refundedAmount ?? 0) > 0 && <span className="block text-xs text-muted">−{formatAUD(b.refundedAmount!)} refunded</span>}</td>
+                  <td className="pr-4">{formatMoney(b.amount)}{(b.refundedAmount ?? 0) > 0 && <span className="block text-xs text-muted">−{formatMoney(b.refundedAmount!)} refunded</span>}</td>
                   <td className={b.status === 'payment_failed' ? 'text-red-300' : ''}>{b.status.replace('_', ' ')}</td>
                 </tr>
               ))}

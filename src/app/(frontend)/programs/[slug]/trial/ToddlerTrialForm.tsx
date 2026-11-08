@@ -1,5 +1,6 @@
 'use client'
 
+import { PolicyLink } from '@/components/PolicyLink'
 import { useActionState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { Field, Fieldset, Input, inputCls } from '@/components/forms/Field'
@@ -51,7 +52,7 @@ export function ToddlerTrialForm({ slug, sessions }: { slug: string; sessions: T
       </Fieldset>
       <label className="flex items-start gap-3 text-sm">
         <input type="checkbox" name="terms" required defaultChecked={v.terms === 'on'} className="mt-1" />
-        <span>I’ll stay at the session to supervise my child, and I agree to the club’s Child Safe policy and terms.</span>
+        <span>I’ll stay at the session to supervise my child, and I agree to the club’s <PolicyLink k="childSafe">Child Safe policy</PolicyLink> and <PolicyLink k="refunds">terms</PolicyLink>.</span>
       </label>
       {state.error && <p role="alert" className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-700">{state.error}</p>}
       <Submit />

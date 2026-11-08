@@ -1,4 +1,4 @@
-import { payload, formatAUD } from '@/lib/payload'
+import { payload, formatMoney } from '@/lib/payload'
 import { getAgeRules } from '@/lib/age-rules'
 import { groupLabel } from '@/lib/age-groups'
 import { awaitingPayment, isOverdue } from '@/selections/payment'
@@ -104,8 +104,8 @@ export async function TournamentsView({ q }: { q: Record<string, string | undefi
     ['Tournaments', String(scope.length), round ? round.title : 'open or selecting'],
     ['Expressions of interest', String(entries.length), `${entries.filter((e) => EOI.includes(e.status)).length} awaiting a decision`],
     ['Selected', String(selected.length), `${entries.filter((e) => e.status === 'unsuccessful').length} unsuccessful`],
-    ['Paid', String(paid.length), formatAUD(paid.reduce((n, e) => n + feeOf(e), 0))],
-    ['Unpaid', String(waitingPay.length), formatAUD(waitingPay.reduce((n, e) => n + feeOf(e), 0)) + ' to come in'],
+    ['Paid', String(paid.length), formatMoney(paid.reduce((n, e) => n + feeOf(e), 0))],
+    ['Unpaid', String(waitingPay.length), formatMoney(waitingPay.reduce((n, e) => n + feeOf(e), 0)) + ' to come in'],
     ['Overdue', String(overdue.length), overdue.length ? 'past the pay-by date' : 'none'],
   ]
   return (

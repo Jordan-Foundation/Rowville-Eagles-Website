@@ -1,5 +1,6 @@
 'use client'
 
+import { PolicyLink } from '@/components/PolicyLink'
 import { useActionState, useState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { bookTerm, type TermState } from './term-actions'
@@ -139,7 +140,7 @@ export function TermBookingForm(props: { slug: string; slots: TermSlotOption[]; 
 
       <label className="flex items-start gap-3 text-sm">
         <input type="checkbox" name="terms" required defaultChecked={v.terms === 'on'} className="mt-1" />
-        <span>I agree to the Code of Conduct, Child Safe policy and refund policy, and confirm the details above are correct.</span>
+        <span>I agree to the <PolicyLink k="codeOfConduct">Code of Conduct</PolicyLink>, <PolicyLink k="childSafe">Child Safe policy</PolicyLink> and <PolicyLink k="refunds">refund policy</PolicyLink>, and confirm the details above are correct.</span>
       </label>
 
       {state.error && (

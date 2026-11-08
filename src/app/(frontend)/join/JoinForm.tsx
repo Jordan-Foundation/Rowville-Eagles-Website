@@ -1,5 +1,6 @@
 'use client'
 
+import { PolicyLink } from '@/components/PolicyLink'
 import { useActionState, useMemo, useState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { fullLabel, groupFor, type AgeRules } from '@/lib/age-groups'
@@ -90,7 +91,7 @@ export function JoinForm({ rules, trials }: { rules: AgeRules; trials: TrialOpti
 
       <label className="flex items-start gap-3 text-sm">
         <input type="checkbox" name="consent" required defaultChecked={v.consent === 'on'} className="mt-1" />
-        <span>I agree to Rowville Eagles FC contacting me about trials and the {season} season, and to the club’s privacy policy.</span>
+        <span>I agree to Rowville Eagles FC contacting me about trials and the {season} season, and to the club’s <PolicyLink k="privacy">privacy policy</PolicyLink>.</span>
       </label>
 
       {state.error && <p role="alert" className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-700">{state.error}</p>}

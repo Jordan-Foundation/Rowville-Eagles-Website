@@ -1,7 +1,7 @@
 import { requireManagement } from '@/lib/management'
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
-import { payload, formatAUD, formatDate } from '@/lib/payload'
+import { payload, formatMoney, formatDate } from '@/lib/payload'
 import { daysUntil } from '@/academy/reminders'
 import { RunButton } from './RunButton'
 
@@ -107,7 +107,7 @@ export default async function StaffAcademyPage() {
                         </td>
                         <td className="pr-4">{typeof b.coach === 'object' ? b.coach.displayName : ''}</td>
                         <td className="pr-4">{b.sessionsPaid ?? 0} of {b.sessionsTotal}</td>
-                        <td className="pr-4">{b.status === 'payment_failed' ? <span className="text-red-300">Overdue {formatAUD(owed)}</span> : 'On track'}</td>
+                        <td className="pr-4">{b.status === 'payment_failed' ? <span className="text-red-300">Overdue {formatMoney(owed)}</span> : 'On track'}</td>
                         <td className="pr-4">{b.nextChargeAt ? formatDate(b.nextChargeAt, { weekday: 'short', day: 'numeric', month: 'short' }) : '—'}</td>
                         <td><a href={`/management/academy/bookings/${b.id}`} className="underline">Open →</a></td>
                       </tr>

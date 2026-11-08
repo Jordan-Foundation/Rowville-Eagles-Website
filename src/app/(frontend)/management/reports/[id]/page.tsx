@@ -6,6 +6,7 @@ import { payload, formatDate } from '@/lib/payload'
 import { LEVELS, levelName } from '@/academy/curriculum/levels'
 import { REPORT_STATUSES, statusLabel } from '@/academy/reports/rules'
 import { CreateReportsButton, ReleaseButton } from '../Forms'
+import { ConfirmButton } from '@/components/ConfirmButton'
 import { approveSelectedAction, reassignAction, setCycleStatusAction } from '../actions'
 
 export const dynamic = 'force-dynamic'
@@ -57,14 +58,15 @@ export default async function CyclePage({ params, searchParams }: { params: Prom
         <form action={setCycleStatusAction}>
           <input type="hidden" name="cycle" value={cycle.id} />
           <input type="hidden" name="status" value={cycle.status === 'open' ? 'closed' : 'open'} />
-          <button className="rounded-full border border-line px-5 py-2 text-sm font-semibold">{cycle.status === 'open' ? 'Close round' : 'Reopen round'}</button>
+          {cycle.status === 'open' ? <ConfirmButton message="Close this report round? Coaches stop getting reminders (you can reopen it)." className="rounded-full border border-line px-5 py-2 text-sm font-semibold">Close round</ConfirmButton> : <button className="rounded-full border border-line px-5 py-2 text-sm font-semibold">Reopen round</button>}
         </form>
       </div>
 
       {reports.length > 0 && (
         <>
           <section className="mt-10" aria-label="Progress">
-            <h2 className={h2}>{submitted} / {reports.length} submitted</h2>
+            <h2 className={h2}>{submitted} / {reports.length} finished</h2>
+            <p className="mt-1 text-sm text-muted">Finished = submitted, approved or released.</p>
             <div className="mt-3 flex h-3 w-full overflow-hidden rounded-full bg-surface-2" aria-hidden>
               <div className="bg-emerald-500" style={{ width: `${(submitted / reports.length) * 100}%` }} />
               <div className="bg-amber-400" style={{ width: `${(byStatus.find((s) => s.value === 'draft')!.n / reports.length) * 100}%` }} />
@@ -74,7 +76,7 @@ export default async function CyclePage({ params, searchParams }: { params: Prom
               <li><Link href="?" className="rounded-full border border-line px-3 py-1">All</Link></li>
             </ul>
             <table className="mt-5 w-full text-sm">
-              <thead><tr className="text-left text-muted"><th className="py-2">Coach</th><th>Submitted</th></tr></thead>
+              <thead><tr className="text-left text-muted"><th className="py-2">Coach</th><th>Finished</th></tr></thead>
               <tbody className="divide-y divide-line">
                 {perCoach.map((c) => (
                   <tr key={String(c.id)}><td className="py-2"><Link className="underline" href={`?coach=${c.id ?? 'none'}`}>{c.name}</Link></td><td className={c.id ? '' : 'font-semibold text-red-700'}>{c.done} / {c.total}</td></tr>
@@ -100,7 +102,7 @@ export default async function CyclePage({ params, searchParams }: { params: Prom
             </form>
             <div className="mt-3 overflow-x-auto">
               <table className="w-full min-w-[640px] text-sm">
-                <thead><tr className="text-left text-muted"><th className="w-8 py-2"><span className="sr-only">Select</span></th><th className="py-2">Player</th><th>Level</th><th>Group / team</th><th>Status</th><th>Written by</th></tr></thead>
+                <thead><tr className="text-left text-muted"><th className="w-8 py-2"><span className="sr-only">Select</span></th><th className="py-2">Player</th><th>Level</th><th>Group / team</th><th>Status</th><th>Written by <span className="font-normal">(change and Save to reassign)</span></th></tr></thead>
                 <tbody className="divide-y divide-line">
                   {shown.map((r) => (
                     <tr key={r.id} className="align-top">

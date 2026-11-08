@@ -1,5 +1,6 @@
 'use server'
 
+import { dobProblem, phoneOk } from '@/lib/validate'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { findDiscount, recordUse } from '@/promotions/service'
@@ -28,6 +29,8 @@ export async function bookRfaTrial(_prev: RfaTrialState, fd: FormData): Promise<
   if (!player.firstName || !player.lastName || !player.dateOfBirth) return fail('Please complete the player’s details.')
   if (!contact.firstName || !contact.lastName || !contact.phone || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email)) return fail('Please complete your contact details.')
   if (!player.emergencyName || !player.emergencyPhone) return fail('Please add an emergency contact.')
+  if (dobProblem(player.dateOfBirth)) return fail(dobProblem(player.dateOfBirth)!)
+  if (!phoneOk(contact.phone) || !phoneOk(player.emergencyPhone)) return fail('Please enter Australian phone numbers, e.g. 0412 345 678.')
   if (fd.get('terms') !== 'on') return fail('Please accept the terms to continue.')
 
   const p = await payload()

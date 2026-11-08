@@ -194,6 +194,7 @@ export interface Config {
   globals: {
     'site-settings': SiteSetting;
     about: About;
+    policies: Policy;
     'difference-page': DifferencePage;
     'academy-settings': AcademySetting;
     'pdr-settings': PdrSetting;
@@ -202,6 +203,7 @@ export interface Config {
   globalsSelect: {
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
     about: AboutSelect<false> | AboutSelect<true>;
+    policies: PoliciesSelect<false> | PoliciesSelect<true>;
     'difference-page': DifferencePageSelect<false> | DifferencePageSelect<true>;
     'academy-settings': AcademySettingsSelect<false> | AcademySettingsSelect<true>;
     'pdr-settings': PdrSettingsSelect<false> | PdrSettingsSelect<true>;
@@ -4046,6 +4048,62 @@ export interface About {
   createdAt?: string | null;
 }
 /**
+ * Linked from every booking form. Paste the text, or a link to the document (PDF or Football Victoria page).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "policies".
+ */
+export interface Policy {
+  id: number;
+  /**
+   * If set, the policy link opens this instead of the text below.
+   */
+  codeOfConductLink?: string | null;
+  /**
+   * Blank line between paragraphs. Lines starting with "## " become headings.
+   */
+  codeOfConductText?: string | null;
+  codeOfConductUpdated?: string | null;
+  /**
+   * If set, the policy link opens this instead of the text below.
+   */
+  childSafeLink?: string | null;
+  /**
+   * Blank line between paragraphs. Lines starting with "## " become headings.
+   */
+  childSafeText?: string | null;
+  childSafeUpdated?: string | null;
+  /**
+   * If set, the policy link opens this instead of the text below.
+   */
+  refundsLink?: string | null;
+  /**
+   * Blank line between paragraphs. Lines starting with "## " become headings.
+   */
+  refundsText?: string | null;
+  refundsUpdated?: string | null;
+  /**
+   * If set, the policy link opens this instead of the text below.
+   */
+  academyTermsLink?: string | null;
+  /**
+   * Blank line between paragraphs. Lines starting with "## " become headings.
+   */
+  academyTermsText?: string | null;
+  academyTermsUpdated?: string | null;
+  /**
+   * If set, the policy link opens this instead of the text below.
+   */
+  privacyLink?: string | null;
+  /**
+   * Blank line between paragraphs. Lines starting with "## " become headings.
+   */
+  privacyText?: string | null;
+  privacyUpdated?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * Copy is pre-filled with a draft — check each section and add photos. Empty fields fall back to the draft.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -4302,6 +4360,30 @@ export interface AboutSelect<T extends boolean = true> {
         id?: T;
       };
   childSafe?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "policies_select".
+ */
+export interface PoliciesSelect<T extends boolean = true> {
+  codeOfConductLink?: T;
+  codeOfConductText?: T;
+  codeOfConductUpdated?: T;
+  childSafeLink?: T;
+  childSafeText?: T;
+  childSafeUpdated?: T;
+  refundsLink?: T;
+  refundsText?: T;
+  refundsUpdated?: T;
+  academyTermsLink?: T;
+  academyTermsText?: T;
+  academyTermsUpdated?: T;
+  privacyLink?: T;
+  privacyText?: T;
+  privacyUpdated?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

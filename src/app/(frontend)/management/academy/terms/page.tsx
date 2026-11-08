@@ -2,7 +2,7 @@ import { requireManagement } from '@/lib/management'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
-import { payload, formatAUD, formatDate } from '@/lib/payload'
+import { payload, formatMoney, formatDate } from '@/lib/payload'
 import { groupLabel } from '@/lib/age-groups'
 import { getAgeRules } from '@/lib/age-rules'
 import { programPriceLabel } from '@/lib/format'
@@ -98,7 +98,7 @@ export default async function StaffTermsPage({ searchParams }: { searchParams: P
                   <Link href={`/admin/collections/academy-term-slots/${s.id}`} className="text-xs underline">Edit time / weeks</Link>
                 </div>
                 <p className="text-sm text-muted">
-                  {count(s.id)} player{count(s.id) === 1 ? "" : "s"}{s.capacity ? ` · ${left} of ${s.capacity} places left` : ''} · {sessions.length} sessions to come · joining now: {q.bookable ? formatAUD(q.total) : 'closed'}
+                  {count(s.id)} player{count(s.id) === 1 ? "" : "s"}{s.capacity ? ` · ${left} of ${s.capacity} places left` : ''} · {sessions.length} sessions to come · joining now: {q.bookable ? formatMoney(q.total) : 'closed'}
                 </p>
                 <div className="mt-3"><CoachPicker slot={s.id} coaches={coaches} chosen={ids(s.coaches as never)} clashes={clashes.get(String(s.id)) ?? []} /></div>
                 <div className="mt-3 space-y-3 border-t border-line pt-3">

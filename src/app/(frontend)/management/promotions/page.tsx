@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { requireManagement } from '@/lib/management'
-import { payload, formatAUD, formatDate } from '@/lib/payload'
+import { payload, formatMoney, formatDate } from '@/lib/payload'
 import { discountLabel } from '@/promotions/rules'
 
 export const dynamic = 'force-dynamic'
@@ -31,7 +31,7 @@ export default async function PromotionsPage() {
               <Link href={`/management/promotions/${d.id}`} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 hover:bg-surface-2">
                 <span>
                   <span className="font-semibold">{d.name}</span> <span className="text-sm text-muted">· {discountLabel(d)}{d.endsAt ? ` · until ${formatDate(d.endsAt, { day: 'numeric', month: 'short' })}` : ''} · {(d.recipients ?? []).length} famil{(d.recipients ?? []).length === 1 ? 'y' : 'ies'}</span>
-                  <span className="block text-sm text-muted">{d.sentAt ? `Sent ${formatDate(d.sentAt, { day: 'numeric', month: 'short' })} · ` : d.status === 'scheduled' && d.scheduledFor ? `Sends ${formatDate(d.scheduledFor, { day: 'numeric', month: 'short' })} · ` : ''}Used {stats[i].uses} time{stats[i].uses === 1 ? '' : 's'} · {formatAUD(stats[i].paid)} paid</span>
+                  <span className="block text-sm text-muted">{d.sentAt ? `Sent ${formatDate(d.sentAt, { day: 'numeric', month: 'short' })} · ` : d.status === 'scheduled' && d.scheduledFor ? `Sends ${formatDate(d.scheduledFor, { day: 'numeric', month: 'short' })} · ` : ''}Used {stats[i].uses} time{stats[i].uses === 1 ? '' : 's'} · {formatMoney(stats[i].paid)} paid</span>
                 </span>
                 <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${tone[d.status] ?? ''}`}>{d.status}</span>
               </Link>

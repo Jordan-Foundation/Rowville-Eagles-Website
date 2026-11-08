@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import type { SiteSetting } from '@/payload-types'
 import { Crest, RfaLogo } from './Logos'
+import { clubBrand, telHref } from '@/academy/brand'
 
 export function Footer({ settings }: { settings: SiteSetting }) {
   const { ground, links } = settings
@@ -33,11 +34,8 @@ export function Footer({ settings }: { settings: SiteSetting }) {
         </div>
         <div className="text-sm md:col-span-3">
           <h3 className="mb-3 font-semibold text-white">Contact</h3>
-          {settings.email && (
-            <a href={`mailto:${settings.email}`} className="hover:text-white">
-              {settings.email}
-            </a>
-          )}
+          <p><a href={telHref(clubBrand.phone)} className="hover:text-white">{clubBrand.phone}</a></p>
+          <p><a href={`mailto:${settings.email || clubBrand.email}`} className="break-all hover:text-white">{settings.email || clubBrand.email}</a></p>
         </div>
         <div className="text-sm md:col-span-2">
           <h3 className="mb-3 font-semibold text-white">Follow</h3>
@@ -52,7 +50,7 @@ export function Footer({ settings }: { settings: SiteSetting }) {
         <div className="container-x flex flex-col justify-between gap-2 py-5 text-xs text-white/50 sm:flex-row">
           <p>© {new Date().getFullYear()} {settings.clubName}</p>
           <p>
-            A Child Safe club · <Link href="/admin" className="hover:text-white">Committee login</Link>
+            A Child Safe club · <Link href="/login" className="hover:text-white">Staff &amp; coach login</Link>
           </p>
         </div>
       </div>
