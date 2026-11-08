@@ -10,6 +10,7 @@ import { purgeThrottle } from './form-guard'
 import { graceSweep } from '../academy/pdr/billing/sync'
 import { sendLaunchEmails, trialReminders } from '../academy/pdr/billing/trial'
 import { announceChallenges, finaliseChallenges } from '../academy/pdr/challenges'
+import { sendReportReminders } from '../academy/reports/service'
 
 type Job = (payload: Payload) => Promise<Record<string, unknown>>
 
@@ -32,5 +33,6 @@ export const cronJobs: Record<string, Record<string, Job>> = {
     foundationLaunchEmails: (payload) => sendLaunchEmails(payload, 500),
     foundationChallengeStart: (payload) => announceChallenges(payload),
     foundationChallengeResults: (payload) => finaliseChallenges(payload),
+    reportReminders: (payload) => sendReportReminders(payload),
   },
 }

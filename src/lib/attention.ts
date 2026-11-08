@@ -3,6 +3,7 @@ import type { AcademyCoach, User } from '@/payload-types'
 import { attendanceDue } from '../academy/coach-sessions'
 import { unreadCount } from '../messaging/service'
 import { seenAt } from './seen'
+import { outstandingFor } from '../academy/reports/service'
 
 /**
  * "Needs attention" counts for the dashboard badges. Every count is a cheap database count, worked out on
@@ -67,7 +68,8 @@ export async function coachAttention(p: Payload, user: User, coach: AcademyCoach
     safe(async () => Object.values(await teamChatNew(p, user, (await coachTeams(p, user)).map((t) => t.id))).reduce((a, b) => a + b, 0)),
     safe(async () => (await p.count({ collection: 'pdr-submissions', where: { status: { equals: 'pending' } }, ...q })).totalDocs),
   ])
-  return { messages, sessions, attendance, availability, groups, teams, reviews, reports: 0 }
+  const reports = await safe(() => outstandingFor(p, user.id))
+  return { messages, sessions, attendance, availability, groups, teams, reviews, reports }
 }
 
 export type ManagementCounts = Record<'bookings' | 'payments' | 'cover' | 'availability' | 'terms' | 'selections' | 'messages' | 'store' | 'foundation' | 'consent' | 'reports', number>
@@ -129,5 +131,7 @@ export async function managementAttention(p: Payload, user: User): Promise<Manag
     }),
     safe(async () => (await p.count({ collection: 'users', where: { consentReviewStatus: { equals: 'pending' } }, ...q })).totalDocs),
   ])
-  return { bookings, payments, cover, availability, terms, selections, messages, store, foundation, consent, reports: 0 }
+  // Reports submitted by coaches, waiting for Management review
+  const reports = await safe(async () => (await p.count({ collection: 'player-reports', where: { status: { equals: 'submitted' } }, ...q })).totalDocs)
+  return { bookings, payments, cover, availability, terms, selections, messages, store, foundation, consent, reports }
 }

@@ -8,6 +8,7 @@ export const coachItems: DashItem[] = [
   { key: 'availability', href: '/coach#availability', label: 'Availability', icon: 'clock' },
   { key: 'groups', href: '/coach/groups', label: 'Academy groups', icon: 'grid' },
   { key: 'teams', href: '/coach/teams', label: 'Teams', icon: 'users', hint: 'Team Chat' },
+  { key: 'reports', href: '/coach/reports', label: 'Reports', icon: 'report', hint: 'Player reports' },
   { key: 'reviews', href: '/coach/reviews', label: 'Video reviews', icon: 'video', hint: 'Foundation+' },
   { key: 'share', href: '/coach/share', label: 'Share links', icon: 'link' },
   { key: 'players', href: '/coach/players', label: 'Players', icon: 'child' },

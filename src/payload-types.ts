@@ -111,6 +111,9 @@ export interface Config {
     'consent-records': ConsentRecord;
     'message-log': MessageLog;
     'curriculum-standards': CurriculumStandard;
+    'report-cycles': ReportCycle;
+    'player-reports': PlayerReport;
+    'report-reminder-log': ReportReminderLog;
     'seen-markers': SeenMarker;
     conversations: Conversation;
     messages: Message;
@@ -167,6 +170,9 @@ export interface Config {
     'consent-records': ConsentRecordsSelect<false> | ConsentRecordsSelect<true>;
     'message-log': MessageLogSelect<false> | MessageLogSelect<true>;
     'curriculum-standards': CurriculumStandardsSelect<false> | CurriculumStandardsSelect<true>;
+    'report-cycles': ReportCyclesSelect<false> | ReportCyclesSelect<true>;
+    'player-reports': PlayerReportsSelect<false> | PlayerReportsSelect<true>;
+    'report-reminder-log': ReportReminderLogSelect<false> | ReportReminderLogSelect<true>;
     'seen-markers': SeenMarkersSelect<false> | SeenMarkersSelect<true>;
     conversations: ConversationsSelect<false> | ConversationsSelect<true>;
     messages: MessagesSelect<false> | MessagesSelect<true>;
@@ -1952,6 +1958,89 @@ export interface CurriculumStandard {
   createdAt: string;
 }
 /**
+ * Easiest from Management → Reports.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "report-cycles".
+ */
+export interface ReportCycle {
+  id: number;
+  name: string;
+  /**
+   * Season year — sets each player’s age level (season − year of birth)
+   */
+  season: number;
+  dueDate: string;
+  /**
+   * Closed cycles stop sending reminders.
+   */
+  status: 'open' | 'closed';
+  programs?: (number | Program)[] | null;
+  teams?: (number | Team)[] | null;
+  reportsCreatedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "player-reports".
+ */
+export interface PlayerReport {
+  id: number;
+  cycle: number | ReportCycle;
+  status: 'not_started' | 'draft' | 'submitted' | 'returned' | 'approved' | 'released';
+  key: string;
+  playerName: string;
+  birthYear?: number | null;
+  /**
+   * Curriculum level reported against. Change it to report at another level.
+   */
+  level: 'F' | '8' | '9' | '10' | '11' | '12' | '13';
+  coach?: (number | null) | User;
+  source?: ('term' | 'team') | null;
+  sourceLabel?: string | null;
+  participant?: (number | null) | Participant;
+  account?: (number | null) | User;
+  registration?: (number | null) | AcademyRegistration;
+  team?: (number | null) | Team;
+  strands?:
+    | {
+        strand: 'ATT' | 'DEF' | 'PHY' | 'PAS' | 'TAC' | 'CHA';
+        rating?: ('well_below' | 'below' | 'at' | 'above' | 'well_above') | null;
+        comment?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  overall?: string | null;
+  returnNote?: string | null;
+  savedAt?: string | null;
+  submittedAt?: string | null;
+  history?:
+    | {
+        action?: string | null;
+        by?: (number | null) | User;
+        at?: string | null;
+        note?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "report-reminder-log".
+ */
+export interface ReportReminderLog {
+  id: number;
+  cycle: number | ReportCycle;
+  coach: number | User;
+  kind: '14d' | '7d' | '3d' | '1d';
+  outstanding?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "seen-markers".
  */
@@ -2226,6 +2315,18 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'curriculum-standards';
         value: number | CurriculumStandard;
+      } | null)
+    | ({
+        relationTo: 'report-cycles';
+        value: number | ReportCycle;
+      } | null)
+    | ({
+        relationTo: 'player-reports';
+        value: number | PlayerReport;
+      } | null)
+    | ({
+        relationTo: 'report-reminder-log';
+        value: number | ReportReminderLog;
       } | null)
     | ({
         relationTo: 'seen-markers';
@@ -3491,6 +3592,75 @@ export interface CurriculumStandardsSelect<T extends boolean = true> {
         text?: T;
         id?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "report-cycles_select".
+ */
+export interface ReportCyclesSelect<T extends boolean = true> {
+  name?: T;
+  season?: T;
+  dueDate?: T;
+  status?: T;
+  programs?: T;
+  teams?: T;
+  reportsCreatedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "player-reports_select".
+ */
+export interface PlayerReportsSelect<T extends boolean = true> {
+  cycle?: T;
+  status?: T;
+  key?: T;
+  playerName?: T;
+  birthYear?: T;
+  level?: T;
+  coach?: T;
+  source?: T;
+  sourceLabel?: T;
+  participant?: T;
+  account?: T;
+  registration?: T;
+  team?: T;
+  strands?:
+    | T
+    | {
+        strand?: T;
+        rating?: T;
+        comment?: T;
+        id?: T;
+      };
+  overall?: T;
+  returnNote?: T;
+  savedAt?: T;
+  submittedAt?: T;
+  history?:
+    | T
+    | {
+        action?: T;
+        by?: T;
+        at?: T;
+        note?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "report-reminder-log_select".
+ */
+export interface ReportReminderLogSelect<T extends boolean = true> {
+  cycle?: T;
+  coach?: T;
+  kind?: T;
+  outstanding?: T;
   updatedAt?: T;
   createdAt?: T;
 }

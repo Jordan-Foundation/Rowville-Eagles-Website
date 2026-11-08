@@ -29,6 +29,9 @@ import { InviteTokens } from './collections/InviteTokens'
 import { ConsentRecords } from './collections/ConsentRecords'
 import { MessageLog } from './collections/MessageLog'
 import { CurriculumStandards } from './academy/curriculum/collections/CurriculumStandards'
+import { ReportCycles } from './academy/reports/collections/ReportCycles'
+import { PlayerReports } from './academy/reports/collections/PlayerReports'
+import { ReportReminderLog } from './academy/reports/collections/ReportReminderLog'
 import { SeenMarkers } from './collections/SeenMarkers'
 import { Conversations, Messages } from './messaging/collections'
 import { AcademyTerms } from './academy/collections/AcademyTerms'
@@ -81,7 +84,7 @@ export default buildConfig({
       },
     },
   },
-  collections: [AcademyBookings, AcademyShareLinks, AcademySessions, AcademyTerms, AcademyTermSlots, AcademyRegistrations, PdrAreas, PdrLevels, PdrStages, PdrVideos, PdrBadges, PdrProgress, PdrChallenges, PdrSubmissions, PdrAudit, PdrAwards, FplusWaitlist, FplusEvents, FplusTrialCards, FormThrottle, AcademyCoaches, AcademyAvailability, AcademyReminderLog, AcademyCredits, Posts, SelectionRounds, Squads, SelectionEntries, TrialSessions, Programs, Bookings, Products, Orders, Teams, TeamMembers, TeamPosts, ForumThreads, ForumReplies, Sponsors, Participants, Users, ConsentRecords, MessageLog, CurriculumStandards, SeenMarkers, Conversations, Messages, InviteTokens, Media],
+  collections: [AcademyBookings, AcademyShareLinks, AcademySessions, AcademyTerms, AcademyTermSlots, AcademyRegistrations, PdrAreas, PdrLevels, PdrStages, PdrVideos, PdrBadges, PdrProgress, PdrChallenges, PdrSubmissions, PdrAudit, PdrAwards, FplusWaitlist, FplusEvents, FplusTrialCards, FormThrottle, AcademyCoaches, AcademyAvailability, AcademyReminderLog, AcademyCredits, Posts, SelectionRounds, Squads, SelectionEntries, TrialSessions, Programs, Bookings, Products, Orders, Teams, TeamMembers, TeamPosts, ForumThreads, ForumReplies, Sponsors, Participants, Users, ConsentRecords, MessageLog, CurriculumStandards, ReportCycles, PlayerReports, ReportReminderLog, SeenMarkers, Conversations, Messages, InviteTokens, Media],
   globals: [SiteSettings, About, DifferencePage, AcademySettings, PdrSettings, SetupProgress],
   editor: lexicalEditor(),
   ...(process.env.RESEND_API_KEY
