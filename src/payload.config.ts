@@ -28,6 +28,7 @@ import { resendAdapter } from '@payloadcms/email-resend'
 import { InviteTokens } from './collections/InviteTokens'
 import { ConsentRecords } from './collections/ConsentRecords'
 import { MessageLog } from './collections/MessageLog'
+import { Conversations, Messages } from './messaging/collections'
 import { AcademyTerms } from './academy/collections/AcademyTerms'
 import { AcademyCoaches } from './academy/collections/AcademyCoaches'
 import { AcademyAvailability } from './academy/collections/AcademyAvailability'
@@ -78,7 +79,7 @@ export default buildConfig({
       },
     },
   },
-  collections: [AcademyBookings, AcademyShareLinks, AcademySessions, AcademyTerms, AcademyTermSlots, AcademyRegistrations, PdrAreas, PdrLevels, PdrStages, PdrVideos, PdrBadges, PdrProgress, PdrChallenges, PdrSubmissions, PdrAudit, PdrAwards, FplusWaitlist, FplusEvents, FplusTrialCards, FormThrottle, AcademyCoaches, AcademyAvailability, AcademyReminderLog, AcademyCredits, Posts, SelectionRounds, Squads, SelectionEntries, TrialSessions, Programs, Bookings, Products, Orders, Teams, TeamMembers, TeamPosts, ForumThreads, ForumReplies, Sponsors, Participants, Users, ConsentRecords, MessageLog, InviteTokens, Media],
+  collections: [AcademyBookings, AcademyShareLinks, AcademySessions, AcademyTerms, AcademyTermSlots, AcademyRegistrations, PdrAreas, PdrLevels, PdrStages, PdrVideos, PdrBadges, PdrProgress, PdrChallenges, PdrSubmissions, PdrAudit, PdrAwards, FplusWaitlist, FplusEvents, FplusTrialCards, FormThrottle, AcademyCoaches, AcademyAvailability, AcademyReminderLog, AcademyCredits, Posts, SelectionRounds, Squads, SelectionEntries, TrialSessions, Programs, Bookings, Products, Orders, Teams, TeamMembers, TeamPosts, ForumThreads, ForumReplies, Sponsors, Participants, Users, ConsentRecords, MessageLog, Conversations, Messages, InviteTokens, Media],
   globals: [SiteSettings, About, DifferencePage, AcademySettings, PdrSettings, SetupProgress],
   editor: lexicalEditor(),
   ...(process.env.RESEND_API_KEY

@@ -12,6 +12,8 @@ import { SelectionList } from '@/selections/SelectionList'
 import { TermList } from '@/academy/terms/TermList'
 import { myTeams } from '@/teams/service'
 import { TeamCards } from '@/teams/TeamCards'
+import { inbox, unreadCount } from '@/messaging/service'
+import { hasRole } from '@/access'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'My account', robots: { index: false } }
@@ -23,6 +25,8 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   if (!user) redirect('/login?next=/account')
   const { welcome } = await searchParams
   const p = await payload()
+  const familyUnread = (await inbox(p, { user, side: 'family' })).filter((x) => x.unread).length
+  const staffUnread = hasRole(user, 'admin', 'committee') ? await unreadCount(p, { user, side: 'staff' }) : 0
   const [participants, bookings, academy, plans] = await Promise.all([
     p.find({ collection: 'participants', where: { account: { equals: user.id } }, depth: 1, limit: 50, overrideAccess: true }),
     p.find({ collection: 'bookings', where: { account: { equals: user.id }, status: { equals: 'paid' } }, depth: 1, limit: 100, sort: '-createdAt', overrideAccess: true }),
@@ -200,6 +204,10 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
             </Link>
           )}
           <Link href="/shop" className="block rounded-2xl border border-line p-6 font-semibold hover:border-brand">Shop team kit →</Link>
+          <Link href="/account/messages" className="block rounded-2xl border border-line p-6 font-semibold hover:border-brand">
+            Messages{familyUnread > 0 && <span className="ml-2 rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white">{familyUnread} new</span>} →
+            <span className="mt-1 block text-sm font-normal text-muted">Message your Foundation Academy coach.</span>
+          </Link>
           <Link href="/account/preferences" className="block rounded-2xl border border-line p-6 font-semibold hover:border-brand">Communication preferences →</Link>
           {(user.roles?.includes('admin') || user.roles?.includes('committee')) && (
             <div className="rounded-2xl border border-line p-6">
@@ -212,6 +220,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
                 <li><Link href="/staff/academy/terms" className="text-brand underline">Academy terms (training times & places)</Link></li>
                 <li><Link href="/staff/academy/bookings" className="text-brand underline">1-on-1 bookings & cancellations</Link></li>
                 <li><Link href="/staff/academy" className="text-brand underline">Academy coach availability</Link></li>
+                <li><Link href="/staff/messages" className="text-brand underline">Messages (all families){staffUnread > 0 ? ` — ${staffUnread} unread` : ''}</Link></li>
                 <li><Link href="/staff/consent" className="text-brand underline">Consent review</Link></li>
               </ul>
             </div>

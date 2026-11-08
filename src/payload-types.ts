@@ -110,6 +110,8 @@ export interface Config {
     users: User;
     'consent-records': ConsentRecord;
     'message-log': MessageLog;
+    conversations: Conversation;
+    messages: Message;
     'invite-tokens': InviteToken;
     media: Media;
     'payload-kv': PayloadKv;
@@ -162,6 +164,8 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     'consent-records': ConsentRecordsSelect<false> | ConsentRecordsSelect<true>;
     'message-log': MessageLogSelect<false> | MessageLogSelect<true>;
+    conversations: ConversationsSelect<false> | ConversationsSelect<true>;
+    messages: MessagesSelect<false> | MessagesSelect<true>;
     'invite-tokens': InviteTokensSelect<false> | InviteTokensSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
@@ -1910,6 +1914,55 @@ export interface MessageLog {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "conversations".
+ */
+export interface Conversation {
+  id: number;
+  title: string;
+  account?: (number | null) | User;
+  phone?: string | null;
+  /**
+   * Coaches the family has booked with — kept up to date automatically.
+   */
+  coaches?: (number | AcademyCoach)[] | null;
+  lastMessageAt?: string | null;
+  lastFamilyAt?: string | null;
+  lastStaffAt?: string | null;
+  lastAlertAt?: string | null;
+  lastPreview?: string | null;
+  /**
+   * When each person last read the conversation (for unread badges).
+   */
+  reads?:
+    | {
+        user: number | User;
+        at: string;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "messages".
+ */
+export interface Message {
+  id: number;
+  conversation: number | Conversation;
+  direction: 'in' | 'out' | 'note';
+  channel: 'sms' | 'portal' | 'email' | 'system';
+  authorRole: 'family' | 'coach' | 'admin' | 'system';
+  author?: (number | null) | User;
+  authorName?: string | null;
+  delivery?: ('sms' | 'email' | 'failed' | 'received') | null;
+  body: string;
+  twilioSid?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "invite-tokens".
  */
 export interface InviteToken {
@@ -2118,6 +2171,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'message-log';
         value: number | MessageLog;
+      } | null)
+    | ({
+        relationTo: 'conversations';
+        value: number | Conversation;
+      } | null)
+    | ({
+        relationTo: 'messages';
+        value: number | Message;
       } | null)
     | ({
         relationTo: 'invite-tokens';
@@ -3351,6 +3412,47 @@ export interface MessageLogSelect<T extends boolean = true> {
   status?: T;
   providerId?: T;
   error?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "conversations_select".
+ */
+export interface ConversationsSelect<T extends boolean = true> {
+  title?: T;
+  account?: T;
+  phone?: T;
+  coaches?: T;
+  lastMessageAt?: T;
+  lastFamilyAt?: T;
+  lastStaffAt?: T;
+  lastAlertAt?: T;
+  lastPreview?: T;
+  reads?:
+    | T
+    | {
+        user?: T;
+        at?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "messages_select".
+ */
+export interface MessagesSelect<T extends boolean = true> {
+  conversation?: T;
+  direction?: T;
+  channel?: T;
+  authorRole?: T;
+  author?: T;
+  authorName?: T;
+  delivery?: T;
+  body?: T;
+  twilioSid?: T;
   updatedAt?: T;
   createdAt?: T;
 }

@@ -2,12 +2,14 @@ import { payload } from '@/lib/payload'
 import { recordConsent } from '@/lib/consent'
 import { logSms, toE164 } from '@/lib/sms'
 import { smsKeyword, twiml } from '@/lib/twilio'
-import { accountLinks, emailAcademyInbox, esc, localNumber, readTwilioRequest, usersByPhone, who } from '@/lib/twilio-inbound'
+import { readTwilioRequest, usersByPhone } from '@/lib/twilio-inbound'
+import { receiveSms, systemNote } from '@/messaging/service'
 
 /**
  * Texts sent to the Twilio number ("A message comes in" → POST https://<site>/twilio/sms).
  * STOP / START update the family's SMS opt-out (Twilio also blocks/unblocks the number itself and sends
- * the standard confirmation). Anything else is logged and emailed to the academy inbox.
+ * the standard confirmation). Anything else goes into the family's conversation (or Unassigned, for an
+ * unknown number) and their coaches — or the academy inbox — get an email alert.
  */
 export async function POST(req: Request) {
   const params = await readTwilioRequest(req)
@@ -31,20 +33,11 @@ export async function POST(req: Request) {
         basis: 'express',
       })
     }
+    await systemNote(p, { users, phone: from, body: kw === 'stop' ? `Replied “${body.slice(0, 40)}” — texts to this number are stopped. Replies will be emailed instead.` : `Replied “${body.slice(0, 40)}” — texts to this number are back on.` })
     return twiml()
   }
   if (kw === 'help') return twiml() // Twilio sends the standard HELP reply
 
-  const name = who(users, localNumber(from))
-  await emailAcademyInbox(p, {
-    subject: `Text from ${name}`,
-    heading: 'New text message',
-    intro: `${esc(name)} texted the Foundation Academy number:<br><br><strong style="white-space:pre-wrap">${esc(body || '(no text)')}</strong>${media ? `<br><br>(+${media} photo/file — open the Twilio console to view)` : ''}`,
-    rows: [
-      ['From', localNumber(from)],
-      ['Account', users.length ? users.map((u) => u.email).join(', ') : 'No account with this mobile'],
-    ],
-    after: `To reply, text or call ${esc(localNumber(from))} from your phone. ${users.length ? `Account: ${esc(accountLinks(users))}` : ''}`,
-  })
+  await receiveSms(p, { from, body, sid: params.MessageSid, media, users })
   return twiml()
 }
