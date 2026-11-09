@@ -18,7 +18,9 @@ export function Breadcrumbs() {
   const path = usePathname() ?? ''
   const parts = path.split('/').filter(Boolean)
   if (parts.length <= 1) return null
-  const trail = parts.map((p, i) => ({ href: '/' + parts.slice(0, i + 1).join('/'), label: CRUMBS[p] ?? (/^\d+$/.test(p) ? 'Details' : p.replace(/-/g, ' ')) }))
+  // Some levels have no page of their own: send them somewhere useful
+  const HREF: Record<string, string> = { '/management/families': '/management/search', '/management/players': '/management/search', '/management/reports/r': '/management/reports', '/management/foundation-plus/challenges': '/management/foundation-plus' }
+  const trail = parts.map((p, i) => ({ href: HREF['/' + parts.slice(0, i + 1).join('/')] ?? '/' + parts.slice(0, i + 1).join('/'), label: CRUMBS[p] ?? (/^\d+$/.test(p) ? 'Details' : p.replace(/-/g, ' ')) }))
   const back = trail[trail.length - 2]
   return (
     <nav aria-label="Breadcrumb" className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted">

@@ -35,6 +35,11 @@ export default async function FamilyPage({ params }: { params: Promise<{ id: str
     accountMemberships(p, id).catch(() => [] as string[]),
   ])
   const name = [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email
+  // Membership: the stored tags plus what the family has actually done
+  const member = new Set<string>(tags as string[])
+  if (oneOnOnes.docs.some((b) => ['confirmed', 'completed', 'payment_failed'].includes(b.status)) || regs.docs.some((r) => r.status === 'paid') || bookings.docs.some((b) => b.payee === 'academy' && b.status === 'paid')) member.add('rfa')
+  if (teams.docs.length || bookings.docs.some((b) => b.payee === 'club' && b.status === 'paid')) member.add('rowville')
+  if (kids.docs.some((k) => k.pdr?.tier && k.pdr.tier !== 'free')) member.add('foundation-plus')
   const creditSessions = credits.docs.reduce((n, c) => n + (c.sessions ?? 0), 0)
   const fplus = kids.docs.filter((k) => k.pdr?.tier && k.pdr.tier !== 'free')
   return (
@@ -55,7 +60,7 @@ export default async function FamilyPage({ params }: { params: Promise<{ id: str
         <Panel title="Account">
           <Rows rows={[
             ['Account', u.activated ? 'Activated' : 'Not activated yet'],
-            ['Member of', (tags as string[]).length ? (tags as string[]).map((t) => ({ rowville: 'Rowville Eagles', rfa: 'Foundation Academy', 'foundation-plus': 'Foundation+' })[t] ?? t).join(', ') : '—'],
+            ['Member of', member.size ? [...member].map((t) => ({ rowville: 'Rowville Eagles', rfa: 'Foundation Academy', 'foundation-plus': 'Foundation+' })[t] ?? t).join(', ') : '—'],
             ['Marketing', [u.marketingEmail ? 'email ✓' : 'email ✗', u.marketingSms ? 'texts ✓' : 'texts ✗'].join(' · ')],
             ['Texts', u.smsOptOut ? 'Turned off (replied STOP)' : 'On'],
             ['Session credits', creditSessions ? `${creditSessions} session${creditSessions === 1 ? '' : 's'}` : '—'],

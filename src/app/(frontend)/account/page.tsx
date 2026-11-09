@@ -1,5 +1,7 @@
 import { academyBrand } from '@/academy/brand'
 import Link from 'next/link'
+import { localToUtc, localYmd } from '@/lib/time'
+import { weekdayOf } from '@/academy/training-day'
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { payload, formatAUD, formatDate } from '@/lib/payload'
@@ -87,7 +89,26 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
       href: `/account/bookings/${booking.reference}`,
     }
   })
-  const upcoming = [...clubItems, ...sessionItems.filter((i) => new Date(i.date).getTime() >= now)].sort((a, b) => (a.date ?? '9999').localeCompare(b.date ?? '9999'))
+  // Team life: each team's next training and next fixture (the family's own teams, not ones they coach)
+  const teamItems: Item[] = []
+  for (const { team: t, players, coach } of teams) {
+    if (coach && !players.length) continue
+    const nextFixture = (t.fixtures ?? []).filter((f) => Date.parse(f.startsAt) >= now).sort((a, b) => a.startsAt.localeCompare(b.startsAt))[0]
+    if (nextFixture) teamItems.push({ key: `f${t.id}`, date: nextFixture.startsAt, title: `${t.name} vs ${nextFixture.opponent}`, detail: [players.join(', '), formatDate(nextFixture.startsAt, { hour: 'numeric', minute: '2-digit' }), nextFixture.venue].filter(Boolean).join(' · '), badge: 'Club', href: `/teams/${t.slug}#fixtures` })
+    const next = (t.training ?? [])
+      .flatMap((tr) => Array.from({ length: 8 }, (_, d) => { const ymd = localYmd(new Date(now + d * 86_400_000)); return weekdayOf(ymd) === tr.day ? { tr, at: localToUtc(ymd, tr.start) } : null }).filter((x): x is { tr: (typeof tr); at: Date } => Boolean(x && x.at.getTime() >= now - 60 * 60_000)))
+      .sort((a, b) => a.at.getTime() - b.at.getTime())[0]
+    if (next) teamItems.push({ key: `t${t.id}`, date: next.at.toISOString(), title: `${t.name} training`, detail: [players.join(', '), formatDate(next.at.toISOString(), { hour: 'numeric', minute: '2-digit' }), next.tr.location].filter(Boolean).join(' · '), badge: 'Club', href: `/teams/${t.slug}#training` })
+  }
+  // What each child is in (team, Academy group, upcoming bookings) for the Players list
+  const { docs: kidMembers } = await p.find({ pagination: false, collection: 'team-members', where: { account: { equals: user.id }, active: { equals: true } }, depth: 1, limit: 100, overrideAccess: true, select: { participant: true, team: true } })
+  const inWhat = new Map<number, string[]>()
+  const add = (id: number | null | undefined, label: string) => { if (id) inWhat.set(id, [...new Set([...(inWhat.get(id) ?? []), label])]) }
+  for (const m of kidMembers) if (typeof m.team === 'object' && !m.team.archived) add(typeof m.participant === 'object' ? m.participant.id : m.participant, m.team.name)
+  for (const r of termRegs) if (r.status === 'paid' || r.status === 'offered') add(typeof r.participant === 'object' ? r.participant?.id : r.participant, `${typeof r.program === 'object' ? r.program.title : 'Academy term'}${r.status === 'offered' ? ' (offer)' : ''}`)
+  for (const b of bookings.docs) if (!b.program || typeof b.program !== 'object' || !b.program.endDate || Date.parse(b.program.endDate) >= now) add(typeof b.participant === 'object' ? b.participant?.id : b.participant, typeof b.program === 'object' ? b.program.title : 'Booking')
+  for (const sx of academy.docs) if (Date.parse(sx.startsAt) >= now) add(typeof (sx.booking as AcademyBooking).participant === 'object' ? ((sx.booking as AcademyBooking).participant as { id: number }).id : ((sx.booking as AcademyBooking).participant as number), '1-on-1s')
+  const upcoming = [...clubItems, ...teamItems, ...sessionItems.filter((i) => new Date(i.date).getTime() >= now)].sort((a, b) => (a.date ?? '9999').localeCompare(b.date ?? '9999'))
   const past = sessionItems.filter((i) => new Date(i.date).getTime() < now).reverse()
 
   return (
@@ -235,8 +256,8 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
                     {(x.memberships ?? []).map((m) => (
                       <span key={m} className={`rounded-full px-2 py-0.5 text-xs font-semibold ${m === 'rfa' || m === 'foundation-plus' ? 'bg-black text-white' : 'bg-brand text-white'}`}>{tagLabel[m]}</span>
                     ))}
-                    {(x.memberships ?? []).length === 0 && <span className="text-xs text-muted">No registrations yet</span>}
                   </div>
+                  <p className="mt-1 text-xs text-muted">{inWhat.get(x.id)?.join(' · ') || 'Not in a team, group or booking right now'}</p>
                 </li>
               ))}
               {participants.docs.length === 0 && <li className="text-sm text-muted">Players appear here after your first booking or offer.</li>}
@@ -254,7 +275,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
           <Link href="/shop" className="block rounded-2xl border border-line p-6 font-semibold hover:border-brand">Shop team kit →</Link>
           <Link href="/account/messages" className="block rounded-2xl border border-line p-6 font-semibold hover:border-brand">
             Messages{familyUnread > 0 && <span className="ml-2 rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white">{familyUnread} new</span>} →
-            <span className="mt-1 block text-sm font-normal text-muted">Message your Foundation Academy coach.</span>
+            <span className="mt-1 block text-sm font-normal text-muted">Message your child’s coaches and the club.</span>
           </Link>
           <Link href="/account/preferences" className="block rounded-2xl border border-line p-6 font-semibold hover:border-brand">Communication preferences →</Link>
         </aside>

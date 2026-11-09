@@ -77,7 +77,7 @@ export function Header({ fplusLive = true }: { fplusLive?: boolean }) {
           href="/foundation-plus"
           aria-label={fplusLive ? 'Foundation+ — online training' : 'Foundation+ — online training, coming soon'}
           aria-current={path.startsWith('/foundation-plus') ? 'page' : undefined}
-          className="group relative flex items-center rounded-sm border border-white/25 px-2 py-1 transition hover:border-white hover:shadow-[0_0_18px_rgba(255,255,255,0.28)] focus-visible:border-white aria-[current=page]:border-white"
+          className="group relative hidden items-center rounded-sm sm:flex border border-white/25 px-2 py-1 transition hover:border-white hover:shadow-[0_0_18px_rgba(255,255,255,0.28)] focus-visible:border-white aria-[current=page]:border-white"
         >
           <span className="hidden xl:block"><FoundationPlusLogo variant="horizontal" tone="white" height={32} alt="" /></span>
           <span className="xl:hidden"><FoundationPlusLogo variant="mark" tone="white" height={24} alt="" /></span>
