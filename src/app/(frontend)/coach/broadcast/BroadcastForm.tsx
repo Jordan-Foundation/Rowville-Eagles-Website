@@ -3,8 +3,8 @@
 import { useActionState, useState } from 'react'
 import { broadcastAction, type BroadcastState } from './actions'
 
-export function BroadcastForm({ to, count, templates }: { to: string; count: number; templates: { label: string; text: string }[] }) {
-  const [state, action, pending] = useActionState<BroadcastState, FormData>(broadcastAction, {})
+export function BroadcastForm({ to, count, templates, send = broadcastAction }: { to: string; count: number; templates: { label: string; text: string }[]; send?: (prev: BroadcastState, fd: FormData) => Promise<BroadcastState> }) {
+  const [state, action, pending] = useActionState<BroadcastState, FormData>(send, {})
   const [text, setText] = useState('')
   if (state.done) return <p role="status" className="panel border border-white/40 p-5">{state.done}</p>
   return (

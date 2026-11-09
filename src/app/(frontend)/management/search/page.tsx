@@ -1,3 +1,4 @@
+import { DownloadCsv } from '@/components/management/DownloadCsv'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { requireManagement } from '@/lib/management'
@@ -17,6 +18,7 @@ export default async function ManagementSearch({ searchParams }: { searchParams:
     <div className="max-w-4xl space-y-8">
       <div>
         <h1 className="font-display text-4xl font-semibold uppercase tracking-tight">Find a family or player</h1>
+        <div className="mt-3 flex flex-wrap gap-2"><DownloadCsv list="families" label="All families (CSV)" /><DownloadCsv list="players" label="All players (CSV)" /></div>
         <form className="mt-4 flex flex-wrap gap-2" role="search">
           <input name="q" type="search" defaultValue={term} autoFocus placeholder="Name, email, mobile or booking reference" aria-label="Search" className="min-h-11 w-full max-w-md border border-line bg-black/40 px-3" />
           <button className="min-h-11 bg-white px-5 text-sm font-semibold uppercase tracking-[0.12em] text-black">Search</button>

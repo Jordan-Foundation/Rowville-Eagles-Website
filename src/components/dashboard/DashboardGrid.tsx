@@ -18,11 +18,11 @@ export function DashboardGrid({ items, counts, role }: { items: DashItem[]; coun
               href={i.href}
               aria-label={badgeLabel(i.label, n, meaning)}
               data-dash={i.key}
-              className="relative flex h-full min-h-28 flex-col justify-between gap-3 border border-line bg-surface p-4 transition hover:border-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:min-h-32 sm:p-5"
+              className="relative flex h-full min-h-20 flex-col justify-between gap-2 border border-line bg-surface p-3 transition sm:min-h-28 sm:gap-3 hover:border-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:min-h-32 sm:p-5"
             >
-              <DashIcon name={i.icon} />
+              <span className="hidden sm:block"><DashIcon name={i.icon} /></span>
               <span>
-                <span className="block font-display text-lg font-semibold uppercase leading-tight tracking-tight sm:text-xl">{i.label}</span>
+                <span className="block font-display text-base font-semibold uppercase leading-tight tracking-tight sm:text-xl">{i.label}</span>
                 {i.hint && <span className="mt-0.5 block text-xs text-muted">{i.hint}</span>}
                 {meaning && <span className="mt-1 block text-xs font-semibold text-red-400">{meaning}</span>}
               </span>

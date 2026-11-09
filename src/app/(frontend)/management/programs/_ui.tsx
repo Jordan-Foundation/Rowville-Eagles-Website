@@ -21,7 +21,7 @@ export const selectCls = 'border border-line bg-surface px-3 py-2 text-sm'
 export function FilterBar({ program, children, note }: { program: string; children: React.ReactNode; note?: string }) {
   return (
     <div>
-      <form className="flex flex-wrap gap-2">
+      <form className="flex flex-wrap items-end gap-2 [&_label]:flex [&_label]:flex-col [&_label]:gap-1 [&_select]:text-sm [&_select]:text-ink [&_input]:text-sm [&_input]:text-ink">
         <input type="hidden" name="program" value={program} />
         {children}
         <button className="bg-white px-4 py-2 text-sm font-semibold uppercase tracking-wider text-black">Apply</button>

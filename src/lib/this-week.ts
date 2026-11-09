@@ -58,7 +58,7 @@ export async function managementThisWeek(p: Payload, now = new Date()): Promise<
       { label: 'Money in (last 7 days)', value: aud(money), href: '/management/programs', tone: 'good' as const },
       { label: 'Cancellations (last 7 days)', value: String(cancels.totalDocs), href: '/management/academy/bookings' },
       ...(needCover.totalDocs ? [{ label: 'Sessions this week needing cover', value: String(needCover.totalDocs), href: '/management/academy#cover', tone: 'warn' as const }] : []),
-      ...(orders.totalDocs ? [{ label: 'Shop orders to fulfil', value: String(orders.totalDocs), href: '/admin/collections/orders', tone: 'warn' as const }] : []),
+      ...(orders.totalDocs ? [{ label: 'Shop orders to fulfil', value: String(orders.totalDocs), href: '/management/store', tone: 'warn' as const }] : []),
     ],
   }
 }

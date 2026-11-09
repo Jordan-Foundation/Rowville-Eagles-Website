@@ -43,6 +43,8 @@ import { AcademyReminderLog } from './academy/collections/AcademyReminderLog'
 import { AcademyBookings } from './academy/collections/AcademyBookings'
 import { AcademyShareLinks } from './academy/collections/AcademyShareLinks'
 import { AcademySessions } from './academy/collections/AcademySessions'
+import { ActivityLog } from './collections/ActivityLog'
+import { withActivity, withGlobalActivity } from './lib/activity'
 import { TrainingAttendance } from './academy/collections/TrainingAttendance'
 import { AcademyTermSlots } from './academy/terms/collections/AcademyTermSlots'
 import { AcademyRegistrations } from './academy/terms/collections/AcademyRegistrations'
@@ -104,8 +106,8 @@ export default buildConfig({
       },
     },
   },
-  collections: [AcademyBookings, AcademyShareLinks, AcademySessions, TrainingAttendance, AcademyTerms, AcademyTermSlots, AcademyRegistrations, PdrAreas, PdrLevels, PdrStages, PdrVideos, PdrBadges, PdrProgress, PdrChallenges, PdrSubmissions, PdrAudit, PdrAwards, FplusWaitlist, FplusEvents, FplusTrialCards, FormThrottle, AcademyCoaches, AcademyAvailability, AcademyReminderLog, AcademyCredits, Posts, SelectionRounds, Squads, SelectionEntries, TrialSessions, Programs, Bookings, Products, Orders, Teams, TeamMembers, TeamPosts, ForumThreads, ForumReplies, Sponsors, Participants, Users, ConsentRecords, MessageLog, CurriculumStandards, ReportCycles, PlayerReports, ReportReminderLog, Promotions, PromotionUses, SeenMarkers, Conversations, Messages, InviteTokens, Media].map((c) => withMoneyCells(c)),
-  globals: [SiteSettings, About, Policies, DifferencePage, AcademySettings, PdrSettings, SetupProgress],
+  collections: [AcademyBookings, AcademyShareLinks, AcademySessions, TrainingAttendance, AcademyTerms, AcademyTermSlots, AcademyRegistrations, PdrAreas, PdrLevels, PdrStages, PdrVideos, PdrBadges, PdrProgress, PdrChallenges, PdrSubmissions, PdrAudit, PdrAwards, FplusWaitlist, FplusEvents, FplusTrialCards, FormThrottle, AcademyCoaches, AcademyAvailability, AcademyReminderLog, AcademyCredits, Posts, SelectionRounds, Squads, SelectionEntries, TrialSessions, Programs, Bookings, Products, Orders, Teams, TeamMembers, TeamPosts, ForumThreads, ForumReplies, Sponsors, Participants, Users, ConsentRecords, MessageLog, CurriculumStandards, ReportCycles, PlayerReports, ReportReminderLog, Promotions, PromotionUses, SeenMarkers, Conversations, Messages, InviteTokens, ActivityLog, Media].map((c) => withActivity(withMoneyCells(c))),
+  globals: [SiteSettings, About, Policies, DifferencePage, AcademySettings, PdrSettings, SetupProgress].map((g) => withGlobalActivity(g)),
   editor: lexicalEditor(),
   ...(process.env.RESEND_API_KEY
     ? {

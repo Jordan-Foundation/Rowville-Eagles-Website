@@ -37,7 +37,7 @@ export async function loadPrices(payload: Payload): Promise<PriceSection[]> {
   const [terms, groupPrograms, programs, rounds, squads, products] = await Promise.all([
     payload.find({ pagination: false, collection: 'academy-terms', sort: '-startDate', limit: 12, ...q }),
     payload.find({ pagination: false, collection: 'programs', where: { type: { in: ['academy-term', 'toddler'] } }, sort: '-startDate', limit: 30, ...q }),
-    payload.find({ pagination: false, collection: 'programs', where: { type: { not_in: ['academy-term', 'toddler', 'community'] } }, sort: '-startDate', limit: 100, ...q }),
+    payload.find({ pagination: false, collection: 'programs', where: { type: { not_in: ['academy-term', 'toddler', 'community', 'private-session'] } }, sort: '-startDate', limit: 100, ...q }),
     payload.find({ pagination: false, collection: 'selection-rounds', where: { kind: { equals: 'tournament' } }, sort: '-createdAt', limit: 30, ...q }),
     payload.find({ pagination: false, collection: 'squads', sort: 'name', limit: 300, ...q }),
     payload.find({ pagination: false, collection: 'products', sort: 'name', limit: 300, ...q }),

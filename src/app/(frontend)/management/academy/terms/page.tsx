@@ -1,3 +1,4 @@
+import { DownloadCsv } from '@/components/management/DownloadCsv'
 import { PersonLink } from '@/components/management/PersonLink'
 import { requireManagement } from '@/lib/management'
 import Link from 'next/link'
@@ -50,6 +51,7 @@ export default async function StaffTermsPage({ searchParams }: { searchParams: P
     <div className="container-x py-14">
       <Link href="/management/academy" className="text-sm text-muted hover:text-ink">← Academy</Link>
       <h1 className="mt-4 font-[family-name:var(--font-barlow)] text-5xl font-extrabold uppercase">Academy terms</h1>
+      <div className="mt-3"><DownloadCsv list="registrations" params={{ program: program.id }} label="Download this program (CSV)" /></div>
       <nav className="mt-4 flex flex-wrap gap-2">
         {programs.map((x) => (
           <Link key={x.id} href={`/management/academy/terms?program=${x.id}`} className={`rounded-full border px-3 py-1 text-sm ${x.id === program.id ? 'border-brand bg-brand text-white' : 'border-line'}`}>{x.title}</Link>

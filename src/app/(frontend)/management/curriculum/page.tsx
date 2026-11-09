@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { WordingForm } from './WordingForm'
 import { requireManagement } from '@/lib/management'
 import { payload } from '@/lib/payload'
 import { curriculum, standardFor } from '@/academy/curriculum/load'
@@ -32,7 +33,7 @@ export default async function CurriculumPage({ searchParams }: { searchParams: P
             key={l.key}
             href={`/management/curriculum?level=${l.key}`}
             aria-current={l.key === level ? 'page' : undefined}
-            className={`rounded-full border px-4 py-2 text-sm font-semibold ${l.key === level ? 'border-ink bg-ink text-white' : 'border-line hover:border-ink'}`}
+            className={`rounded-full border px-4 py-2 text-sm font-semibold ${l.key === level ? 'border-white bg-white text-black' : 'border-line hover:border-ink'}`}
           >
             {l.name}
           </Link>
@@ -59,9 +60,13 @@ export default async function CurriculumPage({ searchParams }: { searchParams: P
                       </li>
                     ))}
                   </ul>
+                  <WordingForm level={level} strand={s.key} standard={st.standard} descriptors={st.descriptors} />
                 </>
               ) : (
-                <p className="mt-2 text-sm text-red-700">Missing — add it in the admin.</p>
+                <>
+                  <p className="mt-2 text-sm text-red-300">Missing — add it here.</p>
+                  <WordingForm level={level} strand={s.key} standard="" descriptors={[]} />
+                </>
               )}
             </section>
           )

@@ -121,6 +121,7 @@ export interface Config {
     conversations: Conversation;
     messages: Message;
     'invite-tokens': InviteToken;
+    'activity-log': ActivityLog;
     media: Media;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
@@ -183,6 +184,7 @@ export interface Config {
     conversations: ConversationsSelect<false> | ConversationsSelect<true>;
     messages: MessagesSelect<false> | MessagesSelect<true>;
     'invite-tokens': InviteTokensSelect<false> | InviteTokensSelect<true>;
+    'activity-log': ActivityLogSelect<false> | ActivityLogSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -2325,6 +2327,31 @@ export interface InviteToken {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "activity-log".
+ */
+export interface ActivityLog {
+  id: number;
+  area?: string | null;
+  what?: string | null;
+  action?: string | null;
+  source?: string | null;
+  docId?: string | null;
+  by?: (number | null) | User;
+  byName?: string | null;
+  changes?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -2562,6 +2589,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'invite-tokens';
         value: number | InviteToken;
+      } | null)
+    | ({
+        relationTo: 'activity-log';
+        value: number | ActivityLog;
       } | null)
     | ({
         relationTo: 'media';
@@ -4050,6 +4081,22 @@ export interface InviteTokensSelect<T extends boolean = true> {
   tokenHash?: T;
   expiresAt?: T;
   usedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "activity-log_select".
+ */
+export interface ActivityLogSelect<T extends boolean = true> {
+  area?: T;
+  what?: T;
+  action?: T;
+  source?: T;
+  docId?: T;
+  by?: T;
+  byName?: T;
+  changes?: T;
   updatedAt?: T;
   createdAt?: T;
 }

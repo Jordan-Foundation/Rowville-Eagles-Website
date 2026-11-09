@@ -1,3 +1,4 @@
+import { DownloadCsv } from '@/components/management/DownloadCsv'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -48,6 +49,7 @@ export default async function CyclePage({ params, searchParams }: { params: Prom
     <div className="container-x max-w-5xl py-14">
       <Link href="/management/reports" className="text-sm text-muted hover:text-ink">← Reports</Link>
       <h1 className="mt-4 font-[family-name:var(--font-barlow)] text-5xl font-extrabold uppercase">{cycle.name}</h1>
+      <div className="mt-3"><DownloadCsv list="reports" params={{ cycle: cycle.id }} /></div>
       <p className="mt-2 text-muted">
         Season {cycle.season} · coaches finish by {formatDate(cycle.dueDate, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} · {cycle.status === 'open' ? 'open' : 'closed (no reminders)'} ·{' '}
         <Link href={`/admin/collections/report-cycles/${cycle.id}`} className="underline">Edit</Link>

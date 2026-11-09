@@ -5,11 +5,11 @@ import { managementAttention } from '@/lib/attention'
 import { Breadcrumbs, ManagementNav, type NavGroup } from '@/components/management/ManagementChrome'
 
 const GROUPS: NavGroup[] = [
-  { title: 'Overview', items: [{ href: '/management', label: 'Dashboard' }, { href: '/management/programs', label: 'Programs Overview' }, { href: '/management/search', label: 'Find a family or player' }] },
-  { title: 'Families', items: [{ href: '/management/messages', label: 'Messages', key: 'messages' }, { href: '/management/academy/bookings', label: 'Bookings & cancellations', key: 'bookings' }, { href: '/management/consent', label: 'Consent review', key: 'consent' }] },
+  { title: 'Overview', items: [{ href: '/management', label: 'Dashboard' }, { href: '/management/programs', label: 'Programs Overview' }, { href: '/management/programs/setup', label: 'Program setup' }, { href: '/management/search', label: 'Find a family or player' }, { href: '/management/guide', label: 'How to run a term' }] },
+  { title: 'Families', items: [{ href: '/management/messages', label: 'Messages', key: 'messages' }, { href: '/management/broadcast', label: 'Email a group' }, { href: '/management/academy/bookings', label: 'Bookings & cancellations', key: 'bookings' }, { href: '/management/consent', label: 'Consent review', key: 'consent' }] },
   { title: 'Academy', items: [{ href: '/management/academy', label: 'Payments, cover & availability', key: 'cover' }, { href: '/management/academy/terms', label: 'Academy terms', key: 'terms' }, { href: '/management/reports', label: 'Player reports', key: 'reports' }, { href: '/management/curriculum', label: 'Curriculum' }] },
   { title: 'Club', items: [{ href: '/management/selections', label: 'Selections', key: 'selections' }, { href: '/management/teams', label: 'Teams' }] },
-  { title: 'Money & setup', items: [{ href: '/management/dates', label: 'Set dates', key: 'dates' }, { href: '/management/prices', label: 'Set prices' }, { href: '/management/promotions', label: 'Promotions', key: 'promotions' }, { href: '/management/foundation-plus', label: 'Foundation+', key: 'foundation' }, { href: '/admin/collections/orders', label: 'Store orders', key: 'store' }, { href: '/admin', label: 'Admin & settings', key: 'settings' }] },
+  { title: 'Money & setup', items: [{ href: '/management/money', label: 'Money summary' }, { href: '/management/dates', label: 'Set dates', key: 'dates' }, { href: '/management/prices', label: 'Set prices' }, { href: '/management/promotions', label: 'Promotions', key: 'promotions' }, { href: '/management/foundation-plus', label: 'Foundation+', key: 'foundation' }, { href: '/management/store', label: 'Store', key: 'store' }, { href: '/management/activity', label: 'Activity log' }, { href: '/admin', label: 'Admin & settings', key: 'settings' }] },
 ]
 
 /**

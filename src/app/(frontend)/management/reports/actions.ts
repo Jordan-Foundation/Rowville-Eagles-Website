@@ -56,7 +56,7 @@ export async function setCycleStatusAction(fd: FormData) {
   if (!user) return
   const status = fd.get('status') === 'closed' ? 'closed' : 'open'
   const id = Number(fd.get('cycle'))
-  await (await payload()).update({ collection: 'report-cycles', id, overrideAccess: true, data: { status } })
+  await (await payload()).update({ collection: 'report-cycles', id, overrideAccess: true, user, data: { status } })
   revalidatePath(`/management/reports/${id}`)
 }
 

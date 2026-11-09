@@ -58,6 +58,7 @@ import * as migration_20261108_220051_program_details from './20261108_220051_pr
 import * as migration_20261108_232239_parents_two from './20261108_232239_parents_two';
 import * as migration_20261109_001500_training_attendance from './20261109_001500_training_attendance';
 import * as migration_20261109_011201_coach_alerts_calendar from './20261109_011201_coach_alerts_calendar';
+import * as migration_20261109_024603_activity_log from './20261109_024603_activity_log';
 
 export const migrations = [
   {
@@ -358,6 +359,11 @@ export const migrations = [
   {
     up: migration_20261109_011201_coach_alerts_calendar.up,
     down: migration_20261109_011201_coach_alerts_calendar.down,
-    name: '20261109_011201_coach_alerts_calendar'
+    name: '20261109_011201_coach_alerts_calendar',
+  },
+  {
+    up: migration_20261109_024603_activity_log.up,
+    down: migration_20261109_024603_activity_log.down,
+    name: '20261109_024603_activity_log'
   },
 ];

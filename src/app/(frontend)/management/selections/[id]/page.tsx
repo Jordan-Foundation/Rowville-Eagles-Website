@@ -1,3 +1,4 @@
+import { DownloadCsv } from '@/components/management/DownloadCsv'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
@@ -68,6 +69,7 @@ export default async function RoundPage({ params, searchParams }: { params: Prom
         <div>
           <p className="eyebrow !text-brand">{round.kind === 'tournament' ? 'Tournament' : 'Rowville trials'} · {round.season}</p>
           <h1 className="mt-2 font-[family-name:var(--font-barlow)] text-4xl font-extrabold uppercase sm:text-5xl">{round.title}</h1>
+          <div className="mt-3"><DownloadCsv list="selections" params={{ round: round.id }} /></div>
         </div>
         <div className="flex gap-3 text-sm">
           <a href={`/management/selections/${round.id}/export?tab=${tab}`} className="rounded-full border border-line px-4 py-2 font-semibold hover:border-brand">Export CSV</a>

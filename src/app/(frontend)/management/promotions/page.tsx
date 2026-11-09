@@ -1,3 +1,4 @@
+import { DownloadCsv } from '@/components/management/DownloadCsv'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { requireManagement } from '@/lib/management'
@@ -24,6 +25,7 @@ export default async function PromotionsPage() {
     <div className="container-x max-w-4xl py-14">
       <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
         <h1 className="font-[family-name:var(--font-barlow)] text-5xl font-extrabold uppercase">Promotions</h1>
+        <div className="mt-3"><DownloadCsv list="promotion-uses" label="Download promotion uses (CSV)" /></div>
         <Link href="/management/promotions/new" className="rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white">New promotion</Link>
       </div>
       <p className="mt-4 text-muted">A discount for chosen families on anything that costs money — 1-on-1s, camps, programs, Mini Ballers, terms, trials, registrations, tournament fees, shop items and Foundation+. Families who get it see “Your offer” on the booking page and the discount is taken off automatically when they pay.</p>

@@ -15,8 +15,18 @@ export type SetupItem = {
   auto: boolean
   note?: string
   href?: string
+  /** Who does it: the developer (accounts, keys, hosting) or the committee (content, prices, decisions) */
+  who?: 'developer' | 'committee'
 }
 export type SetupGroup = { title: string; items: SetupItem[] }
+
+/** Technical jobs (accounts, keys, hosting, phone numbers) — everything else is a committee job. */
+const DEVELOPER = /^(resend|resend-domain|stripe-.*|db-pooled|cron|vercel-pro|twilio-.*|call-forward|stream)$/
+export const whoDoes = (key: string): 'developer' | 'committee' => (DEVELOPER.test(key) ? 'developer' : 'committee')
+
+/** The checklist for one audience, dropping empty groups. */
+export const forWho = (groups: SetupGroup[], who: 'developer' | 'committee') =>
+  groups.map((g) => ({ ...g, items: g.items.filter((i) => (i.who ?? whoDoes(i.key)) === who) })).filter((g) => g.items.length)
 
 const has = (...names: string[]) => names.every((n) => Boolean(process.env[n]))
 const mode = (name: string) => (process.env[name]?.startsWith('sk_live') ? 'live' : process.env[name]?.startsWith('sk_test') ? 'test' : null)

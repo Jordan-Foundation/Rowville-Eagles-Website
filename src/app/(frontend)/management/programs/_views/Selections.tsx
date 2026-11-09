@@ -45,9 +45,9 @@ export async function RowvilleView({ q }: { q: Record<string, string | undefined
     <div className="space-y-10">
       <Heading title="Rowville Eagles" sub={`${season} season · ${seasonRounds.length} trial round${seasonRounds.length === 1 ? '' : 's'}`} links={[{ href: '/management/selections', label: 'Selections board' }, { href: '/management/teams', label: 'Team pages' }]} />
       <FilterBar program="rowville">
-        <select name="season" defaultValue={String(season)} className={selectCls}>{seasons.map((s) => <option key={s} value={s}>{s} season</option>)}</select>
-        <select name="team" defaultValue={q.team ?? ''} className={selectCls}><option value="">All teams</option>{seasonTeams.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select>
-        <select name="age" defaultValue={q.age ?? ''} className={selectCls}><option value="">All age groups</option>{years.map((y) => <option key={y} value={y}>{groupLabel(y)}</option>)}</select>
+        <label className="text-xs text-muted">Season<select name="season" defaultValue={String(season)} className={selectCls}>{seasons.map((s) => <option key={s} value={s}>{s} season</option>)}</select></label>
+        <label className="text-xs text-muted">Team<select name="team" defaultValue={q.team ?? ''} className={selectCls}><option value="">All teams</option>{seasonTeams.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
+        <label className="text-xs text-muted">Age group<select name="age" defaultValue={q.age ?? ''} className={selectCls}><option value="">All age groups</option>{years.map((y) => <option key={y} value={y}>{groupLabel(y)}</option>)}</select></label>
       </FilterBar>
       <KpiTiles tiles={tiles} />
       <section>
@@ -112,8 +112,8 @@ export async function TournamentsView({ q }: { q: Record<string, string | undefi
     <div className="space-y-10">
       <Heading title="Tournaments" sub={round ? round.title : 'All open tournaments'} links={[{ href: '/management/selections', label: 'Selections board' }]} />
       <FilterBar program="tournaments">
-        <select name="tournament" defaultValue={q.tournament ?? ''} className={selectCls}><option value="">All open tournaments</option>{rounds.map((r) => <option key={r.id} value={r.id}>{r.title}</option>)}</select>
-        <select name="squad" defaultValue={q.squad ?? ''} className={selectCls}><option value="">All teams</option>{squads.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select>
+        <label className="text-xs text-muted">Tournament<select name="tournament" defaultValue={q.tournament ?? ''} className={selectCls}><option value="">All open tournaments</option>{rounds.map((r) => <option key={r.id} value={r.id}>{r.title}</option>)}</select></label>
+        <label className="text-xs text-muted">Squad<select name="squad" defaultValue={q.squad ?? ''} className={selectCls}><option value="">All teams</option>{squads.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select></label>
       </FilterBar>
       <KpiTiles tiles={tiles} />
       <section>

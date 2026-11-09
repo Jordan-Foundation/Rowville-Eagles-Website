@@ -3,7 +3,7 @@ import { DefaultTemplate } from '@payloadcms/next/templates'
 import { Gutter } from '@payloadcms/ui'
 import { redirect } from 'next/navigation'
 import { hasRole } from '@/access'
-import { setupChecklist } from '@/lib/setup-checklist'
+import { forWho, setupChecklist } from '@/lib/setup-checklist'
 import { SetupToggle } from './SetupToggle'
 
 const ICON = { done: '✅', todo: '⬜', later: '⏸️' } as const
@@ -14,8 +14,11 @@ export async function SetupView({ initPageResult, params, searchParams }: AdminV
   if (!req.user) redirect('/admin/login?redirect=%2Fadmin%2Fsetup')
   const allowed = hasRole(req.user as never, 'admin', 'committee')
   const ticked = allowed ? (((await req.payload.findGlobal({ slug: 'setup-progress', depth: 0, overrideAccess: true })).ticked as Record<string, boolean>) ?? {}) : {}
-  const groups = allowed ? await setupChecklist(req.payload, ticked) : []
+  const everything = allowed ? await setupChecklist(req.payload, ticked) : []
+  const who = (searchParams as Record<string, string> | undefined)?.who === 'developer' ? 'developer' : 'committee'
+  const groups = forWho(everything, who)
   const all = groups.flatMap((g) => g.items)
+  const otherTodo = forWho(everything, who === 'developer' ? 'committee' : 'developer').flatMap((g) => g.items).filter((i) => i.status === 'todo').length
   const todo = all.filter((i) => i.status === 'todo').length
   const later = all.filter((i) => i.status === 'later').length
   return (
@@ -26,8 +29,15 @@ export async function SetupView({ initPageResult, params, searchParams }: AdminV
           <p>Admins only.</p>
         ) : (
           <>
+            <nav aria-label="Whose jobs" style={{ display: 'flex', gap: 8, margin: '8px 0 16px' }}>
+              {(['committee', 'developer'] as const).map((w) => (
+                <a key={w} href={`/admin/setup?who=${w}`} aria-current={w === who ? 'page' : undefined} className={`btn btn--size-small ${w === who ? 'btn--style-primary' : 'btn--style-secondary'}`} style={{ margin: 0 }}>
+                  {w === 'committee' ? 'Committee jobs' : 'Developer jobs'}{w !== who && otherTodo ? ` (${otherTodo} to do)` : ''}
+                </a>
+              ))}
+            </nav>
             <p style={{ color: 'var(--theme-elevation-600)', maxWidth: 820 }}>
-              Things only you can do — accounts, keys and content. <strong>{todo} to do now</strong> · {later} for later · {all.length - todo - later} done. Items marked “auto” tick themselves
+              {who === 'committee' ? 'Content, prices and decisions for the club and Academy.' : 'Accounts, keys, hosting and phone numbers — for whoever looks after the website.'} Things only you can do — accounts, keys and content. <strong>{todo} to do now</strong> · {later} for later · {all.length - todo - later} done. Items marked “auto” tick themselves
               when the setting or key is in place; tick the others yourself. Secret keys are never shown here, only whether they’re present.
             </p>
             {groups.map((g) => (

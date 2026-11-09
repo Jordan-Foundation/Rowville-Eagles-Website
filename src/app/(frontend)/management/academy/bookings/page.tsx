@@ -1,3 +1,4 @@
+import { DownloadCsv } from '@/components/management/DownloadCsv'
 import { PersonLink } from '@/components/management/PersonLink'
 import { markSeen } from '@/lib/seen'
 import { requireManagement } from '@/lib/management'
@@ -49,6 +50,7 @@ export default async function StaffBookingsPage({ searchParams }: { searchParams
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted">Management · Foundation Academy</p>
             <h1 className="mt-2 font-display text-4xl font-semibold uppercase tracking-tight">1-on-1 bookings</h1>
+            <div className="mt-3"><DownloadCsv list="one-on-ones" /></div>
           </div>
           <div className="flex gap-4 text-sm"><Link href="/management/programs" className="underline">Programs Overview</Link><Link href="/management/academy" className="underline">Availability & cover</Link></div>
         </div>

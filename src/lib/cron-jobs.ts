@@ -13,6 +13,7 @@ import { announceChallenges, finaliseChallenges } from '../academy/pdr/challenge
 import { sendReportReminders } from '../academy/reports/service'
 import { notifyReleasedJob } from '../academy/reports/review'
 import { runScheduledPromotions } from '../promotions/send'
+import { sendWeeklySummary } from './weekly-summary'
 
 type Job = (payload: Payload) => Promise<Record<string, unknown>>
 
@@ -28,6 +29,7 @@ export const cronJobs: Record<string, Record<string, Job>> = {
     selectionPaymentReminders: (payload) => runSelectionReminders(payload),
     availabilityReminders: (payload) => sendAvailabilityReminders(payload),
     reportReminders: (payload) => sendReportReminders(payload),
+    weeklySummary: (payload) => sendWeeklySummary(payload),
     accountReminders: (payload) => sendAccountReminders(payload),
     foundationTrialReminders: (payload) => trialReminders(payload),
     foundationChallengeStart: (payload) => announceChallenges(payload),

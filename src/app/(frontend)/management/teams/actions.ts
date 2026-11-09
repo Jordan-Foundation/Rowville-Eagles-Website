@@ -11,6 +11,6 @@ export async function toggleArchive(fd: FormData) {
   const p = await payload()
   const team = await p.findByID({ collection: 'teams', id: Number(fd.get('id')), depth: 0, overrideAccess: true, disableErrors: true })
   if (!team) return
-  await p.update({ collection: 'teams', id: team.id, overrideAccess: true, data: { archived: !team.archived } })
+  await p.update({ collection: 'teams', id: team.id, overrideAccess: true, user, data: { archived: !team.archived } })
   revalidatePath('/management/teams')
 }

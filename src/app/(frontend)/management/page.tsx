@@ -7,6 +7,7 @@ import { RoleSwitch, myChildren } from '@/components/dashboard/RoleSwitch'
 import { managementItems } from './items'
 import Link from 'next/link'
 import { managementThisWeek } from '@/lib/this-week'
+import { EmailMeSummary } from '@/components/management/EmailMeSummary'
 import { formatDate } from '@/lib/payload'
 
 export const dynamic = 'force-dynamic'
@@ -29,6 +30,7 @@ export default async function ManagementHome() {
         <section aria-label="This week" className="panel mt-8 border border-line">
           <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-line px-5 py-3">
             <h2 className="font-display text-xl font-semibold uppercase">This week</h2>
+            <EmailMeSummary />
             <p className="text-xs text-muted">{formatDate(`${week.from}T02:00:00Z`, { weekday: 'short', day: 'numeric', month: 'short' })} – {formatDate(`${week.to}T02:00:00Z`, { weekday: 'short', day: 'numeric', month: 'short' })}</p>
           </div>
           <dl className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">

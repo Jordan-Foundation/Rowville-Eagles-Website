@@ -59,9 +59,9 @@ export async function AcademyView({ q, type = 'academy-term', program: key = 'ac
     <div className="space-y-10">
       <Heading title={title} sub={`${program.title}${program.status ? ` · ${program.status}` : ''}`} links={[{ href: `/management/academy/terms?program=${program.id}`, label: 'Academy terms board' }, { href: `/programs/${program.slug}`, label: 'Public page' }]} />
       <FilterBar program={key}>
-        <select name="term" defaultValue={String(program.id)} className={selectCls}>{programs.map((x) => <option key={x.id} value={x.id}>{x.title}</option>)}</select>
-        <select name="slot" defaultValue={q.slot ?? ''} className={selectCls}><option value="">All training times</option>{slots.map((s) => <option key={s.id} value={s.id}>{slotLabel(s)}</option>)}</select>
-        <select name="coach" defaultValue={q.coach ?? ''} className={selectCls}><option value="">All coaches</option>{coaches.map((c) => <option key={c.id} value={c.id}>{c.displayName}</option>)}</select>
+        <label className="text-xs text-muted">Term<select name="term" defaultValue={String(program.id)} className={selectCls}>{programs.map((x) => <option key={x.id} value={x.id}>{x.title}</option>)}</select></label>
+        <label className="text-xs text-muted">Training time<select name="slot" defaultValue={q.slot ?? ''} className={selectCls}><option value="">All training times</option>{slots.map((s) => <option key={s.id} value={s.id}>{slotLabel(s)}</option>)}</select></label>
+        <label className="text-xs text-muted">Coach<select name="coach" defaultValue={q.coach ?? ''} className={selectCls}><option value="">All coaches</option>{coaches.map((c) => <option key={c.id} value={c.id}>{c.displayName}</option>)}</select></label>
       </FilterBar>
       <KpiTiles tiles={tiles} />
       <section>

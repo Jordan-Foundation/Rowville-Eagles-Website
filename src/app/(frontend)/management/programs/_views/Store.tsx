@@ -38,9 +38,9 @@ export async function StoreView({ q }: { q: Record<string, string | undefined> }
     <div className="space-y-10">
       <Heading title="Store" sub="Orders, revenue and stock" links={[{ href: '/admin/collections/orders', label: 'All orders' }, { href: '/admin/collections/products', label: 'Products' }]} />
       <FilterBar program="store">
-        <input type="date" name="from" defaultValue={from} className={selectCls} aria-label="From" />
-        <input type="date" name="to" defaultValue={to} className={selectCls} aria-label="To" />
-        <select name="category" defaultValue={q.category ?? ''} className={selectCls}><option value="">All categories</option>{Object.entries(categories).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
+        <label className="text-xs text-muted">From<input type="date" name="from" defaultValue={from} className={selectCls} /></label>
+        <label className="text-xs text-muted">To<input type="date" name="to" defaultValue={to} className={selectCls} /></label>
+        <label className="text-xs text-muted">Category<select name="category" defaultValue={q.category ?? ''} className={selectCls}><option value="">All categories</option>{Object.entries(categories).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
       </FilterBar>
       <KpiTiles tiles={tiles} />
       <section className="grid gap-10 lg:grid-cols-2">

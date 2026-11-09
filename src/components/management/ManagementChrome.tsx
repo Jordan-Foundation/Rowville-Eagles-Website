@@ -11,7 +11,7 @@ const CRUMBS: Record<string, string> = {
   management: 'Management', academy: 'Academy', bookings: 'Bookings', dashboard: '1-on-1 dashboard', terms: 'Academy terms', consent: 'Consent review',
   curriculum: 'Curriculum', dates: 'Set dates', 'foundation-plus': 'Foundation+', challenges: 'Challenges', messages: 'Messages', prices: 'Set prices',
   programs: 'Programs Overview', promotions: 'Promotions', send: 'Send', reports: 'Reports', r: 'Report', selections: 'Selections', teams: 'Teams',
-  search: 'Search', families: 'Families', players: 'Players', new: 'New',
+  search: 'Search', families: 'Families', players: 'Players', new: 'New', money: 'Money summary', store: 'Store', activity: 'Activity', guide: 'How to run a term', broadcast: 'Email a group', export: 'Download', setup: 'Program setup',
 }
 
 export function Breadcrumbs() {

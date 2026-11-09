@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { ProgramPicker } from './ProgramPicker'
 import type { Metadata } from 'next'
 import { requireManagement } from '@/lib/management'
 import { OneOnOneView } from './_views/OneOnOne'
@@ -34,10 +35,12 @@ export default async function ProgramsOverview({ searchParams }: { searchParams:
         <div>
           <p className="mt-4 text-xs font-semibold uppercase tracking-[0.3em] text-muted">Management</p>
           <h1 className="mt-2 font-display text-4xl font-semibold uppercase tracking-tight sm:text-5xl">Programs Overview</h1>
+          <p className="mt-2 text-sm"><Link href="/management/programs/setup" className="underline">Program setup</Link> · <Link href="/management/money" className="underline">Money summary</Link></p>
         </div>
 
         {/* Switcher: real links, so the address can be bookmarked and Back works */}
-        <nav aria-label="Programs" className="flex items-stretch gap-2">
+        <ProgramPicker programs={PROGRAMS.map((x) => ({ key: x.key, label: x.label }))} current={current} />
+        <nav aria-label="Programs" className="hidden items-stretch gap-2 sm:flex">
           <Link href={`/management/programs?program=${prev.key}`} aria-label={`Previous: ${prev.label}`} className="grid w-10 shrink-0 place-items-center border border-line text-lg hover:border-ink">‹</Link>
           <ul className="flex min-w-0 flex-1 snap-x gap-1 overflow-x-auto border border-line p-1">
             {PROGRAMS.map((x) => (

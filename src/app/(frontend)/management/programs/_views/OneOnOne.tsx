@@ -101,11 +101,11 @@ export async function OneOnOneView({ q }: { q: Q }) {
           </div>
         </div>
 
-        <form className="flex flex-wrap gap-2">
+        <form className="flex flex-wrap items-end gap-2 [&_label]:flex [&_label]:flex-col [&_label]:gap-1 [&_select]:text-sm [&_select]:text-ink">
           <input type="hidden" name="program" value="1on1" />
-          <select name="term" defaultValue={String(term.id)} className={select}>{terms.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select>
-          <select name="coach" defaultValue={q.coach ?? ''} className={select}><option value="">All coaches</option>{data.coaches.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
-          <select name="member" defaultValue={q.member ?? ''} className={select}><option value="">All players</option><option value="club">Rowville club members</option><option value="rfa">RFA-only players</option></select>
+          <label className="text-xs text-muted">Term<select name="term" defaultValue={String(term.id)} className={select}>{terms.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
+          <label className="text-xs text-muted">Coach<select name="coach" defaultValue={q.coach ?? ''} className={select}><option value="">All coaches</option>{data.coaches.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
+          <label className="text-xs text-muted">Players<select name="member" defaultValue={q.member ?? ''} className={select}><option value="">All players</option><option value="club">Rowville club members</option><option value="rfa">RFA-only players</option></select></label>
           <button className="bg-white px-4 py-2 text-sm font-semibold uppercase tracking-wider text-black">Apply</button>
         </form>
         {q.member && <p className="text-sm text-muted">Player filter applies to bookings, revenue and sessions; offered hours and open times are for all players.</p>}
