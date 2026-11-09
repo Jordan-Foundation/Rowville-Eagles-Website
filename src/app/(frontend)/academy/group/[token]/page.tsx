@@ -4,7 +4,10 @@ import { formatAUD, formatDate } from '@/lib/format'
 import { payload } from '@/lib/payload'
 import { findGroupInvite, groupInvites, groupWhen } from '@/academy/groups'
 import { firstNamesList, INVITE_STATUS } from '@/academy/group-rules'
-import type { AcademyCoach, AcademyTerm, Media } from '@/payload-types'
+import type { AcademyCoach, AcademyTerm, Media, Participant } from '@/payload-types'
+import { groupSlots } from '@/academy/group-holds'
+import { weeklyPlan } from '@/academy/weekly'
+import { DeclineForm, PayForm } from './PayForm'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Small group session', robots: { index: false, follow: false }, referrer: 'no-referrer' }
@@ -15,8 +18,9 @@ const rel = (v: unknown) => (v && typeof v === 'object' ? (v as { id: number }).
  * A family's own small group link (no login needed). Shows the coach, time, place, price and the other
  * players' first names only — never anyone else's contact or payment details.
  */
-export default async function GroupInvitePage({ params }: { params: Promise<{ token: string }> }) {
+export default async function GroupInvitePage({ params, searchParams }: { params: Promise<{ token: string }>; searchParams: Promise<{ cancelled?: string }> }) {
   const { token } = await params
+  const { cancelled } = await searchParams
   const p = await payload()
   const found = await findGroupInvite(p, token)
   if (!found || found.invite.status === 'removed' || found.group.status === 'cancelled') {
@@ -35,10 +39,15 @@ export default async function GroupInvitePage({ params }: { params: Promise<{ to
     p.findByID({ collection: 'academy-terms', id: rel(g.term)!, depth: 0, overrideAccess: true }) as Promise<AcademyTerm>,
     groupInvites(p, g.id),
   ])
+  const [slots, kid] = await Promise.all([
+    groupSlots(p, g.id),
+    rel(invite.participant) ? (p.findByID({ collection: 'participants', id: rel(invite.participant)!, depth: 0, overrideAccess: true, disableErrors: true }) as Promise<Participant | null>) : Promise.resolve(null),
+  ])
+  const future = slots.filter((x) => new Date(x.startsAt).getTime() > Date.now()).map((x) => x.startsAt)
   const others = everyone.filter((i) => i.id !== invite.id && i.status !== 'declined').map((i) => i.invitee.playerFirstName)
   const size = others.length + 1
   const photo = typeof coach.photo === 'object' ? (coach.photo as Media | null)?.url : null
-  const total = invite.rateLocked * g.sessionsTotal
+  const total = invite.rateLocked * (future.length || g.sessionsTotal)
   const st = INVITE_STATUS[invite.status] ?? INVITE_STATUS.invited
   const me = invite.invitee.playerFirstName
   return (
@@ -68,7 +77,28 @@ export default async function GroupInvitePage({ params }: { params: Promise<{ to
         ) : (
           <>
             <p className="font-semibold">{g.paymentDeadline ? `Please pay by ${formatDate(g.paymentDeadline, { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' })} to keep ${me}’s place.` : `Please pay soon to keep ${me}’s place.`}</p>
-            <p className="mt-2 text-sm text-muted">Online payment for small groups is being switched on — {coach.displayName} will let you know as soon as you can pay here.</p>
+            {cancelled && <p className="mt-3 text-sm text-amber-200">Payment wasn’t completed — {me}’s place is still waiting for you below.</p>}
+            {future.length === 0 ? (
+              <p className="mt-3 text-sm text-muted">This group has already started — please contact {coach.displayName}.</p>
+            ) : (
+              <div className="mt-6">
+                <PayForm
+                  info={{
+                    token,
+                    type: g.type,
+                    rate: invite.rateLocked,
+                    sessions: future.length,
+                    weeklyOk: g.type === 'term' && Boolean(weeklyPlan(future)),
+                    player: me,
+                    needsDob: !kid?.dateOfBirth,
+                    mobile: invite.invitee.mobile ?? '',
+                    emergencyName: kid?.medical?.emergencyContact ?? '',
+                    emergencyPhone: kid?.medical?.emergencyPhone ?? '',
+                  }}
+                />
+                <DeclineForm token={token} player={me} />
+              </div>
+            )}
           </>
         )}
       </div>

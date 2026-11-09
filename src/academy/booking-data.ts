@@ -143,6 +143,15 @@ export async function confirmAcademyBooking(payload: Payload, reference: string)
     const { settleUses } = await import('../promotions/service')
     await settleUses(payload, reference, 'paid')
   }
+  // A small group player's place is now paid — and the group may now be complete
+  if (booking?.kind === 'group' && (booking.status === 'confirmed' || booking.status === 'completed')) {
+    try {
+      const { syncGroupPlace } = await import('./group-payments')
+      await syncGroupPlace(payload, booking)
+    } catch (e) {
+      payload.logger.error({ err: e, msg: `Small group update failed for ${reference}` })
+    }
+  }
   return booking
 }
 
@@ -243,13 +252,17 @@ async function afterConfirmed(payload: Payload, booking: AcademyBooking) {
     : ''
   if (coverDates.length) await alertCoverNeeded(payload, coach, sessions.filter((x) => x.needsCover), `is away for part of a new term booking (${booking.reference})`)
   const promoLine = await (await import('../promotions/service')).discountLine(payload, booking)
+  const group = booking.kind === 'group'
   const html = emailLayout('academy', [
     {
-      heading: booking.type === 'casual' ? 'Your 1-on-1 is booked' : 'Your term of 1-on-1s is booked',
-      intro: `Thanks ${esc(booking.contact.firstName)} — ${esc(booking.player.firstName)} is booked in with ${esc(coach.displayName)}.`,
+      heading: group ? `${booking.player.firstName}’s small group place is paid` : booking.type === 'casual' ? 'Your 1-on-1 is booked' : 'Your term of 1-on-1s is booked',
+      intro: group
+        ? `Thanks ${esc(booking.contact.firstName)} — ${esc(booking.player.firstName)}’s place in the small group with ${esc(coach.displayName)} is paid. Each family pays for their own player; we’ll go ahead once everyone has.`
+        : `Thanks ${esc(booking.contact.firstName)} — ${esc(booking.player.firstName)} is booked in with ${esc(coach.displayName)}.`,
       rows: [
         ...(promoLine ? [promoLine] : []),
         ['Coach', coach.displayName],
+        ...(group ? ([['Group', `Small group of ${booking.groupSize ?? ''} players`.replace('of  ', '')]] as [string, string][]) : []),
         [booking.type === 'casual' ? 'When' : 'First session', when(sessions[0]?.startsAt ?? booking.firstSessionAt ?? '')],
         ...(sessions.length > 1
           ? ([
@@ -283,7 +296,9 @@ async function afterConfirmed(payload: Payload, booking: AcademyBooking) {
       cta: link,
     },
   ])
-  await sendEmail(payload, { to: booking.contact.email, subject: `Booked: 1-on-1 with ${coach.displayName}`, html, sender: 'academy', userId: user.id })
+  await sendEmail(payload, { to: booking.contact.email, subject: group ? `Paid: ${booking.player.firstName}’s small group with ${coach.displayName}` : `Booked: 1-on-1 with ${coach.displayName}`, html, sender: 'academy', userId: user.id })
+  // Small groups: the coach hears once, when the whole group is confirmed (not for each family)
+  if (group) return
   // One alert to the coach for the whole booking (not one per session)
   try {
     await alertCoachNewBooking(payload, booking, sessions)

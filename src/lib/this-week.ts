@@ -23,7 +23,7 @@ export async function managementThisWeek(p: Payload, now = new Date()): Promise<
   const lastWeek = new Date(now.getTime() - 7 * 86_400_000).toISOString()
   const between = { greater_than_equal: w.start.toISOString(), less_than_equal: w.end.toISOString() }
   const [ones, needCover, programs, newOnes, newBookings, cancels, trials, camps, orders, paid1, paid2] = await Promise.all([
-    p.count({ collection: 'academy-sessions', where: { status: { in: ['scheduled', 'completed', 'no_show'] }, startsAt: between }, overrideAccess: true }),
+    p.count({ collection: 'academy-sessions', where: { status: { in: ['scheduled', 'completed', 'no_show'] }, kind: { not_equals: 'group-slot' }, startsAt: between }, overrideAccess: true }),
     p.count({ collection: 'academy-sessions', where: { needsCover: { equals: true }, coverCoach: { exists: false }, status: { equals: 'scheduled' }, startsAt: between }, overrideAccess: true }),
     p.find({ ...q, collection: 'programs', where: { type: { in: ['academy-term', 'toddler'] }, status: { in: ['open', 'full'] } }, limit: 30, depth: 0 }),
     p.count({ collection: 'academy-bookings', where: { status: { in: ['confirmed', 'completed'] }, createdAt: { greater_than: lastWeek } }, overrideAccess: true }),

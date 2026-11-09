@@ -1,0 +1,156 @@
+'use server'
+
+import { redirect } from 'next/navigation'
+import { revalidatePath } from 'next/cache'
+import { rateLimit } from '@/lib/form-guard'
+import { payload } from '@/lib/payload'
+import { makeReference } from '@/lib/reference'
+import { startCheckout } from '@/lib/payments'
+import { paymentsMode } from '@/lib/stripe-accounts'
+import { formatDate } from '@/lib/format'
+import { createHold, holdMinutesFor, releaseAcademyHold, releaseBooking, releaseExpiredHolds } from '@/academy/booking-data'
+import { weeklyPlan } from '@/academy/weekly'
+import { findGroupInvite } from '@/academy/groups'
+import { groupSlots } from '@/academy/group-holds'
+import { declineGroupInvite } from '@/academy/group-payments'
+import { MOBILE } from '@/academy/group-rules'
+
+export type GroupPayState = { error?: string; values?: Record<string, string> }
+
+const rel = (v: unknown) => (v && typeof v === 'object' ? (v as { id: number }).id : (v as number | null | undefined) ?? null)
+const money = (n: number) => new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: n % 1 ? 2 : 0 }).format(n)
+
+/**
+ * A family pays for their own player's place. The price is the one locked on their invite × the group's
+ * sessions — always worked out here. Uses the same held booking + Stripe checkout as a 1-on-1.
+ */
+export async function payGroupPlace(_prev: GroupPayState, fd: FormData): Promise<GroupPayState> {
+  const values = Object.fromEntries([...fd.entries()].filter(([k]) => !k.startsWith('$')).map(([k, v]) => [k, String(v).slice(0, 2000)]))
+  const fail = (error: string): GroupPayState => ({ error, values })
+  const s = (k: string) => (values[k] ?? '').trim()
+  const p = await payload()
+  const limited = await rateLimit(p, 'group-pay', { perIp: 20 })
+  if (limited) return fail(limited)
+  await releaseExpiredHolds(p)
+
+  const found = await findGroupInvite(p, s('token'))
+  if (!found) return fail('This link has expired — please check your latest message from your coach.')
+  const { invite, group } = found
+  if (invite.status === 'paid' || invite.status === 'weekly') return fail('This place is already paid.')
+  if (invite.status === 'declined' || invite.status === 'removed' || group.status === 'cancelled' || group.status === 'completed') return fail('This place isn’t available any more — please contact your coach.')
+
+  const term = await p.findByID({ collection: 'academy-terms', id: rel(group.term)!, depth: 0, overrideAccess: true })
+  const now = Date.now()
+  const slots = (await groupSlots(p, group.id)).filter((x) => new Date(x.startsAt).getTime() > now)
+  if (!slots.length) return fail('This group has already started — please contact your coach.')
+  const sessions = slots.map((x) => ({ startsAt: x.startsAt }))
+  const amount = Math.round(invite.rateLocked * sessions.length * 100) / 100
+  const weekly = group.type === 'term' && s('payMode') === 'weekly'
+  const plan = weekly ? weeklyPlan(sessions.map((x) => x.startsAt)) : null
+  if (weekly && !plan) return fail('Weekly payments aren’t available for this group — please pay upfront.')
+
+  // Parent — the invite's details; the mobile can be corrected
+  const i = invite.invitee
+  const contact = { firstName: i.parentFirstName, lastName: i.parentLastName, email: i.email.toLowerCase(), mobile: (s('contactMobile') || i.mobile || '').replace(/\s+/g, '') }
+  if (!MOBILE.test(contact.mobile)) return fail('Please enter an Australian mobile number, e.g. 0412 345 678.')
+
+  // Player — the club's record if they already have one, otherwise what the family enters now
+  const kid = rel(invite.participant) ? await p.findByID({ collection: 'participants', id: rel(invite.participant)!, depth: 0, overrideAccess: true, disableErrors: true }) : null
+  const dob = kid?.dateOfBirth ?? s('playerDob')
+  if (!dob || Number.isNaN(Date.parse(dob))) return fail(`Please enter ${i.playerFirstName}’s date of birth.`)
+  if (!s('emergencyName') || !s('emergencyPhone')) return fail('Please add an emergency contact.')
+  if (fd.get('terms') !== 'on') return fail('Please accept the terms to continue.')
+  try {
+    paymentsMode('academy')
+  } catch {
+    return fail('Online payments aren’t set up yet — please contact the Academy.')
+  }
+
+  // A checkout this family started earlier and didn't finish is let go first
+  const earlier = rel(invite.booking) ? await p.findByID({ collection: 'academy-bookings', id: rel(invite.booking)!, depth: 0, overrideAccess: true, disableErrors: true }) : null
+  if (earlier?.status === 'held') await releaseBooking(p, earlier, 'cancelled')
+
+  const coach = await p.findByID({ collection: 'academy-coaches', id: rel(group.coach)!, depth: 0, overrideAccess: true })
+  const { docs: everyone } = await p.find({ pagination: false, collection: 'academy-group-invites', where: { group: { equals: group.id }, status: { not_in: ['removed', 'declined'] } }, limit: 20, depth: 0, overrideAccess: true })
+  const reference = makeReference('RFA')
+  const holdMinutes = holdMinutesFor(term)
+  const hold = await createHold(p, {
+    reference,
+    kind: 'group',
+    group: group.id,
+    groupInvite: invite.id,
+    groupSize: everyone.length,
+    type: group.type,
+    paymentMode: group.type === 'casual' ? 'casual' : plan ? 'weekly' : 'upfront',
+    chargeAnchorAt: plan ? new Date(plan.anchor * 1000).toISOString() : undefined,
+    amount,
+    sessionsTotal: sessions.length,
+    sessionsPaid: 0,
+    coach: coach.id,
+    term: term.id,
+    weekday: group.weekday ?? undefined,
+    startTime: group.startTime ?? undefined,
+    firstSessionAt: sessions[0].startsAt,
+    contact,
+    player: {
+      firstName: kid?.firstName || i.playerFirstName,
+      lastName: kid?.lastName || i.playerLastName,
+      dateOfBirth: dob,
+      goals: s('goals') || undefined,
+      medical: s('medical') || undefined,
+      emergencyName: s('emergencyName'),
+      emergencyPhone: s('emergencyPhone'),
+      photoConsent: fd.get('photoConsent') === 'on',
+    },
+    account: rel(invite.account) ?? undefined,
+    participant: kid?.id,
+    source: 'coach-link',
+    sessions,
+    holdMinutes,
+  })
+  if (!hold.ok) return fail('We couldn’t hold this place — please try again, or contact your coach.')
+  await p.update({ collection: 'academy-group-invites', id: invite.id, overrideAccess: true, data: { booking: hold.booking.id } })
+
+  const first = sessions[0].startsAt
+  const name = `Small group with ${coach.displayName}`
+  const who = `${i.playerFirstName} ${i.playerLastName}`
+  let url: string
+  try {
+    const checkout = await startCheckout({
+      payee: 'academy',
+      kind: 'academy',
+      reference,
+      email: contact.email,
+      ...(plan
+        ? { saveCardFor: { note: `Today you pay for the first session. Your card is then saved and ${money(invite.rateLocked)} is charged automatically 2 days before each later session — ${plan.recurringCharges} payments, ${formatDate(plan.chargeDates[1], { day: 'numeric', month: 'short' })} to ${formatDate(plan.chargeDates.at(-1)!, { day: 'numeric', month: 'short' })}. Total ${money(amount)}.` } }
+        : {}),
+      items: plan
+        ? [{ name: `First session — ${formatDate(first, { weekday: 'short', day: 'numeric', month: 'short' })}`, description: `${name} · ${who} · ${sessions.length} sessions, paid weekly`, unitAmount: invite.rateLocked, quantity: 1 }]
+        : group.type === 'term'
+          ? [{ name: `${name} — term`, description: `${who} · ${group.weekday}s ${formatDate(first, { hour: 'numeric', minute: '2-digit' })} · ${sessions.length} sessions`, unitAmount: invite.rateLocked, quantity: sessions.length }]
+          : [{ name, description: `${who} · ${formatDate(first, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}`, unitAmount: invite.rateLocked, quantity: 1 }],
+      cancelPath: `/academy/group/${s('token')}?cancelled=${reference}`,
+      successPath: '/academy/1-on-1/booked',
+      expiresInMinutes: holdMinutes,
+    })
+    if (checkout.sessionId) await p.update({ collection: 'academy-bookings', id: hold.booking.id, data: { stripeCheckoutId: checkout.sessionId }, overrideAccess: true })
+    url = checkout.url
+  } catch (e) {
+    p.logger.error(e)
+    await releaseAcademyHold(p, reference)
+    return fail('We couldn’t start the payment. Please try again shortly.')
+  }
+  redirect(url)
+}
+
+/** "We can't make it" — frees the place and lets the coach know. */
+export async function declineGroupPlace(_prev: GroupPayState, fd: FormData): Promise<GroupPayState> {
+  const p = await payload()
+  const token = String(fd.get('token') ?? '')
+  const found = await findGroupInvite(p, token)
+  if (!found) return { error: 'This link has expired.' }
+  if (found.invite.status !== 'invited' && found.invite.status !== 'overdue') return { error: 'This place can’t be declined here — please contact your coach.' }
+  await declineGroupInvite(p, found.invite.id)
+  revalidatePath(`/academy/group/${token}`)
+  return {}
+}

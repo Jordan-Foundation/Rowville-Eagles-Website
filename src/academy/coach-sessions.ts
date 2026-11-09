@@ -12,6 +12,8 @@ const rel = (v: number | { id: number } | null | undefined) => (v && typeof v ==
 const mine = (coachId: number): Where => ({
   or: [{ coach: { equals: coachId } }, { coverCoach: { equals: coachId } }],
   status: { in: ['scheduled', 'completed', 'no_show'] },
+  // A small group's own "time held" rows have no player — each player has their own row
+  kind: { not_equals: 'group-slot' },
 })
 
 export async function coachSessions(payload: Payload, coachId: number, range: { from: Date; to: Date }) {

@@ -63,7 +63,7 @@ export async function coachAttention(p: Payload, user: User, coach: AcademyCoach
   const [messages, sessions, attendance, availability, groups, teams, reviews] = await Promise.all([
     safe(() => unreadCount(p, { user, side: 'coach', coach })),
     // New 1-on-1 sessions booked with this coach since they last opened My sessions
-    safe(async () => (await p.count({ collection: 'academy-sessions', where: { coach: { equals: coach.id }, status: { equals: 'scheduled' }, createdAt: { greater_than: seen.sessions }, startsAt: { greater_than: new Date().toISOString() } }, ...q })).totalDocs),
+    safe(async () => (await p.count({ collection: 'academy-sessions', where: { coach: { equals: coach.id }, status: { equals: 'scheduled' }, kind: { not_equals: 'group-slot' }, createdAt: { greater_than: seen.sessions }, startsAt: { greater_than: new Date().toISOString() } }, ...q })).totalDocs),
     safe(async () => (await attendanceDue(p, coach.id)).length),
     safe(async () => {
       const terms = await termsAwaitingAvailability(p)

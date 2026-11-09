@@ -152,7 +152,19 @@ export async function recordWeeklyPaid(payload: Payload, c: Charge) {
   })
   await syncPaidSessions(payload, booking, paid)
   if (recovered && !stillFailing) await notifyRecovered(payload, updated)
+  await syncGroup(payload, updated)
   return { ok: true as const, booking: updated }
+}
+
+/** Small group players: a failed weekly charge shows as Overdue on their place, and clears when paid. */
+async function syncGroup(payload: Payload, booking: AcademyBooking) {
+  if (booking.kind !== 'group') return
+  try {
+    const { syncGroupPlace } = await import('./group-payments')
+    await syncGroupPlace(payload, booking)
+  } catch (e) {
+    payload.logger.error({ err: e, msg: `Small group update failed for ${booking.reference}` })
+  }
 }
 
 /** An automatic weekly charge failed (`invoice.payment_failed`). Stripe retries it automatically. */
@@ -170,6 +182,7 @@ export async function recordWeeklyFailed(payload: Payload, c: Charge) {
   const updated = await payload.update({ collection: 'academy-bookings', id: booking.id, data: { payments, status: 'payment_failed', ...(c.subscriptionId && !booking.stripeSubscriptionId ? { stripeSubscriptionId: c.subscriptionId } : {}) }, overrideAccess: true })
   // Email the family on the first failure and again when Stripe gives up; the admin hears about both.
   if (first || c.final) await notifyFailed(payload, updated, { payUrl: c.payUrl, final: Boolean(c.final), amount: c.amount })
+  await syncGroup(payload, updated)
   return { ok: true as const, booking: updated }
 }
 

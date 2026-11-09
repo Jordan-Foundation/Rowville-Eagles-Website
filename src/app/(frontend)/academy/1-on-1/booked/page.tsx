@@ -53,7 +53,7 @@ export default async function BookedPage({ searchParams }: { searchParams: Promi
         ) : (
           <>
             <div className="mx-auto grid h-14 w-14 place-items-center bg-white text-2xl text-black">✓</div>
-            <h1 className="mt-6 font-display text-4xl font-semibold uppercase">{confirmed ? (booking.type === 'term' ? 'Your term is booked' : 'You’re booked in') : 'Payment processing'}</h1>
+            <h1 className="mt-6 font-display text-4xl font-semibold uppercase">{confirmed ? (booking.kind === 'group' ? `${booking.player.firstName}’s small group place is paid` : booking.type === 'term' ? 'Your term is booked' : 'You’re booked in') : 'Payment processing'}</h1>
             <p className="mt-2 text-sm text-muted">Reference <span className="font-mono text-ink">{booking.reference}</span></p>
             <dl className="panel mt-8 space-y-3 border border-line p-6 text-left text-sm">
               <div className="flex justify-between gap-4"><dt className="text-muted">Coach</dt><dd className="font-medium">{coach?.displayName}</dd></div>
@@ -66,6 +66,7 @@ export default async function BookedPage({ searchParams }: { searchParams: Promi
                 <div className="flex justify-between gap-4"><dt className="text-muted">When</dt><dd className="text-right font-medium">{booking.firstSessionAt ? formatDate(booking.firstSessionAt, { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' }) : ''}</dd></div>
               )}
               <div className="flex justify-between gap-4"><dt className="text-muted">Player</dt><dd className="font-medium">{booking.player.firstName}</dd></div>
+              {booking.kind === 'group' && <div className="flex justify-between gap-4"><dt className="text-muted">Group</dt><dd className="text-right font-medium">Small group{booking.groupSize ? ` of ${booking.groupSize}` : ''} — each family pays for their own player</dd></div>}
               {booking.paymentMode === 'weekly' ? (
                 <>
                   <div className="flex justify-between gap-4"><dt className="text-muted">Paid today</dt><dd className="font-medium">{formatAUD(booking.amount / (booking.sessionsTotal || 1))}</dd></div>
