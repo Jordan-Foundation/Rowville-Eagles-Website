@@ -105,6 +105,7 @@ export function PricesEditor({ sections }: { sections: PriceSection[] }) {
                         <input name={f.key} defaultValue={f.value ?? ''} placeholder={f.placeholder} inputMode="decimal" aria-label={`${r.title} — ${f.label}`} className="w-24 rounded-lg border border-line px-3 py-2" />
                         {f.unit === 'days' && 'days'}
                         {f.unit === 'pct' && '%'}
+                        {f.unit === 'hours' && 'hours'}
                         <input type="hidden" name={`$orig:${f.key}`} value={f.value ?? ''} />
                       </span>
                     </label>

@@ -1,10 +1,11 @@
 import type { Payload } from 'payload'
+import { GROUP_MAX, GROUP_MIN, groupRate, groupSettings } from '@/academy/group-pricing'
 
 /**
  * Every price the site charges, gathered for the admin Prices page. Each editable value is addressed as
  * "<collection>.<id>.<field>" so the page can save just the ones that changed.
  */
-export type PriceField = { key: string; label: string; value: number | null; unit?: 'aud' | 'days' | 'pct'; placeholder?: string }
+export type PriceField = { key: string; label: string; value: number | null; unit?: 'aud' | 'days' | 'pct' | 'hours'; placeholder?: string }
 export type PriceRow = { title: string; note?: string; href: string; muted?: boolean; fields: PriceField[] }
 export type PriceSection = { title: string; intro: string; rows: PriceRow[] }
 
@@ -20,6 +21,7 @@ export const EDITABLE: Record<string, { fields: string[]; nullable?: string[] }>
 /** Global settings editable from the Prices page ("g:<global>:<field>"). */
 export const EDITABLE_GLOBAL: Record<string, { group: string; fields: string[] }> = {
   'pdr-settings': { group: 'plans', fields: ['standardMonthly', 'standardYearly', 'premiumMonthly', 'premiumYearly', 'siblingDiscountPct', 'trialDays'] },
+  'academy-settings': { group: 'groupSessions', fields: ['casual2', 'casual3', 'casual4', 'casual5', 'termDiscountPct', 'inviteDeadlineHours', 'reminderHoursBefore'] },
 }
 
 const typeLabel: Record<string, string> = {
@@ -34,6 +36,9 @@ export async function loadPrices(payload: Payload): Promise<PriceSection[]> {
   const q = { depth: 0, overrideAccess: true } as const
   const fplus = await payload.findGlobal({ slug: 'pdr-settings', depth: 0, overrideAccess: true })
   const pl = fplus.plans ?? {}
+  const gs = groupSettings(await payload.findGlobal({ slug: 'academy-settings', depth: 0, overrideAccess: true }))
+  const sizes = Array.from({ length: GROUP_MAX - GROUP_MIN + 1 }, (_, i) => GROUP_MIN + i)
+  const money = (n: number) => `$${Number.isInteger(n) ? n : n.toFixed(2)}`
   const [terms, groupPrograms, programs, rounds, squads, products] = await Promise.all([
     payload.find({ pagination: false, collection: 'academy-terms', sort: '-startDate', limit: 12, ...q }),
     payload.find({ pagination: false, collection: 'programs', where: { type: { in: ['academy-term', 'toddler'] } }, sort: '-startDate', limit: 30, ...q }),
@@ -95,6 +100,33 @@ export async function loadPrices(payload: Payload): Promise<PriceSection[]> {
           { key: `academy-terms.${t.id}.termMemberWindowDays`, label: 'Member window', value: t.termMemberWindowDays ?? 14, unit: 'days' },
         ],
       })),
+    },
+    {
+      title: 'Foundation Academy small groups',
+      intro: 'Price per player, per session, for 2–5 players with one coach. Term groups pay the casual rate less the term discount. A group keeps the price it started at.',
+      rows: [
+        {
+          title: 'Casual (one-off)',
+          note: 'per player, per session',
+          href: '/admin/globals/academy-settings',
+          fields: sizes.map((n) => ({ key: `g:academy-settings:casual${n}`, label: `${n} players`, value: gs[`casual${n}` as 'casual2'], unit: 'aud' as const })),
+        },
+        {
+          title: 'Term discount',
+          note: `Term rates now: ${sizes.map((n) => `${n} players ${money(groupRate(gs, n, 'term'))}`).join(' · ')}`,
+          href: '/admin/globals/academy-settings',
+          fields: [{ key: 'g:academy-settings:termDiscountPct', label: 'Off the casual rate', value: gs.termDiscountPct, unit: 'pct' as const }],
+        },
+        {
+          title: 'Payment deadline',
+          note: 'How long families have to pay after the coach sends the group, and when they get a reminder',
+          href: '/admin/globals/academy-settings',
+          fields: [
+            { key: 'g:academy-settings:inviteDeadlineHours', label: 'Time to pay', value: gs.inviteDeadlineHours, unit: 'hours' as const },
+            { key: 'g:academy-settings:reminderHoursBefore', label: 'Reminder before', value: gs.reminderHoursBefore, unit: 'hours' as const },
+          ],
+        },
+      ],
     },
     {
       title: 'Academy group training & Mini Ballers (terms)',

@@ -17,7 +17,7 @@ export async function savePrices(_prev: PricesState, fd: FormData): Promise<Pric
   const changes = new Map<string, { collection: string; id: number; data: Record<string, number | null> }>()
   const globals = new Map<string, Record<string, number>>()
   for (const [key, raw] of fd.entries()) {
-    const g = /^g:([a-z-]+):([a-zA-Z]+)$/.exec(key)
+    const g = /^g:([a-z-]+):([a-zA-Z][a-zA-Z0-9]*)$/.exec(key)
     if (g && typeof raw === 'string') {
       const rule = EDITABLE_GLOBAL[g[1]]
       if (!rule?.fields.includes(g[2])) return { error: `“${g[2]}” can’t be changed here.` }
@@ -50,8 +50,8 @@ export async function savePrices(_prev: PricesState, fd: FormData): Promise<Pric
   try {
     for (const [slug, values] of globals) {
       const rule = EDITABLE_GLOBAL[slug]
-      const current = (await payload.findGlobal({ slug: slug as 'pdr-settings', depth: 0, overrideAccess: true })) as unknown as Record<string, Record<string, unknown>>
-      await payload.updateGlobal({ slug: slug as 'pdr-settings', data: { [rule.group]: { ...(current[rule.group] ?? {}), ...values } } as never, user, overrideAccess: false })
+      const current = (await payload.findGlobal({ slug: slug as 'pdr-settings' | 'academy-settings', depth: 0, overrideAccess: true })) as unknown as Record<string, Record<string, unknown>>
+      await payload.updateGlobal({ slug: slug as 'pdr-settings' | 'academy-settings', data: { [rule.group]: { ...(current[rule.group] ?? {}), ...values } } as never, user, overrideAccess: false })
       saved += Object.keys(values).length
     }
     for (const c of changes.values()) {

@@ -4430,6 +4430,18 @@ export interface AcademySetting {
   googleReviewUrl?: string | null;
   reviewAfterSessions?: number | null;
   reviewRequestsOn?: boolean | null;
+  /**
+   * Price per player, per session. Term groups pay the casual rate less the term discount. Also editable on Management → Set prices.
+   */
+  groupSessions: {
+    casual2: number;
+    casual3: number;
+    casual4: number;
+    casual5: number;
+    termDiscountPct: number;
+    inviteDeadlineHours: number;
+    reminderHoursBefore: number;
+  };
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -4708,6 +4720,17 @@ export interface AcademySettingsSelect<T extends boolean = true> {
   googleReviewUrl?: T;
   reviewAfterSessions?: T;
   reviewRequestsOn?: T;
+  groupSessions?:
+    | T
+    | {
+        casual2?: T;
+        casual3?: T;
+        casual4?: T;
+        casual5?: T;
+        termDiscountPct?: T;
+        inviteDeadlineHours?: T;
+        reminderHoursBefore?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

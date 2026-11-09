@@ -49,5 +49,31 @@ export const AcademySettings: GlobalConfig = {
         { name: 'reviewRequestsOn', label: 'Send review requests', type: 'checkbox', defaultValue: true },
       ],
     },
+    {
+      type: 'collapsible',
+      label: 'Small group sessions',
+      fields: [
+        {
+          name: 'groupSessions',
+          type: 'group',
+          label: false,
+          admin: { description: 'Price per player, per session. Term groups pay the casual rate less the term discount. Also editable on Management → Set prices.' },
+          fields: [
+            {
+              type: 'row',
+              fields: [
+                { name: 'casual2', label: '2 players', type: 'number', defaultValue: 70, min: 0, required: true },
+                { name: 'casual3', label: '3 players', type: 'number', defaultValue: 60, min: 0, required: true },
+                { name: 'casual4', label: '4 players', type: 'number', defaultValue: 50, min: 0, required: true },
+                { name: 'casual5', label: '5 players', type: 'number', defaultValue: 40, min: 0, required: true },
+              ],
+            },
+            { name: 'termDiscountPct', label: 'Term discount (%)', type: 'number', defaultValue: 10, min: 0, max: 100, required: true },
+            { name: 'inviteDeadlineHours', label: 'Families have this many hours to pay', type: 'number', defaultValue: 48, min: 1, max: 336, required: true },
+            { name: 'reminderHoursBefore', label: 'Remind this many hours before the deadline', type: 'number', defaultValue: 12, min: 0, max: 336, required: true },
+          ],
+        },
+      ],
+    },
   ],
 }
