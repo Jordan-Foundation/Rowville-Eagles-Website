@@ -7,6 +7,8 @@ import { attendanceDue, coachSessions } from '@/academy/coach-sessions'
 import { ageOn, sessionPayment } from '@/academy/session-view'
 import { toYmd } from '@/academy/term-dates'
 import { localToUtc } from '@/lib/time'
+import { coachGroupList, groupTitle, groupWhen } from '@/academy/groups'
+import { GROUP_STATUS } from '@/academy/group-rules'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'My sessions' }
@@ -22,9 +24,10 @@ export default async function CoachSessionsPage({ searchParams }: { searchParams
   const p = await payload()
   const now = new Date()
   const startOfToday = localToUtc(toYmd(now.toISOString()), '00:00') // Sydney midnight
-  const [soon, due] = await Promise.all([
+  const [soon, due, groups] = await Promise.all([
     coachSessions(p, coach.id, { from: startOfToday, to: new Date(now.getTime() + weeks * 7 * DAY) }),
     attendanceDue(p, coach.id, now),
+    coachGroupList(p, coach.id),
   ])
   let upcoming = soon
   // Nothing soon (e.g. before term starts)? Show everything that's booked, so a new booking is never hidden.
@@ -79,8 +82,39 @@ export default async function CoachSessionsPage({ searchParams }: { searchParams
     <div className="space-y-12">
       <div>
         <h1 className="font-display text-4xl font-semibold uppercase tracking-tight sm:text-5xl">My sessions</h1>
-        <p className="mt-3 text-muted">Your 1-on-1s, including sessions you’re covering. Open one for the player’s goals, medical notes and parent contact.</p>
+        <p className="mt-3 text-muted">Your 1-on-1s and small groups, including sessions you’re covering. Open one for the player’s goals, medical notes and parent contact.</p>
+        <Link href="/coach/sessions/group/new" className="mt-5 inline-block bg-white px-5 py-3 text-sm font-semibold uppercase tracking-[0.15em] text-black">+ New group session</Link>
       </div>
+
+      {groups.length > 0 && (
+        <section aria-labelledby="small-groups">
+          <h2 id="small-groups" className="font-display text-2xl font-semibold uppercase">Small groups</h2>
+          <ul className="panel mt-4 divide-y divide-line border border-line">
+            {groups.map(({ group: g, invites }) => {
+              const live = invites.filter((i) => i.status !== 'declined')
+              const paid = invites.filter((i) => i.status === 'paid' || i.status === 'weekly').length
+              const waiting = live.length - paid
+              return (
+                <li key={g.id}>
+                  <Link href={`/coach/sessions/group/${g.id}`} className="flex flex-wrap items-center justify-between gap-3 p-5 transition hover:bg-white/5">
+                    <div>
+                      <p className="font-semibold">{groupTitle(live.length, coach.displayName)}</p>
+                      <p className="text-sm text-muted">{groupWhen(g)}</p>
+                      <p className="mt-1 text-xs text-muted">{live.map((i) => i.invitee.playerFirstName).join(', ')}</p>
+                    </div>
+                    <div className="text-right text-sm">
+                      <p className="font-semibold">{paid} of {live.length} paid</p>
+                      <p className={`text-xs ${g.status === 'shortfall' || invites.some((i) => i.status === 'overdue') ? 'text-red-300' : 'text-muted'}`}>
+                        {g.status === 'forming' && waiting > 0 && g.paymentDeadline ? `Pay by ${formatDate(g.paymentDeadline, { weekday: 'short', hour: 'numeric', minute: '2-digit' })}` : GROUP_STATUS[g.status]}
+                      </p>
+                    </div>
+                  </Link>
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+      )}
 
       {due.length > 0 && (
         <section>
