@@ -1,3 +1,4 @@
+import { PersonLink } from '@/components/management/PersonLink'
 import { requireManagement } from '@/lib/management'
 import Link from 'next/link'
 import type { Metadata } from 'next'
@@ -69,8 +70,8 @@ export default async function StaffTermsPage({ searchParams }: { searchParams: P
               return (
                 <li key={r.id} className="grid gap-2 p-4 lg:grid-cols-[1fr_auto] lg:items-center">
                   <div>
-                    <p className="font-semibold">{r.player.firstName} {r.player.lastName} <span className="font-normal text-muted">· {by ? groupLabel(by) : '?'} · {r.reference}</span></p>
-                    <p className="text-sm text-muted">{r.contact.firstName} {r.contact.lastName} · {r.contact.email} · {r.contact.phone} · registered {formatDate(r.createdAt, { day: 'numeric', month: 'short' })}</p>
+                    <p className="font-semibold"><PersonLink kind="player" of={r.participant}>{r.player.firstName} {r.player.lastName}</PersonLink> <span className="font-normal text-muted">· {by ? groupLabel(by) : '?'} · {r.reference}</span></p>
+                    <p className="text-sm text-muted"><PersonLink kind="family" of={r.account}>{r.contact.firstName} {r.contact.lastName}</PersonLink> · {r.contact.email} · {r.contact.phone} · registered {formatDate(r.createdAt, { day: 'numeric', month: 'short' })}</p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     {slots.length ? <OfferForm reg={r.id} options={options(by)} twoNights={program.twoNightPricePerSession != null} /> : <span className="text-xs text-muted">Add a training time first</span>}

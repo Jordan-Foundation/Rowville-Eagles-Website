@@ -7,7 +7,7 @@ import { isAdmin } from '../access'
  */
 export const InviteTokens: CollectionConfig = {
   slug: 'invite-tokens',
-  admin: { group: 'People', useAsTitle: 'email', defaultColumns: ['email', 'purpose', 'expiresAt', 'usedAt'] },
+  admin: { hidden: true, group: 'People', useAsTitle: 'email', defaultColumns: ['email', 'purpose', 'expiresAt', 'usedAt'] },
   access: { read: isAdmin, create: () => false, update: () => false, delete: isAdmin },
   fields: [
     {

@@ -30,5 +30,5 @@ export function LiveDashboard({ items, initial, role }: { items: DashItem[]; ini
       document.removeEventListener('visibilitychange', load)
     }
   }, [role])
-  return <DashboardGrid items={items} counts={counts} />
+  return <DashboardGrid items={items} counts={counts} role={role} />
 }

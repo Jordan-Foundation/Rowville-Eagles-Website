@@ -8,7 +8,7 @@ import { isStaff } from '../../access'
 export const AcademyReminderLog: CollectionConfig = {
   slug: 'academy-reminder-log',
   labels: { singular: 'Availability reminder', plural: 'Availability reminders' },
-  admin: { group: 'Foundation Academy', defaultColumns: ['coach', 'term', 'kind', 'createdAt'] },
+  admin: { hidden: true, group: 'Foundation Academy', defaultColumns: ['coach', 'term', 'kind', 'createdAt'] },
   access: { read: isStaff, create: () => false, update: () => false, delete: isStaff },
   defaultSort: '-createdAt',
   indexes: [{ fields: ['coach', 'term', 'kind'], unique: true }],

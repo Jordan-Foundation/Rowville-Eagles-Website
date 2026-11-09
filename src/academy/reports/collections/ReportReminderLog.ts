@@ -5,7 +5,7 @@ import { isStaff } from '../../../access'
 export const ReportReminderLog: CollectionConfig = {
   slug: 'report-reminder-log',
   labels: { singular: 'Report reminder', plural: 'Report reminders' },
-  admin: { group: 'Reports', defaultColumns: ['coach', 'cycle', 'kind', 'createdAt'] },
+  admin: { hidden: true, group: 'Reports', defaultColumns: ['coach', 'cycle', 'kind', 'createdAt'] },
   access: { read: isStaff, create: () => false, update: () => false, delete: isStaff },
   defaultSort: '-createdAt',
   indexes: [{ fields: ['cycle', 'coach', 'kind'], unique: true }],

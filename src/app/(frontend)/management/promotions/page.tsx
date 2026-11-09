@@ -22,7 +22,6 @@ export default async function PromotionsPage() {
   const tone: Record<string, string> = { scheduled: 'bg-sky-100 text-sky-900', live: 'bg-emerald-100 text-emerald-900', draft: 'bg-surface-2 text-muted', ended: 'bg-surface-2 text-muted line-through' }
   return (
     <div className="container-x max-w-4xl py-14">
-      <Link href="/management" className="text-sm text-muted hover:text-ink">← Management</Link>
       <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
         <h1 className="font-[family-name:var(--font-barlow)] text-5xl font-extrabold uppercase">Promotions</h1>
         <Link href="/management/promotions/new" className="rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white">New promotion</Link>

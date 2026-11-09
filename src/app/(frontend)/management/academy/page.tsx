@@ -1,3 +1,4 @@
+import { PersonLink } from '@/components/management/PersonLink'
 import { requireManagement } from '@/lib/management'
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
@@ -102,8 +103,8 @@ export default async function StaffAcademyPage() {
                     return (
                       <tr key={b.id}>
                         <td className="py-3 pr-4">
-                          <span className="font-medium">{b.player.firstName} {b.player.lastName}</span>
-                          <span className="block text-xs text-muted">{b.contact.firstName} {b.contact.lastName} · {b.contact.mobile} · {b.reference}</span>
+                          <PersonLink kind="player" of={b.participant} className="font-medium">{b.player.firstName} {b.player.lastName}</PersonLink>
+                          <span className="block text-xs text-muted"><PersonLink kind="family" of={b.account}>{b.contact.firstName} {b.contact.lastName}</PersonLink> · {b.contact.mobile} · {b.reference}</span>
                         </td>
                         <td className="pr-4">{typeof b.coach === 'object' ? b.coach.displayName : ''}</td>
                         <td className="pr-4">{b.sessionsPaid ?? 0} of {b.sessionsTotal}</td>

@@ -33,7 +33,6 @@ export default async function FoundationPlusManagement({ searchParams }: { searc
 
   return (
     <div className="container-x max-w-5xl py-14">
-      <Link href="/management" className="text-sm text-muted hover:text-ink">← Management</Link>
       <h1 className="mt-4 font-[family-name:var(--font-barlow)] text-5xl font-extrabold uppercase">Foundation+</h1>
       <p className="mt-3 text-muted">
         Monthly challenges, video reviews and failed payments. Member numbers, trials, conversion and revenue are in{' '}

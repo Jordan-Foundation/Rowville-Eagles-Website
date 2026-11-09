@@ -38,3 +38,14 @@ describe('program card prices', () => {
     expect(priceBreakdown({ type: 'academy-term', pricePerSession: 25, twoNightPricePerSession: 20 }).map((r) => r.price)).toEqual(['$25 / session', '$20 / session'])
   })
 })
+
+import { badgeMeaning } from '@/components/dashboard/badge'
+describe('badge meanings', () => {
+  it('say what the number is', () => {
+    expect(badgeMeaning('store', 3, 'management')).toBe('3 to fulfil')
+    expect(badgeMeaning('reports', 2, 'coach')).toBe('2 to write')
+    expect(badgeMeaning('reports', 2, 'management')).toBe('2 to review')
+    expect(badgeMeaning('messages', 150)).toBe('99+ unread')
+    expect(badgeMeaning('store', 0)).toBeNull()
+  })
+})

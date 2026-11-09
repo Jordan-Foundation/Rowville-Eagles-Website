@@ -150,3 +150,15 @@ body:has([data-page-brand='fplus']) .site-footer .footer-rule { border-color: #1
     display: none !important;
   }
 }
+
+/* Management has its own menu (sidebar / phone menu) instead of the public website header and footer */
+body:has([data-portal='management']) .site-header,
+body:has([data-portal='management']) .site-footer {
+  display: none !important;
+}
+[data-portal='management'] main .container-x,
+[data-portal='management'] .container-x {
+  margin-inline: 0;
+  padding-inline: 0;
+  padding-top: 0.5rem;
+}

@@ -1,3 +1,4 @@
+import { PersonLink } from '@/components/management/PersonLink'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -36,7 +37,7 @@ export default async function ReviewReportPage({ params }: { params: Promise<{ i
   return (
     <div className="container-x max-w-4xl py-14">
       <Link href={`/management/reports/${cycle.id}`} className="text-sm text-muted hover:text-ink">← {cycle.name}</Link>
-      <h1 className="mt-4 font-[family-name:var(--font-barlow)] text-5xl font-extrabold uppercase">{r.playerName}</h1>
+      <h1 className="mt-4 font-[family-name:var(--font-barlow)] text-5xl font-extrabold uppercase"><PersonLink kind="player" of={r.participant}>{r.playerName}</PersonLink></h1>
       <p className="mt-2 text-muted">
         <strong className="text-ink">{statusLabel(r.status)}</strong> · {levelName(r.level)} · {r.sourceLabel} · written by {coach ? [coach.firstName, coach.lastName].filter(Boolean).join(' ') || coach.email : 'no coach yet'}
         {r.submittedAt ? ` · submitted ${formatDate(r.submittedAt, { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}` : ''}

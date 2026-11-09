@@ -72,12 +72,28 @@ const dirname = path.dirname(filename)
 const databaseUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL || ''
 const usePostgres = /^postgres(ql)?:\/\//.test(databaseUrl)
 
+const MONEY = new Set(['amount', 'price', 'total', 'subtotal', 'postage', 'discount', 'refundedAmount', 'creditApplied', 'casualPrice', 'pricePerSession', 'twoNightPricePerSession', 'termMemberPrice', 'amountOff', 'paidAmount'])
+/** Show money as $ in admin lists (only the list column — editing is unchanged). */
+function withMoneyCells<T extends { fields: unknown[] }>(c: T): T {
+  const walk = (fields: unknown[]): unknown[] =>
+    fields.map((f) => {
+      const x = f as { type?: string; name?: string; fields?: unknown[]; admin?: Record<string, unknown> }
+      if (x.type === 'number' && x.name && MONEY.has(x.name)) return { ...x, admin: { ...x.admin, components: { ...((x.admin?.components as object) ?? {}), Cell: '/components/admin/MoneyCell#MoneyCell' } } }
+      if ((x.type === 'row' || x.type === 'group' || x.type === 'collapsible') && x.fields) return { ...x, fields: walk(x.fields) }
+      return x
+    })
+  return { ...c, fields: walk(c.fields) }
+}
+
 export default buildConfig({
   admin: {
     user: Users.slug,
     meta: { titleSuffix: ' · Rowville Eagles Admin' },
     importMap: { baseDir: path.resolve(dirname) },
+    // Dates read like the rest of the site, e.g. "9 Nov 2026, 5:30 pm"
+    dateFormat: 'd MMM yyyy, h:mm a',
     components: {
+      beforeNavLinks: ['/components/admin/BackToManagement#BackToManagement'],
       afterNavLinks: ['/components/admin/PricesNavLink#SetupNavLink', '/components/admin/PricesNavLink#PricesNavLink', '/components/admin/PricesNavLink#PdrNavLink', '/components/admin/PricesNavLink#FoundationPlusNavLink'],
       beforeDashboard: ['/components/admin/SetupCard#SetupCard', '/components/admin/PricesNavLink#PricesDashboardCard'],
       views: {
@@ -88,7 +104,7 @@ export default buildConfig({
       },
     },
   },
-  collections: [AcademyBookings, AcademyShareLinks, AcademySessions, TrainingAttendance, AcademyTerms, AcademyTermSlots, AcademyRegistrations, PdrAreas, PdrLevels, PdrStages, PdrVideos, PdrBadges, PdrProgress, PdrChallenges, PdrSubmissions, PdrAudit, PdrAwards, FplusWaitlist, FplusEvents, FplusTrialCards, FormThrottle, AcademyCoaches, AcademyAvailability, AcademyReminderLog, AcademyCredits, Posts, SelectionRounds, Squads, SelectionEntries, TrialSessions, Programs, Bookings, Products, Orders, Teams, TeamMembers, TeamPosts, ForumThreads, ForumReplies, Sponsors, Participants, Users, ConsentRecords, MessageLog, CurriculumStandards, ReportCycles, PlayerReports, ReportReminderLog, Promotions, PromotionUses, SeenMarkers, Conversations, Messages, InviteTokens, Media],
+  collections: [AcademyBookings, AcademyShareLinks, AcademySessions, TrainingAttendance, AcademyTerms, AcademyTermSlots, AcademyRegistrations, PdrAreas, PdrLevels, PdrStages, PdrVideos, PdrBadges, PdrProgress, PdrChallenges, PdrSubmissions, PdrAudit, PdrAwards, FplusWaitlist, FplusEvents, FplusTrialCards, FormThrottle, AcademyCoaches, AcademyAvailability, AcademyReminderLog, AcademyCredits, Posts, SelectionRounds, Squads, SelectionEntries, TrialSessions, Programs, Bookings, Products, Orders, Teams, TeamMembers, TeamPosts, ForumThreads, ForumReplies, Sponsors, Participants, Users, ConsentRecords, MessageLog, CurriculumStandards, ReportCycles, PlayerReports, ReportReminderLog, Promotions, PromotionUses, SeenMarkers, Conversations, Messages, InviteTokens, Media].map((c) => withMoneyCells(c)),
   globals: [SiteSettings, About, Policies, DifferencePage, AcademySettings, PdrSettings, SetupProgress],
   editor: lexicalEditor(),
   ...(process.env.RESEND_API_KEY

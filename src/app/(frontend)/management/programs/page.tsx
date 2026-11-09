@@ -32,7 +32,6 @@ export default async function ProgramsOverview({ searchParams }: { searchParams:
     <div data-brand="academy" data-page-brand="academy">
       <div className="container-x space-y-10 py-14">
         <div>
-          <Link href="/management" className="text-sm text-muted hover:text-ink">← Management</Link>
           <p className="mt-4 text-xs font-semibold uppercase tracking-[0.3em] text-muted">Management</p>
           <h1 className="mt-2 font-display text-4xl font-semibold uppercase tracking-tight sm:text-5xl">Programs Overview</h1>
         </div>

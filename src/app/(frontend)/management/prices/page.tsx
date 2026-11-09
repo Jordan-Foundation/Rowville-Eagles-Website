@@ -13,7 +13,6 @@ export default async function SetPricesPage() {
   const sections = await loadPrices(await payload())
   return (
     <div className="container-x max-w-5xl py-14">
-      <Link href="/management" className="text-sm text-muted hover:text-ink">← Management</Link>
       <h1 className="mt-4 font-[family-name:var(--font-barlow)] text-5xl font-extrabold uppercase">Set prices</h1>
       <p className="mt-4 text-muted">
         Every price families pay, in one place. Change any amount and press <strong>Save all changes</strong>. New prices apply to new bookings only — anything already paid or in a

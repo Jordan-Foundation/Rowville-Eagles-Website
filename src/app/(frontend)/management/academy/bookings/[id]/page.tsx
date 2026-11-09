@@ -1,3 +1,4 @@
+import { PersonLink } from '@/components/management/PersonLink'
 import { requireManagement } from '@/lib/management'
 import Link from 'next/link'
 import type { Metadata } from 'next'
@@ -42,10 +43,10 @@ export default async function StaffBookingPage({ params, searchParams }: { param
         <div>
           <Link href="/management/academy/bookings" className="text-sm text-muted hover:text-ink">← Bookings</Link>
           <p className="mt-4 text-xs font-semibold uppercase tracking-[0.3em] text-muted">{b.reference} · {b.type === 'term' ? `Term (${b.paymentMode})` : 'Casual'} · {term.name}</p>
-          <h1 className="mt-2 font-display text-4xl font-semibold uppercase tracking-tight">{b.player.firstName} {b.player.lastName}</h1>
+          <h1 className="mt-2 font-display text-4xl font-semibold uppercase tracking-tight"><PersonLink kind="player" of={b.participant}>{b.player.firstName} {b.player.lastName}</PersonLink></h1>
           <p className="mt-2 text-muted">
             {coach.displayName}
-            {b.type === 'term' && b.weekday ? ` · ${b.weekday}s ${b.startTime}` : ''} · {b.contact.firstName} {b.contact.lastName} · <a href={`tel:${b.contact.mobile}`} className="underline">{b.contact.mobile}</a> · <a href={`mailto:${b.contact.email}`} className="underline">{b.contact.email}</a>
+            {b.type === 'term' && b.weekday ? ` · ${b.weekday}s ${b.startTime}` : ''} · <PersonLink kind="family" of={b.account}>{b.contact.firstName} {b.contact.lastName}</PersonLink> · <a href={`tel:${b.contact.mobile}`} className="underline">{b.contact.mobile}</a> · <a href={`mailto:${b.contact.email}`} className="underline">{b.contact.email}</a>
           </p>
           <p className="mt-3 inline-block border border-line px-2 py-1 text-xs font-semibold uppercase tracking-wider">{b.status.replace('_', ' ')}</p>
         </div>

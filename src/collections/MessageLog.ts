@@ -4,7 +4,7 @@ import { isStaff } from '../access'
 /** Every email and SMS the site sends, plus texts and calls received on the Twilio number — audit trail and proof that marketing went only to subscribers. */
 export const MessageLog: CollectionConfig = {
   slug: 'message-log',
-  labels: { singular: 'Message log', plural: 'Message log' },
+  labels: { singular: 'Sent email / text', plural: 'Sent emails & texts' },
   admin: { group: 'People', useAsTitle: 'subject', defaultColumns: ['channel', 'to', 'subject', 'status', 'createdAt'] },
   access: { read: isStaff, create: () => false, update: () => false, delete: () => false },
   defaultSort: '-createdAt',

@@ -1,3 +1,4 @@
+import { PersonLink } from '@/components/management/PersonLink'
 import { QUICK_REPLIES } from '@/messaging/templates'
 import { requireManagement } from '@/lib/management'
 import Link from 'next/link'
@@ -29,7 +30,7 @@ export default async function StaffThread({ params }: { params: Promise<{ id: st
     <div className="container-x max-w-3xl space-y-6 py-14">
       <Link href="/management/messages" className="text-sm text-muted hover:text-ink">← Messages</Link>
       <div>
-        <h1 className="font-[family-name:var(--font-barlow)] text-4xl font-extrabold uppercase">{conv.title}</h1>
+        <h1 className="font-[family-name:var(--font-barlow)] text-4xl font-extrabold uppercase"><PersonLink kind="family" of={conv.account}>{conv.title}</PersonLink></h1>
         <p className="mt-1 text-sm text-muted">
           {family ? <>{family.email}{family.phone ? ` · ${family.phone}` : ''}{family.smsOptOut ? ' · texts off' : ''} · <Link href={`/admin/collections/users/${family.id}`} className="underline">account</Link></> : conv.phone}
           {' · '}Coaches: {coaches.length ? coaches.join(', ') : 'none'}

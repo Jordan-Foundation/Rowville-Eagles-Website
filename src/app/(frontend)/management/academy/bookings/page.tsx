@@ -1,3 +1,4 @@
+import { PersonLink } from '@/components/management/PersonLink'
 import { markSeen } from '@/lib/seen'
 import { requireManagement } from '@/lib/management'
 import Link from 'next/link'
@@ -70,7 +71,7 @@ export default async function StaffBookingsPage({ searchParams }: { searchParams
               {rows.map((b) => (
                 <tr key={b.id} className="hover:bg-white/5">
                   <td className="py-3 pr-4"><Link href={`/management/academy/bookings/${b.id}`} className="font-mono font-medium underline">{b.reference}</Link><span className="block text-xs text-muted">{b.type === 'term' ? `Term · ${b.paymentMode}` : 'Casual'}</span></td>
-                  <td className="pr-4">{b.player.firstName} {b.player.lastName}<span className="block text-xs text-muted">{b.contact.firstName} {b.contact.lastName} · {b.contact.email}</span></td>
+                  <td className="pr-4"><PersonLink kind="player" of={b.participant}>{b.player.firstName} {b.player.lastName}</PersonLink><span className="block text-xs text-muted"><PersonLink kind="family" of={b.account}>{b.contact.firstName} {b.contact.lastName}</PersonLink> · {b.contact.email}</span></td>
                   <td className="pr-4">{(b.coach as AcademyCoach).displayName}</td>
                   <td className="pr-4">{b.firstSessionAt ? formatDate(b.firstSessionAt, { weekday: 'short', day: 'numeric', month: 'short' }) : '—'}</td>
                   <td className="pr-4">{formatMoney(b.amount)}{(b.refundedAmount ?? 0) > 0 && <span className="block text-xs text-muted">−{formatMoney(b.refundedAmount!)} refunded</span>}</td>

@@ -1,3 +1,4 @@
+import { MoneyCell as MoneyCell_3dfc0f7b84281e0b148b7a6aac00bfe2 } from '../../../components/admin/MoneyCell'
 import { RscEntryLexicalCell as RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
 import { RscEntryLexicalField as RscEntryLexicalField_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
 import { LexicalDiffComponent as LexicalDiffComponent_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
@@ -27,6 +28,7 @@ import { PdrNavLink as PdrNavLink_daca2e6bdffb48c832e41e2f3e7890f7 } from '../..
 import { FoundationPlusNavLink as FoundationPlusNavLink_daca2e6bdffb48c832e41e2f3e7890f7 } from '../../../components/admin/PricesNavLink'
 import { SetupCard as SetupCard_5860131e1a8bf313dddc403dc6d6875e } from '../../../components/admin/SetupCard'
 import { PricesDashboardCard as PricesDashboardCard_daca2e6bdffb48c832e41e2f3e7890f7 } from '../../../components/admin/PricesNavLink'
+import { BackToManagement as BackToManagement_e01500523befd1e3be550cb0a2928eab } from '../../../components/admin/BackToManagement'
 import { PricesView as PricesView_950a424b901ba94042b4a6525f558d13 } from '../../../components/admin/PricesView'
 import { SetupView as SetupView_8f23dfcd74dbbab01220c34dd2a80fea } from '../../../components/admin/SetupView'
 import { FoundationPlusView as FoundationPlusView_b3fc311df5a0eb31440efe157b5dd100 } from '../../../components/admin/FoundationPlusView'
@@ -36,6 +38,7 @@ import { VercelBlobClientUploadHandler as VercelBlobClientUploadHandler_16c82c5e
 
 /** @type import('payload').ImportMap */
 export const importMap = {
+  "/components/admin/MoneyCell#MoneyCell": MoneyCell_3dfc0f7b84281e0b148b7a6aac00bfe2,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalCell": RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalField": RscEntryLexicalField_44fe37237e0ebf4470c9990d8cb7b07e,
   "@payloadcms/richtext-lexical/rsc#LexicalDiffComponent": LexicalDiffComponent_44fe37237e0ebf4470c9990d8cb7b07e,
@@ -65,6 +68,7 @@ export const importMap = {
   "/components/admin/PricesNavLink#FoundationPlusNavLink": FoundationPlusNavLink_daca2e6bdffb48c832e41e2f3e7890f7,
   "/components/admin/SetupCard#SetupCard": SetupCard_5860131e1a8bf313dddc403dc6d6875e,
   "/components/admin/PricesNavLink#PricesDashboardCard": PricesDashboardCard_daca2e6bdffb48c832e41e2f3e7890f7,
+  "/components/admin/BackToManagement#BackToManagement": BackToManagement_e01500523befd1e3be550cb0a2928eab,
   "/components/admin/PricesView#PricesView": PricesView_950a424b901ba94042b4a6525f558d13,
   "/components/admin/SetupView#SetupView": SetupView_8f23dfcd74dbbab01220c34dd2a80fea,
   "/components/admin/FoundationPlusView#FoundationPlusView": FoundationPlusView_b3fc311df5a0eb31440efe157b5dd100,

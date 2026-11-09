@@ -14,7 +14,6 @@ export default async function SetDatesPage() {
   const [sections, issues] = await Promise.all([loadDates(p), loadDateIssues(p)])
   return (
     <div className="container-x max-w-5xl py-14">
-      <Link href="/management" className="text-sm text-muted hover:text-ink">← Management</Link>
       <h1 className="mt-4 font-[family-name:var(--font-barlow)] text-5xl font-extrabold uppercase">Set dates</h1>
       <p className="mt-4 text-muted">Every date that drives bookings, reminders and age groups, in one place. Times are Melbourne time. Each row saves on its own.</p>
       {issues.length > 0 && (
