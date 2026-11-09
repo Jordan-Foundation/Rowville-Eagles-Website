@@ -103,7 +103,20 @@ export async function sweepGroups(p: Payload, now = new Date()) {
     }
     shortfalls++
   }
-  return { reminded, shortfalls }
+  // Term offers nobody finished answering in time: the group stays a one-off
+  let offersClosed = 0
+  const { docs: offers } = await p.find({ pagination: false, collection: 'academy-groups', where: { 'termOffer.status': { equals: 'proposed' }, 'termOffer.deadline': { less_than: now.toISOString() } }, limit: 100, depth: 0, ...q })
+  if (offers.length) {
+    const { endTermOffer } = await import('./group-term-offer')
+    for (const g of offers) {
+      try {
+        if ((await endTermOffer(p, g.id, 'expired')) === 'expired') offersClosed++
+      } catch (e) {
+        p.logger.error({ err: e, msg: `Closing term offer failed for ${g.reference}` })
+      }
+    }
+  }
+  return { reminded, shortfalls, offersClosed }
 }
 
 /** Run the sweep at most every few minutes per server (page visits nudge it between the daily runs). */

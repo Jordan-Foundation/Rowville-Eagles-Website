@@ -133,3 +133,37 @@ export async function releaseGroup(payload: Payload, groupId: number, o: { by?: 
     data: { status: 'cancelled', history: [...(group.history ?? []), { at: new Date().toISOString(), by: id(o.by ?? undefined), action: 'Group cancelled', note: o.note }] },
   })
 }
+
+/** Hold more dates for an existing group (e.g. the rest of the term). All or nothing, like createGroupHold. */
+export async function holdMoreSlots(payload: Payload, o: { groupId: number; coachId: number; dates: string[] }): Promise<{ ok: true } | { ok: false; clashes: string[] }> {
+  const dates = [...new Set(o.dates.map((d) => new Date(d).toISOString()))].sort()
+  if (!dates.length) return { ok: true }
+  const req = await createLocalReq({}, payload)
+  await initTransaction(req)
+  try {
+    const clashes = await coachClashes(payload, o.coachId, dates, req)
+    if (clashes.length) {
+      await killTransaction(req)
+      return { ok: false, clashes }
+    }
+    for (const startsAt of dates) {
+      await payload.create({ collection: 'academy-sessions', overrideAccess: true, req, data: { kind: 'group-slot', group: o.groupId, coach: o.coachId, startsAt, status: 'held' } })
+    }
+    await commitTransaction(req)
+    return { ok: true }
+  } catch (e) {
+    await killTransaction(req)
+    if (isSlotClash(e)) return { ok: false, clashes: dates }
+    throw e
+  }
+}
+
+/** Let go of a group's held (not yet scheduled) dates after a given time — e.g. a term offer that fell through. */
+export async function releaseHeldSlotsAfter(payload: Payload, groupId: number, after: string) {
+  await payload.update({
+    collection: 'academy-sessions',
+    where: { group: { equals: groupId }, kind: { equals: 'group-slot' }, status: { equals: 'held' }, startsAt: { greater_than: after } },
+    data: { status: 'cancelled' },
+    overrideAccess: true,
+  })
+}

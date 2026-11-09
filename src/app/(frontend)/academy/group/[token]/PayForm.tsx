@@ -4,7 +4,7 @@ import { useActionState, useState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { PolicyLink } from '@/components/PolicyLink'
 import { Fieldset, Input } from '@/components/forms/Field'
-import { declineGroupPlace, payGroupPlace, type GroupPayState } from './actions'
+import { declineGroupPlace, payGroupPlace, termOfferAction, type GroupPayState } from './actions'
 
 const money = (n: number) => `$${Number.isInteger(n) ? n : n.toFixed(2)}`
 
@@ -19,6 +19,8 @@ export type PayInfo = {
   mobile: string
   emergencyName: string
   emergencyPhone: string
+  /** Rest of the term after a one-off: what they overpaid for week 1, taken off */
+  credit?: number
 }
 
 function PayButton({ label }: { label: string }) {
@@ -30,8 +32,10 @@ export function PayForm({ info }: { info: PayInfo }) {
   const [state, action] = useActionState<GroupPayState, FormData>(payGroupPlace, {})
   const [payMode, setPayMode] = useState<'upfront' | 'weekly'>('upfront')
   const v = state.values ?? {}
-  const total = info.rate * info.sessions
-  const today = info.type === 'term' && payMode === 'weekly' ? info.rate : total
+  const credit = info.credit ?? 0
+  const total = Math.round((info.rate * info.sessions - credit) * 100) / 100
+  const weekly = Math.round((total / info.sessions) * 100) / 100
+  const today = info.type === 'term' && payMode === 'weekly' ? weekly : total
   return (
     <form action={action} className="space-y-6">
       <input type="hidden" name="token" value={info.token} />
@@ -42,13 +46,13 @@ export function PayForm({ info }: { info: PayInfo }) {
             <label className={`cursor-pointer border p-4 text-sm ${payMode === 'upfront' ? 'border-white' : 'border-line'}`}>
               <input type="radio" name="payMode" value="upfront" checked={payMode === 'upfront'} onChange={() => setPayMode('upfront')} className="mr-2" />
               <span className="font-semibold">Pay for the term now</span>
-              <span className="mt-1 block text-muted">{money(total)} — {info.sessions} sessions × {money(info.rate)}</span>
+              <span className="mt-1 block text-muted">{money(total)} — {info.sessions} sessions × {money(info.rate)}{credit ? `, less ${money(credit)} already paid for week 1` : ''}</span>
             </label>
             {info.weeklyOk && (
               <label className={`cursor-pointer border p-4 text-sm ${payMode === 'weekly' ? 'border-white' : 'border-line'}`}>
                 <input type="radio" name="payMode" value="weekly" checked={payMode === 'weekly'} onChange={() => setPayMode('weekly')} className="mr-2" />
                 <span className="font-semibold">Pay weekly</span>
-                <span className="mt-1 block text-muted">{money(info.rate)} today, then {money(info.rate)} 2 days before each session</span>
+                <span className="mt-1 block text-muted">{money(weekly)} today, then {money(weekly)} 2 days before each session</span>
               </label>
             )}
           </div>
@@ -87,6 +91,25 @@ export function DeclineForm({ token, player }: { token: string; player: string }
       <input type="hidden" name="token" value={token} />
       <button disabled={pending} className="text-sm text-muted underline hover:text-ink">{player} can’t make it</button>
       {state.error && <p role="alert" className="mt-2 text-sm text-red-300">{state.error}</p>}
+    </form>
+  )
+}
+
+/** Book the whole term together: "I'm interested", or yes/no to another family's offer. */
+export function TermOfferForm({ token, mode, label }: { token: string; mode: 'interested' | 'answer'; label?: string }) {
+  const [state, action, pending] = useActionState<GroupPayState, FormData>(termOfferAction, {})
+  return (
+    <form action={action} className="mt-4 flex flex-wrap gap-3">
+      <input type="hidden" name="token" value={token} />
+      {mode === 'interested' ? (
+        <button name="do" value="interested" disabled={pending} className="bg-white px-5 py-3 text-sm font-semibold uppercase tracking-[0.15em] text-black disabled:opacity-50">{pending ? 'Asking…' : label ?? 'I’m interested'}</button>
+      ) : (
+        <>
+          <button name="do" value="yes" disabled={pending} className="bg-white px-5 py-3 text-sm font-semibold uppercase tracking-[0.15em] text-black disabled:opacity-50">Yes, book the term</button>
+          <button name="do" value="no" disabled={pending} className="border border-line px-5 py-3 text-sm font-semibold uppercase tracking-[0.15em] disabled:opacity-50">No thanks</button>
+        </>
+      )}
+      {state.error && <p role="alert" className="w-full text-sm text-red-300">{state.error}</p>}
     </form>
   )
 }

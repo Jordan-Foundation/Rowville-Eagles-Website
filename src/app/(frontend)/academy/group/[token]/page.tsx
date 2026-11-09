@@ -7,7 +7,8 @@ import { firstNamesList, INVITE_STATUS } from '@/academy/group-rules'
 import type { AcademyCoach, AcademyTerm, Media, Participant } from '@/payload-types'
 import { groupSlots } from '@/academy/group-holds'
 import { weeklyPlan } from '@/academy/weekly'
-import { DeclineForm, PayForm } from './PayForm'
+import { DeclineForm, PayForm, TermOfferForm } from './PayForm'
+import { placeDue, termOfferPreview } from '@/academy/group-term-offer'
 import { nudgeGroupClock } from '@/academy/group-clock'
 
 export const dynamic = 'force-dynamic'
@@ -45,11 +46,17 @@ export default async function GroupInvitePage({ params, searchParams }: { params
     groupSlots(p, g.id),
     rel(invite.participant) ? (p.findByID({ collection: 'participants', id: rel(invite.participant)!, depth: 0, overrideAccess: true, disableErrors: true }) as Promise<Participant | null>) : Promise.resolve(null),
   ])
-  const future = slots.filter((x) => new Date(x.startsAt).getTime() > Date.now()).map((x) => x.startsAt)
+  const unpaid = invite.status === 'invited' || invite.status === 'overdue'
+  const due = unpaid ? await placeDue(p, invite, g) : null
+  const future = due ? due.sessions : slots.filter((x) => new Date(x.startsAt).getTime() > Date.now()).map((x) => x.startsAt)
+  const preview = g.type === 'casual' ? await termOfferPreview(p, g.id) : null
+  const offer = g.termOffer
+  const paidPlaces = everyone.filter((i) => i.status === 'paid' || i.status === 'weekly')
+  const proposer = offer?.proposedBy ? everyone.find((i) => i.id === rel(offer.proposedBy)) : null
   const others = everyone.filter((i) => i.id !== invite.id && i.status !== 'declined').map((i) => i.invitee.playerFirstName)
   const size = others.length + 1
   const photo = typeof coach.photo === 'object' ? (coach.photo as Media | null)?.url : null
-  const total = invite.rateLocked * (future.length || g.sessionsTotal)
+  const total = due ? due.amount : invite.rateLocked * g.sessionsTotal
   const st = INVITE_STATUS[invite.status] ?? INVITE_STATUS.invited
   const me = invite.invitee.playerFirstName
   return (
@@ -68,7 +75,7 @@ export default async function GroupInvitePage({ params, searchParams }: { params
           <div><dt className="text-muted">{g.type === 'term' ? 'Weekly' : 'When'}</dt><dd className="font-semibold">{groupWhen(g)}</dd></div>
           <div><dt className="text-muted">Where</dt><dd className="font-semibold">{term.location || 'To be confirmed'}</dd></div>
           <div><dt className="text-muted">Group</dt><dd className="font-semibold">{size} players — {me}{others.length ? ` with ${firstNamesList(others)}` : ''}</dd></div>
-          <div><dt className="text-muted">Price</dt><dd className="font-semibold">{formatAUD(invite.rateLocked)} a session{g.type === 'term' ? <span className="block font-normal text-muted">{formatAUD(total)} for {g.sessionsTotal} sessions</span> : null}</dd></div>
+          <div><dt className="text-muted">Price</dt><dd className="font-semibold">{formatAUD(invite.rateLocked)} a session{g.type === 'term' ? <span className="block font-normal text-muted">{due?.restOfTerm ? `${formatAUD(total)} for the rest of the term (${future.length} sessions, less ${formatAUD(due.credit)} already paid for week 1)` : `${formatAUD(total)} for ${future.length || g.sessionsTotal} sessions`}</span> : null}</dd></div>
         </dl>
       </div>
       <div className="mt-6 border border-line p-6">
@@ -100,14 +107,43 @@ export default async function GroupInvitePage({ params, searchParams }: { params
                     mobile: invite.invitee.mobile ?? '',
                     emergencyName: kid?.medical?.emergencyContact ?? '',
                     emergencyPhone: kid?.medical?.emergencyPhone ?? '',
+                    credit: due?.credit ?? 0,
                   }}
                 />
-                <DeclineForm token={token} player={me} />
+                {!due?.restOfTerm && <DeclineForm token={token} player={me} />}
               </div>
             )}
           </>
         )}
       </div>
+      {preview && (
+        <section aria-label="Book the whole term" className="mt-6 border border-white/30 bg-white/5 p-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-muted">Save {preview.discountPct}%</p>
+          <h2 className="mt-2 font-display text-2xl font-semibold uppercase">Book the whole term together</h2>
+          <p className="mt-2 text-sm text-white/80">
+            Keep this group going: {preview.weekday}s at the same time for the rest of the term — {preview.weeks.length} more weeks at {formatAUD(preview.quote.rate)} a session ({preview.discountPct}% off), with this session as week 1. It only goes ahead if every family says yes.
+          </p>
+          {unpaid ? (
+            <p className="mt-3 text-sm text-muted">Pay for this session first — then you can tell us you’re interested.</p>
+          ) : invite.status === 'declined' ? null : g.status !== 'confirmed' ? (
+            <p className="mt-3 text-sm text-muted">Once every family has paid for this session, you can ask to book the term.</p>
+          ) : offer?.status === 'proposed' ? (
+            invite.termAnswer === 'pending' ? (
+              <>
+                <p className="mt-3 text-sm font-semibold">{proposer ? `${proposer.invitee.playerFirstName}’s family would like to book the term.` : `${coach.displayName} has offered the term.`} Would you like to book it for {me}?{offer.deadline ? ` Please answer by ${formatDate(offer.deadline, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}.` : ''}</p>
+                <TermOfferForm token={token} mode="answer" />
+              </>
+            ) : (
+              <p className="mt-3 text-sm font-semibold text-emerald-200">You’ve said yes — waiting for the other families ({paidPlaces.filter((i) => i.termAnswer === 'accepted').length} of {paidPlaces.length} have said yes).</p>
+            )
+          ) : (
+            <>
+              {(offer?.status === 'declined' || offer?.status === 'expired') && <p className="mt-3 text-sm text-muted">Last time not every family could commit — you can ask again.</p>}
+              <TermOfferForm token={token} mode="interested" />
+            </>
+          )}
+        </section>
+      )}
       <p className="mt-6 text-xs text-muted">Each family pays for their own player. This link is just for you — please don’t forward it.</p>
     </div></div>
   )

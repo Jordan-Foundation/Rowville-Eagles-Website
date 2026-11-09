@@ -11,7 +11,7 @@ import { formatDate } from '@/lib/format'
 import { createHold, holdMinutesFor, releaseAcademyHold, releaseBooking, releaseExpiredHolds } from '@/academy/booking-data'
 import { weeklyPlan } from '@/academy/weekly'
 import { findGroupInvite } from '@/academy/groups'
-import { groupSlots } from '@/academy/group-holds'
+import { placeDue } from '@/academy/group-term-offer'
 import { declineGroupInvite } from '@/academy/group-payments'
 import { MOBILE } from '@/academy/group-rules'
 
@@ -41,10 +41,14 @@ export async function payGroupPlace(_prev: GroupPayState, fd: FormData): Promise
 
   const term = await p.findByID({ collection: 'academy-terms', id: rel(group.term)!, depth: 0, overrideAccess: true })
   const now = Date.now()
-  const slots = (await groupSlots(p, group.id)).filter((x) => new Date(x.startsAt).getTime() > now)
+  // The dates they don't have yet (a one-off that became week 1 isn't charged again), less any week-1 difference
+  const due = await placeDue(p, invite, group)
+  const slots = due.sessions.map((startsAt) => ({ startsAt }))
+  void now
   if (!slots.length) return fail('This group has already started — please contact your coach.')
   const sessions = slots.map((x) => ({ startsAt: x.startsAt }))
-  const amount = Math.round(invite.rateLocked * sessions.length * 100) / 100
+  const amount = due.amount
+  const perSession = Math.round((amount / sessions.length) * 100) / 100
   const weekly = group.type === 'term' && s('payMode') === 'weekly'
   const plan = weekly ? weeklyPlan(sessions.map((x) => x.startsAt)) : null
   if (weekly && !plan) return fail('Weekly payments aren’t available for this group — please pay upfront.')
@@ -80,6 +84,7 @@ export async function payGroupPlace(_prev: GroupPayState, fd: FormData): Promise
     group: group.id,
     groupInvite: invite.id,
     groupSize: everyone.length,
+    groupWeek1Credit: due.credit || undefined,
     type: group.type,
     paymentMode: group.type === 'casual' ? 'casual' : plan ? 'weekly' : 'upfront',
     chargeAnchorAt: plan ? new Date(plan.anchor * 1000).toISOString() : undefined,
@@ -122,12 +127,14 @@ export async function payGroupPlace(_prev: GroupPayState, fd: FormData): Promise
       reference,
       email: contact.email,
       ...(plan
-        ? { saveCardFor: { note: `Today you pay for the first session. Your card is then saved and ${money(invite.rateLocked)} is charged automatically 2 days before each later session — ${plan.recurringCharges} payments, ${formatDate(plan.chargeDates[1], { day: 'numeric', month: 'short' })} to ${formatDate(plan.chargeDates.at(-1)!, { day: 'numeric', month: 'short' })}. Total ${money(amount)}.` } }
+        ? { saveCardFor: { note: `Today you pay for the first session. Your card is then saved and ${money(perSession)} is charged automatically 2 days before each later session — ${plan.recurringCharges} payments, ${formatDate(plan.chargeDates[1], { day: 'numeric', month: 'short' })} to ${formatDate(plan.chargeDates.at(-1)!, { day: 'numeric', month: 'short' })}. Total ${money(amount)}.` } }
         : {}),
       items: plan
-        ? [{ name: `First session — ${formatDate(first, { weekday: 'short', day: 'numeric', month: 'short' })}`, description: `${name} · ${who} · ${sessions.length} sessions, paid weekly`, unitAmount: invite.rateLocked, quantity: 1 }]
+        ? [{ name: `First session — ${formatDate(first, { weekday: 'short', day: 'numeric', month: 'short' })}`, description: `${name} · ${who} · ${sessions.length} sessions, paid weekly${due.credit ? ` · ${money(due.credit)} week-1 credit spread over the term` : ''}`, unitAmount: perSession, quantity: 1 }]
         : group.type === 'term'
-          ? [{ name: `${name} — term`, description: `${who} · ${group.weekday}s ${formatDate(first, { hour: 'numeric', minute: '2-digit' })} · ${sessions.length} sessions`, unitAmount: invite.rateLocked, quantity: sessions.length }]
+          ? due.credit
+            ? [{ name: `${name} — rest of the term`, description: `${who} · ${group.weekday}s ${formatDate(first, { hour: 'numeric', minute: '2-digit' })} · ${sessions.length} sessions × ${money(invite.rateLocked)} less ${money(due.credit)} already paid for week 1`, unitAmount: amount, quantity: 1 }]
+            : [{ name: `${name} — term`, description: `${who} · ${group.weekday}s ${formatDate(first, { hour: 'numeric', minute: '2-digit' })} · ${sessions.length} sessions`, unitAmount: invite.rateLocked, quantity: sessions.length }]
           : [{ name, description: `${who} · ${formatDate(first, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}`, unitAmount: invite.rateLocked, quantity: 1 }],
       cancelPath: `/academy/group/${s('token')}?cancelled=${reference}`,
       successPath: '/academy/1-on-1/booked',
@@ -151,6 +158,29 @@ export async function declineGroupPlace(_prev: GroupPayState, fd: FormData): Pro
   if (!found) return { error: 'This link has expired.' }
   if (found.invite.status !== 'invited' && found.invite.status !== 'overdue') return { error: 'This place can’t be declined here — please contact your coach.' }
   await declineGroupInvite(p, found.invite.id)
+  revalidatePath(`/academy/group/${token}`)
+  return {}
+}
+
+/** "I'm interested" in the term (a family who's paid), or yes/no to an offer another family made. */
+export async function termOfferAction(_prev: GroupPayState, fd: FormData): Promise<GroupPayState> {
+  const p = await payload()
+  const limited = await rateLimit(p, 'group-term', { perIp: 20 })
+  if (limited) return { error: limited }
+  const token = String(fd.get('token') ?? '')
+  const found = await findGroupInvite(p, token)
+  if (!found) return { error: 'This link has expired.' }
+  const { GroupError } = await import('@/academy/groups')
+  const { answerTermOffer, proposeTermOffer } = await import('@/academy/group-term-offer')
+  try {
+    const what = String(fd.get('do'))
+    if (what === 'interested') await proposeTermOffer(p, found.group.id, { inviteId: found.invite.id })
+    else if (what === 'yes' || what === 'no') await answerTermOffer(p, found.invite.id, what === 'yes')
+    else return { error: 'Unknown choice.' }
+  } catch (e) {
+    if (e instanceof GroupError) return { error: e.message }
+    throw e
+  }
   revalidatePath(`/academy/group/${token}`)
   return {}
 }

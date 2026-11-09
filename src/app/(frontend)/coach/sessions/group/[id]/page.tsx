@@ -7,7 +7,8 @@ import { requireCoach } from '@/academy/portal'
 import { groupTitle, groupWhen, loadCoachGroup } from '@/academy/groups'
 import { GROUP_STATUS, INVITE_STATUS } from '@/academy/group-rules'
 import { nudgeGroupClock } from '@/academy/group-clock'
-import { GroupDecisions, PlaceActions } from './GroupControls'
+import { CoachTermOffer, GroupDecisions, PlaceActions } from './GroupControls'
+import { termOfferPreview } from '@/academy/group-term-offer'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Small group', robots: { index: false } }
@@ -24,6 +25,7 @@ export default async function CoachGroupPage({ params, searchParams }: { params:
   const { group: g, invites, slots } = data
   const termId = typeof g.term === 'object' ? g.term.id : g.term
   const term = await (await payload()).findByID({ collection: 'academy-terms', id: termId, depth: 0, overrideAccess: true, disableErrors: true })
+  const preview = g.type === 'casual' && g.status === 'confirmed' ? await termOfferPreview(await payload(), g.id) : null
   const sent = (await searchParams).sent === '1'
   const active = invites.filter((i) => i.status !== 'declined')
   const paid = invites.filter((i) => i.status === 'paid' || i.status === 'weekly').length
@@ -81,6 +83,16 @@ export default async function CoachGroupPage({ params, searchParams }: { params:
           shortfall={g.status === 'shortfall'}
           onlyPaid={paid === 1 ? (() => { const i = invites.find((x) => x.status === 'paid' || x.status === 'weekly')!; return { name: i.invitee.playerFirstName, paid: formatAUD(i.rateLocked * g.sessionsTotal) } })() : undefined}
           oneOnOnePrice={term ? (g.type === 'term' ? `${formatAUD(term.pricePerSession)} a session` : formatAUD(term.casualPrice)) : undefined}
+        />
+      )}
+      {preview && (
+        <CoachTermOffer
+          groupId={g.id}
+          status={g.termOffer?.status ?? 'none'}
+          yes={invites.filter((i) => (i.status === 'paid' || i.status === 'weekly') && i.termAnswer === 'accepted').length}
+          total={invites.filter((i) => i.status === 'paid' || i.status === 'weekly').length}
+          weeks={preview.weeks.length}
+          rate={formatAUD(preview.quote.rate)}
         />
       )}
       {g.type === 'term' && slots.length > 0 && (

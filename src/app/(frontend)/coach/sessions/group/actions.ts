@@ -111,6 +111,12 @@ export async function groupDecisionAction(_prev: GroupDecisionState, fd: FormDat
         done = `Group cancelled and ${r.player}’s family refunded. They’ve been sent a link to book the same time as a 1-on-1${r.held ? ' — it’s held for them' : ''}.${r.problems.length ? ` Some refunds need Management: ${r.problems.join('; ')}` : ''}`
         break
       }
+      case 'term-offer': {
+        const { proposeTermOffer } = await import('@/academy/group-term-offer')
+        await proposeTermOffer(p, groupId, { coachId: c.coach.id, by: c.user.id })
+        done = 'Offered — each family has been asked to say yes or no. The weeks are held for you until they answer.'
+        break
+      }
       case 'cancel': {
         if (fd.get('confirm') !== 'on') return { error: 'Tick the box to confirm cancelling the whole group.' }
         const r = await cancelWholeGroup(p, c.coach.id, groupId, c.user.id, String(fd.get('reason') ?? '').trim().slice(0, 500))

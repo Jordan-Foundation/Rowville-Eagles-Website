@@ -105,3 +105,27 @@ export function GroupDecisions({ groupId, paid, waiting, shortfall, onlyPaid, on
     </section>
   )
 }
+
+/** One-off group, everyone paid: where the term offer stands, and a button to offer it. */
+export function CoachTermOffer({ groupId, status, yes, total, weeks, rate }: { groupId: number; status: string; yes: number; total: number; weeks: number; rate: string }) {
+  const [state, action, pending] = useActionState<GroupDecisionState, FormData>(groupDecisionAction, {})
+  return (
+    <section aria-label="Term offer" className="border border-line p-5">
+      <h2 className="font-display text-xl font-semibold uppercase">Book the whole term together</h2>
+      <p className="mt-1 text-sm text-muted">
+        {status === 'proposed'
+          ? `Offered — ${yes} of ${total} families have said yes. The rest of the term is held for you until they answer.`
+          : status === 'accepted'
+            ? 'Every family said yes — the group is booking the rest of the term.'
+            : `${weeks} more weeks at ${rate} a session. Families can ask from their link, or you can offer it now.${status === 'declined' || status === 'expired' ? ' (Last time not every family could commit.)' : ''}`}
+      </p>
+      {status !== 'proposed' && status !== 'accepted' && (
+        <form action={action} className="mt-4">
+          <input type="hidden" name="group" value={groupId} />
+          <button name="do" value="term-offer" disabled={pending} className="bg-white px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-black disabled:opacity-50">{pending ? 'Offering…' : 'Offer the term'}</button>
+          <Result state={state} />
+        </form>
+      )}
+    </section>
+  )
+}
