@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   title: { default: 'Rowville Eagles Football Club', template: '%s · Rowville Eagles FC' },
   description: 'Community football in Rowville, Victoria — MiniRoos, juniors, seniors and the Rowville Foundation Academy. Est. 1985.',
   icons: { apple: '/icons/apple-touch-icon.png' },
-  appleWebApp: { capable: true, title: 'Eagles', statusBarStyle: 'black-translucent' },
+  appleWebApp: { capable: true, title: 'RFA', statusBarStyle: 'black-translucent' },
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

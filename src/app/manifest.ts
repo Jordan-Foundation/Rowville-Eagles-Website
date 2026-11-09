@@ -4,7 +4,7 @@ import type { MetadataRoute } from 'next'
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'Rowville Eagles FC',
-    short_name: 'Eagles',
+    short_name: 'RFA',
     description: 'Rowville Eagles FC and Rowville Foundation Academy — bookings, teams and the coach portal.',
     start_url: '/account',
     scope: '/',
