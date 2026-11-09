@@ -62,7 +62,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
   const done = past.filter((s) => s.status === 'completed').length
 
   const row = (s: (typeof sessions)[number]) => {
-    const b = byId.get(typeof s.booking === 'object' ? s.booking.id : s.booking) as AcademyBooking
+    const b = byId.get((typeof s.booking === 'object' ? s.booking?.id : s.booking) ?? 0) as AcademyBooking
     const coach = s.coach as AcademyCoach
     const cover = s.needsCover ? (s.coverCoach && typeof s.coverCoach === 'object' ? `Cover: ${s.coverCoach.displayName}` : 'Replacement coach being arranged') : null
     const pay = sessionPayment(s, b)

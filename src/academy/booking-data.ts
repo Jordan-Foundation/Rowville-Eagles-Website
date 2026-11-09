@@ -80,7 +80,8 @@ export async function loadTermBookingData(payload: Payload, term: AcademyTerm, o
   return { availability, taken, coaches: cards }
 }
 
-type HoldInput = Omit<AcademyBooking, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'holdExpiresAt'> & {
+type HoldInput = Omit<AcademyBooking, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'holdExpiresAt' | 'kind'> & {
+  kind?: AcademyBooking['kind']
   sessions: { startsAt: string; needsCover?: boolean }[]
   holdMinutes: number
 }
@@ -98,14 +99,23 @@ export async function createHold(payload: Payload, input: HoldInput): Promise<{ 
       collection: 'academy-bookings',
       overrideAccess: true,
       req,
-      data: { ...data, status: 'held', holdExpiresAt: new Date(Date.now() + (holdMinutes + 2) * 60000).toISOString() },
+      data: { ...data, kind: data.kind ?? 'one-on-one', status: 'held', holdExpiresAt: new Date(Date.now() + (holdMinutes + 2) * 60000).toISOString() },
     })
     for (const s of sessions) {
       await payload.create({
         collection: 'academy-sessions',
         overrideAccess: true,
         req,
-        data: { booking: booking.id, coach: id(data.coach)!, startsAt: s.startsAt, status: 'held', account: id(data.account), needsCover: Boolean(s.needsCover) },
+        data: {
+          booking: booking.id,
+          coach: id(data.coach)!,
+          startsAt: s.startsAt,
+          status: 'held',
+          account: id(data.account),
+          needsCover: Boolean(s.needsCover),
+          // A small group player's own row shares the time the group already holds
+          ...(data.kind === 'group' ? { kind: 'group-player' as const, group: id(data.group) } : { kind: 'one-on-one' as const }),
+        },
       })
     }
     await commitTransaction(req)

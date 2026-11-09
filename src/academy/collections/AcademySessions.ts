@@ -2,9 +2,11 @@ import type { CollectionConfig } from 'payload'
 import { hasRole, isStaff } from '../../access'
 
 /**
- * One row per actual 1-on-1 session (a casual booking = 1 row, a term booking = 1 row per week).
- * The database has a unique index on (coach, startsAt) for every status except `cancelled`, so a coach
- * can never be double-booked — even if two families pay at the same instant.
+ * One row per actual session (a casual booking = 1 row, a term booking = 1 row per week). Small groups
+ * have one `group-slot` row per date plus one `group-player` row per player.
+ * The database has a unique index on (coach, startsAt) for every status except `cancelled`, ignoring
+ * `group-player` rows, so a coach can never be double-booked — 1-on-1 or group — even if two families
+ * pay at the same instant.
  */
 export const AcademySessions: CollectionConfig = {
   slug: 'academy-sessions',
@@ -22,7 +24,30 @@ export const AcademySessions: CollectionConfig = {
   },
   defaultSort: 'startsAt',
   fields: [
-    { name: 'booking', type: 'relationship', relationTo: 'academy-bookings', required: true, index: true },
+    {
+      name: 'booking',
+      type: 'relationship',
+      relationTo: 'academy-bookings',
+      index: true,
+      // Every session belongs to a booking except a small group's own slot rows
+      validate: (v: unknown, { siblingData }: { siblingData: Record<string, unknown> }) => Boolean(v) || siblingData?.kind === 'group-slot' || 'Choose the booking',
+    },
+    { type: 'row', fields: [
+      {
+        name: 'kind',
+        type: 'select',
+        required: true,
+        defaultValue: 'one-on-one',
+        index: true,
+        options: [
+          { label: '1-on-1', value: 'one-on-one' },
+          { label: 'Small group — player', value: 'group-player' },
+          { label: 'Small group — time held', value: 'group-slot' },
+        ],
+        admin: { description: 'A small group holds its time with one “time held” row per date; each player has their own row too.' },
+      },
+      { name: 'group', type: 'relationship', relationTo: 'academy-groups', index: true, admin: { condition: (d) => d?.kind !== 'one-on-one' } },
+    ] },
     { type: 'row', fields: [
       { name: 'coach', type: 'relationship', relationTo: 'academy-coaches', required: true, index: true },
       { name: 'startsAt', type: 'date', required: true, index: true, admin: { date: { pickerAppearance: 'dayAndTime' } } },

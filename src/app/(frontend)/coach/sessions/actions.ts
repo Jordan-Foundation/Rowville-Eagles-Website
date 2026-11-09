@@ -15,7 +15,9 @@ async function ownSession(id: number) {
   const role = s ? coachRole(s, me.coach.id) : null
   // The booked coach can't mark a session someone else is covering
   if (!s || !role || role === 'covered' || s.status === 'held' || s.status === 'cancelled') return { error: 'You can only update sessions you run.' } as const
-  return { p, s, me } as const
+  const bookingId = typeof s.booking === 'object' ? s.booking?.id : s.booking
+  if (!bookingId) return { error: 'You can only update sessions you run.' } as const
+  return { p, s, me, bookingId } as const
 }
 
 export async function markAttendance(_prev: CoachSessionState, fd: FormData): Promise<CoachSessionState> {
@@ -33,7 +35,7 @@ export async function markAttendance(_prev: CoachSessionState, fd: FormData): Pr
     data: { status: status as 'completed' | 'no_show' | 'scheduled', attendanceBy: status === 'scheduled' ? null : me.user.id, attendanceAt: status === 'scheduled' ? null : new Date().toISOString() },
   })
   // Booking is completed once none of its sessions are still to come
-  const bookingId = typeof s.booking === 'object' ? s.booking.id : s.booking
+  const { bookingId } = own
   const { totalDocs: open } = await p.count({ collection: 'academy-sessions', where: { booking: { equals: bookingId }, status: { in: ['held', 'scheduled'] } }, overrideAccess: true })
   const booking = await p.findByID({ collection: 'academy-bookings', id: bookingId, depth: 0, overrideAccess: true })
   if (open === 0 && booking.status === 'confirmed') await p.update({ collection: 'academy-bookings', id: bookingId, data: { status: 'completed' }, overrideAccess: true })
@@ -56,7 +58,7 @@ export async function runningLate(_prev: CoachSessionState, fd: FormData): Promi
   const { p, s, me } = own
   const mins = [5, 10, 15, 20].includes(Number(fd.get('minutes'))) ? Number(fd.get('minutes')) : 10
   if (new Date(s.startsAt).getTime() < Date.now() - 60 * 60_000) return { error: 'This session has already finished.' }
-  const booking = await p.findByID({ collection: 'academy-bookings', id: typeof s.booking === 'object' ? s.booking.id : s.booking, depth: 0, overrideAccess: true })
+  const booking = await p.findByID({ collection: 'academy-bookings', id: own.bookingId, depth: 0, overrideAccess: true })
   const accountId = typeof booking.account === 'object' ? booking.account?.id : booking.account
   if (!accountId) return { error: 'This family has no account to message — please call them.' }
   const { conversationFor, staffReply } = await import('@/messaging/service')

@@ -70,6 +70,8 @@ export interface Config {
     'academy-bookings': AcademyBooking;
     'academy-share-links': AcademyShareLink;
     'academy-sessions': AcademySession;
+    'academy-groups': AcademyGroup;
+    'academy-group-invites': AcademyGroupInvite;
     'training-attendance': TrainingAttendance;
     'academy-terms': AcademyTerm;
     'academy-term-slots': AcademyTermSlot;
@@ -133,6 +135,8 @@ export interface Config {
     'academy-bookings': AcademyBookingsSelect<false> | AcademyBookingsSelect<true>;
     'academy-share-links': AcademyShareLinksSelect<false> | AcademyShareLinksSelect<true>;
     'academy-sessions': AcademySessionsSelect<false> | AcademySessionsSelect<true>;
+    'academy-groups': AcademyGroupsSelect<false> | AcademyGroupsSelect<true>;
+    'academy-group-invites': AcademyGroupInvitesSelect<false> | AcademyGroupInvitesSelect<true>;
     'training-attendance': TrainingAttendanceSelect<false> | TrainingAttendanceSelect<true>;
     'academy-terms': AcademyTermsSelect<false> | AcademyTermsSelect<true>;
     'academy-term-slots': AcademyTermSlotsSelect<false> | AcademyTermSlotsSelect<true>;
@@ -251,6 +255,14 @@ export interface AcademyBooking {
   status: 'held' | 'confirmed' | 'payment_failed' | 'cancelled' | 'refunded' | 'expired' | 'completed';
   type: 'casual' | 'term';
   paymentMode: 'casual' | 'upfront' | 'weekly';
+  kind: 'one-on-one' | 'group';
+  group?: (number | null) | AcademyGroup;
+  groupInvite?: (number | null) | AcademyGroupInvite;
+  groupSize?: number | null;
+  /**
+   * One-off group that became a term: taken off the term total
+   */
+  groupWeek1Credit?: number | null;
   /**
    * AUD (calculated on the server)
    */
@@ -343,81 +355,453 @@ export interface AcademyBooking {
   createdAt: string;
 }
 /**
+ * Small group sessions (2–5 players, one coach). Coaches set these up from My sessions.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "promotions".
+ * via the `definition` "academy-groups".
  */
-export interface Promotion {
+export interface AcademyGroup {
+  id: number;
+  reference: string;
+  status: 'forming' | 'confirmed' | 'shortfall' | 'completed' | 'cancelled';
+  type: 'casual' | 'term';
+  coach: number | AcademyCoach;
+  term: number | AcademyTerm;
+  weekday?: ('Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday') | null;
+  startTime?: string | null;
+  firstSessionAt: string;
+  plannedSize: number;
+  /**
+   * The size the price came from — it stays the same if the group changes
+   */
+  pricingSize: number;
+  /**
+   * Locked when the group was set up
+   */
+  ratePerPlayer: number;
+  sessionsTotal: number;
+  paymentDeadline?: string | null;
+  reminderSentAt?: string | null;
+  termOffer?: {
+    status?: ('none' | 'proposed' | 'accepted' | 'declined' | 'expired') | null;
+    proposedBy?: (number | null) | AcademyGroupInvite;
+    deadline?: string | null;
+  };
+  createdBy?: (number | null) | User;
+  history?:
+    | {
+        at: string;
+        by?: (number | null) | User;
+        action: string;
+        note?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "academy-coaches".
+ */
+export interface AcademyCoach {
+  id: number;
+  user: number | User;
+  /**
+   * Name shown to families, e.g. "Coach Sam"
+   */
+  displayName: string;
+  photo?: (number | null) | Media;
+  /**
+   * Short description shown in the booking carousel (max 400 characters)
+   */
+  bio?: string | null;
+  specialties?:
+    | {
+        label: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Inactive coaches are hidden from families
+   */
+  active?: boolean | null;
+  order?: number | null;
+  organisation?: string | null;
+  alerts?: {
+    bookingEmail?: boolean | null;
+    bookingText?: boolean | null;
+    cancelEmail?: boolean | null;
+    cancelText?: boolean | null;
+    replyEmail?: boolean | null;
+    replyText?: boolean | null;
+  };
+  calendarToken?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "users".
+ */
+export interface User {
+  id: number;
+  firstName?: string | null;
+  lastName?: string | null;
+  phone?: string | null;
+  stripeCustomerAcademy?: string | null;
+  loginLinkHash?: string | null;
+  loginLinkExpires?: string | null;
+  savedCart?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  phoneE164?: string | null;
+  serviceConsentAt?: string | null;
+  marketingEmail?: boolean | null;
+  marketingSms?: boolean | null;
+  smsOptOut?: boolean | null;
+  consentReviewStatus?: ('new' | 'pending' | 'sent' | 'confirmed') | null;
+  /**
+   * Has set their own password / logged in
+   */
+  activated?: boolean | null;
+  reviewRequestSentAt?: string | null;
+  /**
+   * The one reminder sent to a guest who hasn’t set up their account yet
+   */
+  accountReminderSentAt?: string | null;
+  roles?: ('admin' | 'committee' | 'coach' | 'parent' | 'player')[] | null;
+  wwcc?: {
+    number?: string | null;
+    expiry?: string | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+  email: string;
+  resetPasswordToken?: string | null;
+  resetPasswordExpiration?: string | null;
+  salt?: string | null;
+  hash?: string | null;
+  resetPasswordRequestedAt?: string | null;
+  loginAttempts?: number | null;
+  lockUntil?: string | null;
+  sessions?:
+    | {
+        id: string;
+        createdAt?: string | null;
+        expiresAt: string;
+      }[]
+    | null;
+  password?: string | null;
+  collection: 'users';
+}
+/**
+ * Photos and logos. JPG or WebP is best for photos; PNG for logos. Large photos are fine — they upload directly to storage.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media".
+ */
+export interface Media {
   id: number;
   /**
-   * Shown to families, e.g. “Winter special”
+   * Short description of the image for screen readers and Google, e.g. "U9 players at the January holiday camp".
+   */
+  alt: string;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "academy-terms".
+ */
+export interface AcademyTerm {
+  id: number;
+  /**
+   * e.g. "Term 1 2027"
    */
   name: string;
-  status: 'draft' | 'scheduled' | 'live' | 'ended';
-  type: 'percent' | 'amount';
+  status: 'draft' | 'availability' | 'open' | 'closed';
   /**
-   * e.g. 20 (%) or 15 ($) — per booking / order
+   * First day of the school term
    */
-  value: number;
+  startDate: string;
   /**
-   * Leave empty for no limit
+   * Last day of the school term
    */
-  usesPerFamily?: number | null;
-  startsAt?: string | null;
-  endsAt?: string | null;
-  everything?: boolean | null;
-  programGroups?: ('holiday-camp' | 'academy-term' | 'toddler' | 'academy-trial' | 'registration' | 'other')[] | null;
-  programs?: (number | Program)[] | null;
-  oneOnOneAll?: boolean | null;
-  oneOnOneTerms?: (number | AcademyTerm)[] | null;
-  shopAll?: boolean | null;
-  products?: (number | Product)[] | null;
-  tournamentsAll?: boolean | null;
-  tournamentRounds?: (number | SelectionRound)[] | null;
-  foundationPlus?: boolean | null;
+  endDate: string;
   /**
-   * Only these accounts get the discount (set when the promotion is sent).
+   * Number of sessions and dates for each weekday — this sets the term price per weekday (save to refresh)
    */
-  recipients?: (number | User)[] | null;
-  channels?: ('email' | 'sms')[] | null;
-  brand?: ('academy' | 'club') | null;
+  schedulePreview?: string | null;
   /**
-   * A page on this website, e.g. /programs
+   * Coaches must submit their 1-on-1 availability by this date. Reminders go out 2 weeks, 1 week, 3 days and 1 day before.
    */
-  ctaPath?: string | null;
-  subject?: string | null;
-  message?: string | null;
-  smsText?: string | null;
-  audience?:
+  availabilityDeadline: string;
+  /**
+   * Where 1-on-1 sessions are held (shown in confirmations and reminders)
+   */
+  location?: string | null;
+  pricePerSession: number;
+  casualPrice: number;
+  /**
+   * Casual price for families with an active term booking
+   */
+  termMemberPrice: number;
+  /**
+   * Only for sessions starting within this many days of booking
+   */
+  termMemberWindowDays: number;
+  sessionMinutes: number;
+  /**
+   * 24-hour, e.g. 17:00. Default 3pm–9pm.
+   */
+  slotStartTimes?:
     | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
+        time: string;
+        id?: string | null;
+      }[]
     | null;
-  scheduledFor?: string | null;
-  sentAt?: string | null;
-  sentCounts?:
+  /**
+   * 24-hour. Default 8am–5pm (last session starts 4pm).
+   */
+  weekendStartTimes?:
     | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
+        time: string;
+        id?: string | null;
+      }[]
     | null;
-  sendState?:
+  bookingCutoffHours?: number | null;
+  minTermSessions?: number | null;
+  /**
+   * Stripe checkout links last at least 30 minutes
+   */
+  holdMinutes?: number | null;
+  shareLinkHoldHours?: number | null;
+  accountReminderDays?: number | null;
+  organisation?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "academy-group-invites".
+ */
+export interface AcademyGroupInvite {
+  id: number;
+  label?: string | null;
+  group: number | AcademyGroup;
+  tokenHash: string;
+  status: 'invited' | 'paid' | 'weekly' | 'overdue' | 'declined' | 'removed';
+  participant?: (number | null) | Participant;
+  account?: (number | null) | User;
+  invitee: {
+    playerFirstName: string;
+    playerLastName: string;
+    parentFirstName: string;
+    parentLastName: string;
+    email: string;
+    mobile?: string | null;
+  };
+  rateLocked: number;
+  booking?: (number | null) | AcademyBooking;
+  sentEmail?: boolean | null;
+  sentSms?: boolean | null;
+  openedAt?: string | null;
+  remindedAt?: string | null;
+  termAnswer?: ('pending' | 'accepted' | 'declined') | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "participants".
+ */
+export interface Participant {
+  id: number;
+  fullName?: string | null;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
+  gender?: ('female' | 'male' | 'non-binary' | 'prefer-not-to-say') | null;
+  account: number | User;
+  team?: (number | null) | Team;
+  ffaNumber?: string | null;
+  /**
+   * Shared with the player’s coaches. Filled in from their first 1-on-1 booking; families can update it in their account.
+   */
+  football?: {
+    currentClub?: string | null;
+    position?: string | null;
+    goals?: string | null;
+  };
+  medical?: {
+    conditions?: string | null;
+    emergencyContact?: string | null;
+    emergencyPhone?: string | null;
+  };
+  photoConsent?: boolean | null;
+  /**
+   * Foundation+ plan, leaderboard privacy and parental consent.
+   */
+  pdr?: {
+    tier?: ('free' | 'standard' | 'premium') | null;
+    subscriptionId?: string | null;
+    subscriptionStatus?: string | null;
+    /**
+     * e.g. premium_month
+     */
+    plan?: string | null;
+    trialEndsAt?: string | null;
+    currentPeriodEnd?: string | null;
+    cancelAtPeriodEnd?: boolean | null;
+    pastDueSince?: string | null;
+    trialUsedAt?: string | null;
+    trialReminderSentAt?: string | null;
+    pastDueReminderAt?: string | null;
+    leaderboardOptOut?: boolean | null;
+    /**
+     * Default: first name + last initial, e.g. Mia T.
+     */
+    leaderboardName?: string | null;
+    consentAt?: string | null;
+  };
+  /**
+   * Added automatically when registration / Academy term is paid. Edit by hand for players registered outside the website.
+   */
+  memberships?: ('rowville' | 'rfa' | 'foundation-plus')[] | null;
+  /**
+   * Set automatically when the committee offers a place after trials.
+   */
+  registrationOffer?: {
+    program?: (number | null) | Program;
+    status?: ('offered' | 'paid') | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "teams".
+ */
+export interface Team {
+  id: number;
+  name: string;
+  slug: string;
+  type: 'rowville' | 'tournament';
+  season?: number | null;
+  /**
+   * Hides the team page from families after the season / tournament
+   */
+  archived?: boolean | null;
+  /**
+   * Look and sender of team emails
+   */
+  brand?: ('club' | 'academy') | null;
+  /**
+   * Shown as “[Tournament] – [Team]”
+   */
+  event?: string | null;
+  category?: ('miniroos' | 'junior-boys' | 'junior-girls' | 'senior-women' | 'senior-men') | null;
+  /**
+   * e.g. 2017s
+   */
+  ageGroup?: string | null;
+  /**
+   * League / division
+   */
+  competition?: string | null;
+  /**
+   * Coaches/managers can post notices, edit training and fixtures, and moderate Team Chat
+   */
+  coaches?: (number | User)[] | null;
+  sections?: {
+    info?: boolean | null;
+    notices?: boolean | null;
+    fixtures?: boolean | null;
+    training?: boolean | null;
+    forum?: boolean | null;
+  };
+  info?: {
+    /**
+     * e.g. Sat 20 – Sun 21 March 2027
+     */
+    dates?: string | null;
+    venues?: string | null;
+    /**
+     * Arrival times, game times, presentations…
+     */
+    schedule?: string | null;
+    whatToBring?: string | null;
+    costs?: string | null;
+    /**
+     * Team manager / coach names and phone numbers
+     */
+    contacts?: string | null;
+  };
+  externalUrl?: string | null;
+  /**
+   * Families see “Fixtures not yet released” until this or fixtures below are added
+   */
+  driblUrl?: string | null;
+  /**
+   * Upcoming fixtures and results (coaches can also edit these on the team page)
+   */
+  fixtures?:
     | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
+        startsAt: string;
+        opponent: string;
+        venue?: string | null;
+        /**
+         * e.g. W 3–1
+         */
+        result?: string | null;
+        id?: string | null;
+      }[]
     | null;
-  sendCompletedAt?: string | null;
-  approvedBy?: (number | null) | User;
+  training?:
+    | {
+        day: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
+        /**
+         * 24h, e.g. 17:00
+         */
+        start: string;
+        /**
+         * 24h, e.g. 18:00
+         */
+        end?: string | null;
+        location?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Changes are highlighted on the team page for 14 days
+   */
+  trainingChangedAt?: string | null;
+  /**
+   * Short text for the public Fixtures page, e.g. “Tue & Thu 5:00pm”
+   */
+  trainingTimes?: string | null;
+  /**
+   * Dribl team identifier (future automatic fixtures)
+   */
+  driblTeamId?: string | null;
+  photo?: (number | null) | Media;
+  order?: number | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -553,99 +937,82 @@ export interface Program {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "academy-terms".
+ * via the `definition` "promotions".
  */
-export interface AcademyTerm {
+export interface Promotion {
   id: number;
   /**
-   * e.g. "Term 1 2027"
+   * Shown to families, e.g. “Winter special”
    */
   name: string;
-  status: 'draft' | 'availability' | 'open' | 'closed';
+  status: 'draft' | 'scheduled' | 'live' | 'ended';
+  type: 'percent' | 'amount';
   /**
-   * First day of the school term
+   * e.g. 20 (%) or 15 ($) — per booking / order
    */
-  startDate: string;
+  value: number;
   /**
-   * Last day of the school term
+   * Leave empty for no limit
    */
-  endDate: string;
+  usesPerFamily?: number | null;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  everything?: boolean | null;
+  programGroups?: ('holiday-camp' | 'academy-term' | 'toddler' | 'academy-trial' | 'registration' | 'other')[] | null;
+  programs?: (number | Program)[] | null;
+  oneOnOneAll?: boolean | null;
+  oneOnOneTerms?: (number | AcademyTerm)[] | null;
+  shopAll?: boolean | null;
+  products?: (number | Product)[] | null;
+  tournamentsAll?: boolean | null;
+  tournamentRounds?: (number | SelectionRound)[] | null;
+  foundationPlus?: boolean | null;
   /**
-   * Number of sessions and dates for each weekday — this sets the term price per weekday (save to refresh)
+   * Only these accounts get the discount (set when the promotion is sent).
    */
-  schedulePreview?: string | null;
+  recipients?: (number | User)[] | null;
+  channels?: ('email' | 'sms')[] | null;
+  brand?: ('academy' | 'club') | null;
   /**
-   * Coaches must submit their 1-on-1 availability by this date. Reminders go out 2 weeks, 1 week, 3 days and 1 day before.
+   * A page on this website, e.g. /programs
    */
-  availabilityDeadline: string;
-  /**
-   * Where 1-on-1 sessions are held (shown in confirmations and reminders)
-   */
-  location?: string | null;
-  pricePerSession: number;
-  casualPrice: number;
-  /**
-   * Casual price for families with an active term booking
-   */
-  termMemberPrice: number;
-  /**
-   * Only for sessions starting within this many days of booking
-   */
-  termMemberWindowDays: number;
-  sessionMinutes: number;
-  /**
-   * 24-hour, e.g. 17:00. Default 3pm–9pm.
-   */
-  slotStartTimes?:
+  ctaPath?: string | null;
+  subject?: string | null;
+  message?: string | null;
+  smsText?: string | null;
+  audience?:
     | {
-        time: string;
-        id?: string | null;
-      }[]
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
     | null;
-  /**
-   * 24-hour. Default 8am–5pm (last session starts 4pm).
-   */
-  weekendStartTimes?:
+  scheduledFor?: string | null;
+  sentAt?: string | null;
+  sentCounts?:
     | {
-        time: string;
-        id?: string | null;
-      }[]
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
     | null;
-  bookingCutoffHours?: number | null;
-  minTermSessions?: number | null;
-  /**
-   * Stripe checkout links last at least 30 minutes
-   */
-  holdMinutes?: number | null;
-  shareLinkHoldHours?: number | null;
-  accountReminderDays?: number | null;
-  organisation?: string | null;
+  sendState?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  sendCompletedAt?: string | null;
+  approvedBy?: (number | null) | User;
   updatedAt: string;
   createdAt: string;
-}
-/**
- * Photos and logos. JPG or WebP is best for photos; PNG for logos. Large photos are fine — they upload directly to storage.
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "media".
- */
-export interface Media {
-  id: number;
-  /**
-   * Short description of the image for screen readers and Google, e.g. "U9 players at the January holiday camp".
-   */
-  alt: string;
-  updatedAt: string;
-  createdAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -706,178 +1073,6 @@ export interface Product {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "teams".
- */
-export interface Team {
-  id: number;
-  name: string;
-  slug: string;
-  type: 'rowville' | 'tournament';
-  season?: number | null;
-  /**
-   * Hides the team page from families after the season / tournament
-   */
-  archived?: boolean | null;
-  /**
-   * Look and sender of team emails
-   */
-  brand?: ('club' | 'academy') | null;
-  /**
-   * Shown as “[Tournament] – [Team]”
-   */
-  event?: string | null;
-  category?: ('miniroos' | 'junior-boys' | 'junior-girls' | 'senior-women' | 'senior-men') | null;
-  /**
-   * e.g. 2017s
-   */
-  ageGroup?: string | null;
-  /**
-   * League / division
-   */
-  competition?: string | null;
-  /**
-   * Coaches/managers can post notices, edit training and fixtures, and moderate Team Chat
-   */
-  coaches?: (number | User)[] | null;
-  sections?: {
-    info?: boolean | null;
-    notices?: boolean | null;
-    fixtures?: boolean | null;
-    training?: boolean | null;
-    forum?: boolean | null;
-  };
-  info?: {
-    /**
-     * e.g. Sat 20 – Sun 21 March 2027
-     */
-    dates?: string | null;
-    venues?: string | null;
-    /**
-     * Arrival times, game times, presentations…
-     */
-    schedule?: string | null;
-    whatToBring?: string | null;
-    costs?: string | null;
-    /**
-     * Team manager / coach names and phone numbers
-     */
-    contacts?: string | null;
-  };
-  externalUrl?: string | null;
-  /**
-   * Families see “Fixtures not yet released” until this or fixtures below are added
-   */
-  driblUrl?: string | null;
-  /**
-   * Upcoming fixtures and results (coaches can also edit these on the team page)
-   */
-  fixtures?:
-    | {
-        startsAt: string;
-        opponent: string;
-        venue?: string | null;
-        /**
-         * e.g. W 3–1
-         */
-        result?: string | null;
-        id?: string | null;
-      }[]
-    | null;
-  training?:
-    | {
-        day: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
-        /**
-         * 24h, e.g. 17:00
-         */
-        start: string;
-        /**
-         * 24h, e.g. 18:00
-         */
-        end?: string | null;
-        location?: string | null;
-        id?: string | null;
-      }[]
-    | null;
-  /**
-   * Changes are highlighted on the team page for 14 days
-   */
-  trainingChangedAt?: string | null;
-  /**
-   * Short text for the public Fixtures page, e.g. “Tue & Thu 5:00pm”
-   */
-  trainingTimes?: string | null;
-  /**
-   * Dribl team identifier (future automatic fixtures)
-   */
-  driblTeamId?: string | null;
-  photo?: (number | null) | Media;
-  order?: number | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users".
- */
-export interface User {
-  id: number;
-  firstName?: string | null;
-  lastName?: string | null;
-  phone?: string | null;
-  stripeCustomerAcademy?: string | null;
-  loginLinkHash?: string | null;
-  loginLinkExpires?: string | null;
-  savedCart?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  phoneE164?: string | null;
-  serviceConsentAt?: string | null;
-  marketingEmail?: boolean | null;
-  marketingSms?: boolean | null;
-  smsOptOut?: boolean | null;
-  consentReviewStatus?: ('new' | 'pending' | 'sent' | 'confirmed') | null;
-  /**
-   * Has set their own password / logged in
-   */
-  activated?: boolean | null;
-  reviewRequestSentAt?: string | null;
-  /**
-   * The one reminder sent to a guest who hasn’t set up their account yet
-   */
-  accountReminderSentAt?: string | null;
-  roles?: ('admin' | 'committee' | 'coach' | 'parent' | 'player')[] | null;
-  wwcc?: {
-    number?: string | null;
-    expiry?: string | null;
-  };
-  updatedAt: string;
-  createdAt: string;
-  email: string;
-  resetPasswordToken?: string | null;
-  resetPasswordExpiration?: string | null;
-  salt?: string | null;
-  hash?: string | null;
-  resetPasswordRequestedAt?: string | null;
-  loginAttempts?: number | null;
-  lockUntil?: string | null;
-  sessions?:
-    | {
-        id: string;
-        createdAt?: string | null;
-        expiresAt: string;
-      }[]
-    | null;
-  password?: string | null;
-  collection: 'users';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "selection-rounds".
  */
 export interface SelectionRound {
@@ -918,113 +1113,6 @@ export interface SelectionRound {
      * Leave blank to send no text
      */
     unsuccessfulSms?: string | null;
-  };
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "academy-coaches".
- */
-export interface AcademyCoach {
-  id: number;
-  user: number | User;
-  /**
-   * Name shown to families, e.g. "Coach Sam"
-   */
-  displayName: string;
-  photo?: (number | null) | Media;
-  /**
-   * Short description shown in the booking carousel (max 400 characters)
-   */
-  bio?: string | null;
-  specialties?:
-    | {
-        label: string;
-        id?: string | null;
-      }[]
-    | null;
-  /**
-   * Inactive coaches are hidden from families
-   */
-  active?: boolean | null;
-  order?: number | null;
-  organisation?: string | null;
-  alerts?: {
-    bookingEmail?: boolean | null;
-    bookingText?: boolean | null;
-    cancelEmail?: boolean | null;
-    cancelText?: boolean | null;
-    replyEmail?: boolean | null;
-    replyText?: boolean | null;
-  };
-  calendarToken?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "participants".
- */
-export interface Participant {
-  id: number;
-  fullName?: string | null;
-  firstName: string;
-  lastName: string;
-  dateOfBirth: string;
-  gender?: ('female' | 'male' | 'non-binary' | 'prefer-not-to-say') | null;
-  account: number | User;
-  team?: (number | null) | Team;
-  ffaNumber?: string | null;
-  /**
-   * Shared with the player’s coaches. Filled in from their first 1-on-1 booking; families can update it in their account.
-   */
-  football?: {
-    currentClub?: string | null;
-    position?: string | null;
-    goals?: string | null;
-  };
-  medical?: {
-    conditions?: string | null;
-    emergencyContact?: string | null;
-    emergencyPhone?: string | null;
-  };
-  photoConsent?: boolean | null;
-  /**
-   * Foundation+ plan, leaderboard privacy and parental consent.
-   */
-  pdr?: {
-    tier?: ('free' | 'standard' | 'premium') | null;
-    subscriptionId?: string | null;
-    subscriptionStatus?: string | null;
-    /**
-     * e.g. premium_month
-     */
-    plan?: string | null;
-    trialEndsAt?: string | null;
-    currentPeriodEnd?: string | null;
-    cancelAtPeriodEnd?: boolean | null;
-    pastDueSince?: string | null;
-    trialUsedAt?: string | null;
-    trialReminderSentAt?: string | null;
-    pastDueReminderAt?: string | null;
-    leaderboardOptOut?: boolean | null;
-    /**
-     * Default: first name + last initial, e.g. Mia T.
-     */
-    leaderboardName?: string | null;
-    consentAt?: string | null;
-  };
-  /**
-   * Added automatically when registration / Academy term is paid. Edit by hand for players registered outside the website.
-   */
-  memberships?: ('rowville' | 'rfa' | 'foundation-plus')[] | null;
-  /**
-   * Set automatically when the committee offers a place after trials.
-   */
-  registrationOffer?: {
-    program?: (number | null) | Program;
-    status?: ('offered' | 'paid') | null;
   };
   updatedAt: string;
   createdAt: string;
@@ -1072,7 +1160,12 @@ export interface AcademyShareLink {
  */
 export interface AcademySession {
   id: number;
-  booking: number | AcademyBooking;
+  booking?: (number | null) | AcademyBooking;
+  /**
+   * A small group holds its time with one “time held” row per date; each player has their own row too.
+   */
+  kind: 'one-on-one' | 'group-player' | 'group-slot';
+  group?: (number | null) | AcademyGroup;
   coach: number | AcademyCoach;
   startsAt: string;
   status: 'held' | 'scheduled' | 'completed' | 'no_show' | 'cancelled';
@@ -1892,6 +1985,10 @@ export interface AcademyCredit {
    * Booking it came from, or was used on
    */
   booking?: (number | null) | AcademyBooking;
+  /**
+   * Credits from a small group session can only pay for small group sessions.
+   */
+  scope: 'any' | 'group';
   note?: string | null;
   /**
    * For reporting only — credits are always worth one session.
@@ -2387,6 +2484,14 @@ export interface PayloadLockedDocument {
         value: number | AcademySession;
       } | null)
     | ({
+        relationTo: 'academy-groups';
+        value: number | AcademyGroup;
+      } | null)
+    | ({
+        relationTo: 'academy-group-invites';
+        value: number | AcademyGroupInvite;
+      } | null)
+    | ({
         relationTo: 'training-attendance';
         value: number | TrainingAttendance;
       } | null)
@@ -2649,6 +2754,11 @@ export interface AcademyBookingsSelect<T extends boolean = true> {
   status?: T;
   type?: T;
   paymentMode?: T;
+  kind?: T;
+  group?: T;
+  groupInvite?: T;
+  groupSize?: T;
+  groupWeek1Credit?: T;
   amount?: T;
   discount?: T;
   promotion?: T;
@@ -2774,6 +2884,8 @@ export interface AcademyShareLinksSelect<T extends boolean = true> {
  */
 export interface AcademySessionsSelect<T extends boolean = true> {
   booking?: T;
+  kind?: T;
+  group?: T;
   coach?: T;
   startsAt?: T;
   status?: T;
@@ -2790,6 +2902,76 @@ export interface AcademySessionsSelect<T extends boolean = true> {
   attendanceAt?: T;
   coachNotes?: T;
   reminderSentAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "academy-groups_select".
+ */
+export interface AcademyGroupsSelect<T extends boolean = true> {
+  reference?: T;
+  status?: T;
+  type?: T;
+  coach?: T;
+  term?: T;
+  weekday?: T;
+  startTime?: T;
+  firstSessionAt?: T;
+  plannedSize?: T;
+  pricingSize?: T;
+  ratePerPlayer?: T;
+  sessionsTotal?: T;
+  paymentDeadline?: T;
+  reminderSentAt?: T;
+  termOffer?:
+    | T
+    | {
+        status?: T;
+        proposedBy?: T;
+        deadline?: T;
+      };
+  createdBy?: T;
+  history?:
+    | T
+    | {
+        at?: T;
+        by?: T;
+        action?: T;
+        note?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "academy-group-invites_select".
+ */
+export interface AcademyGroupInvitesSelect<T extends boolean = true> {
+  label?: T;
+  group?: T;
+  tokenHash?: T;
+  status?: T;
+  participant?: T;
+  account?: T;
+  invitee?:
+    | T
+    | {
+        playerFirstName?: T;
+        playerLastName?: T;
+        parentFirstName?: T;
+        parentLastName?: T;
+        email?: T;
+        mobile?: T;
+      };
+  rateLocked?: T;
+  booking?: T;
+  sentEmail?: T;
+  sentSms?: T;
+  openedAt?: T;
+  remindedAt?: T;
+  termAnswer?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -3282,6 +3464,7 @@ export interface AcademyCreditsSelect<T extends boolean = true> {
   status?: T;
   reason?: T;
   booking?: T;
+  scope?: T;
   note?: T;
   amount?: T;
   createdBy?: T;

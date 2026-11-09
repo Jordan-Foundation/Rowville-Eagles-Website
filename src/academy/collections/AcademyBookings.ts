@@ -37,6 +37,26 @@ export const AcademyBookings: CollectionConfig = {
     },
     { name: 'type', type: 'select', required: true, options: [{ label: 'Casual session', value: 'casual' }, { label: 'Term (weekly)', value: 'term' }], admin: { position: 'sidebar' } },
     { name: 'paymentMode', type: 'select', required: true, options: ['casual', 'upfront', 'weekly'], admin: { position: 'sidebar' } },
+    {
+      name: 'kind',
+      type: 'select',
+      required: true,
+      defaultValue: 'one-on-one',
+      index: true,
+      options: [{ label: '1-on-1', value: 'one-on-one' }, { label: 'Small group', value: 'group' }],
+      admin: { position: 'sidebar' },
+    },
+    {
+      type: 'collapsible',
+      label: 'Small group',
+      admin: { position: 'sidebar', condition: (d) => d?.kind === 'group' },
+      fields: [
+        { name: 'group', type: 'relationship', relationTo: 'academy-groups', index: true, admin: { readOnly: true } },
+        { name: 'groupInvite', type: 'relationship', relationTo: 'academy-group-invites', admin: { readOnly: true } },
+        { name: 'groupSize', label: 'Group size when booked', type: 'number', admin: { readOnly: true } },
+        { name: 'groupWeek1Credit', label: 'Week 1 already paid (AUD)', type: 'number', admin: { readOnly: true, description: 'One-off group that became a term: taken off the term total' } },
+      ],
+    },
     { name: 'amount', type: 'number', required: true, admin: { position: 'sidebar', description: 'AUD (calculated on the server)' } },
     {
       type: 'row',

@@ -110,7 +110,7 @@ export async function cancelAcademy(payload: Payload, r: CancelRequest): Promise
         collection: 'academy-sessions',
         overrideAccess: true,
         req,
-        data: { booking: booking.id, coach: r.makeUp!.coachId, startsAt: new Date(r.makeUp!.startsAt).toISOString(), status: 'scheduled', account: accountId, paid: targets[0].paid, makeUpFor: targets[0].id },
+        data: { booking: booking.id, kind: 'one-on-one', coach: r.makeUp!.coachId, startsAt: new Date(r.makeUp!.startsAt).toISOString(), status: 'scheduled', account: accountId, paid: targets[0].paid, makeUpFor: targets[0].id },
       })
     }
     if (creditSessions > 0) await giveCredit(payload, { account: accountId!, sessions: creditSessions, value: creditValue, reason: r.by === 'coach' ? 'coach_cancellation' : override ? 'goodwill' : 'cancellation', booking: booking.id, note: r.reason, createdBy: r.actorId }, req)
