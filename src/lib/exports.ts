@@ -43,12 +43,12 @@ export const EXPORTS: Record<string, (p: Payload, params: URLSearchParams) => Pr
     }
   },
   'one-on-ones': async (p, sp) => {
-    const where: Where = sp.get('status') ? { status: { equals: sp.get('status') } } : {}
+    const where: Where = { ...(sp.get('status') ? { status: { equals: sp.get('status') } } : {}), ...(sp.get('kind') ? { kind: { equals: sp.get('kind') } } : {}) }
     const { docs } = await p.find({ ...q, collection: 'academy-bookings', where, limit: 5000, depth: 1, sort: '-createdAt' })
     return {
-      name: '1-on-1 bookings',
-      headers: ['Reference', 'Booked', 'Player', 'Parent', 'Email', 'Mobile', 'Coach', 'Type', 'Sessions', 'Status', 'Price', 'Credit used', 'Refunded'],
-      rows: docs.map((b) => [b.reference, when(b.createdAt), `${b.player.firstName} ${b.player.lastName}`, `${b.contact.firstName} ${b.contact.lastName}`, b.contact.email, formatPhone(b.contact.mobile), title(b.coach, 'displayName'), b.type, b.sessionsTotal ?? 1, b.status, b.amount, b.creditApplied ?? 0, b.refundedAmount ?? 0]),
+      name: '1-on-1 and small group bookings',
+      headers: ['Reference', 'Booked', 'Kind', 'Group', 'Player', 'Parent', 'Email', 'Mobile', 'Coach', 'Type', 'Sessions', 'Status', 'Price', 'Credit used', 'Refunded'],
+      rows: docs.map((b) => [b.reference, when(b.createdAt), b.kind === 'group' ? 'Small group' : '1-on-1', b.kind === 'group' && b.group && typeof b.group === 'object' ? `${b.group.reference} (${b.group.plannedSize})` : '', `${b.player.firstName} ${b.player.lastName}`, `${b.contact.firstName} ${b.contact.lastName}`, b.contact.email, formatPhone(b.contact.mobile), title(b.coach, 'displayName'), b.type, b.sessionsTotal ?? 1, b.status, b.amount, b.creditApplied ?? 0, b.refundedAmount ?? 0]),
     }
   },
   bookings: async (p, sp) => {

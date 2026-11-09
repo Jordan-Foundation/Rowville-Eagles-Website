@@ -2,9 +2,10 @@ import type { Payload } from 'payload'
 
 /** Money summary for Management, to check against the two Stripe accounts (pure parts unit tested). */
 
-export type Category = 'one-on-one' | 'academy-terms' | 'camps' | 'trials' | 'registrations' | 'tournaments' | 'shop'
+export type Category = 'one-on-one' | 'small-group' | 'academy-terms' | 'camps' | 'trials' | 'registrations' | 'tournaments' | 'shop'
 export const CATEGORY_LABEL: Record<Category, string> = {
   'one-on-one': '1-on-1 sessions',
+  'small-group': 'Small group sessions',
   'academy-terms': 'Academy terms & Mini Ballers',
   camps: 'Camps & programs',
   trials: 'Trials',
@@ -51,15 +52,16 @@ export async function moneyEntries(p: Payload, since: string): Promise<Entry[]> 
     p.find({ ...q, collection: 'orders', where: { updatedAt: { greater_than: since }, status: { in: ['paid', 'ready', 'completed', 'refunded'] } }, limit: 20000, depth: 0 }),
   ])
   for (const x of ab.docs) {
+    const category: Category = x.kind === 'group' ? 'small-group' : 'one-on-one'
     const paidUpFront = ['confirmed', 'completed', 'payment_failed'].includes(x.status) || (x.status === 'cancelled' && (x.adjustments ?? []).length > 0)
     if (x.paymentMode === 'weekly') {
-      if (paidUpFront) out.push({ category: 'one-on-one', payee: 'academy', at: x.createdAt, gross: x.amount / (x.sessionsTotal || 1), discount: (x.discount ?? 0) / (x.sessionsTotal || 1) })
-      for (const pay of x.payments ?? []) if (pay.status === 'paid' && pay.at && pay.amount) out.push({ category: 'one-on-one', payee: 'academy', at: pay.at, gross: pay.amount })
+      if (paidUpFront) out.push({ category, payee: 'academy', at: x.createdAt, gross: x.amount / (x.sessionsTotal || 1), discount: (x.discount ?? 0) / (x.sessionsTotal || 1) })
+      for (const pay of x.payments ?? []) if (pay.status === 'paid' && pay.at && pay.amount) out.push({ category, payee: 'academy', at: pay.at, gross: pay.amount })
     } else if (paidUpFront) {
       const card = x.amount - (x.creditApplied ?? 0)
-      if (card > 0) out.push({ category: 'one-on-one', payee: 'academy', at: x.createdAt, gross: card, discount: x.discount ?? 0 })
+      if (card > 0) out.push({ category, payee: 'academy', at: x.createdAt, gross: card, discount: x.discount ?? 0 })
     }
-    for (const a of x.adjustments ?? []) if ((a.cash ?? 0) > 0 && (a.refundStatus === 'refunded' || a.refundStatus === 'simulated') && a.at) out.push({ category: 'one-on-one', payee: 'academy', at: a.at, refund: a.cash! })
+    for (const a of x.adjustments ?? []) if ((a.cash ?? 0) > 0 && (a.refundStatus === 'refunded' || a.refundStatus === 'simulated') && a.at) out.push({ category, payee: 'academy', at: a.at, refund: a.cash! })
   }
   for (const x of b.docs) {
     const prog = typeof x.program === 'object' ? x.program : null

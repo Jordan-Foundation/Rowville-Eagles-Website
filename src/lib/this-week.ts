@@ -22,8 +22,10 @@ export async function managementThisWeek(p: Payload, now = new Date()): Promise<
   const w = weekRange(now)
   const lastWeek = new Date(now.getTime() - 7 * 86_400_000).toISOString()
   const between = { greater_than_equal: w.start.toISOString(), less_than_equal: w.end.toISOString() }
-  const [ones, needCover, programs, newOnes, newBookings, cancels, trials, camps, orders, paid1, paid2] = await Promise.all([
-    p.count({ collection: 'academy-sessions', where: { status: { in: ['scheduled', 'completed', 'no_show'] }, kind: { not_equals: 'group-slot' }, startsAt: between }, overrideAccess: true }),
+  const [ones, smallGroups, needCover, programs, newOnes, newBookings, cancels, trials, camps, orders, paid1, paid2] = await Promise.all([
+    p.count({ collection: 'academy-sessions', where: { status: { in: ['scheduled', 'completed', 'no_show'] }, kind: { equals: 'one-on-one' }, startsAt: between }, overrideAccess: true }),
+    // One per small group session (its time row), however many players are in it
+    p.count({ collection: 'academy-sessions', where: { status: { equals: 'scheduled' }, kind: { equals: 'group-slot' }, startsAt: between }, overrideAccess: true }),
     p.count({ collection: 'academy-sessions', where: { needsCover: { equals: true }, coverCoach: { exists: false }, status: { equals: 'scheduled' }, startsAt: between }, overrideAccess: true }),
     p.find({ ...q, collection: 'programs', where: { type: { in: ['academy-term', 'toddler'] }, status: { in: ['open', 'full'] } }, limit: 30, depth: 0 }),
     p.count({ collection: 'academy-bookings', where: { status: { in: ['confirmed', 'completed'] }, createdAt: { greater_than: lastWeek } }, overrideAccess: true }),
@@ -51,6 +53,7 @@ export async function managementThisWeek(p: Payload, now = new Date()): Promise<
     to: w.to,
     lines: [
       { label: '1-on-1 sessions', value: String(ones.totalDocs), href: '/management/academy/dashboard' },
+      ...(smallGroups.totalDocs ? [{ label: 'Small group sessions', value: String(smallGroups.totalDocs), href: '/management/programs?program=1on1&kind=group' }] : []),
       { label: 'Group trainings', value: String(groupSessions), href: '/management/academy/terms' },
       { label: 'Trial sessions booked', value: String(trials.totalDocs), href: '/management/programs' },
       ...(camps.docs.length ? [{ label: 'Camps starting', value: camps.docs.map((c) => c.title).join(', '), href: '/management/programs' }] : []),

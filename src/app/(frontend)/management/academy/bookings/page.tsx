@@ -10,9 +10,9 @@ import { payload, formatMoney, formatDate } from '@/lib/payload'
 import type { AcademyCoach, Participant } from '@/payload-types'
 
 export const dynamic = 'force-dynamic'
-export const metadata: Metadata = { title: '1-on-1 bookings', robots: { index: false } }
+export const metadata: Metadata = { title: '1-on-1 & small group bookings', robots: { index: false } }
 
-type Q = { q?: string; status?: string; term?: string; coach?: string; type?: string; member?: string }
+type Q = { q?: string; status?: string; term?: string; coach?: string; type?: string; member?: string; kind?: string }
 const statuses = ['confirmed', 'payment_failed', 'completed', 'cancelled', 'refunded', 'expired', 'held']
 
 export default async function StaffBookingsPage({ searchParams }: { searchParams: Promise<Q> }) {
@@ -34,6 +34,7 @@ export default async function StaffBookingsPage({ searchParams }: { searchParams
   if (q.term) and.push({ term: { equals: Number(q.term) } })
   if (q.coach) and.push({ coach: { equals: Number(q.coach) } })
   if (q.type) and.push({ type: { equals: q.type } })
+  if (q.kind === 'group' || q.kind === 'one-on-one') and.push({ kind: { equals: q.kind } })
   const { docs } = await p.find({ pagination: false, collection: 'academy-bookings', where: { and }, sort: '-createdAt', limit: 200, depth: 1, overrideAccess: true })
   // Club members (Rowville registered players) vs RFA-only players
   const rows = docs.filter((b) => {
@@ -49,7 +50,7 @@ export default async function StaffBookingsPage({ searchParams }: { searchParams
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted">Management · Foundation Academy</p>
-            <h1 className="mt-2 font-display text-4xl font-semibold uppercase tracking-tight">1-on-1 bookings</h1>
+            <h1 className="mt-2 font-display text-4xl font-semibold uppercase tracking-tight">1-on-1 &amp; small group bookings</h1>
             <div className="mt-3"><DownloadCsv list="one-on-ones" /></div>
           </div>
           <div className="flex gap-4 text-sm"><Link href="/management/programs" className="underline">Programs Overview</Link><Link href="/management/academy" className="underline">Availability & cover</Link></div>
@@ -59,6 +60,7 @@ export default async function StaffBookingsPage({ searchParams }: { searchParams
           <select name="status" aria-label="Status" defaultValue={q.status ?? ''} className={select}><option value="">Active & past</option>{statuses.map((s) => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}</select>
           <select name="term" aria-label="Term" defaultValue={q.term ?? ''} className={select}><option value="">All terms</option>{terms.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select>
           <select name="coach" aria-label="Coach" defaultValue={q.coach ?? ''} className={select}><option value="">All coaches</option>{coaches.map((c) => <option key={c.id} value={c.id}>{c.displayName}</option>)}</select>
+          <select name="kind" aria-label="1-on-1 or small group" defaultValue={q.kind ?? ''} className={select}><option value="">1-on-1 & small groups</option><option value="one-on-one">1-on-1</option><option value="group">Small groups</option></select>
           <select name="type" aria-label="Casual or term" defaultValue={q.type ?? ''} className={select}><option value="">Casual & term</option><option value="casual">Casual</option><option value="term">Term</option></select>
           <select name="member" aria-label="Players" defaultValue={q.member ?? ''} className={select}><option value="">All players</option><option value="club">Rowville club members</option><option value="rfa">RFA-only players</option></select>
           <button className="bg-white px-4 py-2 text-sm font-semibold uppercase tracking-wider text-black">Filter</button>
@@ -72,7 +74,7 @@ export default async function StaffBookingsPage({ searchParams }: { searchParams
             <tbody className="divide-y divide-line">
               {rows.map((b) => (
                 <tr key={b.id} className="hover:bg-white/5">
-                  <td className="py-3 pr-4"><Link href={`/management/academy/bookings/${b.id}`} className="font-mono font-medium underline">{b.reference}</Link><span className="block text-xs text-muted">{b.type === 'term' ? `Term · ${b.paymentMode}` : 'Casual'}</span></td>
+                  <td className="py-3 pr-4"><Link href={`/management/academy/bookings/${b.id}`} className="font-mono font-medium underline">{b.reference}</Link><span className="block text-xs text-muted">{b.kind === 'group' ? 'Small group · ' : ''}{b.type === 'term' ? `Term · ${b.paymentMode}` : 'Casual'}</span></td>
                   <td className="pr-4"><PersonLink kind="player" of={b.participant}>{b.player.firstName} {b.player.lastName}</PersonLink><span className="block text-xs text-muted"><PersonLink kind="family" of={b.account}>{b.contact.firstName} {b.contact.lastName}</PersonLink> · {b.contact.email}</span></td>
                   <td className="pr-4">{(b.coach as AcademyCoach).displayName}</td>
                   <td className="pr-4">{b.firstSessionAt ? formatDate(b.firstSessionAt, { weekday: 'short', day: 'numeric', month: 'short' }) : '—'}</td>

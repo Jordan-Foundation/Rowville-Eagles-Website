@@ -88,10 +88,10 @@ export default async function FamilyPage({ params }: { params: Promise<{ id: str
             {regs.docs.map((r) => <li key={r.id} className="px-5 py-3"><span className="font-semibold">{r.player.firstName}</span> · {typeof r.program === 'object' ? r.program.title : ''} <span className="text-muted">· {r.status}{r.reference ? ` · ${r.reference}` : ''}</span></li>)}
           </ul>
         </Panel>
-        <Panel title="1-on-1s" count={oneOnOnes.docs.length} empty="No 1-on-1 bookings.">
+        <Panel title="1-on-1s & small groups" count={oneOnOnes.docs.length} empty="No 1-on-1 or small group bookings.">
           <ul className="divide-y divide-line">
             {oneOnOnes.docs.map((b) => (
-              <li key={b.id}><Link href={`/management/academy/bookings/${b.id}`} className="block px-5 py-3 hover:bg-white/5"><span className="font-semibold">{b.player.firstName}</span> · {b.type === 'term' ? 'Term' : 'Casual'} with {typeof b.coach === 'object' ? b.coach.displayName : 'coach'} <span className="text-muted">· {b.status} · {formatMoney(b.amount)} · {b.reference}</span></Link></li>
+              <li key={b.id}><Link href={`/management/academy/bookings/${b.id}`} className="block px-5 py-3 hover:bg-white/5"><span className="font-semibold">{b.player.firstName}</span> · {b.kind === 'group' ? 'Small group · ' : ''}{b.type === 'term' ? 'Term' : 'Casual'} with {typeof b.coach === 'object' ? b.coach.displayName : 'coach'} <span className="text-muted">· {b.status} · {formatMoney(b.amount)} · {b.reference}</span></Link></li>
             ))}
           </ul>
         </Panel>

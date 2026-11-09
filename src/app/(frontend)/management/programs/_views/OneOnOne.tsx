@@ -7,11 +7,11 @@ import { casualSlots } from '@/academy/slots'
 import { creditState, type LedgerEntry } from '@/academy/credit-ledger'
 import type { Participant } from '@/payload-types'
 
-export type Q = { term?: string; coach?: string; member?: string }
+export type Q = { term?: string; coach?: string; member?: string; kind?: string }
 const DAY = 86_400_000
 const rel = (v: number | { id: number } | null | undefined) => (v && typeof v === 'object' ? v.id : (v ?? null))
 
-/** 1-on-1 coaching — the original Academy dashboard, unchanged. */
+/** 1-on-1 and small group coaching — filter by 1-on-1 / small group / both. */
 export async function OneOnOneView({ q }: { q: Q }) {
   const p = await payload()
   const { docs: terms } = await p.find({ pagination: false, collection: 'academy-terms', where: { status: { not_equals: 'draft' } }, sort: '-startDate', limit: 20, depth: 0 })
@@ -26,10 +26,11 @@ export async function OneOnOneView({ q }: { q: Q }) {
     p.find({ pagination: false, collection: 'academy-credits', where: { status: { in: ['active', 'pending'] } }, depth: 0, limit: 10000, overrideAccess: true, select: { account: true, sessions: true, status: true, createdAt: true, expiresAt: true } }),
   ])
   const isMember = (b: (typeof bookingsAll)[number]) => Boolean(b.participant && typeof b.participant === 'object' && (b.participant as Participant).memberships?.includes('rowville'))
-  const bookings = bookingsAll.filter((b) => (!coachFilter || rel(b.coach) === coachFilter) && (!q.member || (q.member === 'club' ? isMember(b) : !isMember(b))))
+  const kind = q.kind === 'group' || q.kind === 'one-on-one' ? q.kind : null
+  const bookings = bookingsAll.filter((b) => (!coachFilter || rel(b.coach) === coachFilter) && (!q.member || (q.member === 'club' ? isMember(b) : !isMember(b))) && (!kind || (b.kind ?? 'one-on-one') === kind))
   const ids = bookings.map((b) => b.id)
   const { docs: sessions } = ids.length
-    ? await p.find({ pagination: false, collection: 'academy-sessions', where: { booking: { in: ids } }, depth: 0, limit: 10000, overrideAccess: true, select: { booking: true, coach: true, coverCoach: true, status: true, startsAt: true } })
+    ? await p.find({ pagination: false, collection: 'academy-sessions', where: { booking: { in: ids } }, depth: 0, limit: 10000, overrideAccess: true, select: { booking: true, coach: true, coverCoach: true, status: true, startsAt: true, kind: true, group: true } })
     : { docs: [] }
 
   // Money
@@ -50,6 +51,8 @@ export async function OneOnOneView({ q }: { q: Q }) {
   const live = sessions.filter((s) => s.status !== 'cancelled' && s.status !== 'held')
   const cancelled = sessions.filter((s) => s.status === 'cancelled' && bookings.find((b) => b.id === rel(s.booking))?.status !== 'expired')
   const active = bookings.filter((b) => b.status !== 'cancelled' && b.status !== 'refunded')
+  const once = (list: typeof live) => [...new Map(list.map((s) => [s.kind === 'group-player' ? `g${rel(s.group as never)}|${s.startsAt}` : `s${s.id}`, s])).values()]
+  const groupIds = new Set(active.filter((b) => b.kind === 'group').map((b) => rel(b.group as never)))
 
   // Capacity & open slots per coach
   const engine = { term, coaches: data.availability, taken: data.taken, now, cutoffHours: term.bookingCutoffHours ?? 24 }
@@ -59,8 +62,9 @@ export async function OneOnOneView({ q }: { q: Q }) {
     .map((c) => {
       const avail = data.availability.find((a) => a.coachId === c.id)
       const capacity = avail ? coachCapacity(term, avail) : 0
-      // Sessions this coach runs: own sessions not covered by someone else, plus sessions they cover
-      const runs = live.filter((s) => (rel(s.coverCoach) ?? rel(s.coach)) === c.id)
+      // Sessions this coach runs: own sessions not covered by someone else, plus sessions they cover.
+      // A small group is one session for the coach however many players are in it.
+      const runs = once(live.filter((s) => (rel(s.coverCoach) ?? rel(s.coach)) === c.id))
       const theirBookings = active.filter((b) => rel(b.coach) === c.id)
       return {
         id: c.id,
@@ -70,7 +74,7 @@ export async function OneOnOneView({ q }: { q: Q }) {
         util: utilisation(runs.length, capacity),
         open14: soon.filter((s) => s.coachIds.includes(c.id)).length,
         revenue: bookings.filter((b) => rel(b.coach) === c.id).reduce((n, b) => n + cashPaid(plain(b)) - (b.refundedAmount ?? 0), 0),
-        cancelled: cancelled.filter((s) => rel(s.coach) === c.id).length,
+        cancelled: once(cancelled.filter((s) => rel(s.coach) === c.id)).length,
         terms: theirBookings.filter((b) => b.type === 'term').length,
         casuals: theirBookings.filter((b) => b.type === 'casual').length,
       }
@@ -80,8 +84,8 @@ export async function OneOnOneView({ q }: { q: Q }) {
   const select = 'border border-line bg-surface px-3 py-2 text-sm'
   const tiles: [string, string, string?][] = [
     ['Net revenue', formatMoney(collected - refunded), `${formatMoney(collected)} collected · ${formatMoney(refunded)} refunded`],
-    ['Bookings', String(active.length), `${active.filter((b) => b.type === 'term').length} term · ${active.filter((b) => b.type === 'casual').length} casual · ${active.filter((b) => b.paymentMode === 'weekly').length} on weekly payments`],
-    ['Sessions booked', `${booked} / ${capacity}`, `${utilisation(booked, capacity)}% of offered hours · ${cancelled.length} cancelled`],
+    ['Bookings', String(active.length), `${active.filter((b) => b.type === 'term').length} term · ${active.filter((b) => b.type === 'casual').length} casual · ${active.filter((b) => b.paymentMode === 'weekly').length} on weekly payments${!kind || kind === 'group' ? ` · ${active.filter((b) => b.kind === 'group').length} small group place${active.filter((b) => b.kind === 'group').length === 1 ? '' : 's'} in ${groupIds.size} group${groupIds.size === 1 ? '' : 's'}` : ''}`],
+    ['Sessions booked', `${booked} / ${capacity}`, `${utilisation(booked, capacity)}% of offered hours · ${once(cancelled).length} cancelled${!kind ? ' · a small group counts once' : ''}`],
     ['Open in next 14 days', String(soon.length), 'bookable times, all coaches'],
     ['Weekly payments overdue', overdue.length ? `${overdue.length} · ${formatMoney(overdueAmount)}` : '0', overdue.length ? 'see Weekly payments' : 'all on track'],
     ['Session credits', `${creditOutstanding}`, `outstanding across ${creditFamilies} famil${creditFamilies === 1 ? 'y' : 'ies'} · this term: ${creditGiven} given, ${creditUsed} used`],
@@ -91,7 +95,7 @@ export async function OneOnOneView({ q }: { q: Q }) {
       <div className="space-y-10">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h2 className="font-display text-3xl font-semibold uppercase tracking-tight">1-on-1 coaching</h2>
+            <h2 className="font-display text-3xl font-semibold uppercase tracking-tight">{kind === 'group' ? 'Small group coaching' : kind === 'one-on-one' ? '1-on-1 coaching' : '1-on-1 & small group coaching'}</h2>
             <p className="mt-1 text-sm text-muted">{term.name} · {formatDate(term.startDate)} – {formatDate(term.endDate)}</p>
           </div>
           <div className="flex gap-4 text-sm">
@@ -105,6 +109,7 @@ export async function OneOnOneView({ q }: { q: Q }) {
           <input type="hidden" name="program" value="1on1" />
           <label className="text-xs text-muted">Term<select name="term" defaultValue={String(term.id)} className={select}>{terms.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
           <label className="text-xs text-muted">Coach<select name="coach" defaultValue={q.coach ?? ''} className={select}><option value="">All coaches</option>{data.coaches.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
+          <label className="text-xs text-muted">Sessions<select name="kind" defaultValue={kind ?? ''} className={select}><option value="">1-on-1 and small groups</option><option value="one-on-one">1-on-1 only</option><option value="group">Small groups only</option></select></label>
           <label className="text-xs text-muted">Players<select name="member" defaultValue={q.member ?? ''} className={select}><option value="">All players</option><option value="club">Rowville club members</option><option value="rfa">RFA-only players</option></select></label>
           <button className="bg-white px-4 py-2 text-sm font-semibold uppercase tracking-wider text-black">Apply</button>
         </form>

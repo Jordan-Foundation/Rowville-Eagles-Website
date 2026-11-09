@@ -74,8 +74,8 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
         <Panel title="Teams" count={members.docs.length} empty="Not on a team.">
           <ul className="divide-y divide-line">{members.docs.map((m) => <li key={m.id} className="px-5 py-3">{typeof m.team === 'object' ? <Link href={`/teams/${m.team.slug}`} className="underline">{m.team.name}</Link> : ''} <span className="text-muted">{m.active ? '' : '· left'}</span></li>)}</ul>
         </Panel>
-        <Panel title="1-on-1 bookings" count={bookings.docs.length} empty="No 1-on-1s.">
-          <ul className="divide-y divide-line">{bookings.docs.map((b) => <li key={b.id}><Link href={`/management/academy/bookings/${b.id}`} className="block px-5 py-3 hover:bg-white/5">{b.type === 'term' ? 'Term' : 'Casual'} with {typeof b.coach === 'object' ? b.coach.displayName : 'coach'} <span className="text-muted">· {b.status} · {b.reference}</span></Link></li>)}</ul>
+        <Panel title="1-on-1 & small group bookings" count={bookings.docs.length} empty="No 1-on-1s or small groups.">
+          <ul className="divide-y divide-line">{bookings.docs.map((b) => <li key={b.id}><Link href={`/management/academy/bookings/${b.id}`} className="block px-5 py-3 hover:bg-white/5">{b.kind === 'group' ? 'Small group · ' : ''}{b.type === 'term' ? 'Term' : 'Casual'} with {typeof b.coach === 'object' ? b.coach.displayName : 'coach'} <span className="text-muted">· {b.status} · {b.reference}</span></Link></li>)}</ul>
         </Panel>
         <Panel title="Camps & programs" count={clubBookings.docs.length} empty="No camp or program bookings.">
           <ul className="divide-y divide-line">{clubBookings.docs.map((b) => <li key={b.id} className="px-5 py-3">{typeof b.program === 'object' ? b.program.title : ''} <span className="text-muted">· {b.status} · {b.reference}</span></li>)}</ul>
