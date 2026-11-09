@@ -9,7 +9,7 @@ import { FoundationPlusLogo } from '@/components/FoundationPlusLogo'
 import { SubNav } from './SubNav'
 import { SampleReport } from './SampleReport'
 import { CurriculumExplorer } from './CurriculumExplorer'
-import { PathwaysToggle } from './PathwaysToggle'
+import { PathwaysSection } from './PathwaysToggle'
 import { curriculum } from '@/academy/curriculum/load'
 import { LEVELS, STRANDS } from '@/academy/curriculum/levels'
 
@@ -167,12 +167,7 @@ export default async function DifferencePage() {
         <p className="mt-6 font-[family-name:var(--font-barlow)] text-3xl font-bold uppercase text-brand">{c.year.sessionsPerYear}</p>
       </Section>
 
-      <Section id="pathways" icon="pathways" eyebrow="Pathways" headline={c.pathways.headline} body={c.pathways.body} more={c.pathways.more} alt>
-        <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
-          <PathwaysToggle />
-          <Photo image={c.pathways.image} icon="pathways" />
-        </div>
-      </Section>
+      <PathwaysSection id="pathways" icon={<Icon k="pathways" />} headline={c.pathways.headline} body={c.pathways.body} more={c.pathways.more} photo={<Photo image={c.pathways.image} icon="pathways" />} />
 
       <Section id="community-night" icon="community" eyebrow="Every Friday" headline={c.community.headline} body={c.community.body} more={c.community.more}>
         <div className="grid gap-8 lg:grid-cols-[1fr_1.2fr] lg:items-start">
