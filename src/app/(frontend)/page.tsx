@@ -87,8 +87,8 @@ export default async function Home() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             {[
-              { k: '12–16', v: 'MiniRoos teams' },
-              { k: '3', v: 'Senior squads' },
+              { k: '12+', v: 'MiniRoos teams' },
+              { k: '2–35+', v: 'All ages welcome' },
               { k: 'Boys & Girls', v: 'Junior pathway' },
               { k: 'Since 1985', v: 'Proudly community' },
             ].map((s) => (

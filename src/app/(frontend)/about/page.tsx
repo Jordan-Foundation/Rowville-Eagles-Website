@@ -25,7 +25,7 @@ const defaults = {
     'Founded in 1985, the Eagles have grown from humble beginnings into one of Rowville’s community sporting hubs, built on decades of volunteers, players and families.',
   milestones: [
     { year: '1985', title: 'The club is founded', text: 'Rowville Eagles Football Club is established.' },
-    { year: 'Today', title: 'A club for everyone', text: '12–16 MiniRoos teams, Senior Men, Men’s Reserves and Senior Women — with junior boys and girls teams on the way.' },
+    { year: 'Today', title: 'A club for everyone', text: '12+ MiniRoos teams, Senior Men, Men’s Reserves and Senior Women — with junior boys and girls teams on the way.' },
     { year: '2027', title: 'Rowville Foundation Academy', text: 'The club launches the RFA, an elite development pathway for committed players.' },
   ],
   childSafe:

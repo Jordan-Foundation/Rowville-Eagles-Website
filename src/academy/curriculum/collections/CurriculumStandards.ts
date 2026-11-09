@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { isStaff } from '../../../access'
+import { refreshAfterChange, refreshAfterDelete } from '../../../lib/revalidate'
 import { LEVELS, STRANDS, levelName, strandName } from '../levels'
 
 /**
@@ -23,6 +24,9 @@ export const CurriculumStandards: CollectionConfig = {
         return data
       },
     ],
+    // The public “Why us” page shows the curriculum — keep it current when wording changes
+    afterChange: [refreshAfterChange],
+    afterDelete: [refreshAfterDelete],
   },
   fields: [
     { name: 'label', type: 'text', admin: { readOnly: true } },

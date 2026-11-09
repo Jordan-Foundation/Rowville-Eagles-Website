@@ -8,6 +8,10 @@ import { differenceContent, type Difference } from '@/content/difference-load'
 import { FoundationPlusLogo } from '@/components/FoundationPlusLogo'
 import { SubNav } from './SubNav'
 import { SampleReport } from './SampleReport'
+import { CurriculumExplorer } from './CurriculumExplorer'
+import { PathwaysToggle } from './PathwaysToggle'
+import { curriculum } from '@/academy/curriculum/load'
+import { LEVELS, STRANDS } from '@/academy/curriculum/levels'
 
 export const revalidate = 3600
 export const metadata: Metadata = {
@@ -71,7 +75,14 @@ const Btn = ({ href, children, ghost }: { href: string; children: React.ReactNod
 )
 
 export default async function DifferencePage() {
-  const c: Difference = await differenceContent(await payload())
+  const p = await payload()
+  const [c, standards]: [Difference, Awaited<ReturnType<typeof curriculum>>] = await Promise.all([differenceContent(p), curriculum(p).catch(() => [])])
+  // The Attacking pillar at every level, straight from the curriculum (edited in Management → Curriculum)
+  const levels = LEVELS.map((l) => {
+    const s = standards.find((x) => x.level === l.key && x.strand === 'ATT')
+    return { key: l.key, name: l.name, phase: l.phase, standard: s?.standard ?? '', descriptors: s?.descriptors ?? [] }
+  }).filter((l) => l.standard || l.descriptors.length)
+  const pillars = STRANDS.map((s) => ({ key: s.key, name: s.name, line: c.curriculum.strands.find((x) => x.name === s.name)?.line }))
   const nav = [
     ['coaches', c.coaches.nav], ['curriculum', c.curriculum.nav], ['sessions', c.sessions.nav], ['reports', c.reports.nav],
     ['year-round', c.year.nav], ['pathways', c.pathways.nav], ['community-night', c.community.nav], ['foundation-plus', c.fplus.nav],
@@ -104,22 +115,18 @@ export default async function DifferencePage() {
       </Section>
 
       <Section id="curriculum" icon="curriculum" eyebrow="Curriculum" headline={c.curriculum.headline} body={c.curriculum.body} more={c.curriculum.more} alt>
-        <ol aria-label="Curriculum levels" className="flex flex-wrap items-center gap-2 text-sm font-semibold">
-          {['Foundation (to age 7)', '8', '9', '10', '11', '12', '13'].map((l, i, a) => (
-            <li key={l} className="flex items-center gap-2">
-              <span className="rounded-full border border-brand px-3 py-1 text-brand">{i === 0 ? l : `Age ${l}`}</span>
-              {i < a.length - 1 && <span aria-hidden className="text-muted">→</span>}
-            </li>
-          ))}
-        </ol>
-        <ul className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {c.curriculum.strands.map((s) => (
-            <li key={s.name} className="rounded-xl border border-line bg-surface p-5">
-              <p className="font-[family-name:var(--font-barlow)] text-xl font-bold uppercase">{s.name}</p>
-              {s.line && <p className="mt-1 text-sm text-muted">{s.line}</p>}
-            </li>
-          ))}
-        </ul>
+        {levels.length ? (
+          <div className="max-w-4xl"><CurriculumExplorer levels={levels} pillars={pillars} /></div>
+        ) : (
+          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {c.curriculum.strands.map((s) => (
+              <li key={s.name} className="rounded-xl border border-line bg-surface p-5">
+                <p className="font-[family-name:var(--font-barlow)] text-xl font-bold uppercase">{s.name}</p>
+                {s.line && <p className="mt-1 text-sm text-muted">{s.line}</p>}
+              </li>
+            ))}
+          </ul>
+        )}
       </Section>
 
       <Section id="sessions" icon="sessions" eyebrow="Every session" headline={c.sessions.headline} body={c.sessions.body}>
@@ -162,14 +169,7 @@ export default async function DifferencePage() {
 
       <Section id="pathways" icon="pathways" eyebrow="Pathways" headline={c.pathways.headline} body={c.pathways.body} more={c.pathways.more} alt>
         <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-xl bg-[#0f2a55] p-5 text-white"><p className="font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase">Rowville Eagles</p><p className="mt-1 text-sm text-white/80">Club teams, weekly games in season.</p></div>
-            <div className="rounded-xl bg-black p-5 text-white"><p className="font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase">Foundation Academy</p><p className="mt-1 text-sm text-white/80">All year, open to players from any club.</p></div>
-            <div className="flex flex-wrap gap-3 sm:col-span-2">
-              <Btn href="/academy">Join the academy</Btn>
-              <Btn href="/join" ghost>Register interest for a team</Btn>
-            </div>
-          </div>
+          <PathwaysToggle />
           <Photo image={c.pathways.image} icon="pathways" />
         </div>
       </Section>
