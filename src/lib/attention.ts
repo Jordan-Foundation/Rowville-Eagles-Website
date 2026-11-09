@@ -62,8 +62,14 @@ export async function coachAttention(p: Payload, user: User, coach: AcademyCoach
   const seen = await seenAt(p, user.id, ['sessions', 'groups'])
   const [messages, sessions, attendance, availability, groups, teams, reviews] = await Promise.all([
     safe(() => unreadCount(p, { user, side: 'coach', coach })),
-    // New 1-on-1 sessions booked with this coach since they last opened My sessions
-    safe(async () => (await p.count({ collection: 'academy-sessions', where: { coach: { equals: coach.id }, status: { equals: 'scheduled' }, kind: { not_equals: 'group-slot' }, createdAt: { greater_than: seen.sessions }, startsAt: { greater_than: new Date().toISOString() } }, ...q })).totalDocs),
+    // New sessions booked with this coach since they last opened My sessions, plus small group places
+    // still waiting on payment (or the coach's decision)
+    safe(async () => {
+      const fresh = (await p.count({ collection: 'academy-sessions', where: { coach: { equals: coach.id }, status: { equals: 'scheduled' }, kind: { not_equals: 'group-slot' }, createdAt: { greater_than: seen.sessions }, startsAt: { greater_than: new Date().toISOString() } }, ...q })).totalDocs
+      const { docs: open } = await p.find({ pagination: false, collection: 'academy-groups', where: { coach: { equals: coach.id }, status: { in: ['forming', 'shortfall'] } }, limit: 100, depth: 0, ...q, select: { status: true } })
+      const unpaid = open.length ? (await p.count({ collection: 'academy-group-invites', where: { group: { in: open.map((g) => g.id) }, status: { in: ['invited', 'overdue', 'declined'] } }, ...q })).totalDocs : 0
+      return fresh + unpaid
+    }),
     safe(async () => (await attendanceDue(p, coach.id)).length),
     safe(async () => {
       const terms = await termsAwaitingAvailability(p)

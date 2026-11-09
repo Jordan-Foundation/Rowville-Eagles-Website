@@ -102,7 +102,7 @@ export async function payGroupPlace(_prev: GroupPayState, fd: FormData): Promise
       lastName: kid?.lastName || i.playerLastName,
       dateOfBirth: dob,
       goals: s('goals') || undefined,
-      medical: s('medical') || undefined,
+      medical: s('medical') || kid?.medical?.conditions || undefined,
       emergencyName: s('emergencyName'),
       emergencyPhone: s('emergencyPhone'),
       photoConsent: fd.get('photoConsent') === 'on',

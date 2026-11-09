@@ -1,7 +1,7 @@
 import { payload } from '@/lib/payload'
 import { icsFile, type CalEvent } from '@/lib/ics'
 import { siteBase } from '@/lib/seo'
-import { coachSessions } from '@/academy/coach-sessions'
+import { coachSessions, collapseGroups, groupSessionHref } from '@/academy/coach-sessions'
 import { coachGroups } from '@/academy/terms/coach-groups'
 import { datesOnWeekday, localToUtc, localYmd } from '@/lib/time'
 
@@ -31,7 +31,15 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
     coachGroups(p, coach.id),
     p.find({ pagination: false, collection: 'teams', where: { coaches: { in: [userId] }, archived: { not_equals: true } }, limit: 50, depth: 0, overrideAccess: true }),
   ])
+  for (const e of collapseGroups(ones)) {
+    if (e.kind === 'one') continue
+    if (e.role === 'covered') continue
+    const b0 = e.players[0].booking
+    const term = typeof b0.term === 'object' ? b0.term : null
+    events.push({ uid: `gs${e.groupId}-${Date.parse(e.startsAt)}@rowvilleeagles`, title: `Small group (${e.players.length}) · ${e.players.map((x) => x.booking.player.firstName).join(', ')}${e.role === 'cover' ? ' (cover)' : ''}`, start: e.startsAt, end: new Date(Date.parse(e.startsAt) + (term?.sessionMinutes ?? 60) * 60_000).toISOString(), location: term?.location, url: `${base}${groupSessionHref(e.groupId, e.startsAt)}` })
+  }
   for (const { session: s, booking: b, role } of ones) {
+    if (s.kind === 'group-player') continue
     if (role === 'covered') continue
     const term = typeof b.term === 'object' ? b.term : null
     events.push({ uid: `s${s.id}@rowvilleeagles`, title: `1-on-1 · ${b.player.firstName} ${b.player.lastName.charAt(0)}.${role === 'cover' ? ' (cover)' : ''}`, start: s.startsAt, end: new Date(Date.parse(s.startsAt) + (term?.sessionMinutes ?? 60) * 60_000).toISOString(), location: term?.location, url: `${base}/coach/sessions/${s.id}` })

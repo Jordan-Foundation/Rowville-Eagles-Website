@@ -30,3 +30,19 @@ export function coachRole(s: Pick<AcademySession, 'coach' | 'coverCoach' | 'need
   if (rel(s.coach) === coachId) return s.needsCover && rel(s.coverCoach) ? 'covered' : 'coach'
   return null
 }
+
+/** The size of a small group booking: the group as it is now if loaded, else the size when booked. */
+export function groupSizeOf(b: Pick<AcademyBooking, 'group' | 'groupSize'>) {
+  const g = b.group && typeof b.group === 'object' ? b.group : null
+  return g?.plannedSize ?? b.groupSize ?? null
+}
+
+/** "Small group (3) with Coach Sam" or "1-on-1 with Coach Sam". */
+export function bookingTitle(b: Pick<AcademyBooking, 'kind' | 'group' | 'groupSize'>, coachName: string) {
+  if (b.kind !== 'group') return `1-on-1 with ${coachName}`
+  const n = groupSizeOf(b)
+  return `Small group${n ? ` (${n})` : ''} with ${coachName}`
+}
+
+/** "1-on-1s" / "small group" — what a player is doing, for short lists. */
+export const bookingKindLabel = (b: Pick<AcademyBooking, 'kind'>) => (b.kind === 'group' ? 'Small group' : '1-on-1s')

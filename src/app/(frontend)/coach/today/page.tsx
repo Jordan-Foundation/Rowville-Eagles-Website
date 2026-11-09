@@ -6,6 +6,7 @@ import { todayYmd, trainingDay } from '@/academy/training-day'
 import { ContactButtons, MedicalBadge } from '@/components/coach/ContactButtons'
 import { formatPhone } from '@/lib/phone'
 import { AttendanceSheet } from './AttendanceSheet'
+import { collapseGroups, groupSessionHref } from '@/academy/coach-sessions'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Training day', robots: { index: false } }
@@ -37,16 +38,25 @@ export default async function TrainingDay({ searchParams }: { searchParams: Prom
 
       {oneOnOnes.length > 0 && (
         <section className="panel border border-line">
-          <h2 className="border-b border-line p-5 font-display text-xl font-semibold uppercase">1-on-1s</h2>
+          <h2 className="border-b border-line p-5 font-display text-xl font-semibold uppercase">1-on-1s & small groups</h2>
           <ul className="divide-y divide-line">
-            {oneOnOnes.map(({ session, booking }) => (
-              <li key={session.id}>
-                <Link href={`/coach/sessions/${session.id}`} className="flex items-center justify-between gap-4 p-5 hover:bg-white/5">
-                  <span><strong>{formatDate(session.startsAt, { hour: 'numeric', minute: '2-digit' })}</strong> · {booking.player.firstName} {booking.player.lastName}{booking.player.medical?.trim() && <span className="ml-2 bg-red-600 px-1.5 py-0.5 text-[11px] font-bold uppercase text-white">Medical</span>}</span>
-                  <span className="text-xs uppercase tracking-[0.15em] text-muted">Open →</span>
-                </Link>
-              </li>
-            ))}
+            {collapseGroups(oneOnOnes).map((e) =>
+              e.kind === 'one' ? (
+                <li key={`s${e.x.session.id}`}>
+                  <Link href={`/coach/sessions/${e.x.session.id}`} className="flex items-center justify-between gap-4 p-5 hover:bg-white/5">
+                    <span><strong>{formatDate(e.x.session.startsAt, { hour: 'numeric', minute: '2-digit' })}</strong> · {e.x.booking.player.firstName} {e.x.booking.player.lastName}{e.x.booking.player.medical?.trim() && <span className="ml-2 bg-red-600 px-1.5 py-0.5 text-[11px] font-bold uppercase text-white">Medical</span>}</span>
+                    <span className="text-xs uppercase tracking-[0.15em] text-muted">Open →</span>
+                  </Link>
+                </li>
+              ) : (
+                <li key={`g${e.groupId}-${e.startsAt}`}>
+                  <Link href={groupSessionHref(e.groupId, e.startsAt)} className="flex items-center justify-between gap-4 p-5 hover:bg-white/5">
+                    <span><strong>{formatDate(e.startsAt, { hour: 'numeric', minute: '2-digit' })}</strong> · Small group ({e.players.length}): {e.players.map((x) => x.booking.player.firstName).join(', ')}{e.players.some((x) => x.booking.player.medical?.trim()) && <span className="ml-2 bg-red-600 px-1.5 py-0.5 text-[11px] font-bold uppercase text-white">Medical</span>}</span>
+                    <span className="text-xs uppercase tracking-[0.15em] text-muted">Roster →</span>
+                  </Link>
+                </li>
+              ),
+            )}
           </ul>
         </section>
       )}

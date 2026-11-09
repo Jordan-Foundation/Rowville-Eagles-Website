@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { payload, formatDate } from '@/lib/payload'
 import { requireCoach } from '@/academy/portal'
-import { coachSessions } from '@/academy/coach-sessions'
+import { coachSessions, collapseGroups, groupSessionHref } from '@/academy/coach-sessions'
 import { coachGroups, nextSession } from '@/academy/terms/coach-groups'
 import { RoleSwitch, myChildren } from '@/components/dashboard/RoleSwitch'
 import { LiveDashboard } from '@/components/dashboard/LiveDashboard'
@@ -27,7 +27,9 @@ export default async function CoachHome() {
   // Today / next session: the earliest of my 1-on-1s, group trainings and team trainings
   const soon = new Date(now.getTime() - 60 * 60_000)
   const candidates: NextUp[] = []
-  const one = next.find((x) => new Date(x.session.startsAt) > soon)
+  const nextEntry = collapseGroups(next.filter((x) => new Date(x.session.startsAt) > soon))[0]
+  if (nextEntry?.kind === 'group') candidates.push({ when: nextEntry.startsAt, title: `Small group (${nextEntry.players.length})`, subtitle: nextEntry.players.map((x) => x.booking.player.firstName).join(', '), players: nextEntry.players.length, medical: nextEntry.players.filter((x) => x.booking.player.medical?.trim()).length, href: groupSessionHref(nextEntry.groupId, nextEntry.startsAt), hrefLabel: 'Roster & attendance' })
+  const one = nextEntry?.kind === 'one' ? nextEntry.x : null
   if (one) candidates.push({ when: one.session.startsAt, title: `1-on-1 · ${one.booking.player.firstName} ${one.booking.player.lastName}`, players: 1, medical: one.booking.player.medical?.trim() ? 1 : 0, href: `/coach/sessions/${one.session.id}`, hrefLabel: 'Open session', parent: { name: `${one.booking.contact.firstName} ${one.booking.contact.lastName}`, phone: one.booking.contact.mobile, accountId: typeof one.booking.account === 'object' ? one.booking.account?.id : one.booking.account } })
   if (nextGroup) candidates.push({ when: nextGroup.s!.startsAt, title: nextGroup.g.title, subtitle: nextGroup.g.program.title, players: nextGroup.g.players.length, medical: nextGroup.g.players.filter((r) => r.player.medical?.trim()).length, href: `/coach/today?date=${nextGroup.s!.date}`, hrefLabel: 'Training day & attendance' })
   const myTeams = (await p.find({ pagination: false, collection: 'teams', where: { coaches: { in: [user.id] }, archived: { not_equals: true } }, limit: 50, depth: 0, overrideAccess: true })).docs

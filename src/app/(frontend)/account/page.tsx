@@ -8,7 +8,7 @@ import { payload, formatAUD, formatDate } from '@/lib/payload'
 import { currentUser } from '@/lib/auth'
 import type { AcademyBooking, AcademyCoach, Program, Team } from '@/payload-types'
 import { LogoutButton } from './LogoutButton'
-import { sessionPayment } from '@/academy/session-view'
+import { bookingKindLabel, bookingTitle, sessionPayment } from '@/academy/session-view'
 import { creditStateFor } from '@/academy/credits'
 import { getAgeRules } from '@/lib/age-rules'
 import { SelectionList } from '@/selections/SelectionList'
@@ -37,7 +37,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   const [participants, bookings, academy, plans] = await Promise.all([
     p.find({ pagination: false, collection: 'participants', where: { account: { equals: user.id } }, depth: 1, limit: 50, overrideAccess: true }),
     p.find({ pagination: false, collection: 'bookings', where: { account: { equals: user.id }, status: { equals: 'paid' } }, depth: 1, limit: 100, sort: '-createdAt', overrideAccess: true }),
-    // Foundation Academy 1-on-1 sessions (one row per session)
+    // Foundation Academy 1-on-1 and small group sessions (one row per session)
     p.find({ pagination: false, collection: 'academy-sessions', where: { account: { equals: user.id }, status: { in: ['scheduled', 'completed', 'no_show'] } }, depth: 2, limit: 300, sort: 'startsAt', overrideAccess: true }),
     // Weekly payment plans that need attention
     p.find({ pagination: false, collection: 'academy-bookings', where: { account: { equals: user.id }, paymentMode: { equals: 'weekly' }, status: { equals: 'payment_failed' } }, depth: 1, limit: 20, overrideAccess: true }),
@@ -82,8 +82,8 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
     return {
       key: `s${s.id}`,
       date: s.startsAt,
-      title: `1-on-1 with ${coach.displayName}`,
-      detail: [booking.player.firstName, formatDate(s.startsAt, { hour: 'numeric', minute: '2-digit' }), paid].join(' · ') + cover,
+      title: bookingTitle(booking, coach.displayName),
+      detail: [booking.player.firstName, formatDate(s.startsAt, { hour: 'numeric', minute: '2-digit' }), booking.kind === 'group' && booking.term && typeof booking.term === 'object' ? booking.term.location : null, paid].filter(Boolean).join(' · ') + cover,
       badge: 'RFA' as const,
       status: s.status,
       href: `/account/bookings/${booking.reference}`,
@@ -107,7 +107,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   for (const m of kidMembers) if (typeof m.team === 'object' && !m.team.archived) add(typeof m.participant === 'object' ? m.participant.id : m.participant, m.team.name)
   for (const r of termRegs) if (r.status === 'paid' || r.status === 'offered') add(typeof r.participant === 'object' ? r.participant?.id : r.participant, `${typeof r.program === 'object' ? r.program.title : 'Academy term'}${r.status === 'offered' ? ' (offer)' : ''}`)
   for (const b of bookings.docs) if (!b.program || typeof b.program !== 'object' || !b.program.endDate || Date.parse(b.program.endDate) >= now) add(typeof b.participant === 'object' ? b.participant?.id : b.participant, typeof b.program === 'object' ? b.program.title : 'Booking')
-  for (const sx of academy.docs) if (Date.parse(sx.startsAt) >= now) add(typeof (sx.booking as AcademyBooking).participant === 'object' ? ((sx.booking as AcademyBooking).participant as { id: number }).id : ((sx.booking as AcademyBooking).participant as number), '1-on-1s')
+  for (const sx of academy.docs) if (Date.parse(sx.startsAt) >= now) add(typeof (sx.booking as AcademyBooking).participant === 'object' ? ((sx.booking as AcademyBooking).participant as { id: number }).id : ((sx.booking as AcademyBooking).participant as number), bookingKindLabel(sx.booking as AcademyBooking))
   const upcoming = [...clubItems, ...teamItems, ...sessionItems.filter((i) => new Date(i.date).getTime() >= now)].sort((a, b) => (a.date ?? '9999').localeCompare(b.date ?? '9999'))
   const past = sessionItems.filter((i) => new Date(i.date).getTime() < now).reverse()
 
@@ -152,7 +152,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
             return (
               <div key={b.id} className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border-2 border-red-500/60 bg-red-500/5 p-6">
                 <div>
-                  <p className="font-semibold">{b.player.firstName}’s weekly 1-on-1s with {(b.coach as AcademyCoach).displayName}</p>
+                  <p className="font-semibold">{b.player.firstName}’s weekly {b.kind === 'group' ? 'small group' : '1-on-1s'} with {(b.coach as AcademyCoach).displayName}</p>
                   <p className="text-sm text-muted">
                     The automatic {formatAUD(owed)} payment didn’t go through · {b.sessionsPaid ?? 0} of {b.sessionsTotal} sessions paid · {b.reference}
                   </p>

@@ -134,3 +134,28 @@ export async function groupDecisionAction(_prev: GroupDecisionState, fd: FormDat
   revalidatePath('/coach/sessions')
   return { done }
 }
+
+/** "Running late" for a small group: tell every family, each in their own conversation. */
+export async function groupRunningLate(_prev: GroupDecisionState, fd: FormData): Promise<GroupDecisionState> {
+  const c = await coachOrNull()
+  if (!c) return { error: 'Please log in as a coach.' }
+  const p = await payload()
+  const { loadGroupSession } = await import('@/academy/coach-sessions')
+  const data = await loadGroupSession(p, c.coach.id, Number(fd.get('group')), String(fd.get('at') ?? ''))
+  if (!data) return { error: 'Session not found.' }
+  const mins = [5, 10, 15, 20].includes(Number(fd.get('minutes'))) ? Number(fd.get('minutes')) : 10
+  if (new Date(String(fd.get('at'))).getTime() < Date.now() - 60 * 60_000) return { error: 'This session has already finished.' }
+  const { conversationFor, staffReply } = await import('@/messaging/service')
+  let told = 0
+  const missed: string[] = []
+  for (const { booking: b } of data.rows) {
+    const accountId = typeof b.account === 'object' ? b.account?.id : b.account
+    if (!accountId) { missed.push(b.player.firstName); continue }
+    const account = await p.findByID({ collection: 'users', id: accountId, depth: 0, overrideAccess: true })
+    const conv = await conversationFor(p, { account })
+    const r = await staffReply(p, { user: c.user, side: 'coach', coach: c.coach }, conv.id, `Hi ${b.contact.firstName}, I’m running about ${mins} minutes late for ${b.player.firstName}’s small group session — sorry! See you soon.`)
+    if (r.delivery === 'failed') missed.push(b.player.firstName)
+    else told++
+  }
+  return missed.length ? { error: `Told ${told} famil${told === 1 ? 'y' : 'ies'}; couldn’t reach ${missed.join(', ')} — please call them.` } : { done: `All ${told} families told you’re ${mins} minutes late.` }
+}

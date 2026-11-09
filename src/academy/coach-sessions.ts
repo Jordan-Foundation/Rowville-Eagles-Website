@@ -114,3 +114,48 @@ export async function loadCoachSession(payload: Payload, coachId: number, sessio
     inBookingCount: inBooking.length,
   }
 }
+
+type CoachRow = Awaited<ReturnType<typeof coachSessions>>[number]
+export type CoachEntry = { kind: 'one'; x: CoachRow } | { kind: 'group'; groupId: number; startsAt: string; role: CoachRow['role']; players: CoachRow[] }
+
+/** Coach lists show one entry per small group session (its players together), and each 1-on-1 on its own. */
+export function collapseGroups(rows: CoachRow[]): CoachEntry[] {
+  const out: CoachEntry[] = []
+  const groups = new Map<string, Extract<CoachEntry, { kind: 'group' }>>()
+  for (const x of rows) {
+    const gid = rel(x.session.group as number | { id: number } | null)
+    if (x.session.kind !== 'group-player' || !gid) {
+      out.push({ kind: 'one', x })
+      continue
+    }
+    const key = `${gid}|${new Date(x.session.startsAt).getTime()}`
+    const g = groups.get(key)
+    if (g) g.players.push(x)
+    else {
+      const entry = { kind: 'group' as const, groupId: gid, startsAt: x.session.startsAt, role: x.role, players: [x] }
+      groups.set(key, entry)
+      out.push(entry)
+    }
+  }
+  return out
+}
+
+export const entryStart = (e: CoachEntry) => (e.kind === 'one' ? e.x.session.startsAt : e.startsAt)
+export const groupSessionHref = (groupId: number, startsAt: string) => `/coach/sessions/group/${groupId}/session?at=${encodeURIComponent(new Date(startsAt).toISOString())}`
+
+/** One small group session for this coach: every player's own session at that time. */
+export async function loadGroupSession(payload: Payload, coachId: number, groupId: number, at: string) {
+  const group = await payload.findByID({ collection: 'academy-groups', id: groupId, depth: 1, overrideAccess: true, disableErrors: true })
+  if (!group || Number.isNaN(Date.parse(at))) return null
+  const { docs } = await payload.find({
+    collection: 'academy-sessions',
+    where: { group: { equals: groupId }, kind: { equals: 'group-player' }, startsAt: { equals: new Date(at).toISOString() }, status: { in: ['scheduled', 'completed', 'no_show'] } },
+    depth: 2,
+    limit: 10,
+    overrideAccess: true,
+  })
+  const rows = docs.map((s) => ({ session: s, booking: s.booking as AcademyBooking, role: coachRole(s, coachId) }))
+  if (!rows.length || rows.every((r) => !r.role)) return null
+  const kids = await Promise.all(rows.map((r) => (r.booking.participant ? payload.findByID({ collection: 'participants', id: rel(r.booking.participant as never)!, depth: 0, overrideAccess: true, disableErrors: true }) : null)))
+  return { group, rows: rows.map((r, i) => ({ ...r, player: playerCard(r.booking, kids[i] as Participant | null) })) }
+}

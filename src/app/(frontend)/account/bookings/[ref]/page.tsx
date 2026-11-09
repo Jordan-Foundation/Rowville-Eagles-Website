@@ -7,7 +7,7 @@ import { currentUser } from '@/lib/auth'
 import { hasRole } from '@/access'
 import { academyBrand } from '@/academy/brand'
 import { cashPaid } from '@/academy/cancellation'
-import { sessionPayment } from '@/academy/session-view'
+import { groupSizeOf, sessionPayment } from '@/academy/session-view'
 import type { AcademyCoach, AcademyTerm, Program } from '@/payload-types'
 
 export const dynamic = 'force-dynamic'
@@ -61,7 +61,7 @@ export default async function MyBookingPage({ params }: { params: Promise<{ ref:
             <Link href="/account" className="text-sm text-muted hover:text-ink">← My account</Link>
             <p className="mt-4 text-xs font-semibold uppercase tracking-[0.3em] text-muted">Foundation Academy · {b.reference}</p>
             <h1 className="mt-2 font-display text-4xl font-semibold uppercase tracking-tight">
-              {b.type === 'term' ? 'Term of 1-on-1s' : '1-on-1 session'} — {b.player.firstName}
+              {b.kind === 'group' ? `Small group${groupSizeOf(b) ? ` (${groupSizeOf(b)})` : ''}${b.type === 'term' ? ' — term' : ''}` : b.type === 'term' ? 'Term of 1-on-1s' : '1-on-1 session'} — {b.player.firstName}
             </h1>
             <p className="mt-2 text-muted">
               with {coach.displayName}

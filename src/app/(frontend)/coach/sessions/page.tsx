@@ -3,7 +3,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { payload, formatDate } from '@/lib/payload'
 import { requireCoach } from '@/academy/portal'
-import { attendanceDue, coachSessions } from '@/academy/coach-sessions'
+import { attendanceDue, coachSessions, collapseGroups, entryStart, groupSessionHref, type CoachEntry } from '@/academy/coach-sessions'
 import { ageOn, sessionPayment } from '@/academy/session-view'
 import { toYmd } from '@/academy/term-dates'
 import { localToUtc } from '@/lib/time'
@@ -41,11 +41,13 @@ export default async function CoachSessionsPage({ searchParams }: { searchParams
   }
   const dueIds = new Set(due.map((d) => d.session.id))
   const future = upcoming.filter((x) => !dueIds.has(x.session.id))
-  const days = new Map<string, typeof future>()
-  for (const x of future) {
-    const k = toYmd(x.session.startsAt)
-    days.set(k, [...(days.get(k) ?? []), x])
+  // One entry per small group session (its players together); 1-on-1s as before
+  const days = new Map<string, CoachEntry[]>()
+  for (const e of collapseGroups(future)) {
+    const k = toYmd(entryStart(e))
+    days.set(k, [...(days.get(k) ?? []), e])
   }
+  const dueEntries = collapseGroups(due)
   const todayKey = toYmd(now.toISOString())
 
   const Row = ({ x, showDate }: { x: (typeof future)[number]; showDate?: boolean }) => {
@@ -79,6 +81,38 @@ export default async function CoachSessionsPage({ searchParams }: { searchParams
       </li>
     )
   }
+
+  const GroupRow = ({ e, showDate }: { e: Extract<CoachEntry, { kind: 'group' }>; showDate?: boolean }) => {
+    const unpaid = e.players.filter((x) => sessionPayment(x.session, x.booking).tone === 'bad').length
+    const medical = e.players.some((x) => x.booking.player.medical?.trim())
+    const note = roleNote[e.role]
+    const marked = e.players.filter((x) => x.session.status !== 'scheduled').length
+    return (
+      <li>
+        <Link href={groupSessionHref(e.groupId, e.startsAt)} className="grid gap-1 p-5 transition hover:bg-white/5 sm:grid-cols-[7rem_1fr_auto] sm:items-center sm:gap-6">
+          <p className="font-display text-xl font-semibold">
+            {showDate && <span className="mr-2 text-sm font-normal uppercase text-muted">{formatDate(e.startsAt, { weekday: 'short', day: 'numeric', month: 'short' })}</span>}
+            {formatDate(e.startsAt, { hour: 'numeric', minute: '2-digit' })}
+          </p>
+          <div>
+            <p className="font-semibold">Small group ({e.players.length}) <span className="ml-1 text-sm font-normal text-muted">{e.players.map((x) => x.booking.player.firstName).join(', ')}</span></p>
+            <p className="text-sm text-muted">
+              {e.players[0].booking.type === 'term' ? 'Term' : 'One-off'}
+              {medical && <span className="ml-2 bg-red-600 px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-white">Medical</span>}
+              {' · '}
+              <span className={unpaid ? 'font-semibold text-red-300' : ''}>{unpaid ? `${unpaid} payment${unpaid === 1 ? '' : 's'} overdue` : 'All paid'}</span>
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {note && <span className="border border-white/40 px-2 py-1 text-xs font-semibold uppercase tracking-wider">{note}</span>}
+            {marked > 0 && <span className="bg-white px-2 py-1 text-xs font-semibold uppercase tracking-wider text-black">{marked} of {e.players.length} marked</span>}
+          </div>
+        </Link>
+      </li>
+    )
+  }
+  const Entry = ({ e, showDate }: { e: CoachEntry; showDate?: boolean }) => (e.kind === 'one' ? <Row x={e.x} showDate={showDate} /> : <GroupRow e={e} showDate={showDate} />)
+  const entryKey = (e: CoachEntry) => (e.kind === 'one' ? `s${e.x.session.id}` : `g${e.groupId}-${e.startsAt}`)
 
   return (
     <div className="space-y-12">
@@ -122,7 +156,7 @@ export default async function CoachSessionsPage({ searchParams }: { searchParams
         <section>
           <h2 className="font-display text-2xl font-semibold uppercase">Mark attendance</h2>
           <p className="mt-1 text-sm text-muted">These sessions have started but haven’t been marked yet.</p>
-          <ol className="panel mt-4 divide-y divide-line border border-line">{due.map((x) => <Row key={x.session.id} x={x} showDate />)}</ol>
+          <ol className="panel mt-4 divide-y divide-line border border-line">{dueEntries.map((e) => <Entry key={entryKey(e)} e={e} showDate />)}</ol>
         </section>
       )}
 
@@ -144,9 +178,9 @@ export default async function CoachSessionsPage({ searchParams }: { searchParams
             {[...days.entries()].map(([day, list]) => (
               <div key={day}>
                 <p className="text-xs font-semibold uppercase tracking-[0.25em] text-muted">
-                  {day === todayKey ? 'Today' : formatDate(list[0].session.startsAt, { weekday: 'long', day: 'numeric', month: 'long' })} · {list.length} session{list.length === 1 ? '' : 's'}
+                  {day === todayKey ? 'Today' : formatDate(entryStart(list[0]), { weekday: 'long', day: 'numeric', month: 'long' })} · {list.length} session{list.length === 1 ? '' : 's'}
                 </p>
-                <ol className="panel mt-2 divide-y divide-line border border-line">{list.map((x) => <Row key={x.session.id} x={x} />)}</ol>
+                <ol className="panel mt-2 divide-y divide-line border border-line">{list.map((e) => <Entry key={entryKey(e)} e={e} />)}</ol>
               </div>
             ))}
           </div>

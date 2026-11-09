@@ -9,7 +9,7 @@ export const BADGE_UNITS: Record<string, string> = {
   selections: 'to decide', store: 'to fulfil', foundation: 'to review', consent: 'to review', reports: 'to review', dates: 'to fix',
   promotions: 'live or scheduled', settings: 'to do',
   // Coach (messages: both)
-  messages: 'unread', sessions: 'new bookings', attendance: 'to mark', groups: 'new', teams: 'new posts', reviews: 'to review',
+  messages: 'unread', sessions: 'to check', attendance: 'to mark', groups: 'new', teams: 'new posts', reviews: 'to review',
 }
 /** "3 to fulfil" — or null at 0. Coach reports read "to write". */
 export const badgeMeaning = (key: string, n: number | null | undefined, role?: 'coach' | 'management') =>

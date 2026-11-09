@@ -41,7 +41,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ ref: st
     const { docs: sessions } = await p.find({ pagination: false, collection: 'academy-sessions', where: { booking: { equals: b.id }, status: { in: ['scheduled', 'completed'] } }, sort: 'startsAt', limit: 60, depth: 0, overrideAccess: true })
     const term = b.term && typeof b.term === 'object' ? b.term : null
     const mins = term?.sessionMinutes || 60
-    for (const s of sessions) events.push({ uid: `${ref}-${s.id}@rowvilleeagles`, title: `1-on-1 with ${coach}`, start: s.startsAt, end: new Date(Date.parse(s.startsAt) + mins * 60_000).toISOString(), location: term?.location || ground, description: `Foundation Academy · booking ${ref}` })
+    for (const s of sessions) events.push({ uid: `${ref}-${s.id}@rowvilleeagles`, title: b.kind === 'group' ? `Small group with ${coach}` : `1-on-1 with ${coach}`, start: s.startsAt, end: new Date(Date.parse(s.startsAt) + mins * 60_000).toISOString(), location: term?.location || ground, description: `Foundation Academy · booking ${ref}` })
   }
   if (!events.length) return new Response('Not found', { status: 404 })
   for (const e of events) e.url = `${siteBase()}/account/bookings/${ref}`

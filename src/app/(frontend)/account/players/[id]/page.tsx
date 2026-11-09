@@ -6,7 +6,7 @@ import { currentUser } from '@/lib/auth'
 import { graceDaysLeft } from '@/academy/pdr/manage-rules'
 import { releasedFor, reportCard } from '@/academy/reports/family'
 import { PlayerReportView } from '@/components/reports/PlayerReportView'
-import { ageOn, sessionPayment } from '@/academy/session-view'
+import { ageOn, bookingTitle, sessionPayment } from '@/academy/session-view'
 import type { AcademyBooking, AcademyCoach, Program } from '@/payload-types'
 import { PlayerForm } from './PlayerForm'
 import { getAgeRules } from '@/lib/age-rules'
@@ -41,7 +41,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
     p.find({ pagination: false, collection: 'academy-registrations', where: { participant: { equals: kid.id }, status: { not_equals: 'cancelled' } }, sort: '-createdAt', depth: 2, limit: 20, overrideAccess: true }),
   ])
   const [{ docs: academyBookings }, { docs: clubBookings }] = await Promise.all([
-    p.find({ pagination: false, collection: 'academy-bookings', where: { participant: { equals: kid.id } }, depth: 0, limit: 100, overrideAccess: true }),
+    p.find({ pagination: false, collection: 'academy-bookings', where: { participant: { equals: kid.id } }, depth: 1, limit: 100, overrideAccess: true }),
     p.find({ pagination: false, collection: 'bookings', where: { participant: { equals: kid.id }, status: { equals: 'paid' } }, depth: 1, limit: 50, sort: '-createdAt', overrideAccess: true }),
   ])
   const byId = new Map(academyBookings.map((b) => [b.id, b]))
@@ -72,7 +72,8 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
         <p className="font-[family-name:var(--font-barlow)] text-lg font-bold uppercase text-brand">{formatDate(s.startsAt, { weekday: 'short', day: 'numeric', month: 'short' })}</p>
         <div>
           <p className="font-semibold">
-            1-on-1 with {coach.displayName} · {formatDate(s.startsAt, { hour: 'numeric', minute: '2-digit' })}
+            {bookingTitle(b, coach.displayName)} · {formatDate(s.startsAt, { hour: 'numeric', minute: '2-digit' })}
+            {b.kind === 'group' && b.term && typeof b.term === 'object' && b.term.location ? <span className="font-normal text-muted"> · {b.term.location}</span> : null}
             {s.status === 'no_show' && <span className="ml-2 text-sm font-normal text-red-600">Missed</span>}
             {s.status === 'completed' && <span className="ml-2 text-sm font-normal text-muted">Attended</span>}
           </p>
@@ -165,12 +166,12 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
               <SelectionList entries={selections} rules={rules} showPlayer={false} />
             </div>
           )}
-          <h2 className="font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase">Upcoming 1-on-1s</h2>
+          <h2 className="font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase">Upcoming sessions</h2>
           {upcoming.length ? (
             <ol className="mt-4 divide-y divide-line rounded-2xl border border-line">{upcoming.map(row)}</ol>
           ) : (
             <p className="mt-4 rounded-2xl border border-line p-6 text-muted">
-              No 1-on-1s booked. <Link href="/academy/1-on-1" className="font-semibold text-brand underline">Book a session</Link>
+              No 1-on-1s or small groups booked. <Link href="/academy/1-on-1" className="font-semibold text-brand underline">Book a session</Link>
             </p>
           )}
 
@@ -198,7 +199,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
 
           {past.length > 0 && (
             <>
-              <h2 className="mt-10 font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase">Past 1-on-1s</h2>
+              <h2 className="mt-10 font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase">Past sessions</h2>
               <ol className="mt-4 divide-y divide-line rounded-2xl border border-line opacity-80">{past.map(row)}</ol>
             </>
           )}
