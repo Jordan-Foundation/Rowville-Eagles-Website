@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import type { User } from '@/payload-types'
 import { currentUser } from './auth'
-import { homeFor, isManagementRoles } from './home'
+import { isManagementRoles } from './home'
 
 /**
  * Gate for every /management page: Management (admin or committee) only. Logged out → login;
@@ -10,7 +10,7 @@ import { homeFor, isManagementRoles } from './home'
 export async function requireManagement(next = '/management'): Promise<User> {
   const user = await currentUser()
   if (!user) redirect(`/login?next=${encodeURIComponent(next)}`)
-  if (!isManagementRoles(user.roles)) redirect(homeFor(user))
+  if (!isManagementRoles(user.roles)) redirect('/no-access?area=management')
   return user
 }
 

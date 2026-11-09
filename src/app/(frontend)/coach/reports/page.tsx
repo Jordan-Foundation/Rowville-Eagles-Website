@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
+import { ReportList } from './ReportList'
 import { requireCoach } from '@/academy/portal'
 import { payload, formatDate } from '@/lib/payload'
 import { levelName } from '@/academy/curriculum/levels'
@@ -28,12 +28,11 @@ export default async function CoachReportsPage({ searchParams }: { searchParams:
   const cycle = cycles.find((c) => c.id === cycleId)
   const inCycle = all.filter((r) => (typeof r.cycle === 'object' ? r.cycle.id : r.cycle) === cycleId)
   const status = REPORT_STATUSES.some((s) => s.value === sp.status) ? (sp.status as ReportStatus) : sp.status === 'todo' ? 'todo' : ''
-  const shown = inCycle.filter((r) => (status === 'todo' ? OUTSTANDING.includes(r.status as ReportStatus) : status ? r.status === status : true))
+  const shown = [...inCycle]
   // Returned first, then drafts, then not started, then the rest
   const order = ['returned', 'draft', 'not_started', 'submitted', 'approved', 'released']
   shown.sort((a, b) => order.indexOf(a.status) - order.indexOf(b.status) || a.playerName.localeCompare(b.playerName))
   const todo = inCycle.filter((r) => OUTSTANDING.includes(r.status as ReportStatus)).length
-  const groups = [...new Set(shown.map((r) => r.sourceLabel ?? ''))]
 
   return (
     <div className="space-y-8">
@@ -53,42 +52,21 @@ export default async function CoachReportsPage({ searchParams }: { searchParams:
               <div className="h-full bg-emerald-400" style={{ width: `${inCycle.length ? Math.round(((inCycle.length - todo) / inCycle.length) * 100) : 0}%` }} />
             </div>
           </div>
-          <form className="flex flex-wrap items-end gap-3 text-sm" method="get">
-            {cycles.length > 1 && (
+          {cycles.length > 1 && (
+            <form className="flex flex-wrap items-end gap-3 text-sm" method="get">
               <label>Round
                 <select name="cycle" defaultValue={cycleId} className="mt-1 block border border-line bg-black/40 px-3 py-2">
                   {cycles.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </label>
-            )}
-            <label>Show
-              <select name="status" defaultValue={status} className="mt-1 block border border-line bg-black/40 px-3 py-2">
-                <option value="">All</option>
-                <option value="todo">Still to do</option>
-                {REPORT_STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-              </select>
-            </label>
-            <button className="border border-line px-4 py-2 font-semibold">Filter</button>
-          </form>
-          {shown.length === 0 && <p className="text-muted">No reports match.</p>}
-          {groups.map((g) => (
-            <section key={g} aria-label={g || 'Players'}>
-              {g && <h3 className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-muted">{g}</h3>}
-              <ul className="divide-y divide-line border border-line">
-                {shown.filter((r) => (r.sourceLabel ?? '') === g).map((r) => (
-                  <li key={r.id}>
-                    <Link href={`/coach/reports/${r.id}`} className="flex items-center justify-between gap-3 p-4 hover:bg-white/5">
-                      <span>
-                        <span className="font-semibold">{r.playerName}</span>
-                        <span className="ml-2 text-sm text-muted">{levelName(r.level)}</span>
-                      </span>
-                      <span className={`shrink-0 border px-2 py-0.5 text-xs font-semibold uppercase ${tone[r.status] ?? ''}`}>{statusLabel(r.status)}</span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ))}
+              <button className="border border-line px-4 py-2 font-semibold">Show round</button>
+            </form>
+          )}
+          <ReportList
+            tone={tone}
+            initialStatus={status === 'todo' ? 'todo' : status ? status : todo ? 'todo' : 'all'}
+            rows={shown.map((r) => ({ id: r.id, name: r.playerName, level: levelName(r.level), status: r.status, statusLabel: statusLabel(r.status), group: r.sourceLabel ?? '' }))}
+          />
         </>
       )}
     </div>

@@ -13,6 +13,10 @@ const nextConfig: NextConfig = {
     // Coach profile photos are resized in the browser first; this leaves headroom for the form data
     serverActions: { bodySizeLimit: '3mb' },
   },
+  async headers() {
+    // The offline helper must always be re-checked, and may only run the site's own code
+    return [{ source: '/sw.js', headers: [{ key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' }, { key: 'Content-Security-Policy', value: "default-src 'self'; script-src 'self'" }] }]
+  },
   async redirects() {
     // Fixtures now live on each team's private page — old links go to the player portal (login first if needed)
     return [

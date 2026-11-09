@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from 'react'
 import { inputCls } from '@/components/forms/Field'
-import { markAttendance, saveCoachNotes, type CoachSessionState } from '../actions'
+import { markAttendance, needCover, runningLate, saveCoachNotes, type CoachSessionState } from '../actions'
 
 export function Attendance({ id, status, open }: { id: number; status: string; open: boolean }) {
   const [state, action, pending] = useActionState<CoachSessionState, FormData>(markAttendance, {})
@@ -41,5 +41,38 @@ export function Notes({ id, notes, disabled }: { id: number; notes: string; disa
       {state.error && <p role="alert" className="text-sm text-red-300">{state.error}</p>}
       {state.saved && <p role="status" className="text-sm text-muted">{state.saved}</p>}
     </form>
+  )
+}
+
+/** Running late (tells the family) and Need cover (asks Management). */
+export function SessionHelp({ id, canCover, needsCover }: { id: number; canCover: boolean; needsCover: boolean }) {
+  const [late, lateAction, latePending] = useActionState<CoachSessionState, FormData>(runningLate, {})
+  const [cover, coverAction, coverPending] = useActionState<CoachSessionState, FormData>(needCover, {})
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="space-y-4">
+      <form action={lateAction} className="flex flex-wrap items-center gap-2">
+        <input type="hidden" name="id" value={id} />
+        <span className="text-sm font-semibold">Running late:</span>
+        {[5, 10, 15].map((m) => (
+          <button key={m} name="minutes" value={m} disabled={latePending} className="min-h-10 border border-line px-3 text-sm font-semibold hover:border-white disabled:opacity-60">{m} min</button>
+        ))}
+        {late.saved && <p role="status" className="w-full text-sm text-emerald-300">{late.saved}</p>}
+        {late.error && <p role="alert" className="w-full text-sm text-red-300">{late.error}</p>}
+      </form>
+      {canCover && (needsCover || cover.saved ? (
+        <p role="status" className="text-sm text-amber-300">{cover.saved ?? 'Cover has been requested — Management will assign a coach.'}</p>
+      ) : !open ? (
+        <button type="button" onClick={() => setOpen(true)} className="min-h-10 border border-amber-300/60 px-4 text-sm font-semibold text-amber-300">I can’t make this — need cover</button>
+      ) : (
+        <form action={coverAction} className="space-y-3 border border-amber-300/40 p-4">
+          <input type="hidden" name="id" value={id} />
+          <label className="block text-sm">Why? (for Management only)<input name="reason" className={`${inputCls} mt-1 rounded-none`} placeholder="e.g. sick" /></label>
+          <label className="block text-sm">Handover for the cover coach<textarea name="handover" rows={3} className={`${inputCls} mt-1 rounded-none`} placeholder="What you’ve been working on, anything to know…" /></label>
+          <button disabled={coverPending} className="min-h-10 bg-white px-4 text-sm font-semibold uppercase tracking-[0.12em] text-black disabled:opacity-60">{coverPending ? 'Sending…' : 'Ask for cover'}</button>
+          {cover.error && <p role="alert" className="text-sm text-red-300">{cover.error}</p>}
+        </form>
+      ))}
+    </div>
   )
 }

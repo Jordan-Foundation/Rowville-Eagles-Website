@@ -29,5 +29,26 @@ export const AcademyCoaches: CollectionConfig = {
     { name: 'active', type: 'checkbox', defaultValue: true, admin: { position: 'sidebar', description: 'Inactive coaches are hidden from families' }, access: { update: ({ req: { user } }) => hasRole(user as never, 'admin', 'committee') } },
     { name: 'order', type: 'number', defaultValue: 0, admin: { position: 'sidebar' } },
     { name: 'organisation', type: 'text', defaultValue: 'rowville', admin: { position: 'sidebar', readOnly: true } },
+    {
+      name: 'alerts',
+      label: 'Alerts (the coach chooses these in the coach portal)',
+      type: 'group',
+      fields: [
+        { type: 'row', fields: [
+          { name: 'bookingEmail', label: 'New booking — email', type: 'checkbox', defaultValue: true },
+          { name: 'bookingText', label: 'New booking — text', type: 'checkbox', defaultValue: true },
+        ] },
+        { type: 'row', fields: [
+          { name: 'cancelEmail', label: 'Cancellation — email', type: 'checkbox', defaultValue: true },
+          { name: 'cancelText', label: 'Cancellation — text', type: 'checkbox', defaultValue: false },
+        ] },
+        { type: 'row', fields: [
+          { name: 'replyEmail', label: 'Parent message — email', type: 'checkbox', defaultValue: true },
+          { name: 'replyText', label: 'Parent message — text', type: 'checkbox', defaultValue: false },
+        ] },
+      ],
+    },
+    // Private calendar feed link (/calendar/coach/<token>) — only the coach sees it
+    { name: 'calendarToken', type: 'text', index: true, admin: { hidden: true }, access: { read: () => false, update: () => false, create: () => false } },
   ],
 }

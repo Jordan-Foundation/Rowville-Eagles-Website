@@ -3,14 +3,15 @@
 import { useActionState, useMemo, useState } from 'react'
 import { saveAvailability, type AvailabilityState } from './actions'
 
-type Props = { termId: number; weekdays: readonly string[]; times: string[]; allowed: Record<string, string[]>; initial: string[]; submitted: boolean; locked: boolean }
+type Props = { termId: number; weekdays: readonly string[]; times: string[]; allowed: Record<string, string[]>; initial: string[]; submitted: boolean; locked: boolean; lastTerm?: { name: string; slots: string[] } | null }
 
 const label12 = (t: string) => {
   const [h, m] = t.split(':').map(Number)
   return `${((h + 11) % 12) + 1}${m ? `:${String(m).padStart(2, '0')}` : ''}${h < 12 ? 'am' : 'pm'}`
 }
 
-export function AvailabilityGrid({ termId, weekdays, times, allowed, initial, submitted, locked }: Props) {
+export function AvailabilityGrid({ termId, weekdays, times, allowed, initial, submitted, locked, lastTerm }: Props) {
+  const [day, setDay] = useState(weekdays.find((d) => (allowed[d] ?? []).length) ?? weekdays[0])
   const [picked, setPicked] = useState<Set<string>>(() => new Set(initial))
   const [state, action, pending] = useActionState<AvailabilityState, FormData>(saveAvailability, {})
   const dirty = useMemo(() => picked.size !== initial.length || [...picked].some((k) => !initial.includes(k)), [picked, initial])
@@ -35,7 +36,43 @@ export function AvailabilityGrid({ termId, weekdays, times, allowed, initial, su
       <input type="hidden" name="termId" value={termId} />
       <input type="hidden" name="slots" value={JSON.stringify([...picked])} />
 
-      <div className="overflow-x-auto">
+      {lastTerm && lastTerm.slots.length > 0 && !locked && (
+        <div className="flex flex-wrap items-center gap-3 border border-line p-4 text-sm">
+          <p className="flex-1">Same as last term? {lastTerm.name}: {lastTerm.slots.length} weekly slot{lastTerm.slots.length === 1 ? '' : 's'}.</p>
+          <button type="button" onClick={() => setPicked(new Set(lastTerm.slots))} className="min-h-10 border border-white/40 px-4 text-xs font-semibold uppercase tracking-[0.15em] hover:bg-white hover:text-black">Copy last term’s times</button>
+        </div>
+      )}
+
+      {/* Phones: one day at a time */}
+      <div className="md:hidden">
+        <div className="-mx-1 flex gap-1 overflow-x-auto pb-2" role="tablist" aria-label="Day">
+          {weekdays.map((d) => {
+            const n = (allowed[d] ?? []).filter((t) => picked.has(`${d} ${t}`)).length
+            return (
+              <button key={d} type="button" role="tab" aria-selected={day === d} onClick={() => setDay(d)} disabled={!(allowed[d] ?? []).length} className={`min-h-11 min-w-14 shrink-0 border px-2 text-xs font-semibold uppercase disabled:opacity-30 ${day === d ? 'border-white bg-white text-black' : 'border-line text-muted'}`}>
+                {d.slice(0, 3)}{n > 0 && <span className="block text-[10px] normal-case">{n} free</span>}
+              </button>
+            )
+          })}
+        </div>
+        <div className="mt-2 flex items-center justify-between">
+          <p className="font-display text-xl font-semibold uppercase">{day}</p>
+          <button type="button" disabled={locked} onClick={() => toggleDay(day)} className="text-sm font-semibold underline">{(allowed[day] ?? []).every((t) => picked.has(`${day} ${t}`)) ? 'Clear day' : 'All day'}</button>
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          {(allowed[day] ?? []).map((t) => {
+            const k = `${day} ${t}`
+            const on = picked.has(k)
+            return (
+              <button key={k} type="button" disabled={locked} aria-pressed={on} aria-label={`${day} ${label12(t)}`} onClick={() => toggle(k)} className={`min-h-12 border text-sm font-semibold ${on ? 'border-white bg-white text-black' : 'border-line bg-surface-2 text-muted'}`}>
+                {label12(t)}{on ? ' · Free' : ''}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      <div className="hidden overflow-x-auto md:block">
         <table className="w-full min-w-[640px] border-separate border-spacing-1 text-sm">
           <thead>
             <tr>

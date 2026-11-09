@@ -7,7 +7,7 @@ import { payload, formatDate } from '@/lib/payload'
 import { requireCoach } from '@/academy/portal'
 import { loadCoachSession } from '@/academy/coach-sessions'
 import { ageOn, canMarkAttendance, sessionPayment } from '@/academy/session-view'
-import { Attendance, Notes } from './SessionTools'
+import { Attendance, Notes, SessionHelp } from './SessionTools'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Session' }
@@ -23,6 +23,8 @@ export default async function CoachSessionPage({ params }: { params: Promise<{ i
   const { session: s, booking: b, player, role, bookedCoach, coverCoach, history } = data
   const pay = sessionPayment(s, b)
   const term = typeof b.term === 'object' ? b.term : null
+  // Notes carry over: the latest earlier session with this player that has notes
+  const lastNotes = [...history].filter((h) => h.startsAt < s.startsAt && h.coachNotes?.trim()).sort((a, b) => b.startsAt.localeCompare(a.startsAt))[0] ?? null
   const tel = (n: string) => `tel:${n.replace(/\s+/g, '')}`
 
   return (
@@ -88,6 +90,20 @@ export default async function CoachSessionPage({ params }: { params: Promise<{ i
           <p className="text-xs text-muted">Child Safe: contact the parent or guardian only — never the player directly. Booking {b.reference}.</p>
         </section>
       </div>
+
+      {lastNotes && (
+        <section className="border-l-4 border-white/60 bg-white/5 p-5" aria-label="From last session">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">From last session · {formatDate(lastNotes.startsAt, { weekday: 'short', day: 'numeric', month: 'short' })}</p>
+          <p className="mt-2 whitespace-pre-line text-sm">{lastNotes.coachNotes}</p>
+        </section>
+      )}
+
+      {role !== 'covered' && new Date(s.startsAt).getTime() > Date.now() - 60 * 60_000 && s.status === 'scheduled' && (
+        <section className="panel space-y-4 border border-line p-6">
+          <h2 className="font-display text-xl font-semibold uppercase">On the day</h2>
+          <SessionHelp id={s.id} canCover={role === 'coach' && new Date(s.startsAt) > new Date()} needsCover={Boolean(s.needsCover)} />
+        </section>
+      )}
 
       <section className="panel space-y-4 border border-line p-6">
         <h2 className="font-display text-xl font-semibold uppercase">Attendance</h2>

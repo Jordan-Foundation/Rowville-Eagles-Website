@@ -11,6 +11,7 @@ export function LogoutButton() {
       onClick={async () => {
         await fetch('/api/users/logout', { method: 'POST', credentials: 'include' })
         replaceCart([]) // the cart is saved in the account — don't leave it on a shared device
+        navigator.serviceWorker?.controller?.postMessage('clear') // coach pages saved for offline use
         window.dispatchEvent(new Event('refc-auth'))
         router.push('/')
         router.refresh()

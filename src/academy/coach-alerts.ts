@@ -51,8 +51,9 @@ export async function alertCoachNewBooking(payload: Payload, booking: AcademyBoo
       after: 'Contact the parent or guardian only, through the Academy — never the player directly.',
     },
   ])
-  await sendEmail(payload, { to: user.email, subject: `${heading}: ${p.firstName} — ${summary}`, html, sender: 'academy', userId: user.id })
-  await sendSms(payload, {
+  // The coach chooses how they hear about new bookings (Coach portal → My profile → Alerts)
+  if (coach.alerts?.bookingEmail !== false) await sendEmail(payload, { to: user.email, subject: `${heading}: ${p.firstName} — ${summary}`, html, sender: 'academy', userId: user.id })
+  if (coach.alerts?.bookingText !== false) await sendSms(payload, {
     to: user.phone,
     kind: 'coach_alert',
     optedOut: user.smsOptOut,

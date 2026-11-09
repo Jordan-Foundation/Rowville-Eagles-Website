@@ -21,6 +21,10 @@ export default async function TermAvailability({ params }: { params: Promise<{ t
   const allowed = Object.fromEntries(WEEKDAYS.map((d) => [d, startTimesFor(term, d)]))
   const times = Array.from(new Set(Object.values(allowed).flat())).sort()
   const counts = WEEKDAYS.map((d) => `${d.slice(0, 3)} ${termDatesForWeekday(term, d).length}`).join(' · ')
+  // "Copy last term": the most recent other term this coach gave availability for
+  const { docs: earlier } = await p.find({ pagination: false, collection: 'academy-availability', where: { coach: { equals: coach.id }, term: { not_equals: term.id } }, sort: '-updatedAt', limit: 5, depth: 1, overrideAccess: true })
+  const prev = earlier.find((a) => (a.slots ?? []).length > 0 && typeof a.term === 'object' && a.term.startDate < term.startDate) ?? earlier.find((a) => (a.slots ?? []).length > 0)
+  const lastTerm = prev && typeof prev.term === 'object' ? { name: prev.term.name, slots: (prev.slots ?? []).filter((s) => allowed[s.weekday]?.includes(s.startTime)).map((s) => `${s.weekday} ${s.startTime}`) } : null
   const fmtDay = (iso: string) => formatDate(iso, { weekday: 'short', day: 'numeric', month: 'short' })
 
   return (
@@ -46,6 +50,7 @@ export default async function TermAvailability({ params }: { params: Promise<{ t
         initial={(mine?.slots ?? []).filter((s) => allowed[s.weekday]?.includes(s.startTime)).map((s) => `${s.weekday} ${s.startTime}`)}
         submitted={Boolean(mine?.submittedAt)}
         locked={locked}
+        lastTerm={lastTerm}
       />
       <AwayPeriods
         termId={term.id}

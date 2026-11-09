@@ -130,7 +130,12 @@ async function alertStaff(p: Payload, conv: Conversation, text: string, via: str
   await p.update({ collection: 'conversations', id: conv.id, ...q, data: { lastAlertAt: new Date().toISOString() } })
   const coachIds = (conv.coaches ?? []).map(rel).filter((x): x is number => x != null)
   const coaches = coachIds.length ? (await p.find({ pagination: false, collection: 'academy-coaches', where: { id: { in: coachIds } }, depth: 1, limit: 20, ...q })).docs : []
-  const to = coaches.map((c) => (typeof c.user === 'object' ? (c.user as User | null)?.email : null)).filter((e): e is string => Boolean(e))
+  // Each coach chooses email and/or text for parent messages (Coach portal → My profile → Alerts)
+  const to = coaches.filter((c) => c.alerts?.replyEmail !== false).map((c) => (typeof c.user === 'object' ? (c.user as User | null)?.email : null)).filter((e): e is string => Boolean(e))
+  for (const c of coaches.filter((x) => x.alerts?.replyText)) {
+    const u = typeof c.user === 'object' ? (c.user as User | null) : null
+    if (u) await sendSms(p, { to: u.phone, kind: 'coach_alert', optedOut: u.smsOptOut, userId: u.id, body: `Foundation Academy: new message from ${conv.title}. Reply: ${siteUrl()}/coach/messages/${conv.id}` })
+  }
   const send = async (email: string, href: string) =>
     sendEmail(p, {
       to: email,
@@ -139,7 +144,7 @@ async function alertStaff(p: Payload, conv: Conversation, text: string, via: str
       sender: 'academy',
     })
   for (const email of to) await send(email, `${siteUrl()}/coach/messages/${conv.id}`)
-  if (!to.length) await send(academyBrand.email, `${siteUrl()}/management/messages/${conv.id}`)
+  if (!coaches.length) await send(academyBrand.email, `${siteUrl()}/management/messages/${conv.id}`)
 }
 
 /** A text arrived on the Twilio number. */

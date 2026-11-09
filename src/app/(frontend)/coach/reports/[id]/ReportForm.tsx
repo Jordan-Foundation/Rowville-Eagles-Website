@@ -13,7 +13,7 @@ type SaveState = 'idle' | 'dirty' | 'saving' | 'saved' | 'error'
 const AUTOSAVE_MS = 1200
 const time = (iso: string) => new Date(iso).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' })
 
-export function ReportForm({ id, editable, strands, initial, savedAt, firstName }: { id: number; editable: boolean; strands: Strand[]; initial: Entry; savedAt: string | null; firstName: string }) {
+export function ReportForm({ id, editable, strands, initial, savedAt, firstName, nextId }: { nextId?: number | null; id: number; editable: boolean; strands: Strand[]; initial: Entry; savedAt: string | null; firstName: string }) {
   const router = useRouter()
   const [entry, setEntry] = useState<Entry>(() => ({
     overall: initial.overall,
@@ -76,7 +76,7 @@ export function ReportForm({ id, editable, strands, initial, savedAt, firstName 
     await inFlight.current?.catch(() => null)
     const res = await submitReportAction(id, latest.current)
     setSubmitting(false)
-    if (res.ok) router.push('/coach/reports?submitted=1')
+    if (res.ok) router.push(nextId ? `/coach/reports/${nextId}?submitted=1` : '/coach/reports?submitted=1')
     else { setError(res.error); setState('error') }
   }
 

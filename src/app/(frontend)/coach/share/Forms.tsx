@@ -59,12 +59,21 @@ export function ShareForm({ casual, weekly, holdChoices, defaultHold }: { casual
           <p className="text-emerald-200">{state.sent}</p>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <input readOnly value={state.url} aria-label="Booking link" className="min-w-0 flex-1 border border-line bg-black/40 px-3 py-2 text-xs" onFocus={(e) => e.currentTarget.select()} />
-            <button type="button" onClick={() => { navigator.clipboard?.writeText(state.url!); setCopied(true) }} className="border border-line px-3 py-2 text-xs font-semibold uppercase tracking-[0.15em]">{copied ? 'Copied' : 'Copy'}</button>
+            <button type="button" onClick={async () => { try { await navigator.clipboard.writeText(state.url!); setCopied(true) } catch { window.prompt('Copy this link', state.url!) } }} className="min-h-10 border border-line px-3 text-xs font-semibold uppercase tracking-[0.15em]">{copied ? 'Copied ✓' : 'Copy'}</button>
+            <a href={`https://wa.me/${waNumber(mobile)}?text=${encodeURIComponent(`Here’s your link to book a Foundation Academy 1-on-1: ${state.url}`)}`} target="_blank" rel="noopener" className="min-h-10 border border-line px-3 py-2.5 text-xs font-semibold uppercase tracking-[0.15em]">WhatsApp</a>
+            <button type="button" onClick={() => navigator.share?.({ title: 'Book a 1-on-1', url: state.url! }).catch(() => {})} className="min-h-10 border border-line px-3 text-xs font-semibold uppercase tracking-[0.15em] sm:hidden">Share…</button>
           </div>
+          <p className="mt-2 text-xs text-muted">The link can’t be shown again after you leave this page (it’s stored securely) — use Resend if you need it later.</p>
         </div>
       )}
     </form>
   )
+}
+
+/** wa.me wants the number in international form without "+" (empty opens WhatsApp's contact picker). */
+const waNumber = (m: string) => {
+  const d = m.replace(/\D/g, '')
+  return /^04\d{8}$/.test(d) ? `61${d.slice(1)}` : /^614\d{8}$/.test(d) ? d : ''
 }
 
 export function LinkButtons({ id, canResend }: { id: number; canResend: boolean }) {

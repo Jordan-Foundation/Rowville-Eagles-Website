@@ -948,6 +948,15 @@ export interface AcademyCoach {
   active?: boolean | null;
   order?: number | null;
   organisation?: string | null;
+  alerts?: {
+    bookingEmail?: boolean | null;
+    bookingText?: boolean | null;
+    cancelEmail?: boolean | null;
+    cancelText?: boolean | null;
+    replyEmail?: boolean | null;
+    replyText?: boolean | null;
+  };
+  calendarToken?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -3171,6 +3180,17 @@ export interface AcademyCoachesSelect<T extends boolean = true> {
   active?: T;
   order?: T;
   organisation?: T;
+  alerts?:
+    | T
+    | {
+        bookingEmail?: T;
+        bookingText?: T;
+        cancelEmail?: T;
+        cancelText?: T;
+        replyEmail?: T;
+        replyText?: T;
+      };
+  calendarToken?: T;
   updatedAt?: T;
   createdAt?: T;
 }
