@@ -606,6 +606,7 @@ export interface AcademyGroupInvite {
   label?: string | null;
   group: number | AcademyGroup;
   tokenHash: string;
+  altTokenHash?: string | null;
   status: 'invited' | 'paid' | 'weekly' | 'overdue' | 'declined' | 'removed';
   participant?: (number | null) | Participant;
   account?: (number | null) | User;
@@ -2952,6 +2953,7 @@ export interface AcademyGroupInvitesSelect<T extends boolean = true> {
   label?: T;
   group?: T;
   tokenHash?: T;
+  altTokenHash?: T;
   status?: T;
   participant?: T;
   account?: T;

@@ -14,6 +14,7 @@ import { sendReportReminders } from '../academy/reports/service'
 import { notifyReleasedJob } from '../academy/reports/review'
 import { runScheduledPromotions } from '../promotions/send'
 import { sendWeeklySummary } from './weekly-summary'
+import { sweepGroups } from '../academy/group-decisions'
 
 type Job = (payload: Payload) => Promise<Record<string, unknown>>
 
@@ -25,6 +26,7 @@ export const cronJobs: Record<string, Record<string, Job>> = {
   // ~6am Melbourne: quick, important jobs first (payments, access, reminders)
   daily: {
     foundationGrace: (payload) => graceSweep(payload),
+    smallGroupDeadlines: (payload) => sweepGroups(payload),
     teamMembers: (payload) => syncTeamMembers(payload),
     selectionPaymentReminders: (payload) => runSelectionReminders(payload),
     availabilityReminders: (payload) => sendAvailabilityReminders(payload),
@@ -41,6 +43,7 @@ export const cronJobs: Record<string, Record<string, Job>> = {
     reportNotifications: (payload) => notifyReleasedJob(payload),
     foundationLaunchEmails: (payload) => sendLaunchEmails(payload, 100, { deadline: Date.now() + 60_000 }),
     reviewRequests: (payload) => sendReviewRequests(payload),
+    smallGroupDeadlines: (payload) => sweepGroups(payload),
   },
   // ~3:30am Melbourne: housekeeping
   cleanup: {

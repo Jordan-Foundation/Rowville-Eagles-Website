@@ -31,7 +31,7 @@ export function groupWhen(g: Pick<AcademyGroup, 'type' | 'weekday' | 'firstSessi
 export const groupTitle = (size: number, coachName: string) => `Small group (${size}) with ${coachName}`
 
 /** The player and parent behind each roster entry (existing players use their family account's details). */
-async function resolveRoster(p: Payload, players: RosterPlayer[]) {
+export async function resolveRoster(p: Payload, players: RosterPlayer[]) {
   const ids = players.flatMap((x) => (x.kind === 'existing' ? [x.participantId] : []))
   const { docs } = ids.length ? await p.find({ pagination: false, collection: 'participants', where: { id: { in: ids } }, depth: 1, limit: ids.length, ...q }) : { docs: [] as Participant[] }
   return players.map((x, i) => {
@@ -177,7 +177,8 @@ export async function sendGroupInvite(
 /** A family's invite from its secret link, with its group (null if unknown). */
 export async function findGroupInvite(p: Payload, token: string | null | undefined) {
   if (!token || !validShareToken(token)) return null
-  const { docs } = await p.find({ pagination: false, collection: 'academy-group-invites', where: { tokenHash: { equals: hashShareToken(token) } }, limit: 1, depth: 0, ...q })
+  const hash = hashShareToken(token)
+  const { docs } = await p.find({ pagination: false, collection: 'academy-group-invites', where: { or: [{ tokenHash: { equals: hash } }, { altTokenHash: { equals: hash } }] }, limit: 1, depth: 0, ...q })
   const invite = docs[0]
   if (!invite) return null
   const group = await p.findByID({ collection: 'academy-groups', id: rel(invite.group)!, depth: 0, ...q, disableErrors: true })

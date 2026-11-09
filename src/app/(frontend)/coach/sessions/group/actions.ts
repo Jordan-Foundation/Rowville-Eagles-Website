@@ -6,7 +6,7 @@ import { coachOrNull } from '@/academy/portal'
 import type { Where } from 'payload'
 import { payload } from '@/lib/payload'
 import { createGroup, GroupError } from '@/academy/groups'
-import { cleanPlayer, rosterProblem, type RosterPlayer } from '@/academy/group-rules'
+import { cleanPlayer, playerProblem, rosterProblem, type RosterPlayer } from '@/academy/group-rules'
 
 export type FoundPlayer = { id: number; name: string; parent: string; birthYear: number | null; canInvite: boolean; mobile: boolean }
 
@@ -71,4 +71,55 @@ export async function createGroupAction(_prev: GroupFormState, fd: FormData): Pr
   }
   revalidatePath('/coach/sessions')
   redirect(`/coach/sessions/group/${groupId}?sent=1`)
+}
+
+export type GroupDecisionState = { error?: string; done?: string }
+
+/** The coach's choices for a group: resend a link, replace a place, go ahead smaller, or cancel. */
+export async function groupDecisionAction(_prev: GroupDecisionState, fd: FormData): Promise<GroupDecisionState> {
+  const c = await coachOrNull()
+  if (!c) return { error: 'Please log in as a coach.' }
+  const p = await payload()
+  const groupId = Number(fd.get('group'))
+  const inviteId = Number(fd.get('invite'))
+  const { cancelWholeGroup, goAheadSmaller, replaceGroupPlace, resendGroupInvite } = await import('@/academy/group-decisions')
+  let done: string
+  try {
+    switch (String(fd.get('do'))) {
+      case 'resend': {
+        const r = await resendGroupInvite(p, c.coach.id, inviteId, c.user.id)
+        done = `Sent again${r.sentSms ? ' by email and text' : ' by email'} with a new link — the old one no longer works.`
+        break
+      }
+      case 'replace': {
+        let raw: unknown
+        try { raw = JSON.parse(String(fd.get('player') ?? 'null')) } catch { return { error: 'Choose the new player again.' } }
+        const player = cleanPlayer(raw)
+        const problem = playerProblem(player)
+        if (problem || !player) return { error: problem ?? 'Choose the new player.' }
+        await replaceGroupPlace(p, c.coach.id, inviteId, player, c.user.id)
+        done = 'Invited — they have their own link by email (and text if there’s a mobile).'
+        break
+      }
+      case 'smaller': {
+        const r = await goAheadSmaller(p, c.coach.id, groupId, c.user.id)
+        done = `Going ahead with ${r.players} players — they keep their price.`
+        break
+      }
+      case 'cancel': {
+        if (fd.get('confirm') !== 'on') return { error: 'Tick the box to confirm cancelling the whole group.' }
+        const r = await cancelWholeGroup(p, c.coach.id, groupId, c.user.id, String(fd.get('reason') ?? '').trim().slice(0, 500))
+        done = r.problems.length ? `Group cancelled, but some refunds need Management: ${r.problems.join('; ')}` : 'Group cancelled — everyone who paid is being refunded, and every family has been told.'
+        break
+      }
+      default:
+        return { error: 'Unknown action.' }
+    }
+  } catch (e) {
+    if (e instanceof GroupError) return { error: e.message }
+    throw e
+  }
+  revalidatePath(`/coach/sessions/group/${groupId}`)
+  revalidatePath('/coach/sessions')
+  return { done }
 }

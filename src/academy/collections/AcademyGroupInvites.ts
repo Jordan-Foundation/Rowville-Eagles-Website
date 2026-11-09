@@ -27,6 +27,8 @@ export const AcademyGroupInvites: CollectionConfig = {
     { name: 'label', type: 'text', admin: { readOnly: true } },
     { name: 'group', type: 'relationship', relationTo: 'academy-groups', required: true, index: true },
     { name: 'tokenHash', type: 'text', required: true, unique: true, index: true, admin: { hidden: true } },
+    // The reminder's link — the first link keeps working too, until the coach resends (which replaces both)
+    { name: 'altTokenHash', type: 'text', index: true, admin: { hidden: true } },
     {
       name: 'status',
       type: 'select',

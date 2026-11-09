@@ -53,6 +53,17 @@ export function cleanPlayer(raw: unknown): RosterPlayer | null {
   return null
 }
 
+/** What's wrong with one player's details (null if fine). */
+export function playerProblem(p: RosterPlayer | null): string | null {
+  if (!p) return 'Choose a player or enter their details.'
+  if (p.kind === 'existing') return null
+  if (!p.playerFirstName || !p.playerLastName) return 'Enter the player’s first and last name.'
+  if (!p.parentFirstName || !p.parentLastName) return 'Enter the parent’s first and last name.'
+  if (!EMAIL.test(p.email)) return 'Enter the parent’s email address.'
+  if (p.mobile && !MOBILE.test(p.mobile)) return 'Enter an Australian mobile, e.g. 0412 345 678 (or leave it empty).'
+  return null
+}
+
 /** What's wrong with a roster, in words a coach understands — or null if it's fine. */
 export function rosterProblem(players: (RosterPlayer | null)[]): string | null {
   if (players.length < GROUP_MIN || players.length > GROUP_MAX) return `A small group is ${GROUP_MIN}–${GROUP_MAX} players.`

@@ -9,6 +9,7 @@ import { toYmd } from '@/academy/term-dates'
 import { localToUtc } from '@/lib/time'
 import { coachGroupList, groupTitle, groupWhen } from '@/academy/groups'
 import { GROUP_STATUS } from '@/academy/group-rules'
+import { nudgeGroupClock } from '@/academy/group-clock'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'My sessions' }
@@ -18,6 +19,7 @@ const roleNote = { coach: null, cover: 'You’re covering', covered: 'Being cove
 
 export default async function CoachSessionsPage({ searchParams }: { searchParams: Promise<{ weeks?: string }> }) {
   const { coach, user: me } = await requireCoach('/coach/sessions')
+  nudgeGroupClock()
   void markSeen(await payload(), me.id, 'sessions')
   const asked = (await searchParams).weeks
   let weeks = asked === 'all' ? 52 : Math.min(52, Math.max(1, Number(asked) || 4))

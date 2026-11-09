@@ -62,3 +62,13 @@ describe('other players’ names', () => {
     expect(firstNamesList([])).toBe('')
   })
 })
+
+import { playerProblem } from '@/academy/group-rules'
+describe('one player', () => {
+  it('checks a replacement player', () => {
+    expect(playerProblem({ kind: 'existing', participantId: 3 })).toBeNull()
+    expect(playerProblem(null)).toMatch(/Choose a player/)
+    expect(playerProblem({ kind: 'new', playerFirstName: 'A', playerLastName: 'B', parentFirstName: 'C', parentLastName: 'D', email: 'bad' })).toMatch(/email/)
+    expect(playerProblem({ kind: 'new', playerFirstName: 'A', playerLastName: 'B', parentFirstName: 'C', parentLastName: 'D', email: 'c@d.com', mobile: '0412345678' })).toBeNull()
+  })
+})

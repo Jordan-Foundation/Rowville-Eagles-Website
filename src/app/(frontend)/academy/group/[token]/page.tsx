@@ -8,6 +8,7 @@ import type { AcademyCoach, AcademyTerm, Media, Participant } from '@/payload-ty
 import { groupSlots } from '@/academy/group-holds'
 import { weeklyPlan } from '@/academy/weekly'
 import { DeclineForm, PayForm } from './PayForm'
+import { nudgeGroupClock } from '@/academy/group-clock'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Small group session', robots: { index: false, follow: false }, referrer: 'no-referrer' }
@@ -21,6 +22,7 @@ const rel = (v: unknown) => (v && typeof v === 'object' ? (v as { id: number }).
 export default async function GroupInvitePage({ params, searchParams }: { params: Promise<{ token: string }>; searchParams: Promise<{ cancelled?: string }> }) {
   const { token } = await params
   const { cancelled } = await searchParams
+  nudgeGroupClock()
   const p = await payload()
   const found = await findGroupInvite(p, token)
   if (!found || found.invite.status === 'removed' || found.group.status === 'cancelled') {
@@ -76,7 +78,11 @@ export default async function GroupInvitePage({ params, searchParams }: { params
           <p className="text-muted">You’ve let {coach.displayName} know {me} can’t make it. Thanks for telling us.</p>
         ) : (
           <>
-            <p className="font-semibold">{g.paymentDeadline ? `Please pay by ${formatDate(g.paymentDeadline, { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' })} to keep ${me}’s place.` : `Please pay soon to keep ${me}’s place.`}</p>
+            <p className="font-semibold">
+              {g.paymentDeadline && new Date(g.paymentDeadline).getTime() > Date.now()
+                ? `Please pay by ${formatDate(g.paymentDeadline, { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' })} to keep ${me}’s place.`
+                : `The time to pay has passed, but ${me}’s place is still open — pay now to keep it.`}
+            </p>
             {cancelled && <p className="mt-3 text-sm text-amber-200">Payment wasn’t completed — {me}’s place is still waiting for you below.</p>}
             {future.length === 0 ? (
               <p className="mt-3 text-sm text-muted">This group has already started — please contact {coach.displayName}.</p>

@@ -9,11 +9,13 @@ import Link from 'next/link'
 import { managementThisWeek } from '@/lib/this-week'
 import { EmailMeSummary } from '@/components/management/EmailMeSummary'
 import { formatDate } from '@/lib/payload'
+import { nudgeGroupClock } from '@/academy/group-clock'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Management', robots: { index: false } }
 
 export default async function ManagementHome() {
+  nudgeGroupClock()
   const user = await requireManagement('/management')
   const p = await payload()
   const [kids, counts, week] = await Promise.all([myChildren(p, user), managementAttention(p, user), managementThisWeek(p)])

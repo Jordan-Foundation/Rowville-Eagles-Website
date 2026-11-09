@@ -61,6 +61,7 @@ import * as migration_20261109_011201_coach_alerts_calendar from './20261109_011
 import * as migration_20261109_024603_activity_log from './20261109_024603_activity_log';
 import * as migration_20261109_092722_group_settings from './20261109_092722_group_settings';
 import * as migration_20261109_101625_small_groups from './20261109_101625_small_groups';
+import * as migration_20261109_121219_group_reminder_link from './20261109_121219_group_reminder_link';
 
 export const migrations = [
   {
@@ -376,6 +377,11 @@ export const migrations = [
   {
     up: migration_20261109_101625_small_groups.up,
     down: migration_20261109_101625_small_groups.down,
-    name: '20261109_101625_small_groups'
+    name: '20261109_101625_small_groups',
+  },
+  {
+    up: migration_20261109_121219_group_reminder_link.up,
+    down: migration_20261109_121219_group_reminder_link.down,
+    name: '20261109_121219_group_reminder_link'
   },
 ];

@@ -90,7 +90,7 @@ export function GroupForm({ casual, weekly, settings }: { casual: Casual[]; week
                       {rows.length > GROUP_MIN && <button type="button" onClick={() => setRows((rs) => rs.filter((x) => x.key !== r.key))} className={`${btn} text-red-200`} aria-label={`Remove player ${i + 1}`}>Remove</button>}
                     </div>
                   </div>
-                  {r.mode === 'find' ? <FindPlayer row={r} index={i} onPick={(found) => update(r.key, (x) => ({ ...x, found }))} taken={rows.flatMap((x) => (x.key !== r.key && x.mode === 'find' && x.found ? [x.found.id] : []))} /> : (
+                  {r.mode === 'find' ? <FindPlayer found={r.found} index={i} onPick={(found) => update(r.key, (x) => ({ ...x, found }))} taken={rows.flatMap((x) => (x.key !== r.key && x.mode === 'find' && x.found ? [x.found.id] : []))} /> : (
                     <div className="mt-3 grid gap-3 sm:grid-cols-2">
                       {([['playerFirstName', 'Player first name'], ['playerLastName', 'Player last name'], ['parentFirstName', 'Parent first name'], ['parentLastName', 'Parent last name'], ['email', 'Parent email'], ['mobile', 'Parent mobile (to text the link)']] as const).map(([k, label]) => (
                         <label key={k} className="block text-sm">
@@ -152,14 +152,14 @@ export function GroupForm({ casual, weekly, settings }: { casual: Casual[]; week
   )
 }
 
-function FindPlayer({ row, index, onPick, taken }: { row: Row; index: number; onPick: (p: FoundPlayer | undefined) => void; taken: number[] }) {
+export function FindPlayer({ found, index, onPick, taken, label }: { found?: FoundPlayer; index: number; onPick: (p: FoundPlayer | undefined) => void; taken: number[]; label?: string }) {
   const [q, setQ] = useState('')
   const [results, setResults] = useState<FoundPlayer[] | null>(null)
   const [busy, setBusy] = useState(false)
-  if (row.found) {
+  if (found) {
     return (
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm">
-        <p><span className="font-semibold">{row.found.name}</span>{row.found.parent && <span className="text-muted"> · parent {row.found.parent}</span>}</p>
+        <p><span className="font-semibold">{found.name}</span>{found.parent && <span className="text-muted"> · parent {found.parent}</span>}</p>
         <button type="button" onClick={() => onPick(undefined)} className={btn}>Change</button>
       </div>
     )
@@ -174,7 +174,7 @@ function FindPlayer({ row, index, onPick, taken }: { row: Row; index: number; on
           onChange={(e) => setQ(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void search() } }}
           placeholder="Search players by name"
-          aria-label={`Player ${index + 1} — search by name`}
+          aria-label={label ?? `Player ${index + 1} — search by name`}
           className="min-w-0 flex-1 border border-line bg-black/40 px-3 py-2.5 text-sm"
         />
         <button type="button" onClick={search} disabled={busy || q.trim().length < 2} className={btn}>{busy ? '…' : 'Search'}</button>
