@@ -142,3 +142,11 @@ body:has([data-page-brand='fplus']) .site-footer .footer-rule { border-color: #1
   body { background: #fff !important; }
   @page { margin: 14mm; }
 }
+
+/* Coach portal on phones: an app-like screen — no public site menu or footer (the portal has its own tab bar) */
+@media (max-width: 1023px) {
+  body:has([data-portal='coach']) .site-header,
+  body:has([data-portal='coach']) .site-footer {
+    display: none !important;
+  }
+}

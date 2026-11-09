@@ -1,3 +1,5 @@
+import { ContactButtons } from '@/components/coach/ContactButtons'
+import { QUICK_REPLIES } from '@/messaging/templates'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
@@ -27,9 +29,10 @@ export default async function CoachThread({ params }: { params: Promise<{ id: st
       <Link href="/coach/messages" className="text-sm text-muted hover:text-ink">← Messages</Link>
       <div>
         <h1 className="font-display text-4xl font-semibold uppercase">{conv.title}</h1>
+        {family?.phone && <div className="mt-3"><ContactButtons name={[family.firstName, family.lastName].filter(Boolean).join(' ')} phone={family.phone} /></div>}
         <p className="mt-1 text-sm text-muted">{family?.smsOptOut ? 'This family has turned texts off — replies are emailed.' : family?.phone ? 'Replies are texted to the parent’s mobile.' : 'No mobile on file — replies are emailed.'}</p>
       </div>
-      <Thread seen={seen} messages={toThread(msgs, 'management')} action={staffSendAction} hidden={{ conversation: conv.id }} placeholder={`Reply to ${conv.title}…`} hint="Signed with your name. Keep it about training — admins can see every message." empty="No messages yet." />
+      <Thread templates={QUICK_REPLIES} seen={seen} messages={toThread(msgs, 'management')} action={staffSendAction} hidden={{ conversation: conv.id }} placeholder={`Reply to ${conv.title}…`} hint="Signed with your name. Keep it about training — admins can see every message." empty="No messages yet." />
     </div>
   )
 }

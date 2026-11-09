@@ -60,7 +60,7 @@ export default async function CoachSessionsPage({ searchParams }: { searchParams
             </p>
             <p className="text-sm text-muted">
               {x.booking.type === 'term' ? 'Term' : 'Casual'}
-              {x.booking.player.medical ? ' · medical notes' : ''}
+              {x.booking.player.medical?.trim() && <span className="ml-2 bg-red-600 px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-white">Medical</span>}
               {' · '}
               <span className={pay.tone === 'bad' ? 'font-semibold text-red-300' : ''}>{pay.label}</span>
             </p>

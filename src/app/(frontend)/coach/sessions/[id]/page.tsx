@@ -1,3 +1,5 @@
+import { ContactButtons, MedicalBadge } from '@/components/coach/ContactButtons'
+import { formatPhone } from '@/lib/phone'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
@@ -66,11 +68,11 @@ export default async function CoachSessionPage({ params }: { params: Promise<{ i
             <div><dt className="text-muted">Goals</dt><dd className="mt-0.5 whitespace-pre-line">{player.goals || '—'}</dd></div>
             <div>
               <dt className="text-muted">Medical / injury notes</dt>
-              <dd className={`mt-0.5 whitespace-pre-line ${player.medical ? 'border-l-2 border-red-400 pl-3 font-medium' : ''}`}>{player.medical || 'None given'}</dd>
+              <dd className="mt-0.5 whitespace-pre-line">{player.medical ? <MedicalBadge note={player.medical} /> : 'None given'}</dd>
             </div>
             <div>
               <dt className="text-muted">Emergency contact</dt>
-              <dd className="mt-0.5">{player.emergencyName || '—'}{player.emergencyPhone && <> · <a href={tel(player.emergencyPhone)} className="underline">{player.emergencyPhone}</a></>}</dd>
+              <dd className="mt-0.5">{player.emergencyName || '—'}{player.emergencyPhone && <> · <a href={tel(player.emergencyPhone)} className="underline">{formatPhone(player.emergencyPhone)}</a></>}</dd>
             </div>
           </dl>
         </section>
@@ -79,9 +81,10 @@ export default async function CoachSessionPage({ params }: { params: Promise<{ i
           <h2 className="font-display text-xl font-semibold uppercase">Parent / guardian</h2>
           <dl className="space-y-3 text-sm">
             <div><dt className="text-muted">Name</dt><dd className="mt-0.5">{player.parent.name}</dd></div>
-            <div><dt className="text-muted">Mobile</dt><dd className="mt-0.5"><a href={tel(player.parent.mobile)} className="underline">{player.parent.mobile}</a></dd></div>
+            <div><dt className="text-muted">Mobile</dt><dd className="mt-0.5">{formatPhone(player.parent.mobile)}</dd></div>
             <div><dt className="text-muted">Email</dt><dd className="mt-0.5"><a href={`mailto:${player.parent.email}`} className="underline">{player.parent.email}</a></dd></div>
           </dl>
+          <ContactButtons compact name={player.parent.name} phone={player.parent.mobile} accountId={typeof b.account === 'object' ? b.account?.id : b.account} />
           <p className="text-xs text-muted">Child Safe: contact the parent or guardian only — never the player directly. Booking {b.reference}.</p>
         </section>
       </div>

@@ -56,6 +56,7 @@ import * as migration_20261108_204924_resumable_sends from './20261108_204924_re
 import * as migration_20261108_212256_status_indexes from './20261108_212256_status_indexes';
 import * as migration_20261108_220051_program_details from './20261108_220051_program_details';
 import * as migration_20261108_232239_parents_two from './20261108_232239_parents_two';
+import * as migration_20261109_001500_training_attendance from './20261109_001500_training_attendance';
 
 export const migrations = [
   {
@@ -346,6 +347,11 @@ export const migrations = [
   {
     up: migration_20261108_232239_parents_two.up,
     down: migration_20261108_232239_parents_two.down,
-    name: '20261108_232239_parents_two'
+    name: '20261108_232239_parents_two',
+  },
+  {
+    up: migration_20261109_001500_training_attendance.up,
+    down: migration_20261109_001500_training_attendance.down,
+    name: '20261109_001500_training_attendance'
   },
 ];

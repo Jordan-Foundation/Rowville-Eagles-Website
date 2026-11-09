@@ -7,6 +7,9 @@ import { RoleSwitch, myChildren } from '@/components/dashboard/RoleSwitch'
 import { LiveDashboard } from '@/components/dashboard/LiveDashboard'
 import { coachAttention } from '@/lib/attention'
 import { coachItems } from './items'
+import { NextUpCard, type NextUp } from '@/components/coach/NextUpCard'
+import { localToUtc, localYmd } from '@/lib/time'
+import { weekdayOf } from '@/academy/training-day'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,6 +24,27 @@ export default async function CoachHome() {
   const now = new Date()
   const [next, groups] = await Promise.all([coachSessions(p, coach.id, { from: now, to: new Date(now.getTime() + 7 * 86_400_000) }), coachGroups(p, coach.id)])
   const nextGroup = groups.map((g) => ({ g, s: nextSession(g, now) })).filter((x) => x.s).sort((a, b) => a.s!.startsAt.localeCompare(b.s!.startsAt))[0]
+  // Today / next session: the earliest of my 1-on-1s, group trainings and team trainings
+  const soon = new Date(now.getTime() - 60 * 60_000)
+  const candidates: NextUp[] = []
+  const one = next.find((x) => new Date(x.session.startsAt) > soon)
+  if (one) candidates.push({ when: one.session.startsAt, title: `1-on-1 · ${one.booking.player.firstName} ${one.booking.player.lastName}`, players: 1, medical: one.booking.player.medical?.trim() ? 1 : 0, href: `/coach/sessions/${one.session.id}`, hrefLabel: 'Open session', parent: { name: `${one.booking.contact.firstName} ${one.booking.contact.lastName}`, phone: one.booking.contact.mobile, accountId: typeof one.booking.account === 'object' ? one.booking.account?.id : one.booking.account } })
+  if (nextGroup) candidates.push({ when: nextGroup.s!.startsAt, title: nextGroup.g.title, subtitle: nextGroup.g.program.title, players: nextGroup.g.players.length, medical: nextGroup.g.players.filter((r) => r.player.medical?.trim()).length, href: `/coach/today?date=${nextGroup.s!.date}`, hrefLabel: 'Training day & attendance' })
+  const myTeams = (await p.find({ pagination: false, collection: 'teams', where: { coaches: { in: [user.id] }, archived: { not_equals: true } }, limit: 50, depth: 0, overrideAccess: true })).docs
+  for (let d = 0; d < 7 && myTeams.length; d++) {
+    const ymd = localYmd(new Date(now.getTime() + d * 86_400_000))
+    for (const t of myTeams) for (const tr of (t.training ?? []).filter((x) => x.day === weekdayOf(ymd))) {
+      const when = localToUtc(ymd, tr.start)
+      if (when > soon) candidates.push({ when: when.toISOString(), title: t.name, subtitle: ['Team training', tr.location].filter(Boolean).join(' · '), players: 0, medical: 0, href: `/coach/today?date=${ymd}`, hrefLabel: 'Training day & attendance', teamId: t.id } as NextUp & { teamId: number })
+    }
+  }
+  candidates.sort((a, b) => a.when.localeCompare(b.when))
+  const upNext = candidates[0] ?? null
+  if (upNext && 'teamId' in upNext) {
+    const { docs: members } = await p.find({ pagination: false, collection: 'team-members', where: { team: { equals: (upNext as NextUp & { teamId: number }).teamId }, active: { equals: true } }, limit: 200, depth: 1, overrideAccess: true })
+    upNext.players = members.length
+    upNext.medical = members.filter((m) => typeof m.participant === 'object' && m.participant?.medical?.conditions?.trim()).length
+  }
   const byTerm = new Map(mine.map((a) => [typeof a.term === 'object' ? a.term.id : a.term, a]))
   const profileGaps = [!coach.photo && 'a photo', !coach.bio && 'a short bio', !(coach.specialties?.length) && 'your specialties'].filter(Boolean) as string[]
 
@@ -33,6 +57,8 @@ export default async function CoachHome() {
         </div>
         <RoleSwitch user={user} current="coach" kids={kids} />
       </div>
+
+      <NextUpCard next={upNext} today={localYmd(now)} />
 
       <LiveDashboard items={coachItems.map((it) =>
         it.key === 'sessions' ? { ...it, hint: [counts.sessions ? `${counts.sessions} new booking${counts.sessions === 1 ? '' : 's'}` : '', next.length ? `${next.length} in the next 7 days` : 'none in the next 7 days'].filter(Boolean).join(' · ') } : it.key === 'groups' && groups.length ? { ...it, hint: `${groups.length} group${groups.length === 1 ? '' : 's'}${nextGroup ? ` · next ${formatDate(nextGroup.s!.startsAt, { weekday: 'short', hour: 'numeric', minute: '2-digit' })}` : ''}` } : it,

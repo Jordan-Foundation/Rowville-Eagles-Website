@@ -70,6 +70,7 @@ export interface Config {
     'academy-bookings': AcademyBooking;
     'academy-share-links': AcademyShareLink;
     'academy-sessions': AcademySession;
+    'training-attendance': TrainingAttendance;
     'academy-terms': AcademyTerm;
     'academy-term-slots': AcademyTermSlot;
     'academy-registrations': AcademyRegistration;
@@ -131,6 +132,7 @@ export interface Config {
     'academy-bookings': AcademyBookingsSelect<false> | AcademyBookingsSelect<true>;
     'academy-share-links': AcademyShareLinksSelect<false> | AcademyShareLinksSelect<true>;
     'academy-sessions': AcademySessionsSelect<false> | AcademySessionsSelect<true>;
+    'training-attendance': TrainingAttendanceSelect<false> | TrainingAttendanceSelect<true>;
     'academy-terms': AcademyTermsSelect<false> | AcademyTermsSelect<true>;
     'academy-term-slots': AcademyTermSlotsSelect<false> | AcademyTermSlotsSelect<true>;
     'academy-registrations': AcademyRegistrationsSelect<false> | AcademyRegistrationsSelect<true>;
@@ -1082,6 +1084,44 @@ export interface AcademySession {
    */
   coachNotes?: string | null;
   reminderSentAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "training-attendance".
+ */
+export interface TrainingAttendance {
+  id: number;
+  /**
+   * group:<slot>:<group>:<date> or team:<team>:<date>
+   */
+  key: string;
+  title?: string | null;
+  kind: 'group' | 'team';
+  /**
+   * YYYY-MM-DD
+   */
+  date: string;
+  slot?: (number | null) | AcademyTermSlot;
+  groupId?: string | null;
+  team?: (number | null) | Team;
+  /**
+   * Registration ids (groups) or team-member ids (teams) marked present
+   */
+  present?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  presentCount?: number | null;
+  rosterCount?: number | null;
+  takenBy?: (number | null) | User;
+  takenAt?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -2311,6 +2351,10 @@ export interface PayloadLockedDocument {
         value: number | AcademySession;
       } | null)
     | ({
+        relationTo: 'training-attendance';
+        value: number | TrainingAttendance;
+      } | null)
+    | ({
         relationTo: 'academy-terms';
         value: number | AcademyTerm;
       } | null)
@@ -2706,6 +2750,26 @@ export interface AcademySessionsSelect<T extends boolean = true> {
   attendanceAt?: T;
   coachNotes?: T;
   reminderSentAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "training-attendance_select".
+ */
+export interface TrainingAttendanceSelect<T extends boolean = true> {
+  key?: T;
+  title?: T;
+  kind?: T;
+  date?: T;
+  slot?: T;
+  groupId?: T;
+  team?: T;
+  present?: T;
+  presentCount?: T;
+  rosterCount?: T;
+  takenBy?: T;
+  takenAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }

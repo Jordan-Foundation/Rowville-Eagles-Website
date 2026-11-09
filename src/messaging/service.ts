@@ -15,13 +15,24 @@ export class MessageError extends Error {}
 const nameOf = (u: Pick<User, 'firstName' | 'lastName' | 'email'>) => [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email
 const localNumber = (e164: string) => (/^\+614\d{8}$/.test(e164) ? `0${e164.slice(3, 6)} ${e164.slice(6, 9)} ${e164.slice(9)}` : e164)
 
-/** Coaches who work with this family: 1-on-1 bookings and paid Academy term places. */
+/** Coaches who work with this family: 1-on-1 bookings, paid Academy term places, and the coaches of their children's teams. */
 export async function familyCoaches(p: Payload, accountId: number) {
-  const [bookings, regs] = await Promise.all([
+  const [bookings, regs, members] = await Promise.all([
     p.find({ pagination: false, collection: 'academy-bookings', where: { account: { equals: accountId }, status: { in: ['confirmed', 'completed', 'payment_failed'] } }, limit: 200, depth: 0, ...q, select: { coach: true } }),
     p.find({ pagination: false, collection: 'academy-registrations', where: { account: { equals: accountId }, status: { equals: 'paid' } }, limit: 100, depth: 1, ...q, select: { slot: true, groupId: true } }),
+    p.find({ pagination: false, collection: 'team-members', where: { account: { equals: accountId }, active: { equals: true } }, limit: 50, depth: 0, ...q, select: { team: true } }),
   ])
   const ids = new Set<number>(bookings.docs.map((b) => rel(b.coach)).filter((x): x is number => x != null))
+  // Team coaches are user accounts; their coach profile is what the messaging uses
+  const teamIds = [...new Set(members.docs.map((m) => rel(m.team)).filter((x): x is number => x != null))]
+  if (teamIds.length) {
+    const { docs: teams } = await p.find({ pagination: false, collection: 'teams', where: { id: { in: teamIds }, archived: { not_equals: true } }, limit: 50, depth: 0, ...q, select: { coaches: true } })
+    const users = [...new Set(teams.flatMap((t) => (t.coaches ?? []).map(rel)).filter((x): x is number => x != null))]
+    if (users.length) {
+      const { docs: profiles } = await p.find({ pagination: false, collection: 'academy-coaches', where: { user: { in: users } }, limit: 100, depth: 0, ...q, select: { user: true } })
+      for (const c of profiles) ids.add(c.id)
+    }
+  }
   for (const r of regs.docs) {
     const slot = r.slot as AcademyTermSlot | null
     if (!slot || typeof slot !== 'object') continue
@@ -197,8 +208,11 @@ export async function assignToAccount(p: Payload, convId: number, email: string)
   return target
 }
 
-/** Families a coach can start a conversation with (they've booked or are in the coach's groups). */
+/** Families a coach can start a conversation with (they've booked, are in the coach's groups, or on the coach's teams). */
 export async function coachFamilies(p: Payload, coachId: number) {
+  const coachUser = rel((await p.findByID({ collection: 'academy-coaches', id: coachId, depth: 0, ...q, disableErrors: true }))?.user as never)
+  const teamIds = coachUser ? (await p.find({ pagination: false, collection: 'teams', where: { coaches: { in: [coachUser] }, archived: { not_equals: true } }, limit: 50, depth: 0, ...q, select: { name: true } })).docs.map((t) => t.id) : []
+  const teamFamilies = teamIds.length ? (await p.find({ pagination: false, collection: 'team-members', where: { team: { in: teamIds }, active: { equals: true } }, limit: 1000, depth: 0, ...q, select: { account: true } })).docs : []
   const [bookings, slots] = await Promise.all([
     p.find({ pagination: false, collection: 'academy-bookings', where: { coach: { equals: coachId }, status: { in: ['confirmed', 'completed', 'payment_failed'] }, account: { exists: true } }, limit: 500, depth: 0, ...q, select: { account: true } }),
     p.find({ pagination: false, collection: 'academy-term-slots', where: { or: [{ coaches: { contains: coachId } }, { 'groups.coaches': { contains: coachId } }] }, limit: 200, depth: 0, ...q, select: { coaches: true } }),
@@ -206,7 +220,7 @@ export async function coachFamilies(p: Payload, coachId: number) {
   const regs = slots.docs.length
     ? await p.find({ pagination: false, collection: 'academy-registrations', where: { slot: { in: slots.docs.map((s) => s.id) }, status: { equals: 'paid' }, account: { exists: true } }, limit: 1000, depth: 0, ...q, select: { account: true } })
     : { docs: [] as { account?: unknown }[] }
-  const ids = [...new Set([...bookings.docs, ...regs.docs].map((d) => rel(d.account)).filter((x): x is number => x != null))]
+  const ids = [...new Set([...bookings.docs, ...regs.docs, ...teamFamilies].map((d) => rel(d.account as never)).filter((x): x is number => x != null))]
   if (!ids.length) return []
   const { docs } = await p.find({ pagination: false, collection: 'users', where: { id: { in: ids } }, limit: ids.length, depth: 0, ...q, select: { firstName: true, lastName: true, email: true } })
   return docs.map((u) => ({ id: u.id, name: nameOf(u as User) })).sort((a, b) => a.name.localeCompare(b.name))

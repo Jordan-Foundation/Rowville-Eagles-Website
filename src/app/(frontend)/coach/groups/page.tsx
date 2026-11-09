@@ -1,4 +1,8 @@
+import Link from 'next/link'
 import { markSeen } from '@/lib/seen'
+import { ContactButtons, MedicalBadge } from '@/components/coach/ContactButtons'
+import { formatPhone } from '@/lib/phone'
+import { todayYmd } from '@/academy/training-day'
 import type { Metadata } from 'next'
 import { payload, formatDate } from '@/lib/payload'
 import { requireCoach } from '@/academy/portal'
@@ -28,13 +32,22 @@ export default async function CoachGroupsPage() {
       {groups.map((g) => {
         const next = nextSession(g)
         const ahead = g.sessions.filter((s) => new Date(s.endsAt).getTime() > now)
+        const first = g.sessions.find((s) => !s.cancelled)
+        const upcoming = first && new Date(first.startsAt).getTime() > now // next term's group, shown in advance
         return (
           <section key={g.key} className="panel gloss-sheen border border-line">
             <div className="border-b border-line p-5">
               <p className="text-xs uppercase tracking-[0.2em] text-muted">{g.program.title}</p>
-              <h2 className="mt-1 font-display text-2xl font-semibold uppercase">{g.title}</h2>
+              <h2 className="mt-1 font-display text-2xl font-semibold uppercase">
+                {g.title}
+                {upcoming && <span className="ml-3 align-middle bg-white px-2 py-0.5 text-xs font-bold tracking-wider text-black">Starts {day(first!.startsAt)}</span>}
+              </h2>
               <p className="mt-1 text-sm text-muted">
                 {g.players.length} player{g.players.length === 1 ? '' : 's'} · {next ? `next ${day(next.startsAt)}, ${time(next.startsAt)}${next.moved ? ' (changed time)' : ''}` : 'no sessions left this term'}
+              </p>
+              <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                {next && next.date === todayYmd() && <Link href="/coach/today" className="font-semibold underline">Take attendance</Link>}
+                {g.players.length > 0 && <Link href={`/coach/broadcast?to=group:${g.key.includes(':') ? g.key : `${g.key}:`}`} className="font-semibold underline">Message this group</Link>}
               </p>
               {ahead.filter((s) => s.cancelled || s.moved).map((s) => (
                 <p key={s.date} className="mt-1 text-sm font-semibold text-amber-300">{day(s.startsAt)}: {s.cancelled ? 'no training' : `moved to ${time(s.startsAt)}`}{s.note ? ` — ${s.note}` : ''}</p>
@@ -51,16 +64,12 @@ export default async function CoachGroupsPage() {
                           {r.player.firstName} {r.player.lastName}
                           <span className="ml-2 text-sm font-normal text-muted">{by ? groupLabel(by) : ''}{r.playingBirthYear && r.playingBirthYear !== r.birthYear ? ` (born ${r.birthYear})` : ''}</span>
                         </p>
-                        {r.player.medical?.trim() ? (
-                          <p className="mt-1 text-sm"><span className="mr-1 bg-red-500/20 px-1.5 py-0.5 text-xs font-semibold uppercase text-red-300">Medical</span>{r.player.medical}</p>
-                        ) : (
-                          <p className="mt-1 text-sm text-muted">No medical notes</p>
-                        )}
+                        <MedicalBadge note={r.player.medical} />
+                        {r.player.emergencyName && <p className="mt-1 text-sm text-muted">Emergency: {r.player.emergencyName}{r.player.emergencyPhone ? ` · ${formatPhone(r.player.emergencyPhone)}` : ''}</p>}
+                        {r.player.photoConsent === false && <p className="text-xs font-semibold text-amber-300">No photos</p>}
                       </div>
                       <div className="text-sm">
-                        <p>Parent: {r.contact.firstName} {r.contact.lastName} · <a href={`tel:${r.contact.phone.replace(/\s/g, '')}`} className="underline">{r.contact.phone}</a></p>
-                        {r.player.emergencyName && <p className="text-muted">Emergency: {r.player.emergencyName} · {r.player.emergencyPhone}</p>}
-                        {r.player.photoConsent === false && <p className="text-xs font-semibold text-amber-300">No photos</p>}
+                        <ContactButtons name={`${r.contact.firstName} ${r.contact.lastName}`} phone={r.contact.phone} accountId={typeof r.account === 'object' ? r.account?.id : r.account} />
                       </div>
                     </li>
                   )

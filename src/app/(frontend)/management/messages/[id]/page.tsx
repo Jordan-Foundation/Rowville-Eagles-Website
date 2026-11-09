@@ -1,3 +1,4 @@
+import { QUICK_REPLIES } from '@/messaging/templates'
 import { requireManagement } from '@/lib/management'
 import Link from 'next/link'
 import type { Metadata } from 'next'
@@ -35,7 +36,7 @@ export default async function StaffThread({ params }: { params: Promise<{ id: st
         </p>
       </div>
       {!family && <AssignForm conversation={conv.id} />}
-      <Thread seen={seen} messages={toThread(msgs, 'management')} action={staffSendAction} hidden={{ conversation: conv.id }} placeholder={`Reply to ${conv.title}…`} hint="Signed with your first name." empty="No messages yet." />
+      <Thread templates={QUICK_REPLIES} seen={seen} messages={toThread(msgs, 'management')} action={staffSendAction} hidden={{ conversation: conv.id }} placeholder={`Reply to ${conv.title}…`} hint="Signed with your first name." empty="No messages yet." />
     </div>
   )
 }

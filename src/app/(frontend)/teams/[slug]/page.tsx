@@ -1,3 +1,6 @@
+import { hasRole } from '@/access'
+import { ContactButtons, MedicalBadge } from '@/components/coach/ContactButtons'
+import { formatPhone } from '@/lib/phone'
 import { markSeen } from '@/lib/seen'
 import Link from 'next/link'
 import type { Metadata } from 'next'
@@ -210,8 +213,12 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
                     return (
                       <li key={m.id} className="rounded-lg border border-line p-3">
                         <p className="font-semibold">{kid.firstName} {kid.lastName}</p>
-                        <p className="text-muted">{[parent.firstName, parent.lastName].filter(Boolean).join(' ')} · {parent.phone ? <a href={`tel:${parent.phone}`} className="underline">{parent.phone}</a> : parent.email}</p>
-                        {kid.medical?.conditions && <p className="mt-1 text-xs text-red-700">Medical: {kid.medical.conditions}</p>}
+                        <MedicalBadge note={kid.medical?.conditions} quiet={false} />
+                        {kid.medical?.emergencyContact && <p className="mt-1 text-xs text-muted">Emergency: {kid.medical.emergencyContact}{kid.medical.emergencyPhone ? ` · ${formatPhone(kid.medical.emergencyPhone)}` : ''}</p>}
+                        <div className="mt-2">
+                          <ContactButtons name={[parent.firstName, parent.lastName].filter(Boolean).join(' ') || parent.email} phone={parent.phone} accountId={user && hasRole(user, 'coach') ? parent.id : null} />
+                        </div>
+                        {!parent.phone && <p className="text-xs text-muted">{parent.email}</p>}
                       </li>
                     )
                   })}

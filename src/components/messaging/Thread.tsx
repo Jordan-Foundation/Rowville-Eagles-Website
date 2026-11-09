@@ -11,7 +11,7 @@ const fmt = (iso: string) =>
   new Date(iso).toLocaleString('en-AU', { timeZone: 'Australia/Melbourne', weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })
 
 /** A conversation: messages oldest → newest, a reply box, and a quiet refresh every 15 seconds. */
-export function Thread({ messages, action, hidden, placeholder, hint, empty, seen }: { seen?: { id: number; text: string; at: string } | null; messages: ThreadMessage[]; action: Action; hidden?: Record<string, string | number>; placeholder: string; hint?: string; empty: string }) {
+export function Thread({ messages, action, hidden, placeholder, hint, empty, seen, templates }: { templates?: { label: string; text: string }[]; seen?: { id: number; text: string; at: string } | null; messages: ThreadMessage[]; action: Action; hidden?: Record<string, string | number>; placeholder: string; hint?: string; empty: string }) {
   const router = useRouter()
   const [state, send, pending] = useActionState<SendState, FormData>(action, {})
   const [text, setText] = useState('')
@@ -47,6 +47,15 @@ export function Thread({ messages, action, hidden, placeholder, hint, empty, see
       </ol>
       <form action={send} className="mt-4 space-y-2">
         {Object.entries(hidden ?? {}).map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
+        {templates && templates.length > 0 && (
+          <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]" aria-label="Quick replies">
+            {templates.map((t) => (
+              <button key={t.label} type="button" onClick={() => setText(t.text)} className="shrink-0 border border-line px-3 py-1.5 text-xs font-semibold transition hover:border-white">
+                {t.label}
+              </button>
+            ))}
+          </div>
+        )}
         <label className="block text-sm">
           <span className="sr-only">Message</span>
           <textarea name="body" rows={3} required maxLength={1200} value={text} onChange={(e) => setText(e.target.value)} placeholder={placeholder} className="block w-full border border-line bg-transparent px-3 py-2.5 text-sm" />
