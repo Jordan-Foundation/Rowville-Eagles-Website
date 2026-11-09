@@ -22,6 +22,8 @@ export default async function CoachGroupPage({ params, searchParams }: { params:
   const data = await loadCoachGroup(await payload(), coach.id, Number(id))
   if (!data) notFound()
   const { group: g, invites, slots } = data
+  const termId = typeof g.term === 'object' ? g.term.id : g.term
+  const term = await (await payload()).findByID({ collection: 'academy-terms', id: termId, depth: 0, overrideAccess: true, disableErrors: true })
   const sent = (await searchParams).sent === '1'
   const active = invites.filter((i) => i.status !== 'declined')
   const paid = invites.filter((i) => i.status === 'paid' || i.status === 'weekly').length
@@ -71,7 +73,16 @@ export default async function CoachGroupPage({ params, searchParams }: { params:
           })}
         </ul>
       </section>
-      {open && <GroupDecisions groupId={g.id} paid={paid} waiting={waiting} shortfall={g.status === 'shortfall'} />}
+      {open && (
+        <GroupDecisions
+          groupId={g.id}
+          paid={paid}
+          waiting={waiting}
+          shortfall={g.status === 'shortfall'}
+          onlyPaid={paid === 1 ? (() => { const i = invites.find((x) => x.status === 'paid' || x.status === 'weekly')!; return { name: i.invitee.playerFirstName, paid: formatAUD(i.rateLocked * g.sessionsTotal) } })() : undefined}
+          oneOnOnePrice={term ? (g.type === 'term' ? `${formatAUD(term.pricePerSession)} a session` : formatAUD(term.casualPrice)) : undefined}
+        />
+      )}
       {g.type === 'term' && slots.length > 0 && (
         <section>
           <h2 className="font-display text-2xl font-semibold uppercase">Dates</h2>

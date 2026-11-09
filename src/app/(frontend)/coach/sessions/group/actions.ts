@@ -82,7 +82,7 @@ export async function groupDecisionAction(_prev: GroupDecisionState, fd: FormDat
   const p = await payload()
   const groupId = Number(fd.get('group'))
   const inviteId = Number(fd.get('invite'))
-  const { cancelWholeGroup, goAheadSmaller, replaceGroupPlace, resendGroupInvite } = await import('@/academy/group-decisions')
+  const { cancelWholeGroup, goAheadSmaller, offerOneOnOne, replaceGroupPlace, resendGroupInvite } = await import('@/academy/group-decisions')
   let done: string
   try {
     switch (String(fd.get('do'))) {
@@ -104,6 +104,11 @@ export async function groupDecisionAction(_prev: GroupDecisionState, fd: FormDat
       case 'smaller': {
         const r = await goAheadSmaller(p, c.coach.id, groupId, c.user.id)
         done = `Going ahead with ${r.players} players — they keep their price.`
+        break
+      }
+      case 'one-on-one': {
+        const r = await offerOneOnOne(p, c.coach, c.user, groupId)
+        done = `Group cancelled and ${r.player}’s family refunded. They’ve been sent a link to book the same time as a 1-on-1${r.held ? ' — it’s held for them' : ''}.${r.problems.length ? ` Some refunds need Management: ${r.problems.join('; ')}` : ''}`
         break
       }
       case 'cancel': {

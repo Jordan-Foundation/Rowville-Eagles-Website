@@ -223,3 +223,40 @@ export async function cancelWholeGroup(p: Payload, coachId: number, groupId: num
   await releaseGroup(p, g.id, { by, note: reason || 'Cancelled by the coach' })
   return { problems }
 }
+
+/**
+ * Only one player has paid: cancel the group (their family is refunded in full, anyone else is told) and
+ * hold the same time for them as a 1-on-1 at the normal 1-on-1 price — a coach share link, so they book
+ * and pay the usual way. Net, they pay the difference.
+ */
+export async function offerOneOnOne(p: Payload, coach: AcademyCoach, user: User, groupId: number) {
+  const g = await ownGroup(p, coach.id, groupId)
+  const invites = await groupInvites(p, g.id)
+  const paid = invites.filter(isPaid)
+  if (paid.length !== 1) throw new GroupError('This is for when exactly one player has paid.')
+  const keep = paid[0]
+  const { term } = await context(p, g)
+  const oneOnOne = g.type === 'term' ? term.pricePerSession : term.casualPrice
+  const { problems } = await cancelWholeGroup(p, coach.id, groupId, user.id, `The small group couldn’t go ahead — ${keep.invitee.playerFirstName} has been offered a 1-on-1 at the same time instead.`)
+  const { createShareLink, ShareLinkError } = await import('./share-links')
+  const i = keep.invitee
+  try {
+    const r = await createShareLink(p, {
+      coach,
+      user,
+      mode: g.type,
+      ...(g.type === 'term' ? { weekday: g.weekday ?? undefined, startTime: g.startTime ?? undefined } : { startsAt: g.firstSessionAt }),
+      client: { firstName: i.parentFirstName, lastName: i.parentLastName, email: i.email, mobile: i.mobile ?? undefined, playerFirstName: i.playerFirstName },
+      message: `The small group couldn’t go ahead, so your payment has been refunded in full. I’ve held the same time for ${i.playerFirstName} as a 1-on-1 instead (${g.type === 'term' ? `${formatPrice(oneOnOne)} a session` : formatPrice(oneOnOne)}) — book it here if you’d like it.`,
+      holdHours: Math.min(term.shareLinkHoldHours ?? 48, 72),
+      viaEmail: true,
+      viaSms: Boolean(i.mobile),
+    })
+    return { player: i.playerFirstName, held: Boolean(r.link.holdUntil), problems }
+  } catch (e) {
+    if (e instanceof ShareLinkError) throw new GroupError(`The group is cancelled and ${i.playerFirstName}’s family refunded, but the 1-on-1 couldn’t be held: ${e.message} Send them a share link for another time.`)
+    throw e
+  }
+}
+
+const formatPrice = (n: number) => new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: n % 1 ? 2 : 0 }).format(n)

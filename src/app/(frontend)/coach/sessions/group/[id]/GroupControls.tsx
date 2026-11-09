@@ -62,10 +62,10 @@ export function PlaceActions({ groupId, inviteId, player, canResend }: { groupId
 }
 
 /** What happens to the group: go ahead with who's paid, or cancel and refund everyone. */
-export function GroupDecisions({ groupId, paid, waiting, shortfall }: { groupId: number; paid: number; waiting: number; shortfall: boolean }) {
+export function GroupDecisions({ groupId, paid, waiting, shortfall, onlyPaid, oneOnOnePrice }: { groupId: number; paid: number; waiting: number; shortfall: boolean; onlyPaid?: { name: string; paid: string }; oneOnOnePrice?: string }) {
   const [state, action, pending] = useActionState<GroupDecisionState, FormData>(groupDecisionAction, {})
   const [cancelling, setCancelling] = useState(false)
-  if (state.done && /cancelled/i.test(state.done)) return <p role="status" className="border border-emerald-400/40 p-4 text-sm text-emerald-200">{state.done}</p>
+  if (state.done && /cancelled|refunded/i.test(state.done)) return <p role="status" className="border border-emerald-400/40 p-4 text-sm text-emerald-200">{state.done}</p>
   return (
     <section aria-label="What happens next" className={`border p-5 ${shortfall ? 'border-amber-400/60 bg-amber-400/5' : 'border-line'}`}>
       <h2 className="font-display text-xl font-semibold uppercase">{shortfall ? 'Your decision' : 'If someone doesn’t pay'}</h2>
@@ -79,6 +79,17 @@ export function GroupDecisions({ groupId, paid, waiting, shortfall }: { groupId:
         {waiting > 0 && paid >= 2 && (
           <button name="do" value="smaller" disabled={pending} onClick={(e) => { if (!window.confirm(`Go ahead with the ${paid} players who’ve paid? They keep their price.`)) e.preventDefault() }} className="bg-white px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-black disabled:opacity-50">
             Go ahead with {paid} players
+          </button>
+        )}
+        {paid === 1 && onlyPaid && (
+          <button
+            name="do"
+            value="one-on-one"
+            disabled={pending}
+            onClick={(e) => { if (!window.confirm(`Cancel the group and offer ${onlyPaid.name} a 1-on-1 at the same time instead? Their ${onlyPaid.paid} is refunded and they get a link to book the 1-on-1${oneOnOnePrice ? ` (${oneOnOnePrice})` : ''}, held for them.`)) e.preventDefault() }}
+            className="bg-white px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-black disabled:opacity-50"
+          >
+            Offer {onlyPaid.name} a 1-on-1 instead
           </button>
         )}
         <button type="button" onClick={() => setCancelling((v) => !v)} className={`${btn} text-red-200`}>Cancel the group…</button>
