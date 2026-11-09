@@ -82,7 +82,7 @@ export function Board({ roundId, kind, groups, squads, years }: Props) {
               <option value="">Move to…</option>
               {years.map((y) => <option key={y.year} value={y.year}>{y.label}</option>)}
             </select>
-            <input name="reason" required placeholder="Reason (required)" value={reason} onChange={(e) => setReason(e.target.value)} className={`${field} min-w-56 flex-1`} />
+            <input name="reason" aria-label="Reason" required placeholder="Reason (required)" value={reason} onChange={(e) => setReason(e.target.value)} className={`${field} min-w-56 flex-1`} />
             {state.needsConfirm && (
               <label className="flex items-center gap-2 text-sm text-amber-700"><input type="checkbox" name="confirm" checked={confirm} onChange={(e) => setConfirm(e.target.checked)} /> Confirm moving down 2 groups (only if they can’t take part in their own age group)</label>
             )}

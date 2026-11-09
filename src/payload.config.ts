@@ -94,6 +94,8 @@ export default buildConfig({
     importMap: { baseDir: path.resolve(dirname) },
     // Dates read like the rest of the site, e.g. "9 Nov 2026, 5:30 pm"
     dateFormat: 'd MMM yyyy, h:mm a',
+    // Built-in avatar: don't send admins' email hashes to Gravatar
+    avatar: 'default',
     components: {
       beforeNavLinks: ['/components/admin/BackToManagement#BackToManagement'],
       afterNavLinks: ['/components/admin/PricesNavLink#SetupNavLink', '/components/admin/PricesNavLink#PricesNavLink', '/components/admin/PricesNavLink#PdrNavLink', '/components/admin/PricesNavLink#FoundationPlusNavLink'],

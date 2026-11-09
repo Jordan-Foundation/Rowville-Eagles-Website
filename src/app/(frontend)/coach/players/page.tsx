@@ -41,7 +41,7 @@ export default async function CoachPlayers({ searchParams }: { searchParams: Pro
         <p className="mt-3 text-muted">Your players — open one to see their Foundation+ page and mark stages you’ve seen them complete. Search to find anyone else.</p>
       </div>
       <form className="flex gap-2">
-        <input name="q" defaultValue={term} placeholder="Search all players by name" className="w-72 border border-line bg-black/40 px-3 py-2 text-sm" />
+        <input name="q" type="search" aria-label="Search all players by name" defaultValue={term} placeholder="Search all players by name" className="w-72 border border-line bg-black/40 px-3 py-2 text-sm" />
         <button className="bg-white px-4 py-2 text-sm font-semibold text-black">Search</button>
       </form>
       {term.length < 2 && (

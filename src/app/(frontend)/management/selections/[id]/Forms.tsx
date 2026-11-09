@@ -10,10 +10,10 @@ export function SquadForm({ roundId, years }: { roundId: number; years: string }
   return (
     <form action={action} className="flex flex-wrap items-end gap-2">
       <input type="hidden" name="roundId" value={roundId} />
-      <input name="name" required placeholder="Squad name, e.g. 2016s Red" className={`${field} min-w-48 flex-1`} />
-      <input name="years" placeholder={`Years of birth, e.g. ${years}`} className={`${field} w-48`} />
-      <input name="capacity" type="number" min={1} placeholder="Max players" className={`${field} w-32`} />
-      <input name="fee" type="number" min={0} step="0.01" placeholder="Fee (optional)" className={`${field} w-36`} />
+      <input name="name" aria-label="Squad name" required placeholder="Squad name, e.g. 2016s Red" className={`${field} min-w-48 flex-1`} />
+      <input name="years" aria-label="Years of birth" placeholder={`Years of birth, e.g. ${years}`} className={`${field} w-48`} />
+      <input name="capacity" aria-label="Max players" type="number" min={1} placeholder="Max players" className={`${field} w-32`} />
+      <input name="fee" aria-label="Fee" type="number" min={0} step="0.01" placeholder="Fee (optional)" className={`${field} w-36`} />
       <button disabled={pending} className="rounded-full border border-line px-4 py-2 text-sm font-semibold hover:border-brand">{pending ? 'Adding…' : 'Add squad'}</button>
       {state.error && <p role="alert" className="basis-full text-sm text-red-700">{state.error}</p>}
       {state.done && <p role="status" className="basis-full text-sm text-emerald-700">{state.done}</p>}

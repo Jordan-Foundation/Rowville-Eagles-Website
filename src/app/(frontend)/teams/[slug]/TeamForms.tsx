@@ -36,8 +36,8 @@ export function NoticeForm({ slug, edit, families }: { slug: string; edit?: { id
     >
       <input type="hidden" name="slug" value={slug} />
       {edit && <input type="hidden" name="id" value={edit.id} />}
-      <input name="title" required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title, e.g. Saturday’s game moved to 9am" className={inputCls} />
-      <textarea name="body" required rows={4} value={body} onChange={(e) => setBody(e.target.value)} placeholder="The full message for families" className={inputCls} />
+      <input name="title" aria-label="Notice title" required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title, e.g. Saturday’s game moved to 9am" className={inputCls} />
+      <textarea name="body" aria-label="Notice message" required rows={4} value={body} onChange={(e) => setBody(e.target.value)} placeholder="The full message for families" className={inputCls} />
       <div className="flex flex-wrap items-center gap-4 text-sm">
         <label className="flex items-center gap-2"><input type="checkbox" name="pinned" defaultChecked={edit?.pinned} /> Pin to top</label>
         <label className="flex items-center gap-2"><input type="checkbox" name="send" /> {edit ? 'Send the update to families again' : `Also email and text ${families != null ? `all ${families} famil${families === 1 ? 'y' : 'ies'}` : 'all families'}`}</label>
@@ -85,7 +85,7 @@ export function TrainingForm({ slug, rows }: { slug: string; rows: TrainingRow[]
           <select name="day" value={r.day} onChange={(e) => set(i, 'day', e.target.value)} className={inputCls} aria-label="Day">{DAYS.map((d) => <option key={d}>{d}</option>)}</select>
           <input name="start" type="time" value={r.start} onChange={(e) => set(i, 'start', e.target.value)} className={inputCls} aria-label="Start" />
           <input name="end" type="time" value={r.end ?? ''} onChange={(e) => set(i, 'end', e.target.value)} className={inputCls} aria-label="End" />
-          <input name="location" value={r.location ?? ''} onChange={(e) => set(i, 'location', e.target.value)} placeholder="Location" className={inputCls} />
+          <input name="location" aria-label={`Training ${i + 1} location`} value={r.location ?? ''} onChange={(e) => set(i, 'location', e.target.value)} placeholder="Location" className={inputCls} />
           <button type="button" onClick={() => setList((l) => l.filter((_, j) => j !== i))} className={ghost}>Remove</button>
         </div>
       ))}
@@ -106,8 +106,8 @@ export function FixtureForm({ slug }: { slug: string }) {
       <input type="hidden" name="op" value="add" />
       <input name="date" type="date" required className={inputCls} aria-label="Date" />
       <input name="time" type="time" className={inputCls} aria-label="Time" />
-      <input name="opponent" required placeholder="Opponent" className={inputCls} />
-      <input name="venue" placeholder="Venue / pitch" className={inputCls} />
+      <input name="opponent" aria-label="Opponent" required placeholder="Opponent" className={inputCls} />
+      <input name="venue" aria-label="Venue or pitch" placeholder="Venue / pitch" className={inputCls} />
       <button disabled={pending} className={btn}>Add</button>
       <div className="sm:col-span-5"><Msg s={state} /></div>
     </form>
@@ -122,7 +122,7 @@ export function FixtureTools({ slug, id, result }: { slug: string; id: string; r
         <input type="hidden" name="slug" value={slug} />
         <input type="hidden" name="fixtureId" value={id} />
         <input type="hidden" name="op" value="result" />
-        <input name="result" defaultValue={result ?? ''} placeholder="Result, e.g. W 3–1" className="w-32 rounded-lg border border-line bg-surface px-2 py-1 text-xs" />
+        <input name="result" aria-label="Result" defaultValue={result ?? ''} placeholder="Result, e.g. W 3–1" className="w-32 rounded-lg border border-line bg-surface px-2 py-1 text-xs" />
         <button disabled={pending} className={ghost}>Save</button>
       </form>
       <form action={action}>
@@ -141,8 +141,8 @@ export function ThreadForm({ slug }: { slug: string }) {
   return (
     <form action={action} className="space-y-3">
       <input type="hidden" name="slug" value={slug} />
-      <input name="title" required placeholder="Your question, e.g. Do we need shin pads at training?" className={inputCls} />
-      <textarea name="body" required rows={3} placeholder="More detail (optional for others to help)" className={inputCls} />
+      <input name="title" aria-label="Question" required placeholder="Your question, e.g. Do we need shin pads at training?" className={inputCls} />
+      <textarea name="body" aria-label="Details" required rows={3} placeholder="More detail (optional for others to help)" className={inputCls} />
       <button disabled={pending} className={btn}>{pending ? 'Posting…' : 'Ask the team'}</button>
       <Msg s={state} />
     </form>
@@ -155,7 +155,7 @@ export function ReplyForm({ slug, thread }: { slug: string; thread: number }) {
     <form action={action} className="mt-3 flex flex-wrap gap-2">
       <input type="hidden" name="slug" value={slug} />
       <input type="hidden" name="thread" value={thread} />
-      <input name="body" required placeholder="Write a reply…" className={`${inputCls} min-w-60 flex-1`} />
+      <input name="body" aria-label="Reply" required placeholder="Write a reply…" className={`${inputCls} min-w-60 flex-1`} />
       <button disabled={pending} className={btn}>Reply</button>
       <div className="basis-full"><Msg s={state} /></div>
     </form>

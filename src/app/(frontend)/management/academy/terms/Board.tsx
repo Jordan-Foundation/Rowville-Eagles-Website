@@ -106,7 +106,7 @@ export function Board({ programId, rows, slots, coaches }: { programId: number; 
               <option value="" disabled>Move to training time…</option>
               {slots.map((s) => <option key={s.id} value={s.id}>{s.label} · {s.years}</option>)}
             </select>
-            <input name="reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason (needed if outside their age group)" className={`${sel} min-w-72 flex-1`} />
+            <input name="reason" aria-label="Reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason (needed if outside their age group)" className={`${sel} min-w-72 flex-1`} />
             <label className="flex items-center gap-1 text-sm"><input type="checkbox" name="notify" defaultChecked /> Tell paid families</label>
             <button disabled={moving} className={btn}>{moving ? 'Moving…' : 'Move'}</button>
             <div className="basis-full"><Result s={moveState} /></div>

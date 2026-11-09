@@ -33,7 +33,7 @@ export function Notes({ id, notes, disabled }: { id: number; notes: string; disa
   return (
     <form action={action} className="space-y-3">
       <input type="hidden" name="id" value={id} />
-      <textarea name="notes" rows={5} value={text} onChange={(e) => setText(e.target.value)} disabled={disabled} className={`${inputCls} rounded-none`} placeholder="What you worked on, what to focus on next time…" />
+      <textarea name="notes" aria-label="Your notes" rows={5} value={text} onChange={(e) => setText(e.target.value)} disabled={disabled} className={`${inputCls} rounded-none`} placeholder="What you worked on, what to focus on next time…" />
       <div className="flex items-center gap-3">
         {!disabled && <button disabled={pending} className="bg-white px-4 py-2.5 text-sm font-semibold uppercase tracking-[0.12em] text-black disabled:opacity-60">{pending ? 'Saving…' : 'Save notes'}</button>}
         <p className="text-xs text-muted">Private — seen by Academy coaches and admins only, never by the family.</p>

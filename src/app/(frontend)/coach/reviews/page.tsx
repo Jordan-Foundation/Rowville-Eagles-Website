@@ -40,7 +40,7 @@ export default async function ReviewQueue({ searchParams }: { searchParams: Prom
         <select name="area" defaultValue={f.area ?? ''} className={sel} aria-label="Area"><option value="">All areas</option>{areas.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select>
         <select name="level" defaultValue={f.level ?? ''} className={sel} aria-label="Level"><option value="">All levels</option>{[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>Level {n}</option>)}</select>
         <select name="type" defaultValue={f.type ?? ''} className={sel} aria-label="Type"><option value="">Attempts & feedback</option><option value="verification">Challenge attempts</option><option value="feedback">Feedback only</option><option value="challenge">Monthly challenge</option></select>
-        <input name="q" defaultValue={f.q ?? ''} placeholder="Player name" className={sel} />
+        <input name="q" type="search" aria-label="Player name" defaultValue={f.q ?? ''} placeholder="Player name" className={sel} />
         <button className="bg-white px-4 py-1.5 text-sm font-semibold text-black">Filter</button>
       </form>
       {docs.length === 0 ? (

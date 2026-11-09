@@ -55,12 +55,12 @@ export default async function StaffBookingsPage({ searchParams }: { searchParams
           <div className="flex gap-4 text-sm"><Link href="/management/programs" className="underline">Programs Overview</Link><Link href="/management/academy" className="underline">Availability & cover</Link></div>
         </div>
         <form className="flex flex-wrap gap-2">
-          <input name="q" defaultValue={q.q} placeholder="Reference, family or player" className={`${select} min-w-56 flex-1`} />
-          <select name="status" defaultValue={q.status ?? ''} className={select}><option value="">Active & past</option>{statuses.map((s) => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}</select>
-          <select name="term" defaultValue={q.term ?? ''} className={select}><option value="">All terms</option>{terms.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select>
-          <select name="coach" defaultValue={q.coach ?? ''} className={select}><option value="">All coaches</option>{coaches.map((c) => <option key={c.id} value={c.id}>{c.displayName}</option>)}</select>
-          <select name="type" defaultValue={q.type ?? ''} className={select}><option value="">Casual & term</option><option value="casual">Casual</option><option value="term">Term</option></select>
-          <select name="member" defaultValue={q.member ?? ''} className={select}><option value="">All players</option><option value="club">Rowville club members</option><option value="rfa">RFA-only players</option></select>
+          <input name="q" type="search" aria-label="Search by reference, family or player" defaultValue={q.q} placeholder="Reference, family or player" className={`${select} min-w-56 flex-1`} />
+          <select name="status" aria-label="Status" defaultValue={q.status ?? ''} className={select}><option value="">Active & past</option>{statuses.map((s) => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}</select>
+          <select name="term" aria-label="Term" defaultValue={q.term ?? ''} className={select}><option value="">All terms</option>{terms.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select>
+          <select name="coach" aria-label="Coach" defaultValue={q.coach ?? ''} className={select}><option value="">All coaches</option>{coaches.map((c) => <option key={c.id} value={c.id}>{c.displayName}</option>)}</select>
+          <select name="type" aria-label="Casual or term" defaultValue={q.type ?? ''} className={select}><option value="">Casual & term</option><option value="casual">Casual</option><option value="term">Term</option></select>
+          <select name="member" aria-label="Players" defaultValue={q.member ?? ''} className={select}><option value="">All players</option><option value="club">Rowville club members</option><option value="rfa">RFA-only players</option></select>
           <button className="bg-white px-4 py-2 text-sm font-semibold uppercase tracking-wider text-black">Filter</button>
         </form>
         <p className="text-sm text-muted">{rows.length} booking{rows.length === 1 ? '' : 's'}</p>

@@ -45,7 +45,7 @@ export function AddGroup({ slot }: { slot: number }) {
   return (
     <form action={action} className="flex flex-wrap items-center gap-2">
       <input type="hidden" name="slot" value={slot} />
-      <input name="name" required placeholder="New group, e.g. Group A" className="w-44 rounded-lg border border-line bg-surface px-2 py-1 text-xs" />
+      <input name="name" aria-label="New group name" required placeholder="New group, e.g. Group A" className="w-44 rounded-lg border border-line bg-surface px-2 py-1 text-xs" />
       <button disabled={pending} className={ghost}>Add group</button>
       <Msg s={state} />
     </form>
