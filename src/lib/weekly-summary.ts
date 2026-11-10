@@ -7,7 +7,7 @@ import { sendEmail } from './email'
 import { siteUrl } from './payments'
 import { localYmd } from './time'
 
-const LABELS: Record<string, string> = { bookings: 'Bookings & cancellations', payments: 'Weekly payments', cover: 'Cover', availability: 'Coach availability', terms: 'Academy terms', selections: 'Selections', messages: 'Messages', store: 'Store', foundation: 'Foundation+', consent: 'Consent review', reports: 'Player reports', dates: 'Set dates', promotions: 'Promotions', camps: 'Holiday camps', yearly: 'Yearly setup' }
+const LABELS: Record<string, string> = { bookings: 'Bookings & cancellations', payments: 'Weekly payments', cover: 'Cover', availability: 'Coach availability', terms: 'Academy terms', selections: 'Selections', messages: 'Messages', store: 'Store', foundation: 'Foundation+', consent: 'Consent review', reports: 'Player reports', dates: 'Set dates', promotions: 'Promotions', camps: 'Holiday camps', yearly: 'Yearly setup', announcements: 'Announcements' }
 
 /** Is it Monday in Melbourne? */
 export const isMonday = (now = new Date()) => new Date(`${localYmd(now)}T00:00:00Z`).getUTCDay() === 1

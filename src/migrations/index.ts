@@ -70,6 +70,7 @@ import * as migration_20261110_081403_holiday_packs from './20261110_081403_holi
 import * as migration_20261110_085134_year_setups from './20261110_085134_year_setups';
 import * as migration_20261110_093406_registrations_open from './20261110_093406_registrations_open';
 import * as migration_20261110_111715_academy_pricing from './20261110_111715_academy_pricing';
+import * as migration_20261110_115455_announcements from './20261110_115455_announcements';
 
 export const migrations = [
   {
@@ -430,6 +431,11 @@ export const migrations = [
   {
     up: migration_20261110_111715_academy_pricing.up,
     down: migration_20261110_111715_academy_pricing.down,
-    name: '20261110_111715_academy_pricing'
+    name: '20261110_111715_academy_pricing',
+  },
+  {
+    up: migration_20261110_115455_announcements.up,
+    down: migration_20261110_115455_announcements.down,
+    name: '20261110_115455_announcements'
   },
 ];

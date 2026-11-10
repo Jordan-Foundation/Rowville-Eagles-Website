@@ -75,6 +75,7 @@ export interface Config {
     'training-attendance': TrainingAttendance;
     'academy-terms': AcademyTerm;
     'year-setups': YearSetup;
+    announcements: Announcement;
     'academy-term-slots': AcademyTermSlot;
     'academy-registrations': AcademyRegistration;
     'pdr-areas': PdrArea;
@@ -144,6 +145,7 @@ export interface Config {
     'training-attendance': TrainingAttendanceSelect<false> | TrainingAttendanceSelect<true>;
     'academy-terms': AcademyTermsSelect<false> | AcademyTermsSelect<true>;
     'year-setups': YearSetupsSelect<false> | YearSetupsSelect<true>;
+    announcements: AnnouncementsSelect<false> | AnnouncementsSelect<true>;
     'academy-term-slots': AcademyTermSlotsSelect<false> | AcademyTermSlotsSelect<true>;
     'academy-registrations': AcademyRegistrationsSelect<false> | AcademyRegistrationsSelect<true>;
     'pdr-areas': PdrAreasSelect<false> | PdrAreasSelect<true>;
@@ -1457,6 +1459,52 @@ export interface YearSetup {
   createdAt: string;
 }
 /**
+ * Use Management → Announcements.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "announcements".
+ */
+export interface Announcement {
+  id: number;
+  program: number | Program;
+  kind: 'open' | 'reminder';
+  year?: number | null;
+  status: 'needs-approval' | 'scheduled' | 'sending' | 'sent' | 'cancelled';
+  subject: string;
+  /**
+   * The email text (the prices, dates, register link and the $950 note are added automatically)
+   */
+  message: string;
+  /**
+   * “– Foundation Academy. Reply STOP to opt out” is added automatically
+   */
+  smsText?: string | null;
+  scheduledFor?: string | null;
+  approvedBy?: (number | null) | User;
+  sentAt?: string | null;
+  sendCompletedAt?: string | null;
+  sendState?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  sentCounts?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "academy-registrations".
  */
@@ -2739,6 +2787,10 @@ export interface PayloadLockedDocument {
         value: number | YearSetup;
       } | null)
     | ({
+        relationTo: 'announcements';
+        value: number | Announcement;
+      } | null)
+    | ({
         relationTo: 'academy-term-slots';
         value: number | AcademyTermSlot;
       } | null)
@@ -3320,6 +3372,27 @@ export interface YearSetupsSelect<T extends boolean = true> {
   publishedBy?: T;
   reminderSentAt?: T;
   results?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "announcements_select".
+ */
+export interface AnnouncementsSelect<T extends boolean = true> {
+  program?: T;
+  kind?: T;
+  year?: T;
+  status?: T;
+  subject?: T;
+  message?: T;
+  smsText?: T;
+  scheduledFor?: T;
+  approvedBy?: T;
+  sentAt?: T;
+  sendCompletedAt?: T;
+  sendState?: T;
+  sentCounts?: T;
   updatedAt?: T;
   createdAt?: T;
 }

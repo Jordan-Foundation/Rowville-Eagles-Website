@@ -42,7 +42,19 @@ export const Programs: CollectionConfig = {
   },
   defaultSort: 'startDate',
   hooks: {
-    afterChange: [refreshAfterChange],
+    afterChange: [
+      refreshAfterChange,
+      // An Academy term opening for registrations gets its "registrations are open" announcement
+      async ({ doc, previousDoc, operation, req }) => {
+        if (operation !== 'update' || doc.type !== 'academy-term' || doc.status !== 'open' || previousDoc?.status === 'open') return doc
+        try {
+          await (await import('../academy/announcements')).announceOpening(req.payload, doc.id)
+        } catch (e) {
+          req.payload.logger.error({ err: e, msg: 'Could not create the registrations announcement' })
+        }
+        return doc
+      },
+    ],
     afterDelete: [refreshAfterDelete],
     beforeValidate: [
       async ({ data, req, originalDoc }) => {

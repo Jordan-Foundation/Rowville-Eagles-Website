@@ -18,6 +18,7 @@ export const managementItems: DashItem[] = [
   { key: 'messages', href: '/management/messages', label: 'Messages', icon: 'chat' },
   { key: 'broadcast', href: '/management/broadcast', label: 'Email a group', icon: 'megaphone', hint: 'Group, team or report round' },
   { key: 'promotions', href: '/management/promotions', label: 'Promotions', icon: 'megaphone' },
+  { key: 'announcements', href: '/management/announcements', label: 'Announcements', icon: 'megaphone', hint: 'Registrations open' },
   { key: 'foundation', href: '/management/foundation-plus', label: 'Foundation+', icon: 'star' },
   { key: 'store', href: '/management/store', label: 'Store', icon: 'bag' },
   { key: 'reports', href: '/management/reports', label: 'Reports', icon: 'report', hint: 'Player reports' },

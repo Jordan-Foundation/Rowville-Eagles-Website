@@ -25,9 +25,16 @@ export async function openDuePrograms(p: Payload, now = new Date()) {
 }
 
 let last = 0
-/** Also checked when people view programs (the scheduled job only runs daily). At most every 5 minutes. */
+/**
+ * Also checked when people view programs (the scheduled job only runs daily), at most every 5 minutes:
+ * open what's due now; send due announcements after the page has gone out.
+ */
 export async function nudgeOpenPrograms(p: Payload) {
   if (Date.now() - last < 5 * 60_000) return
   last = Date.now()
   await openDuePrograms(p).catch((e) => p.logger.error({ err: e, msg: 'Opening Academy programs failed' }))
+  try {
+    const { after } = await import('next/server')
+    after(async () => { await (await import('./announcements')).runAnnouncements(p).catch((e) => p.logger.error({ err: e, msg: 'Announcements failed' })) })
+  } catch { /* not in a request */ }
 }

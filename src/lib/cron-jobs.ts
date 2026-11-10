@@ -1,6 +1,7 @@
 import { sweepCampCoaches } from '../camps/staffing'
 import { yearlyReminder } from '../academy/yearly-setup'
 import { openDuePrograms } from '../academy/release-service'
+import { runAnnouncements } from '../academy/announcements'
 import type { Payload } from 'payload'
 import { purgeOldInvites } from './invites'
 import { sendAvailabilityReminders } from '../academy/reminders'
@@ -32,6 +33,7 @@ export const cronJobs: Record<string, Record<string, Job>> = {
     smallGroupDeadlines: (payload) => sweepGroups(payload),
     campCoaches: (payload) => sweepCampCoaches(payload),
     openAcademyPrograms: (payload) => openDuePrograms(payload),
+    announcements: (payload) => runAnnouncements(payload),
     yearlySetup: (payload) => yearlyReminder(payload),
     teamMembers: (payload) => syncTeamMembers(payload),
     selectionPaymentReminders: (payload) => runSelectionReminders(payload),
@@ -52,6 +54,7 @@ export const cronJobs: Record<string, Record<string, Job>> = {
     smallGroupDeadlines: (payload) => sweepGroups(payload),
     campCoaches: (payload) => sweepCampCoaches(payload),
     openAcademyPrograms: (payload) => openDuePrograms(payload),
+    announcements: (payload) => runAnnouncements(payload),
   },
   // ~3:30am Melbourne: housekeeping
   cleanup: {
