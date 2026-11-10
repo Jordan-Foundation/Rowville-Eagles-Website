@@ -21,6 +21,8 @@ export type PayInfo = {
   emergencyPhone: string
   /** Rest of the term after a one-off: what they overpaid for week 1, taken off */
   credit?: number
+  /** Small group credits on the family's account (used automatically, not with weekly payments) */
+  groupCredits?: number
 }
 
 function PayButton({ label }: { label: string }) {
@@ -35,7 +37,10 @@ export function PayForm({ info }: { info: PayInfo }) {
   const credit = info.credit ?? 0
   const total = Math.round((info.rate * info.sessions - credit) * 100) / 100
   const weekly = Math.round((total / info.sessions) * 100) / 100
-  const today = info.type === 'term' && payMode === 'weekly' ? weekly : total
+  const weeklyChosen = info.type === 'term' && payMode === 'weekly'
+  const creditsUsed = weeklyChosen ? 0 : Math.min(info.groupCredits ?? 0, info.sessions)
+  const creditOff = Math.round(creditsUsed * (total / info.sessions) * 100) / 100
+  const today = weeklyChosen ? weekly : Math.max(0, Math.round((total - creditOff) * 100) / 100)
   return (
     <form action={action} className="space-y-6">
       <input type="hidden" name="token" value={info.token} />
@@ -78,8 +83,9 @@ export function PayForm({ info }: { info: PayInfo }) {
           {info.type === 'term' && payMode === 'weekly' && ' I authorise Foundation Sports Australia Pty Ltd to charge my card weekly as shown until the last session is paid; weekly payments stop if the booking is cancelled.'}
         </span>
       </label>
+      {creditsUsed > 0 && <p className="text-sm text-emerald-200">{creditsUsed} small group credit{creditsUsed === 1 ? '' : 's'} on your account will be used ({money(creditOff)} off).</p>}
       {state.error && <p role="alert" className="border border-red-400/40 p-3 text-sm text-red-300">{state.error}</p>}
-      <PayButton label={`Pay ${money(today)}${info.type === 'term' && payMode === 'weekly' ? ' today' : ''}`} />
+      <PayButton label={today <= 0 ? 'Book with my credit' : `Pay ${money(today)}${weeklyChosen ? ' today' : ''}`} />
     </form>
   )
 }

@@ -66,7 +66,7 @@ export default async function StaffAcademyPage() {
                   <tr><th className="py-3 pr-4">When</th><th className="pr-4">Booked coach (away)</th><th className="pr-4">Player</th><th className="pr-4">Cover coach</th><th /></tr>
                 </thead>
                 <tbody className="divide-y divide-line">
-                  {cover.map((s) => {
+                  {cover.filter((s) => s.kind !== 'group-player').map((s) => {
                     const b = typeof s.booking === 'object' ? s.booking : null
                     const c = typeof s.coach === 'object' ? s.coach : null
                     const cc = s.coverCoach && typeof s.coverCoach === 'object' ? s.coverCoach : null
@@ -74,9 +74,9 @@ export default async function StaffAcademyPage() {
                       <tr key={s.id}>
                         <td className="py-3 pr-4 font-medium">{formatDate(s.startsAt, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}</td>
                         <td className="pr-4">{c?.displayName}</td>
-                        <td className="pr-4">{b ? `${b.player.firstName} ${b.player.lastName}` : '—'}</td>
+                        <td className="pr-4">{s.kind === 'group-slot' ? 'Small group' : b ? `${b.player.firstName} ${b.player.lastName}` : '—'}</td>
                         <td className="pr-4">{cc ? cc.displayName : <span className="text-red-300">Not assigned</span>}</td>
-                        <td><a href={`/admin/collections/academy-sessions/${s.id}`} className="underline">Assign →</a></td>
+                        <td><a href={s.kind === 'group-slot' && s.group ? `/management/academy/groups/${typeof s.group === 'object' ? s.group.id : s.group}` : `/admin/collections/academy-sessions/${s.id}`} className="underline">Assign →</a></td>
                       </tr>
                     )
                   })}

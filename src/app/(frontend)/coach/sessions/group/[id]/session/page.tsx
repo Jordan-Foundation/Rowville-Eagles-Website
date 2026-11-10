@@ -8,7 +8,7 @@ import { ageOn, canMarkAttendance, sessionPayment } from '@/academy/session-view
 import { ContactButtons, MedicalBadge } from '@/components/coach/ContactButtons'
 import { Attendance } from '../../../[id]/SessionTools'
 import { groupTitle } from '@/academy/groups'
-import { GroupLate } from './LateButton'
+import { GroupLate, GroupNeedCover } from './LateButton'
 import type { AcademyCoach, AcademyTerm } from '@/payload-types'
 
 export const dynamic = 'force-dynamic'
@@ -42,6 +42,7 @@ export default async function GroupSessionPage({ params, searchParams }: { param
         {role === 'cover' && <p className="mt-2 text-sm font-semibold">You’re covering this session for {coachName}.</p>}
       </div>
       {new Date(startsAt).getTime() > Date.now() - 60 * 60_000 && <GroupLate groupId={g.id} at={new Date(startsAt).toISOString()} />}
+      {role === 'coach' && new Date(startsAt).getTime() > Date.now() && (rows[0].session.needsCover ? <p className="text-sm text-amber-200">Cover requested{rows[0].session.coverCoach ? ' — a cover coach is assigned.' : ' — the Academy is arranging a coach.'}</p> : <GroupNeedCover groupId={g.id} at={new Date(startsAt).toISOString()} />)}
       <ul className="space-y-4">
         {rows.map(({ session: s, booking: b, player }) => {
           const pay = sessionPayment(s, b)

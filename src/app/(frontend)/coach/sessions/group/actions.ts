@@ -117,6 +117,23 @@ export async function groupDecisionAction(_prev: GroupDecisionState, fd: FormDat
         done = 'Offered — each family has been asked to say yes or no. The weeks are held for you until they answer.'
         break
       }
+      case 'add': {
+        let raw: unknown
+        try { raw = JSON.parse(String(fd.get('player') ?? 'null')) } catch { return { error: 'Choose the new player again.' } }
+        const player = cleanPlayer(raw)
+        const problem = playerProblem(player)
+        if (problem || !player) return { error: problem ?? 'Choose the new player.' }
+        const { addGroupPlayer } = await import('@/academy/group-admin')
+        await addGroupPlayer(p, c.coach, groupId, player, c.user.id)
+        done = 'Added — they have their own link to pay for the sessions left.'
+        break
+      }
+      case 'need-cover': {
+        const { coachNeedsGroupCover } = await import('@/academy/group-admin')
+        await coachNeedsGroupCover(p, c.coach, groupId, String(fd.get('at') ?? ''), String(fd.get('note') ?? '').trim().slice(0, 1000))
+        done = 'Cover requested — the Academy has been told and will arrange a coach.'
+        break
+      }
       case 'cancel': {
         if (fd.get('confirm') !== 'on') return { error: 'Tick the box to confirm cancelling the whole group.' }
         const r = await cancelWholeGroup(p, c.coach.id, groupId, c.user.id, String(fd.get('reason') ?? '').trim().slice(0, 500))

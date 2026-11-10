@@ -42,6 +42,8 @@ export async function planReschedule(payload: Payload, r: RescheduleRequest, now
   if (!data) return { error: 'Booking not found.' as const }
   const { booking, sessions, term } = data
   if (!['confirmed', 'payment_failed'].includes(booking.status)) return { error: `This booking is ${booking.status.replace('_', ' ')} — nothing to reschedule.` as const }
+  // A small group moves together — one player can't be moved out of it
+  if (booking.kind === 'group') return { error: 'This is a small group booking — move the whole group from its group page.' as const }
   const upcoming = sessions.filter((s) => s.status === 'scheduled' && new Date(s.startsAt).getTime() > now.getTime())
   let moves: Move[]
   if (r.kind === 'session') {

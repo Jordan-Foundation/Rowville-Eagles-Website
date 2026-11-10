@@ -54,7 +54,7 @@ export const AcademyGroups: CollectionConfig = {
       { name: 'firstSessionAt', label: 'First (or only) session', type: 'date', required: true, index: true, admin: { date: { pickerAppearance: 'dayAndTime' } } },
     ] },
     { type: 'row', fields: [
-      { name: 'plannedSize', label: 'Players', type: 'number', required: true, min: 2, max: 5 },
+      { name: 'plannedSize', label: 'Players', type: 'number', required: true, min: 1, max: 5, admin: { description: 'Players in the group now (can drop to 1 if others leave)' } },
       { name: 'pricingSize', label: 'Priced as a group of', type: 'number', required: true, min: 2, max: 5, admin: { readOnly: true, description: 'The size the price came from — it stays the same if the group changes' } },
       { name: 'ratePerPlayer', label: 'Price per player, per session (AUD)', type: 'number', required: true, admin: { readOnly: true, description: 'Locked when the group was set up' } },
       { name: 'sessionsTotal', label: 'Sessions', type: 'number', required: true, min: 1 },

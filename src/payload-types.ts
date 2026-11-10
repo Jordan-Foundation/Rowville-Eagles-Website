@@ -370,6 +370,9 @@ export interface AcademyGroup {
   weekday?: ('Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday') | null;
   startTime?: string | null;
   firstSessionAt: string;
+  /**
+   * Players in the group now (can drop to 1 if others leave)
+   */
   plannedSize: number;
   /**
    * The size the price came from — it stays the same if the group changes

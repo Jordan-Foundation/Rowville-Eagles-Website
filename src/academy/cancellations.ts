@@ -58,6 +58,8 @@ export type CancelRequest = {
   /** Make-up: the new time for the (single) cancelled session */
   makeUp?: { startsAt: string; coachId: number }
   notify?: boolean
+  /** Small groups: a date cancelled for the whole group — players keep their place in the group */
+  keepGroupPlace?: boolean
 }
 
 export type CancelResult = { ok: true; key: string; cash: number; creditSessions: number; refund: string; quote: Quote; warnings: string[] } | { ok: false; error: string }
@@ -81,6 +83,7 @@ export async function cancelAcademy(payload: Payload, r: CancelRequest): Promise
   if (amountOverride !== undefined && (amountOverride < 0 || amountOverride > ceiling)) return { ok: false, error: `The refund must be between $0 and ${formatAUD(ceiling)}.` }
   if (sessionsOverride !== undefined && (sessionsOverride < 0 || sessionsOverride > maxSessions || !Number.isInteger(sessionsOverride))) return { ok: false, error: `Session credits must be a whole number from 0 to ${maxSessions}.` }
   if (!override && !quote.options.includes(r.outcome)) return { ok: false, error: `That outcome isn’t available under the policy (${quote.options.join(', ')}). Tick “override” to give goodwill.` }
+  if (r.outcome === 'makeup' && booking.kind === 'group') return { ok: false, error: 'This is a small group booking — move the group’s session from its group page instead of booking a 1-on-1 make-up.' }
   if (r.outcome === 'makeup') {
     if (quote.sessionIds.length !== 1) return { ok: false, error: 'Book make-ups one session at a time.' }
     if (!r.makeUp || Number.isNaN(Date.parse(r.makeUp.startsAt)) || new Date(r.makeUp.startsAt) <= new Date()) return { ok: false, error: 'Choose a future date and time for the make-up session.' }
@@ -113,7 +116,8 @@ export async function cancelAcademy(payload: Payload, r: CancelRequest): Promise
         data: { booking: booking.id, kind: 'one-on-one', coach: r.makeUp!.coachId, startsAt: new Date(r.makeUp!.startsAt).toISOString(), status: 'scheduled', account: accountId, paid: targets[0].paid, makeUpFor: targets[0].id },
       })
     }
-    if (creditSessions > 0) await giveCredit(payload, { account: accountId!, sessions: creditSessions, value: creditValue, reason: r.by === 'coach' ? 'coach_cancellation' : override ? 'goodwill' : 'cancellation', booking: booking.id, note: r.reason, createdBy: r.actorId }, req)
+    // Credits from a small group can only be used for small group sessions
+    if (creditSessions > 0) await giveCredit(payload, { account: accountId!, sessions: creditSessions, value: creditValue, reason: r.by === 'coach' ? 'coach_cancellation' : override ? 'goodwill' : 'cancellation', booking: booking.id, note: r.reason, createdBy: r.actorId, scope: booking.kind === 'group' ? 'group' : 'any' }, req)
 
     const live = sessions.filter((s) => s.status !== 'cancelled' && !quote.sessionIds.includes(s.id)).length + (makeUpSession ? 1 : 0)
     const toCome = sessions.filter((s) => (s.status === 'scheduled' || s.status === 'held') && !quote.sessionIds.includes(s.id)).length + (makeUpSession ? 1 : 0)
@@ -157,6 +161,16 @@ export async function cancelAcademy(payload: Payload, r: CancelRequest): Promise
   }
 
   const warnings = [...quote.warnings]
+  // A small group player who has left: their place is removed (the others keep their price)
+  const nothingLeft = sessions.filter((s) => s.status !== 'cancelled' && !quote.sessionIds.includes(s.id)).length === 0 && !makeUpSession
+  if (booking.kind === 'group' && nothingLeft && !r.keepGroupPlace && rel(booking.groupInvite)) {
+    try {
+      const { leaveGroup } = await import('./group-admin')
+      await leaveGroup(payload, rel(booking.groupInvite)!, r.actorId)
+    } catch (e) {
+      payload.logger.error({ err: e, msg: `Leaving the group failed for ${booking.reference}` })
+    }
+  }
   // Stop future weekly charges
   if (quote.stopWeekly) {
     try {
@@ -230,7 +244,7 @@ export async function goodwillCredit(payload: Payload, r: { bookingId: number; s
   if (!Number.isInteger(r.sessions) || r.sessions < 1 || r.sessions > 10) return { ok: false as const, error: 'Give between 1 and 10 session credits.' }
   if (!r.reason.trim()) return { ok: false as const, error: 'Please give a reason.' }
   const value = round((booking.amount / (booking.sessionsTotal || 1)) * r.sessions)
-  await giveCredit(payload, { account: rel(booking.account)!, sessions: r.sessions, value, reason: 'goodwill', booking: booking.id, note: r.reason, createdBy: r.actorId })
+  await giveCredit(payload, { account: rel(booking.account)!, sessions: r.sessions, value, reason: 'goodwill', booking: booking.id, note: r.reason, createdBy: r.actorId, scope: booking.kind === 'group' ? 'group' : 'any' })
   await payload.update({
     collection: 'academy-bookings',
     id: booking.id,

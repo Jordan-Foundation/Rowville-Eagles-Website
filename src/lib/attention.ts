@@ -101,7 +101,7 @@ export async function managementAttention(p: Payload, user: User): Promise<Manag
       return c.totalDocs + r.totalDocs
     }),
     safe(async () => (await p.count({ collection: 'academy-bookings', where: { paymentMode: { equals: 'weekly' }, status: { equals: 'payment_failed' } }, ...q })).totalDocs),
-    safe(async () => (await p.count({ collection: 'academy-sessions', where: { needsCover: { equals: true }, coverCoach: { exists: false }, status: { in: ['held', 'scheduled'] }, startsAt: { greater_than: now } }, ...q })).totalDocs),
+    safe(async () => (await p.count({ collection: 'academy-sessions', where: { needsCover: { equals: true }, coverCoach: { exists: false }, status: { in: ['held', 'scheduled'] }, kind: { not_equals: 'group-player' }, startsAt: { greater_than: now } }, ...q })).totalDocs),
     // Coaches who haven't submitted availability for a term that's still collecting it
     safe(async () => {
       const termsDue = await termsAwaitingAvailability(p)

@@ -7,7 +7,7 @@ import { requireCoach } from '@/academy/portal'
 import { groupTitle, groupWhen, loadCoachGroup } from '@/academy/groups'
 import { GROUP_STATUS, INVITE_STATUS } from '@/academy/group-rules'
 import { nudgeGroupClock } from '@/academy/group-clock'
-import { CoachTermOffer, GroupDecisions, PlaceActions } from './GroupControls'
+import { AddPlayer, CoachTermOffer, GroupDecisions, PlaceActions } from './GroupControls'
 import { termOfferPreview } from '@/academy/group-term-offer'
 
 export const dynamic = 'force-dynamic'
@@ -66,7 +66,7 @@ export default async function CoachGroupPage({ params, searchParams }: { params:
                 </div>
                 <div className="flex flex-col items-end gap-2">
                   <span className={`px-2 py-1 text-xs font-semibold uppercase tracking-wider ${tone[st.tone]}`}>{st.label}</span>
-                  {open && (i.status === 'invited' || i.status === 'overdue' || i.status === 'declined') && (
+                  {(open || g.status === 'confirmed') && (i.status === 'invited' || i.status === 'overdue' || i.status === 'declined') && (
                     <PlaceActions groupId={g.id} inviteId={i.id} player={i.invitee.playerFirstName} canResend={i.status !== 'declined'} />
                   )}
                 </div>
@@ -85,6 +85,7 @@ export default async function CoachGroupPage({ params, searchParams }: { params:
           oneOnOnePrice={term ? (g.type === 'term' ? `${formatAUD(term.pricePerSession)} a session` : formatAUD(term.casualPrice)) : undefined}
         />
       )}
+      {(g.status === 'forming' || g.status === 'confirmed') && invites.filter((i) => i.status !== 'declined').length < 5 && slots.some((s) => new Date(s.startsAt).getTime() > Date.now()) && <AddPlayer groupId={g.id} rate={formatAUD(g.ratePerPlayer)} />}
       {preview && (
         <CoachTermOffer
           groupId={g.id}

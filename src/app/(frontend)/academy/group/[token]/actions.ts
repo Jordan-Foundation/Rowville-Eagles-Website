@@ -8,7 +8,8 @@ import { makeReference } from '@/lib/reference'
 import { startCheckout } from '@/lib/payments'
 import { paymentsMode } from '@/lib/stripe-accounts'
 import { formatDate } from '@/lib/format'
-import { createHold, holdMinutesFor, releaseAcademyHold, releaseBooking, releaseExpiredHolds } from '@/academy/booking-data'
+import { confirmAcademyBooking, createHold, holdMinutesFor, releaseAcademyHold, releaseBooking, releaseExpiredHolds } from '@/academy/booking-data'
+import { creditBalance, creditStateFor, reserveCredit } from '@/academy/credits'
 import { weeklyPlan } from '@/academy/weekly'
 import { findGroupInvite } from '@/academy/groups'
 import { placeDue } from '@/academy/group-term-offer'
@@ -78,6 +79,11 @@ export async function payGroupPlace(_prev: GroupPayState, fd: FormData): Promise
   const { docs: everyone } = await p.find({ pagination: false, collection: 'academy-group-invites', where: { group: { equals: group.id }, status: { not_in: ['removed', 'declined'] } }, limit: 20, depth: 0, overrideAccess: true })
   const reference = makeReference('RFA')
   const holdMinutes = holdMinutesFor(term)
+  // Small group credits (from a cancelled group session) pay for sessions first — not with weekly plans
+  const accountId = rel(invite.account)
+  const creditSessionsUsed = accountId && !plan ? Math.min(await creditBalance(p, accountId, undefined, 'group'), sessions.length) : 0
+  const creditUse = Math.round(creditSessionsUsed * perSession * 100) / 100
+  const charge = Math.round((amount - creditUse) * 100) / 100
   const hold = await createHold(p, {
     reference,
     kind: 'group',
@@ -85,6 +91,8 @@ export async function payGroupPlace(_prev: GroupPayState, fd: FormData): Promise
     groupInvite: invite.id,
     groupSize: everyone.length,
     groupWeek1Credit: due.credit || undefined,
+    creditApplied: creditUse || undefined,
+    creditSessionsUsed: creditSessionsUsed || undefined,
     type: group.type,
     paymentMode: group.type === 'casual' ? 'casual' : plan ? 'weekly' : 'upfront',
     chargeAnchorAt: plan ? new Date(plan.anchor * 1000).toISOString() : undefined,
@@ -115,6 +123,18 @@ export async function payGroupPlace(_prev: GroupPayState, fd: FormData): Promise
   })
   if (!hold.ok) return fail('We couldn’t hold this place — please try again, or contact your coach.')
   await p.update({ collection: 'academy-group-invites', id: invite.id, overrideAccess: true, data: { booking: hold.booking.id } })
+  if (creditUse > 0) {
+    await reserveCredit(p, { account: accountId!, sessions: creditSessionsUsed, value: creditUse, booking: hold.booking.id, scope: 'group' })
+    if ((await creditStateFor(p, accountId!, undefined, 'group')).overdrawn) {
+      await releaseAcademyHold(p, reference)
+      return fail('Your credit is being used in another checkout. Please try again in a moment.')
+    }
+    if (charge <= 0) {
+      // Fully covered by small group credit — no card payment
+      await confirmAcademyBooking(p, reference)
+      redirect(`/academy/1-on-1/booked?kind=academy&ref=${reference}&credit=1`)
+    }
+  }
 
   const first = sessions[0].startsAt
   const name = `Small group with ${coach.displayName}`
@@ -129,7 +149,9 @@ export async function payGroupPlace(_prev: GroupPayState, fd: FormData): Promise
       ...(plan
         ? { saveCardFor: { note: `Today you pay for the first session. Your card is then saved and ${money(perSession)} is charged automatically 2 days before each later session — ${plan.recurringCharges} payments, ${formatDate(plan.chargeDates[1], { day: 'numeric', month: 'short' })} to ${formatDate(plan.chargeDates.at(-1)!, { day: 'numeric', month: 'short' })}. Total ${money(amount)}.` } }
         : {}),
-      items: plan
+      items: creditUse > 0
+        ? [{ name: group.type === 'term' ? `${name} — term` : name, description: `${who} · ${sessions.length} session${sessions.length === 1 ? '' : 's'} · ${money(amount)} less ${creditSessionsUsed} small group credit${creditSessionsUsed === 1 ? '' : 's'}`, unitAmount: charge, quantity: 1 }]
+        : plan
         ? [{ name: `First session — ${formatDate(first, { weekday: 'short', day: 'numeric', month: 'short' })}`, description: `${name} · ${who} · ${sessions.length} sessions, paid weekly${due.credit ? ` · ${money(due.credit)} week-1 credit spread over the term` : ''}`, unitAmount: perSession, quantity: 1 }]
         : group.type === 'term'
           ? due.credit

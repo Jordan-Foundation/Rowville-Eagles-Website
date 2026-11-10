@@ -129,3 +129,49 @@ export function CoachTermOffer({ groupId, status, yes, total, weeks, rate }: { g
     </section>
   )
 }
+
+/** Add a player to a running group — they pay the group's price for the sessions left. */
+export function AddPlayer({ groupId, rate }: { groupId: number; rate: string }) {
+  const [state, action, pending] = useActionState<GroupDecisionState, FormData>(groupDecisionAction, {})
+  const [open, setOpen] = useState(false)
+  const [mode, setMode] = useState<'find' | 'new'>('find')
+  const [found, setFound] = useState<FoundPlayer | undefined>()
+  const [fresh, setFresh] = useState({ playerFirstName: '', playerLastName: '', parentFirstName: '', parentLastName: '', email: '', mobile: '' })
+  const player = mode === 'find' ? (found ? { kind: 'existing', participantId: found.id } : null) : { kind: 'new', ...fresh }
+  return (
+    <section aria-label="Add a player" className="border border-line p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="font-display text-xl font-semibold uppercase">Add a player</h2>
+          <p className="text-sm text-muted">They pay {rate} a session for the sessions left. Everyone else keeps their price.</p>
+        </div>
+        <button type="button" onClick={() => setOpen((o) => !o)} className={btn}>{open ? 'Close' : 'Add a player'}</button>
+      </div>
+      {open && !state.done && (
+        <form action={action} className="mt-4">
+          <input type="hidden" name="group" value={groupId} />
+          <input type="hidden" name="player" value={JSON.stringify(player)} />
+          <div className="flex gap-2 text-xs">
+            {(['find', 'new'] as const).map((m) => (
+              <button key={m} type="button" onClick={() => setMode(m)} className={`${btn} ${mode === m ? 'bg-white text-black' : ''}`}>{m === 'find' ? 'Find a player' : 'New player'}</button>
+            ))}
+          </div>
+          {mode === 'find' ? (
+            <FindPlayer found={found} index={0} onPick={setFound} taken={[]} label="New player — search by name" />
+          ) : (
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              {([['playerFirstName', 'Player first name'], ['playerLastName', 'Player last name'], ['parentFirstName', 'Parent first name'], ['parentLastName', 'Parent last name'], ['email', 'Parent email'], ['mobile', 'Parent mobile']] as const).map(([k, label]) => (
+                <label key={k} className="block text-sm">
+                  {label}
+                  <input value={fresh[k]} onChange={(e) => setFresh((f) => ({ ...f, [k]: e.target.value }))} type={k === 'email' ? 'email' : k === 'mobile' ? 'tel' : 'text'} aria-label={`New player — ${label}`} className={field} />
+                </label>
+              ))}
+            </div>
+          )}
+          <button name="do" value="add" disabled={pending} className="mt-4 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-wider text-black disabled:opacity-50">{pending ? 'Sending…' : 'Send them a link'}</button>
+        </form>
+      )}
+      <Result state={state} />
+    </section>
+  )
+}

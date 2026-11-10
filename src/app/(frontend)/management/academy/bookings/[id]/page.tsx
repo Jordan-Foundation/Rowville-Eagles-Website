@@ -42,7 +42,8 @@ export default async function StaffBookingPage({ params, searchParams }: { param
       <div className="container-x space-y-10 py-14">
         <div>
           <Link href="/management/academy/bookings" className="text-sm text-muted hover:text-ink">← Bookings</Link>
-          <p className="mt-4 text-xs font-semibold uppercase tracking-[0.3em] text-muted">{b.reference} · {b.type === 'term' ? `Term (${b.paymentMode})` : 'Casual'} · {term.name}</p>
+          <p className="mt-4 text-xs font-semibold uppercase tracking-[0.3em] text-muted">{b.reference} · {b.kind === 'group' ? 'Small group · ' : ''}{b.type === 'term' ? `Term (${b.paymentMode})` : 'Casual'} · {term.name}</p>
+          {b.kind === 'group' && b.group && <p className="mt-2 text-sm">Part of a small group — <Link href={`/management/academy/groups/${typeof b.group === 'object' ? b.group.id : b.group}`} className="underline">open the group</Link> to cancel, move or cover a date for everyone. Cancelling this booking removes just this player.</p>}
           <h1 className="mt-2 font-display text-4xl font-semibold uppercase tracking-tight"><PersonLink kind="player" of={b.participant}>{b.player.firstName} {b.player.lastName}</PersonLink></h1>
           <p className="mt-2 text-muted">
             {coach.displayName}
@@ -94,7 +95,7 @@ export default async function StaffBookingPage({ params, searchParams }: { param
           </table>
         </section>
 
-        {['confirmed', 'payment_failed'].includes(b.status) && (
+        {b.kind !== 'group' && ['confirmed', 'payment_failed'].includes(b.status) && (
           <section className="panel border border-line p-6">
             <h2 className="font-display text-2xl font-semibold uppercase">Reschedule</h2>
             <p className="mt-1 text-sm text-muted">Move one session, or the rest of the term, to a new day or time (or coach). Price and payments don’t change.</p>

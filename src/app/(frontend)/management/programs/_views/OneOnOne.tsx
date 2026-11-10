@@ -102,6 +102,7 @@ export async function OneOnOneView({ q }: { q: Q }) {
             <Link href="/management/academy/bookings" className="underline">Bookings & cancellations</Link>
             <Link href="/management/academy#payments" className="underline">Weekly payments</Link>
             <Link href="/management/academy#cover" className="underline">Cover</Link>
+            <Link href="/management/academy/groups" className="underline">Small groups</Link>
           </div>
         </div>
 

@@ -10,6 +10,7 @@ import { weeklyPlan } from '@/academy/weekly'
 import { DeclineForm, PayForm, TermOfferForm } from './PayForm'
 import { placeDue, termOfferPreview } from '@/academy/group-term-offer'
 import { nudgeGroupClock } from '@/academy/group-clock'
+import { creditBalance } from '@/academy/credits'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Small group session', robots: { index: false, follow: false }, referrer: 'no-referrer' }
@@ -108,6 +109,7 @@ export default async function GroupInvitePage({ params, searchParams }: { params
                     emergencyName: kid?.medical?.emergencyContact ?? '',
                     emergencyPhone: kid?.medical?.emergencyPhone ?? '',
                     credit: due?.credit ?? 0,
+                    groupCredits: invite.account ? await creditBalance(p, rel(invite.account)!, undefined, 'group') : 0,
                   }}
                 />
                 {!due?.restOfTerm && <DeclineForm token={token} player={me} />}
