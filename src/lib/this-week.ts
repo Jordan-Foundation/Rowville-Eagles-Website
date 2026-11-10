@@ -1,6 +1,7 @@
 import type { Payload } from 'payload'
 import { localToUtc, localYmd } from './time'
 import { slotSessions } from '../academy/terms/slots'
+import { campDayList } from './camps'
 import type { Program } from '@/payload-types'
 
 const q = { overrideAccess: true, pagination: false } as const
@@ -32,7 +33,8 @@ export async function managementThisWeek(p: Payload, now = new Date()): Promise<
     p.count({ collection: 'bookings', where: { status: { equals: 'paid' }, bookingType: { not_equals: 'trial' }, createdAt: { greater_than: lastWeek } }, overrideAccess: true }),
     p.count({ collection: 'academy-sessions', where: { status: { equals: 'cancelled' }, cancelledAt: { greater_than: lastWeek } }, overrideAccess: true }),
     p.count({ collection: 'bookings', where: { bookingType: { equals: 'trial' }, status: { equals: 'paid' }, sessionStart: between }, overrideAccess: true }),
-    p.find({ ...q, collection: 'programs', where: { type: { equals: 'holiday-camp' }, startDate: between }, limit: 10, depth: 0 }),
+    // Camps running at any point this week
+    p.find({ ...q, collection: 'programs', where: { type: { equals: 'holiday-camp' }, status: { in: ['open', 'full', 'closed'] }, startDate: { less_than_equal: w.end.toISOString() }, endDate: { greater_than_equal: w.start.toISOString() } }, limit: 10, depth: 0 }),
     p.count({ collection: 'orders', where: { status: { equals: 'paid' } }, overrideAccess: true }),
     p.find({ ...q, collection: 'academy-bookings', where: { status: { in: ['confirmed', 'completed'] }, createdAt: { greater_than: lastWeek } }, limit: 1000, depth: 0, select: { amount: true, creditApplied: true, paymentMode: true, sessionsTotal: true } }),
     p.find({ ...q, collection: 'bookings', where: { status: { equals: 'paid' }, createdAt: { greater_than: lastWeek } }, limit: 1000, depth: 0, select: { amount: true } }),
@@ -48,6 +50,14 @@ export async function managementThisWeek(p: Payload, now = new Date()): Promise<
   }
   const money = paid1.docs.reduce((n, b) => n + (b.paymentMode === 'weekly' ? b.amount / (b.sessionsTotal || 1) : b.amount - (b.creditApplied ?? 0)), 0) + paid2.docs.reduce((n, b) => n + (b.amount ?? 0), 0)
   const aud = (n: number) => new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 }).format(n)
+  // Camps running this week: days this week and children booked
+  const campLines: WeekLine[] = []
+  for (const c of camps.docs) {
+    const days = campDayList(c).filter((d) => d.date >= w.from && d.date <= w.to)
+    if (!days.length) continue
+    const kids = (await p.count({ collection: 'bookings', where: { program: { equals: c.id }, status: { equals: 'paid' } }, overrideAccess: true })).totalDocs
+    campLines.push({ label: `Camp this week: ${c.title}`, value: `${days.length} day${days.length === 1 ? '' : 's'} · ${kids} kids`, href: `/management/camps/${c.id}` })
+  }
   return {
     from: w.from,
     to: w.to,
@@ -56,7 +66,7 @@ export async function managementThisWeek(p: Payload, now = new Date()): Promise<
       ...(smallGroups.totalDocs ? [{ label: 'Small group sessions', value: String(smallGroups.totalDocs), href: '/management/programs?program=1on1&kind=group' }] : []),
       { label: 'Group trainings', value: String(groupSessions), href: '/management/academy/terms' },
       { label: 'Trial sessions booked', value: String(trials.totalDocs), href: '/management/programs' },
-      ...(camps.docs.length ? [{ label: 'Camps starting', value: camps.docs.map((c) => c.title).join(', '), href: '/management/programs' }] : []),
+      ...campLines,
       { label: 'New bookings (last 7 days)', value: String(newOnes.totalDocs + newBookings.totalDocs), href: '/management/academy/bookings', tone: 'good' as const },
       { label: 'Money in (last 7 days)', value: aud(money), href: '/management/programs', tone: 'good' as const },
       { label: 'Cancellations (last 7 days)', value: String(cancels.totalDocs), href: '/management/academy/bookings' },

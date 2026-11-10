@@ -7,6 +7,8 @@ import { AcademyView } from './_views/Academy'
 import { RowvilleView, TournamentsView } from './_views/Selections'
 import { FoundationPlusView } from './_views/FoundationPlus'
 import { StoreView } from './_views/Store'
+import { CampsView } from './_views/Camps'
+import { TimeframesView } from './_views/Timeframes'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Programs Overview', robots: { index: false } }
@@ -18,6 +20,8 @@ const PROGRAMS = [
   { key: 'tournaments', label: 'Tournaments' },
   { key: 'foundation-plus', label: 'Foundation+' },
   { key: 'toddler', label: 'Mini Ballers' },
+  { key: 'camps', label: 'Holiday camps' },
+  { key: 'timeframes', label: 'Timeframes' },
   { key: 'store', label: 'Store' },
 ] as const
 type Key = (typeof PROGRAMS)[number]['key']
@@ -65,6 +69,8 @@ export default async function ProgramsOverview({ searchParams }: { searchParams:
         {current === 'foundation-plus' && <FoundationPlusView />}
         {current === 'toddler' && <AcademyView q={q} type="toddler" program="toddler" />}
         {current === 'store' && <StoreView q={q} />}
+        {current === 'camps' && <CampsView />}
+        {current === 'timeframes' && <TimeframesView />}
       </div>
     </div>
   )
