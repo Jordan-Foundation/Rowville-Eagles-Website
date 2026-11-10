@@ -33,6 +33,12 @@ export default async function CoachCampsPage({ searchParams }: { searchParams: P
           <h2 className="font-display text-2xl font-semibold uppercase">{program.title}</h2>
           <p className="mb-3 text-sm text-muted">{days.length ? `${campDayLabel(days[0].date)} – ${campDayLabel(days.at(-1)!.date)}` : ''}{cc.status === 'invited' ? ' · please answer' : ''}</p>
           <CampInvite title={program.title} location={program.location} days={days} status={cc.status} action={answerCampAction} hidden={{ campCoach: String(cc.id) }} />
+          {cc.status === 'confirmed' && (
+            <p className="mt-4 flex flex-wrap gap-3 text-sm">
+              <Link href={`/camps/${program.id}/print/attendance${days[0] ? `?day=${days[0].date}` : ''}`} className="underline">Attendance sheets</Link>
+              <Link href={`/camps/${program.id}/print/emergency`} className="underline">Emergency contacts &amp; medical</Link>
+            </p>
+          )}
         </section>
       ))}
     </div>

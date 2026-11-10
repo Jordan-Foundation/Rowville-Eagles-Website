@@ -47,7 +47,11 @@ export default async function CampPage({ params, searchParams }: { params: Promi
           <Link href={`/programs/${camp.slug}`} className="underline">Public page</Link>
           <Link href={`/admin/collections/programs/${camp.id}`} className="text-muted underline">Camp days &amp; prices (admin)</Link>
         </p>
-        <div className="mt-3"><DownloadCsv list="bookings" params={{ program: camp.id }} label="Download bookings (CSV)" /></div>
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <DownloadCsv list="bookings" params={{ program: camp.id }} label="Download bookings (CSV)" />
+          <Link href={`/camps/${camp.id}/print/attendance${data.days[0] ? `?day=${data.days[0].date}` : ''}`} className="inline-flex min-h-10 items-center border border-line px-3 text-xs font-semibold uppercase tracking-[0.12em] hover:border-white">Attendance sheets</Link>
+          <Link href={`/camps/${camp.id}/print/emergency`} className="inline-flex min-h-10 items-center border border-line px-3 text-xs font-semibold uppercase tracking-[0.12em] hover:border-white">Emergency contacts sheet</Link>
+        </div>
       </div>
 
       {(sp.done || sp.error) && <p role={sp.error ? 'alert' : 'status'} className={`border p-4 text-sm ${sp.error ? 'border-red-400/40 text-red-200' : 'border-emerald-400/40 text-emerald-200'}`}>{sp.error ?? sp.done}</p>}
