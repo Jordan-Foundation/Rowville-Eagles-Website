@@ -3,6 +3,7 @@ import type { DashItem } from '@/components/dashboard/DashboardGrid'
 /** Management dashboard sections; keys match the badge counts in src/lib/attention.ts. */
 export const managementItems: DashItem[] = [
   { key: 'programs', href: '/management/programs', label: 'Programs Overview', icon: 'chart' },
+  { key: 'yearly', href: '/management/yearly-setup', label: 'Yearly setup', icon: 'calendar', hint: 'Next year’s terms & holidays' },
   { key: 'dates', href: '/management/dates', label: 'Set dates', icon: 'calendar' },
   { key: 'prices', href: '/management/prices', label: 'Set prices', icon: 'dollar' },
   { key: 'money', href: '/management/money', label: 'Money summary', icon: 'chart', hint: 'Month & term, by Stripe account' },

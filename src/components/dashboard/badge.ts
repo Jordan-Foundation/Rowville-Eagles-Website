@@ -7,7 +7,7 @@ export const BADGE_UNITS: Record<string, string> = {
   // Management
   bookings: 'to action', payments: 'overdue', cover: 'need cover', availability: 'not submitted', terms: 'waiting or no coach',
   selections: 'to decide', store: 'to fulfil', foundation: 'to review', consent: 'to review', reports: 'to review', dates: 'to fix',
-  promotions: 'live or scheduled', settings: 'to do', camps: 'to sort',
+  promotions: 'live or scheduled', settings: 'to do', camps: 'to sort', yearly: 'due',
   // Coach (messages: both)
   messages: 'unread', sessions: 'to check', attendance: 'to mark', groups: 'new', teams: 'new posts', reviews: 'to review',
 }

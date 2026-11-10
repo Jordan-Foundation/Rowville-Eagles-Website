@@ -88,7 +88,7 @@ export async function coachAttention(p: Payload, user: User, coach: AcademyCoach
   return { messages, sessions, attendance, availability, groups, teams, reviews, reports, camps }
 }
 
-export type ManagementCounts = Record<'bookings' | 'payments' | 'cover' | 'availability' | 'terms' | 'selections' | 'messages' | 'store' | 'foundation' | 'consent' | 'reports' | 'dates' | 'promotions' | 'camps', number>
+export type ManagementCounts = Record<'bookings' | 'payments' | 'cover' | 'availability' | 'terms' | 'selections' | 'messages' | 'store' | 'foundation' | 'consent' | 'reports' | 'dates' | 'promotions' | 'camps' | 'yearly', number>
 
 export async function managementAttention(p: Payload, user: User): Promise<ManagementCounts> {
   const now = new Date().toISOString()
@@ -149,5 +149,11 @@ export async function managementAttention(p: Payload, user: User): Promise<Manag
   const promotions = await safe(async () => (await p.count({ collection: 'promotions', where: { or: [{ status: { equals: 'scheduled' } }, { and: [{ status: { equals: 'live' } }, { endsAt: { less_than: new Date(Date.now() + 7 * 86_400_000).toISOString(), greater_than: new Date().toISOString() } }] }] }, ...q })).totalDocs)
   // Holiday camps: short of coaches, over-staffed, declines and no-replies
   const camps = await safe(async () => (await (await import('../camps/staffing')).campsAttention(p)).length)
-  return { bookings, payments, cover, availability, terms, selections, messages, store, foundation, consent, reports, dates, promotions, camps }
+  // From November: next year's dates still to set up
+  const yearly = await safe(async () => {
+    const { setupDue } = await import('../academy/yearly')
+    const { publishedYears } = await import('../academy/yearly-setup')
+    return setupDue(new Date(), await publishedYears(p)) ? 1 : 0
+  })
+  return { bookings, payments, cover, availability, terms, selections, messages, store, foundation, consent, reports, dates, promotions, camps, yearly }
 }

@@ -74,6 +74,7 @@ export interface Config {
     'academy-group-invites': AcademyGroupInvite;
     'training-attendance': TrainingAttendance;
     'academy-terms': AcademyTerm;
+    'year-setups': YearSetup;
     'academy-term-slots': AcademyTermSlot;
     'academy-registrations': AcademyRegistration;
     'pdr-areas': PdrArea;
@@ -142,6 +143,7 @@ export interface Config {
     'academy-group-invites': AcademyGroupInvitesSelect<false> | AcademyGroupInvitesSelect<true>;
     'training-attendance': TrainingAttendanceSelect<false> | TrainingAttendanceSelect<true>;
     'academy-terms': AcademyTermsSelect<false> | AcademyTermsSelect<true>;
+    'year-setups': YearSetupsSelect<false> | YearSetupsSelect<true>;
     'academy-term-slots': AcademyTermSlotsSelect<false> | AcademyTermSlotsSelect<true>;
     'academy-registrations': AcademyRegistrationsSelect<false> | AcademyRegistrationsSelect<true>;
     'pdr-areas': PdrAreasSelect<false> | PdrAreasSelect<true>;
@@ -1370,6 +1372,70 @@ export interface AcademyTermSlot {
         note?: string | null;
         id?: string | null;
       }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Use Management → Yearly setup.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "year-setups".
+ */
+export interface YearSetup {
+  id: number;
+  year: number;
+  status: 'draft' | 'published';
+  terms?:
+    | {
+        /**
+         * YYYY-MM-DD
+         */
+        start?: string | null;
+        /**
+         * YYYY-MM-DD
+         */
+        end?: string | null;
+        /**
+         * YYYY-MM-DD
+         */
+        deadline?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  holidays?:
+    | {
+        period?: ('summer' | 'april' | 'mid-year' | 'september') | null;
+        /**
+         * YYYY-MM-DD
+         */
+        start?: string | null;
+        /**
+         * YYYY-MM-DD
+         */
+        end?: string | null;
+        /**
+         * YYYY-MM-DD
+         */
+        deadline?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  term1OpensAt?: string | null;
+  publishedAt?: string | null;
+  publishedBy?: (number | null) | User;
+  reminderSentAt?: string | null;
+  /**
+   * What publishing created or updated
+   */
+  results?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
     | null;
   updatedAt: string;
   createdAt: string;
@@ -2652,6 +2718,10 @@ export interface PayloadLockedDocument {
         value: number | AcademyTerm;
       } | null)
     | ({
+        relationTo: 'year-setups';
+        value: number | YearSetup;
+      } | null)
+    | ({
         relationTo: 'academy-term-slots';
         value: number | AcademyTermSlot;
       } | null)
@@ -3201,6 +3271,38 @@ export interface AcademyTermsSelect<T extends boolean = true> {
   packSizes?: T;
   packPricePerSession?: T;
   organisation?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "year-setups_select".
+ */
+export interface YearSetupsSelect<T extends boolean = true> {
+  year?: T;
+  status?: T;
+  terms?:
+    | T
+    | {
+        start?: T;
+        end?: T;
+        deadline?: T;
+        id?: T;
+      };
+  holidays?:
+    | T
+    | {
+        period?: T;
+        start?: T;
+        end?: T;
+        deadline?: T;
+        id?: T;
+      };
+  term1OpensAt?: T;
+  publishedAt?: T;
+  publishedBy?: T;
+  reminderSentAt?: T;
+  results?: T;
   updatedAt?: T;
   createdAt?: T;
 }
