@@ -155,6 +155,7 @@ const term = await payload.create({
   collection: 'academy-terms',
   data: {
     name: 'Term 1 2027',
+    category: 'school-term',
     status: 'open',
     // Sample school term: Mon 1 Feb – Thu 1 Apr 2027 (replace with the real Victorian term dates)
     startDate: '2027-01-31T13:00:00.000Z',

@@ -34,7 +34,7 @@ export function dueReminder(days: number, alreadySent: ReadonlySet<string>): Rem
   return mostUrgent.kind
 }
 
-/** Daily job: remind every coach who hasn't submitted availability for a term collecting it. */
+/** Daily job: remind every coach who hasn't submitted availability for a timeframe (term or holidays) collecting it. */
 export async function sendAvailabilityReminders(payload: Payload, now = new Date()) {
   const result = { checked: 0, sent: 0 }
   const { docs: terms } = await payload.find({
@@ -100,10 +100,10 @@ function reminderHtml(user: User, displayName: string, term: AcademyTerm, kind: 
   return emailLayout('academy', [
     {
       heading: kind === '1d' ? 'Availability due tomorrow' : `${term.name} availability`,
-      intro: `Hi ${user.firstName || displayName} — please set your recurring 1-on-1 availability for ${term.name} (${formatDate(term.startDate)} – ${formatDate(term.endDate)}) so families can start booking with you. It only takes a couple of minutes, and you can add any dates you’ll be away.`,
+      intro: `Hi ${user.firstName || displayName} — please set your recurring 1-on-1 and small group availability for ${term.name} (${formatDate(term.startDate)} – ${formatDate(term.endDate)}) so families can start booking with you. It only takes a couple of minutes, and you can add any dates you’ll be away.`,
       rows: [
         ['Due', due(term)],
-        ['Term', `${formatDate(term.startDate)} – ${formatDate(term.endDate)}`],
+        [term.category === 'school-holidays' ? 'Holidays' : 'Term', `${formatDate(term.startDate)} – ${formatDate(term.endDate)}`],
       ],
       cta: { label: 'Set my availability', href: `${siteUrl()}/coach/availability/${term.id}` },
       after: 'You’ll stop getting these reminders as soon as you submit.',

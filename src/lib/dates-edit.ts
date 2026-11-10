@@ -62,7 +62,7 @@ export function formatDateInput(k: DateKind, stored: string | number | null | un
 
 export type DateIssue = { text: string; href: string }
 
-type Dated = { id: number; name: string; status?: string | null; startDate?: string | null; endDate?: string | null }
+type Dated = { id: number; name: string; status?: string | null; startDate?: string | null; endDate?: string | null; category?: string | null }
 /**
  * Things to fix on the Set dates page (and the dashboard badge): no upcoming Academy term, programs still open after
  * they finished or with no dates, report rounds past their due date, and an out-of-date season year.
@@ -70,10 +70,17 @@ type Dated = { id: number; name: string; status?: string | null; startDate?: str
 export function dateIssues(o: { now: Date; terms: Dated[]; programs: (Dated & { type: string; termLinked: boolean })[]; cycles: (Dated & { dueDate: string; outstanding: number })[]; season: number | null; expectedSeason: number }): DateIssue[] {
   const out: DateIssue[] = []
   const now = o.now.getTime()
-  const live = o.terms.filter((t) => t.status !== 'closed' && t.endDate && Date.parse(t.endDate) > now)
+  const notClosed = o.terms.filter((t) => t.status !== 'closed' && t.endDate && Date.parse(t.endDate) > now)
+  const live = notClosed.filter((t) => t.category !== 'school-holidays')
   const upcoming = live.filter((t) => t.startDate && Date.parse(t.startDate) > now)
-  if (!live.length) out.push({ text: 'No current or upcoming Academy term — set up the next one.', href: '/admin/collections/academy-terms/create' })
-  else if (!upcoming.length) out.push({ text: 'The next Academy term isn’t set up yet.', href: '/admin/collections/academy-terms/create' })
+  if (!live.length) out.push({ text: 'No current or upcoming school term timeframe — set up the next one.', href: '/admin/collections/academy-terms/create' })
+  else if (!upcoming.length) out.push({ text: 'The next school term timeframe isn’t set up yet.', href: '/admin/collections/academy-terms/create' })
+  // The next school holidays: set one up once the term before them is under way
+  const holidays = notClosed.filter((t) => t.category === 'school-holidays')
+  const current = live.find((t) => t.startDate && Date.parse(t.startDate) <= now)
+  if (current && !holidays.some((h) => h.startDate && current.endDate && Date.parse(h.startDate) >= Date.parse(current.endDate))) {
+    out.push({ text: `The school holidays after ${current.name} aren’t set up yet — add them so coaches can give holiday availability.`, href: '/admin/collections/academy-terms/create' })
+  }
   for (const p of o.programs) {
     if (p.termLinked || p.type === 'community' || p.type === 'private-session' || p.type === 'registration') continue
     if (p.status !== 'open') continue

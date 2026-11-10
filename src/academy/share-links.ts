@@ -1,3 +1,4 @@
+import { allowsWeekly } from './timeframes'
 import type { Payload } from 'payload'
 import type { AcademyCoach, AcademyShareLink, AcademyTerm, User } from '@/payload-types'
 import { emailLayout, esc } from '../lib/email-templates'
@@ -30,7 +31,7 @@ export async function coachOpenSlots(p: Payload, coachId: number) {
   return {
     term,
     casual: casualSlots(engine).map((s) => s.startsAt),
-    weekly: termSlots({ ...engine, minSessions: term.minTermSessions ?? 2 }).map((s) => ({ weekday: s.weekday, time: s.time, sessions: s.sessions })),
+    weekly: (allowsWeekly(term) ? termSlots({ ...engine, minSessions: term.minTermSessions ?? 2 }) : []).map((s) => ({ weekday: s.weekday, time: s.time, sessions: s.sessions })),
   }
 }
 
@@ -72,6 +73,7 @@ export async function createShareLink(p: Payload, o: NewLink) {
   await releaseExpiredHolds(p)
   const term = (await openTerms(p))[0]
   if (!term) throw new ShareLinkError('There’s no open term to book into.')
+  if (o.mode === 'term' && !allowsWeekly(term)) throw new ShareLinkError('Weekly bookings aren’t available in the school holidays — send a casual time instead.')
   const slot = await resolveSlot(p, term, o.coach.id, { mode: o.mode, startsAt: o.startsAt, weekday: o.weekday, startTime: o.startTime })
   if (!slot) throw new ShareLinkError('That time isn’t free any more — choose another.')
   const now = new Date()

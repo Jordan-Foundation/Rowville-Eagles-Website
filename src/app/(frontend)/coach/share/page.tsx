@@ -1,3 +1,4 @@
+import { allowsWeekly } from '@/academy/timeframes'
 import type { Metadata } from 'next'
 import { formatDate } from '@/lib/payload'
 import { requireCoach } from '@/academy/portal'
@@ -33,7 +34,7 @@ export default async function SharePage() {
         ) : casual.length + weekly.length === 0 ? (
           <p className="mt-3 text-sm text-muted">You have no open times left this term — add more in Availability.</p>
         ) : (
-          <div className="mt-5"><ShareForm casual={casual} weekly={weekly} holdChoices={HOLD_CHOICES} defaultHold={HOLD_CHOICES.includes(open.term.shareLinkHoldHours ?? 24) ? (open.term.shareLinkHoldHours ?? 24) : 24} /></div>
+          <div className="mt-5"><ShareForm holidays={!allowsWeekly(open.term)} casual={casual} weekly={weekly} holdChoices={HOLD_CHOICES} defaultHold={HOLD_CHOICES.includes(open.term.shareLinkHoldHours ?? 24) ? (open.term.shareLinkHoldHours ?? 24) : 24} /></div>
         )}
       </section>
       <section>

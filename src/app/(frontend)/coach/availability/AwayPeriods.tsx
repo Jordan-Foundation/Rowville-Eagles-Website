@@ -5,12 +5,12 @@ import { updateAway, type AwayState } from './actions'
 
 type Period = { from: string; to: string; note?: string | null; label: string }
 
-export function AwayPeriods({ termId, periods, min, max, locked }: { termId: number; periods: Period[]; min: string; max: string; locked: boolean }) {
+export function AwayPeriods({ termId, periods, min, max, locked, noun = 'term' }: { termId: number; periods: Period[]; min: string; max: string; locked: boolean; noun?: 'term' | 'holidays' }) {
   const [state, action, pending] = useActionState<AwayState, FormData>(updateAway, {})
   const input = 'w-full border border-line bg-surface px-3 py-2.5 text-ink outline-none focus:border-white [color-scheme:dark]'
   return (
     <section className="panel border border-line p-6">
-      <h2 className="font-display text-xl font-semibold uppercase">Away during the term</h2>
+      <h2 className="font-display text-xl font-semibold uppercase">Away during the {noun}</h2>
       <p className="mt-2 max-w-2xl text-sm text-muted">
         Add any dates you know you’ll be away. Families who book a term with you will see these dates at checkout, and the admin will arrange a
         replacement coach with a handover from you.

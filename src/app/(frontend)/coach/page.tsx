@@ -55,7 +55,7 @@ export default async function CoachHome() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-4xl font-semibold uppercase tracking-tight sm:text-5xl">Hi {coach.displayName}</h1>
-          <p className="mt-3 text-muted">Set your 1-on-1 availability for each term and keep your profile up to date — families see it when they book.</p>
+          <p className="mt-3 text-muted">Set your 1-on-1 and small group availability for each term and school holidays, and keep your profile up to date — families see it when they book.</p>
         </div>
         <RoleSwitch user={user} current="coach" kids={kids} />
       </div>

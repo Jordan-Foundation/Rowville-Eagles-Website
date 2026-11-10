@@ -40,12 +40,21 @@ describe('Set dates — what needs attention', () => {
       season: 2026,
     })
     expect(issues.map((i) => i.text)).toEqual([
-      'The next Academy term isn’t set up yet.',
+      'The next school term timeframe isn’t set up yet.',
+      'The school holidays after Term 1 aren’t set up yet — add them so coaches can give holiday availability.',
       'Jan camp finished but is still open for bookings.',
       'Easter camp is open but has no start date.',
       'Summer reports: due date has passed with 3 reports unfinished.',
       'Season is set to 2026 — change it to 2027 when the new season’s age groups start.',
     ])
+  })
+  it('holiday timeframes don’t count as the next term, but do cover the holidays after the current term', () => {
+    const t1 = { id: 1, name: 'Term 1', status: 'open', category: 'school-term', startDate: '2027-01-31T13:00:00Z', endDate: '2027-04-01T12:00:00Z' }
+    const april = { id: 2, name: 'April holidays', status: 'availability', category: 'school-holidays', startDate: '2027-04-02T13:00:00Z', endDate: '2027-04-18T13:59:00Z' }
+    const t2 = { id: 3, name: 'Term 2', status: 'draft', category: 'school-term', startDate: '2027-04-18T14:00:00Z', endDate: '2027-06-25T13:59:00Z' }
+    expect(dateIssues({ ...base, terms: [t1, april] }).map((i) => i.text)).toEqual(['The next school term timeframe isn’t set up yet.'])
+    expect(dateIssues({ ...base, terms: [t1, t2] }).map((i) => i.text)).toEqual(['The school holidays after Term 1 aren’t set up yet — add them so coaches can give holiday availability.'])
+    expect(dateIssues({ ...base, terms: [t1, april, t2] })).toEqual([])
   })
   it('nothing to fix', () => {
     expect(dateIssues({ ...base, terms: [{ id: 1, name: 'Term 2', status: 'open', startDate: '2027-04-19T14:00:00Z', endDate: '2027-06-27T13:59:00Z' }] })).toEqual([])

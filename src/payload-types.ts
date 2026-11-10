@@ -529,30 +529,44 @@ export interface Media {
   focalY?: number | null;
 }
 /**
+ * School terms and school holidays. Coaches set 1-on-1 availability for each one; Academy programs use school terms; camps sit in the holidays.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "academy-terms".
  */
 export interface AcademyTerm {
   id: number;
   /**
-   * e.g. "Term 1 2027"
+   * e.g. "Term 1 2027" or "April holidays 2027"
    */
   name: string;
+  /**
+   * Worked out from the name if left blank
+   */
+  period?: ('term-1' | 'term-2' | 'term-3' | 'term-4' | 'summer' | 'april' | 'mid-year' | 'september') | null;
+  /**
+   * Set from the term or holidays chosen
+   */
+  category: 'school-term' | 'school-holidays';
+  /**
+   * Set from the start date
+   */
+  year?: number | null;
   status: 'draft' | 'availability' | 'open' | 'closed';
   /**
-   * First day of the school term
+   * First day of the term or holidays
    */
   startDate: string;
   /**
-   * Last day of the school term
+   * Last day of the term or holidays
    */
   endDate: string;
   /**
-   * Number of sessions and dates for each weekday — this sets the term price per weekday (save to refresh)
+   * Number of sessions and dates for each weekday — for school terms this sets the term price per weekday (save to refresh)
    */
   schedulePreview?: string | null;
   /**
-   * Coaches must submit their 1-on-1 availability by this date. Reminders go out 2 weeks, 1 week, 3 days and 1 day before.
+   * Coaches must submit their 1-on-1 and small group availability for this timeframe by this date. Reminders go out 2 weeks, 1 week, 3 days and 1 day before.
    */
   availabilityDeadline: string;
   /**
@@ -3006,6 +3020,9 @@ export interface TrainingAttendanceSelect<T extends boolean = true> {
  */
 export interface AcademyTermsSelect<T extends boolean = true> {
   name?: T;
+  period?: T;
+  category?: T;
+  year?: T;
   status?: T;
   startDate?: T;
   endDate?: T;

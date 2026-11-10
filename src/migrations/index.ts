@@ -62,6 +62,7 @@ import * as migration_20261109_024603_activity_log from './20261109_024603_activ
 import * as migration_20261109_092722_group_settings from './20261109_092722_group_settings';
 import * as migration_20261109_101625_small_groups from './20261109_101625_small_groups';
 import * as migration_20261109_121219_group_reminder_link from './20261109_121219_group_reminder_link';
+import * as migration_20261110_043135_timeframes from './20261110_043135_timeframes';
 
 export const migrations = [
   {
@@ -382,6 +383,11 @@ export const migrations = [
   {
     up: migration_20261109_121219_group_reminder_link.up,
     down: migration_20261109_121219_group_reminder_link.down,
-    name: '20261109_121219_group_reminder_link'
+    name: '20261109_121219_group_reminder_link',
+  },
+  {
+    up: migration_20261110_043135_timeframes.up,
+    down: migration_20261110_043135_timeframes.down,
+    name: '20261110_043135_timeframes'
   },
 ];

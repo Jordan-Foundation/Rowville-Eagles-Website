@@ -6,6 +6,7 @@ import { WEEKDAYS, startTimesFor } from '@/academy/constants'
 import { termDatesForWeekday, toYmd } from '@/academy/term-dates'
 import { AvailabilityGrid } from '../AvailabilityGrid'
 import { AwayPeriods } from '../AwayPeriods'
+import { isHolidayTimeframe } from '@/academy/timeframes'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,9 +22,12 @@ export default async function TermAvailability({ params }: { params: Promise<{ t
   const allowed = Object.fromEntries(WEEKDAYS.map((d) => [d, startTimesFor(term, d)]))
   const times = Array.from(new Set(Object.values(allowed).flat())).sort()
   const counts = WEEKDAYS.map((d) => `${d.slice(0, 3)} ${termDatesForWeekday(term, d).length}`).join(' · ')
-  // "Copy last term": the most recent other term this coach gave availability for
-  const { docs: earlier } = await p.find({ pagination: false, collection: 'academy-availability', where: { coach: { equals: coach.id }, term: { not_equals: term.id } }, sort: '-updatedAt', limit: 5, depth: 1, overrideAccess: true })
-  const prev = earlier.find((a) => (a.slots ?? []).length > 0 && typeof a.term === 'object' && a.term.startDate < term.startDate) ?? earlier.find((a) => (a.slots ?? []).length > 0)
+  // "Copy last term": the most recent other timeframe of the same kind (term → term, holidays → holidays)
+  const holidays = isHolidayTimeframe(term)
+  const noun = holidays ? 'holidays' : 'term'
+  const { docs: earlier } = await p.find({ pagination: false, collection: 'academy-availability', where: { coach: { equals: coach.id }, term: { not_equals: term.id } }, sort: '-updatedAt', limit: 10, depth: 1, overrideAccess: true })
+  const sameKind = earlier.filter((a) => (a.slots ?? []).length > 0 && typeof a.term === 'object' && isHolidayTimeframe(a.term) === holidays)
+  const prev = sameKind.find((a) => typeof a.term === 'object' && a.term.startDate < term.startDate) ?? sameKind[0]
   const lastTerm = prev && typeof prev.term === 'object' ? { name: prev.term.name, slots: (prev.slots ?? []).filter((s) => allowed[s.weekday]?.includes(s.startTime)).map((s) => `${s.weekday} ${s.startTime}`) } : null
   const fmtDay = (iso: string) => formatDate(iso, { weekday: 'short', day: 'numeric', month: 'short' })
 
@@ -34,14 +38,15 @@ export default async function TermAvailability({ params }: { params: Promise<{ t
         <h1 className="font-display text-4xl font-semibold uppercase tracking-tight">{term.name} availability</h1>
         <p className="mt-3 max-w-2xl text-muted">
           Tap every hour you can coach a 1-on-1 <strong className="text-ink">every week</strong> from {formatDate(term.startDate)} to {formatDate(term.endDate)}. Sessions are{' '}
-          {term.sessionMinutes} minutes, and you’re available on public holidays unless you add them as an away period below. Families can book these times for the whole term or as one-off sessions.
+          {term.sessionMinutes} minutes, and you’re available on public holidays unless you add them as an away period below.{' '}
+          {holidays ? 'These are school holiday times — families book them as one-off sessions, and they can also be used for small groups.' : 'Families can book these times for the whole term or as one-off sessions.'}
         </p>
         <p className="mt-2 text-sm text-muted">
           {mine?.submittedAt ? `Submitted ${formatDate(mine.submittedAt)}.` : `Please submit by ${formatDate(term.availabilityDeadline, { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' })}.`}
         </p>
-        <p className="mt-2 text-xs uppercase tracking-wider text-muted">Sessions this term: {counts}</p>
+        <p className="mt-2 text-xs uppercase tracking-wider text-muted">Sessions {holidays ? 'these holidays' : 'this term'}: {counts}</p>
       </div>
-      {locked && <p className="panel border border-line p-4 text-sm">This term is closed for changes. Contact the admin if you need to update your times.</p>}
+      {locked && <p className="panel border border-line p-4 text-sm">{holidays ? 'These holidays are' : 'This term is'} closed for changes. Contact the admin if you need to update your times.</p>}
       <AvailabilityGrid
         termId={term.id}
         weekdays={WEEKDAYS}
@@ -51,9 +56,11 @@ export default async function TermAvailability({ params }: { params: Promise<{ t
         submitted={Boolean(mine?.submittedAt)}
         locked={locked}
         lastTerm={lastTerm}
+        noun={noun}
       />
       <AwayPeriods
         termId={term.id}
+        noun={noun}
         locked={locked}
         min={toYmd(term.startDate)}
         max={toYmd(term.endDate)}

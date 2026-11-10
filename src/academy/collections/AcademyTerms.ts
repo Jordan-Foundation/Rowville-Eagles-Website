@@ -4,17 +4,25 @@ import { APIError } from 'payload'
 import { anyone, isStaff } from '../../access'
 import { DEFAULT_WEEKDAY_TIMES, DEFAULT_WEEKEND_TIMES, TIME_RE } from '../constants'
 import { scheduleSummary, toYmd } from '../term-dates'
-import { localToUtc } from '../../lib/time'
+import { localToUtc, localYmd } from '../../lib/time'
+import { TIMEFRAME_CATEGORIES, TIMEFRAME_PERIODS, categoryOfPeriod, periodFromName } from '../timeframes'
 
 /**
- * Foundation Academy terms — shared by 1-on-1 coaching and Academy group programs.
+ * Timeframes — the Academy calendar: school terms (Terms 1–4) and school holidays.
+ * 1-on-1s and small groups run in every timeframe; Academy training programs only in school terms;
+ * holiday camps sit inside a holiday timeframe. The slug stays `academy-terms` so existing records keep working.
  * Terms follow the school term dates, so the number of sessions varies by weekday (e.g. 9, 10 or 11)
  * and the term price is always price-per-session × sessions remaining.
  */
 export const AcademyTerms: CollectionConfig = {
   slug: 'academy-terms',
-  labels: { singular: 'Academy term', plural: 'Academy terms' },
-  admin: { group: 'Foundation Academy', useAsTitle: 'name', defaultColumns: ['name', 'startDate', 'endDate', 'availabilityDeadline', 'status'] },
+  labels: { singular: 'Timeframe', plural: 'Timeframes' },
+  admin: {
+    group: 'Foundation Academy',
+    useAsTitle: 'name',
+    defaultColumns: ['name', 'category', 'startDate', 'endDate', 'availabilityDeadline', 'status'],
+    description: 'School terms and school holidays. Coaches set 1-on-1 availability for each one; Academy programs use school terms; camps sit in the holidays.',
+  },
   access: { read: anyone, create: isStaff, update: isStaff, delete: isStaff },
   defaultSort: '-startDate',
   hooks: {
@@ -24,6 +32,12 @@ export const AcademyTerms: CollectionConfig = {
       ({ data, originalDoc }) => {
         if (!data) return data
         const merged = { ...originalDoc, ...data }
+        // Period from the name if not chosen; the category always follows the period
+        const period = merged.period || periodFromName(merged.name)
+        if (period && !merged.period) data.period = period
+        const category = categoryOfPeriod(period)
+        if (category) data.category = category
+        else if (!merged.category) data.category = 'school-term'
         for (const t of [...(merged.slotStartTimes ?? []), ...(merged.weekendStartTimes ?? [])]) {
           if (!TIME_RE.test(t?.time ?? '')) throw new APIError(`Start time "${t?.time}" must be 24-hour HH:MM, e.g. 17:00.`, 400, undefined, true)
         }
@@ -34,13 +48,39 @@ export const AcademyTerms: CollectionConfig = {
           // Store the start/end as the very start/end of those days (Sydney time) so the last day counts in full
           data.startDate = localToUtc(start, '00:00').toISOString()
           data.endDate = localToUtc(end, '23:59').toISOString()
+          // The year it belongs to: the year it starts in (summer holidays starting in December count for the next year)
+          const y = Number(localYmd(new Date(data.startDate)).slice(0, 4))
+          data.year = period === 'summer' && localYmd(new Date(data.startDate)).slice(5, 7) === '12' ? y + 1 : y
         }
         return data
       },
     ],
   },
   fields: [
-    { name: 'name', type: 'text', required: true, admin: { description: 'e.g. "Term 1 2027"' } },
+    { name: 'name', type: 'text', required: true, admin: { description: 'e.g. "Term 1 2027" or "April holidays 2027"' } },
+    {
+      type: 'row',
+      fields: [
+        {
+          name: 'period',
+          label: 'Which term or holidays',
+          type: 'select',
+          options: TIMEFRAME_PERIODS.map((p) => ({ label: p.label, value: p.value })),
+          admin: { description: 'Worked out from the name if left blank' },
+        },
+        {
+          name: 'category',
+          label: 'Type',
+          type: 'select',
+          required: true,
+          defaultValue: 'school-term',
+          index: true,
+          options: TIMEFRAME_CATEGORIES,
+          admin: { readOnly: true, description: 'Set from the term or holidays chosen' },
+        },
+        { name: 'year', type: 'number', index: true, admin: { readOnly: true, description: 'Set from the start date' } },
+      ],
+    },
     {
       name: 'status',
       type: 'select',
@@ -57,15 +97,15 @@ export const AcademyTerms: CollectionConfig = {
     {
       type: 'row',
       fields: [
-        { name: 'startDate', type: 'date', required: true, admin: { date: { pickerAppearance: 'dayOnly', displayFormat: 'd MMM yyyy' }, description: 'First day of the school term' } },
-        { name: 'endDate', type: 'date', required: true, admin: { date: { pickerAppearance: 'dayOnly', displayFormat: 'd MMM yyyy' }, description: 'Last day of the school term' } },
+        { name: 'startDate', type: 'date', required: true, admin: { date: { pickerAppearance: 'dayOnly', displayFormat: 'd MMM yyyy' }, description: 'First day of the term or holidays' } },
+        { name: 'endDate', type: 'date', required: true, admin: { date: { pickerAppearance: 'dayOnly', displayFormat: 'd MMM yyyy' }, description: 'Last day of the term or holidays' } },
       ],
     },
     {
       name: 'schedulePreview',
       type: 'textarea',
       virtual: true,
-      admin: { readOnly: true, description: 'Number of sessions and dates for each weekday — this sets the term price per weekday (save to refresh)' },
+      admin: { readOnly: true, description: 'Number of sessions and dates for each weekday — for school terms this sets the term price per weekday (save to refresh)' },
       hooks: {
         afterRead: [({ siblingData }) => (siblingData?.startDate && siblingData?.endDate ? scheduleSummary({ startDate: siblingData.startDate, endDate: siblingData.endDate }) : '')],
       },
@@ -74,7 +114,7 @@ export const AcademyTerms: CollectionConfig = {
       name: 'availabilityDeadline',
       type: 'date',
       required: true,
-      admin: { date: { pickerAppearance: 'dayAndTime' }, description: 'Coaches must submit their 1-on-1 availability by this date. Reminders go out 2 weeks, 1 week, 3 days and 1 day before.' },
+      admin: { date: { pickerAppearance: 'dayAndTime' }, description: 'Coaches must submit their 1-on-1 and small group availability for this timeframe by this date. Reminders go out 2 weeks, 1 week, 3 days and 1 day before.' },
     },
     {
       type: 'collapsible',

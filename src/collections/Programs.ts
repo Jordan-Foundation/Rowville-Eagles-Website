@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { APIError } from 'payload'
 import { refreshAfterChange, refreshAfterDelete } from '../lib/revalidate'
 import { isStaff, publishedOrStaff } from '../access'
 
@@ -50,6 +51,7 @@ export const Programs: CollectionConfig = {
         const termProgram = type === 'academy-term' || type === 'toddler'
         if (termProgram && termId) {
           const term = await req.payload.findByID({ collection: 'academy-terms', id: termId, depth: 0, req, disableErrors: true })
+          if (term && term.category === 'school-holidays') throw new APIError(`${term.name} is a school holidays timeframe — Academy programs run in school terms only.`, 400, undefined, true)
           if (term) {
             data.startDate = term.startDate
             data.endDate = term.endDate
@@ -210,9 +212,10 @@ export const Programs: CollectionConfig = {
     },
     {
       name: 'academyTerm',
-      label: 'Academy term',
+      label: 'School term',
       type: 'relationship',
       relationTo: 'academy-terms',
+      filterOptions: { category: { not_equals: 'school-holidays' } },
       admin: {
         condition: (d) => d?.type === 'academy-term' || d?.type === 'toddler',
         description: 'Start and end dates are taken from this term automatically.',

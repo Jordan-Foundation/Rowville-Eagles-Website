@@ -1,3 +1,4 @@
+import { allowsWeekly } from '@/academy/timeframes'
 import Image from 'next/image'
 import { PromoNotice } from '@/promotions/PromoNotice'
 import Link from 'next/link'
@@ -40,7 +41,7 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
   const user = await currentUser()
   const coachId = Number(q.coach)
   const terms = await openTerms(p)
-  const term = mode === 'term' ? terms[0] : terms.find((t) => q.start && q.start >= t.startDate && q.start <= t.endDate)
+  const term = mode === 'term' ? (allowsWeekly(terms[0]) ? terms[0] : undefined) : terms.find((t) => q.start && q.start >= t.startDate && q.start <= t.endDate)
   // A coach's share link: the time they reserved is free for this family, and their details are filled in
   const shareLink = q.share ? await findShareLink(p, q.share) : null
   const share = shareLink && linkMatches(shareLink, { mode, coach: coachId, start: q.start, weekday: q.weekday, time: q.time }) ? shareLink : null

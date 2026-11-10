@@ -5,7 +5,7 @@ import { createShareAction, linkAction, type ShareState } from './actions'
 
 const field = 'mt-1 block w-full border border-line bg-black/40 px-3 py-2.5 text-sm'
 
-export function ShareForm({ casual, weekly, holdChoices, defaultHold }: { casual: { value: string; label: string; group: string }[]; weekly: { value: string; label: string }[]; holdChoices: number[]; defaultHold: number }) {
+export function ShareForm({ casual, weekly, holdChoices, defaultHold, holidays = false }: { casual: { value: string; label: string; group: string }[]; weekly: { value: string; label: string }[]; holdChoices: number[]; defaultHold: number; holidays?: boolean }) {
   const [state, action, pending] = useActionState<ShareState, FormData>(createShareAction, {})
   const [mode, setMode] = useState<'casual' | 'term'>(casual.length || !weekly.length ? 'casual' : 'term')
   const [slot, setSlot] = useState('')
@@ -15,7 +15,7 @@ export function ShareForm({ casual, weekly, holdChoices, defaultHold }: { casual
   return (
     <form action={action} className="space-y-5">
       <div className="flex flex-wrap gap-2 text-sm" role="radiogroup" aria-label="Type of booking">
-        {(['casual', 'term'] as const).map((m) => (
+        {(holidays ? (['casual'] as const) : (['casual', 'term'] as const)).map((m) => (
           <button key={m} type="button" role="radio" aria-checked={mode === m} onClick={() => { setMode(m); setSlot('') }} className={`border px-3 py-1.5 ${mode === m ? 'border-white bg-white text-black' : 'border-line'}`}>
             {m === 'casual' ? `One session (${casual.length} open)` : `Whole term, weekly (${weekly.length} open)`}
           </button>

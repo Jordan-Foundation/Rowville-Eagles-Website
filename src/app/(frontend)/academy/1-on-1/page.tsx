@@ -6,6 +6,7 @@ import { AcademyBackdrop } from '@/components/AcademyBackdrop'
 import { RfaLogo } from '@/components/Logos'
 import { SlotBrowser } from './SlotBrowser'
 import { currentUser } from '@/lib/auth'
+import { allowsWeekly } from '@/academy/timeframes'
 import { isTermMember, memberWindowEnd } from '@/academy/pricing'
 
 export const dynamic = 'force-dynamic'
@@ -16,15 +17,17 @@ export const metadata: Metadata = {
 
 export default async function OneOnOnePage({ searchParams }: { searchParams: Promise<{ mode?: string; link?: string }> }) {
   const sp = await searchParams
-  const mode = sp.mode === 'term' ? 'term' : 'casual'
   const p = await payload()
   await releaseExpiredHolds(p)
   const terms = await openTerms(p)
   const term = terms[0]
+  // School holidays: casual sessions only (no weekly term bookings)
+  const weeklyOk = allowsWeekly(term)
+  const mode = sp.mode === 'term' && weeklyOk ? 'term' : 'casual'
   const data = term ? await loadTermBookingData(p, term) : null
   const engine = term && data ? { term, coaches: data.availability, taken: data.taken, now: new Date(), cutoffHours: term.bookingCutoffHours ?? 24 } : null
   const slots = engine ? casualSlots(engine) : []
-  const weekly = engine ? termSlots({ ...engine, minSessions: term!.minTermSessions ?? 2 }) : []
+  const weekly = engine && weeklyOk ? termSlots({ ...engine, minSessions: term!.minTermSessions ?? 2 }) : []
   // Families with an active term booking: lower casual price for the next couple of weeks
   const user = await currentUser()
   const now = new Date()
@@ -50,9 +53,9 @@ export default async function OneOnOnePage({ searchParams }: { searchParams: Pro
                 Casual session · <strong>{formatAUD(term.casualPrice)}</strong>
                 {member && <> · <strong>{formatAUD(member.price)}</strong> for you</>}
               </a>
-              <a href="/academy/1-on-1?mode=term" role="tab" aria-selected={mode === 'term'} className={`px-4 py-2 ${mode === 'term' ? 'bg-white text-black' : 'border border-line text-muted hover:text-ink'}`}>
+              {weeklyOk && <a href="/academy/1-on-1?mode=term" role="tab" aria-selected={mode === 'term'} className={`px-4 py-2 ${mode === 'term' ? 'bg-white text-black' : 'border border-line text-muted hover:text-ink'}`}>
                 Whole term · <strong>{formatAUD(term.pricePerSession)}</strong>/session
-              </a>
+              </a>}
             </div>
           )}
           {term && (
@@ -61,10 +64,17 @@ export default async function OneOnOnePage({ searchParams }: { searchParams: Pro
                 <dt className="font-semibold">Casual session</dt>
                 <dd className="mt-1 text-muted">One session, any free time. Good for trying a coach or a one-off boost.</dd>
               </div>
-              <div className={`border p-4 ${mode === 'term' ? 'border-white/60' : 'border-line'}`}>
-                <dt className="font-semibold">Whole term</dt>
-                <dd className="mt-1 text-muted">The same coach, day and time every week for the rest of term, at a lower price per session. Pay upfront, or weekly when enough of the term is left.</dd>
-              </div>
+              {weeklyOk ? (
+                <div className={`border p-4 ${mode === 'term' ? 'border-white/60' : 'border-line'}`}>
+                  <dt className="font-semibold">Whole term</dt>
+                  <dd className="mt-1 text-muted">The same coach, day and time every week for the rest of term, at a lower price per session. Pay upfront, or weekly when enough of the term is left.</dd>
+                </div>
+              ) : (
+                <div className="border border-line p-4">
+                  <dt className="font-semibold">{term.name}</dt>
+                  <dd className="mt-1 text-muted">School holiday sessions — book any free time during the break.</dd>
+                </div>
+              )}
             </dl>
           )}
         </div>

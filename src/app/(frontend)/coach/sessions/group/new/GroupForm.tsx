@@ -17,7 +17,7 @@ const emptyNew: NewP = { playerFirstName: '', playerLastName: '', parentFirstNam
 let nextKey = 1
 const newRow = (): Row => ({ key: nextKey++, mode: 'find', fresh: { ...emptyNew } })
 
-export function GroupForm({ casual, weekly, settings }: { casual: Casual[]; weekly: Weekly[]; settings: GroupSettings }) {
+export function GroupForm({ casual, weekly, settings, holidays = false }: { casual: Casual[]; weekly: Weekly[]; settings: GroupSettings; holidays?: boolean }) {
   const [state, action, pending] = useActionState<GroupFormState, FormData>(createGroupAction, {})
   const [type, setType] = useState<'casual' | 'term'>(casual.length || !weekly.length ? 'casual' : 'term')
   const [slot, setSlot] = useState('')
@@ -56,7 +56,7 @@ export function GroupForm({ casual, weekly, settings }: { casual: Casual[]; week
           <section className="space-y-4">
             <h2 className="font-display text-2xl font-semibold uppercase">1. When</h2>
             <div className="flex flex-wrap gap-2 text-sm" role="radiogroup" aria-label="Casual or term">
-              {(['casual', 'term'] as const).map((m) => (
+              {(holidays ? (['casual'] as const) : (['casual', 'term'] as const)).map((m) => (
                 <button key={m} type="button" role="radio" aria-checked={type === m} onClick={() => { setType(m); setSlot('') }} className={`border px-3 py-1.5 ${type === m ? 'border-white bg-white text-black' : 'border-line'}`}>
                   {m === 'casual' ? `One-off session (${casual.length} open)` : `Whole term, weekly (${weekly.length} open)`}
                 </button>

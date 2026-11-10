@@ -1,3 +1,4 @@
+import { isSchoolTerm } from '@/academy/timeframes'
 import Link from 'next/link'
 import { payload, formatDate } from '@/lib/payload'
 import { foundationSettings } from '@/academy/pdr/load'
@@ -48,10 +49,10 @@ export default async function Home() {
     p.find({ pagination: false, collection: 'programs', where: { type: { equals: 'holiday-camp' }, status: { in: ['open', 'full'] }, startDate: { greater_than: nowIso } }, sort: 'startDate', limit: 1, depth: 0 }),
     p.find({ pagination: false, collection: 'trial-sessions', where: { status: { equals: 'published' }, start: { greater_than: nowIso } }, sort: 'start', limit: 1, depth: 0 }),
     p.find({ pagination: false, collection: 'programs', where: { type: { equals: 'community' }, status: { equals: 'open' } }, limit: 1, depth: 0 }),
-    p.find({ pagination: false, collection: 'academy-terms', where: { endDate: { greater_than: nowIso } }, sort: 'startDate', limit: 4, depth: 0 }),
+    p.find({ pagination: false, collection: 'academy-terms', where: { endDate: { greater_than: nowIso } }, sort: 'startDate', limit: 8, depth: 0 }),
   ])
   const friday = nextFriday(new Date())
-  const inTerm = terms.docs.some((t) => t.startDate <= friday.toISOString() && friday.toISOString() <= t.endDate)
+  const inTerm = terms.docs.some((t) => isSchoolTerm(t) && t.startDate <= friday.toISOString() && friday.toISOString() <= t.endDate)
   const nextUp = [
     camp.docs[0] && { href: `/programs/${camp.docs[0].slug}`, k: 'Next camp', t: camp.docs[0].title, d: formatDate(camp.docs[0].startDate!, { weekday: 'short', day: 'numeric', month: 'short' }) },
     trial.docs[0]

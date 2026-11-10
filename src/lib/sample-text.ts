@@ -24,6 +24,6 @@ export async function findSampleText(p: Payload): Promise<SampleHit[]> {
   for (const d of programs.docs) if (hasSampleText([d.title, d.summary, d.description, d.scheduleNote])) hits.push({ where: `Program: ${d.title}`, href: `/admin/collections/programs/${d.id}` })
   for (const d of coaches.docs) if (hasSampleText(d.bio)) hits.push({ where: `Coach bio: ${d.displayName}`, href: `/admin/collections/academy-coaches/${d.id}` })
   for (const d of products.docs) if (hasSampleText([d.name, d.description])) hits.push({ where: `Shop: ${d.name}`, href: `/admin/collections/products/${d.id}` })
-  for (const d of terms.docs) if (hasSampleText([d.name, (d as unknown as { notes?: string }).notes])) hits.push({ where: `Academy term: ${d.name}`, href: `/admin/collections/academy-terms/${d.id}` })
+  for (const d of terms.docs) if (hasSampleText([d.name, (d as unknown as { notes?: string }).notes])) hits.push({ where: `Timeframe: ${d.name}`, href: `/admin/collections/academy-terms/${d.id}` })
   return hits
 }

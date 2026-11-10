@@ -3,14 +3,14 @@
 import { useActionState, useMemo, useState } from 'react'
 import { saveAvailability, type AvailabilityState } from './actions'
 
-type Props = { termId: number; weekdays: readonly string[]; times: string[]; allowed: Record<string, string[]>; initial: string[]; submitted: boolean; locked: boolean; lastTerm?: { name: string; slots: string[] } | null }
+type Props = { termId: number; weekdays: readonly string[]; times: string[]; allowed: Record<string, string[]>; initial: string[]; submitted: boolean; locked: boolean; lastTerm?: { name: string; slots: string[] } | null; noun?: 'term' | 'holidays' }
 
 const label12 = (t: string) => {
   const [h, m] = t.split(':').map(Number)
   return `${((h + 11) % 12) + 1}${m ? `:${String(m).padStart(2, '0')}` : ''}${h < 12 ? 'am' : 'pm'}`
 }
 
-export function AvailabilityGrid({ termId, weekdays, times, allowed, initial, submitted, locked, lastTerm }: Props) {
+export function AvailabilityGrid({ termId, weekdays, times, allowed, initial, submitted, locked, lastTerm, noun = 'term' }: Props) {
   const [day, setDay] = useState(weekdays.find((d) => (allowed[d] ?? []).length) ?? weekdays[0])
   const [picked, setPicked] = useState<Set<string>>(() => new Set(initial))
   const [state, action, pending] = useActionState<AvailabilityState, FormData>(saveAvailability, {})
@@ -38,8 +38,8 @@ export function AvailabilityGrid({ termId, weekdays, times, allowed, initial, su
 
       {lastTerm && lastTerm.slots.length > 0 && !locked && (
         <div className="flex flex-wrap items-center gap-3 border border-line p-4 text-sm">
-          <p className="flex-1">Same as last term? {lastTerm.name}: {lastTerm.slots.length} weekly slot{lastTerm.slots.length === 1 ? '' : 's'}.</p>
-          <button type="button" onClick={() => setPicked(new Set(lastTerm.slots))} className="min-h-10 border border-white/40 px-4 text-xs font-semibold uppercase tracking-[0.15em] hover:bg-white hover:text-black">Copy last term’s times</button>
+          <p className="flex-1">Same as last {noun === 'term' ? 'term' : 'holidays'}? {lastTerm.name}: {lastTerm.slots.length} weekly slot{lastTerm.slots.length === 1 ? '' : 's'}.</p>
+          <button type="button" onClick={() => setPicked(new Set(lastTerm.slots))} className="min-h-10 border border-white/40 px-4 text-xs font-semibold uppercase tracking-[0.15em] hover:bg-white hover:text-black">{noun === 'term' ? 'Copy last term’s times' : 'Copy last holidays’ times'}</button>
         </div>
       )}
 
@@ -120,11 +120,11 @@ export function AvailabilityGrid({ termId, weekdays, times, allowed, initial, su
         <button type="submit" disabled={pending || locked || (!dirty && submitted)} className="bg-white px-7 py-3.5 text-sm font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-white/85 disabled:opacity-40">
           {pending ? 'Saving…' : submitted ? 'Save changes' : 'Submit availability'}
         </button>
-        <p className="text-sm text-muted">{picked.size} weekly slot{picked.size === 1 ? '' : 's'} selected · each runs every week of the term</p>
+        <p className="text-sm text-muted">{picked.size} weekly slot{picked.size === 1 ? '' : 's'} selected · each runs every week of the {noun}</p>
       </div>
       {state.saved && !pending && (
         <p role="status" className="border border-white/30 px-4 py-3 text-sm">
-          {state.first ? 'Availability submitted — thanks! You won’t get any more reminders for this term.' : 'Changes saved.'}
+          {state.first ? `Availability submitted — thanks! You won’t get any more reminders for this ${noun === 'term' ? 'term' : 'timeframe'}.` : 'Changes saved.'}
         </p>
       )}
       {state.error && <p role="alert" className="border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300">{state.error}</p>}

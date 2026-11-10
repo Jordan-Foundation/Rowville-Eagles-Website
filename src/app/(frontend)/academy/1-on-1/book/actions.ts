@@ -1,5 +1,6 @@
 'use server'
 
+import { allowsWeekly } from '@/academy/timeframes'
 import { rateLimit } from '@/lib/form-guard'
 import { redirect } from 'next/navigation'
 import { payload } from '@/lib/payload'
@@ -39,6 +40,7 @@ export async function bookSession(_prev: BookState, fd: FormData): Promise<BookS
   const termId = Number(s('term'))
   const term = termId ? await p.findByID({ collection: 'academy-terms', id: termId, depth: 0, disableErrors: true }) : null
   if (!term || term.status !== 'open' || !coachId) return fail('This booking isn’t available any more.')
+  if (mode === 'term' && !allowsWeekly(term)) return fail('Weekly bookings aren’t available in the school holidays — book casual sessions instead.')
   // Booking from a coach's share link: the coach's reservation is this family's to use
   const shareLink = s('share') ? await findShareLink(p, s('share')) : null
   const share = shareLink && linkMatches(shareLink, { mode, coach: coachId, start: s('start'), weekday: s('weekday'), time: s('time') }) ? shareLink : null

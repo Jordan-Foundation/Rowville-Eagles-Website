@@ -1,3 +1,4 @@
+import { allowsWeekly } from './timeframes'
 import type { Payload } from 'payload'
 import type { AcademyCoach, AcademyGroup, AcademyGroupInvite, AcademyTerm, Participant, User } from '@/payload-types'
 import { emailLayout, esc } from '../lib/email-templates'
@@ -68,6 +69,7 @@ export async function groupSessionsFor(p: Payload, coachId: number, o: { type: '
     if (!at) throw new GroupError('That time isn’t free any more — choose another.')
     return { term: open.term, dates: [new Date(at).toISOString()], weekday: undefined, startTime: undefined }
   }
+  if (!allowsWeekly(open.term)) throw new GroupError('Weekly small groups aren’t available in the school holidays — set up a one-off group instead.')
   const w = open.weekly.find((x) => x.weekday === o.weekday && x.time === o.startTime)
   if (!w) throw new GroupError('That weekly time isn’t free any more — choose another.')
   return { term: open.term, dates: w.sessions, weekday: w.weekday, startTime: w.time }

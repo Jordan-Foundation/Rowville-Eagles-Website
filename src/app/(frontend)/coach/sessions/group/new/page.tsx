@@ -1,3 +1,4 @@
+import { allowsWeekly } from '@/academy/timeframes'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { formatDate } from '@/lib/format'
@@ -35,7 +36,7 @@ export default async function NewGroupPage() {
       ) : casual.length + weekly.length === 0 ? (
         <p className="text-muted">You have no open times left this term — add more in <Link href="/coach/availability" className="underline">Availability</Link>.</p>
       ) : (
-        <GroupForm casual={casual} weekly={weekly} settings={groupSettings(settings)} />
+        <GroupForm casual={casual} weekly={weekly} settings={groupSettings(settings)} holidays={!allowsWeekly(open?.term)} />
       )}
     </div>
   )

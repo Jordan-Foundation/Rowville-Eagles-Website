@@ -87,10 +87,10 @@ export async function loadPrices(payload: Payload): Promise<PriceSection[]> {
     },
     {
       title: 'Foundation Academy 1-on-1s',
-      intro: 'Per Academy term. Term bookings pay the term price × sessions left; casual sessions pay the casual price; families with an active term pay the term-member price for sessions within the window.',
+      intro: 'Per timeframe (school term or holidays). Term bookings pay the term price × sessions left; casual sessions pay the casual price; families with an active term pay the term-member price for sessions within the window.',
       rows: terms.docs.map((t) => ({
         title: t.name,
-        note: t.status,
+        note: `${t.category === 'school-holidays' ? 'holidays · ' : ''}${t.status}`,
         href: `/admin/collections/academy-terms/${t.id}`,
         muted: done(t.status),
         fields: [

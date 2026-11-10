@@ -38,12 +38,12 @@ export async function loadDates(p: Payload): Promise<DateSection[]> {
     },
     {
       id: 'terms',
-      title: 'Academy terms',
-      intro: 'School-term dates for 1-on-1s and group training, and when coaches must submit their availability. Group programs and Mini Ballers linked to a term follow its dates automatically.',
+      title: 'Timeframes',
+      intro: 'School terms and school holidays: dates for 1-on-1s, small groups and group training, and when coaches must submit their availability for each. Group programs and Mini Ballers linked to a term follow its dates automatically.',
       rows: terms.docs.map((t) => ({
         target: `academy-terms:${t.id}`,
         title: t.name,
-        note: t.status,
+        note: `${t.category === 'school-holidays' ? 'holidays' : 'term'} · ${t.status}`,
         href: `/admin/collections/academy-terms/${t.id}`,
         muted: t.status === 'closed',
         fields: [f('academy-terms', 'startDate', 'First day', t.startDate), f('academy-terms', 'endDate', 'Last day', t.endDate), f('academy-terms', 'availabilityDeadline', 'Coach availability due', t.availabilityDeadline)],
@@ -52,7 +52,7 @@ export async function loadDates(p: Payload): Promise<DateSection[]> {
     {
       id: 'programs',
       title: 'Programs & camps',
-      intro: 'Start and finish (date and time). Programs linked to an Academy term take the term’s dates — change those above.',
+      intro: 'Start and finish (date and time). Programs linked to a school term take the term’s dates — change those above.',
       rows: programs.docs.map((x) => {
         const linked = (x.type === 'academy-term' || x.type === 'toddler') && termOf(x.academyTerm)
         return {
@@ -95,14 +95,14 @@ export async function loadDates(p: Payload): Promise<DateSection[]> {
 export async function loadDateIssues(p: Payload, now = new Date()) {
   const settings = await p.findGlobal({ slug: 'site-settings', depth: 0, overrideAccess: true })
   const [terms, programs, cycles] = await Promise.all([
-    p.find({ pagination: false, collection: 'academy-terms', limit: 30, ...q, select: { name: true, status: true, startDate: true, endDate: true } }),
+    p.find({ pagination: false, collection: 'academy-terms', limit: 30, ...q, select: { name: true, status: true, startDate: true, endDate: true, category: true } }),
     p.find({ pagination: false, collection: 'programs', where: { status: { equals: 'open' } }, limit: 100, ...q, select: { title: true, type: true, status: true, startDate: true, endDate: true, academyTerm: true } }),
     p.find({ pagination: false, collection: 'report-cycles', where: { status: { equals: 'open' } }, limit: 20, ...q }),
   ])
   const outstanding = await Promise.all(cycles.docs.map(async (c) => (await p.count({ collection: 'player-reports', where: { cycle: { equals: c.id }, status: { in: ['not_started', 'draft', 'returned'] } }, overrideAccess: true })).totalDocs))
   return dateIssues({
     now,
-    terms: terms.docs.map((t) => ({ id: t.id, name: t.name, status: t.status, startDate: t.startDate, endDate: t.endDate })),
+    terms: terms.docs.map((t) => ({ id: t.id, name: t.name, status: t.status, startDate: t.startDate, endDate: t.endDate, category: t.category })),
     programs: programs.docs.map((x) => ({ id: x.id, name: x.title, type: x.type, status: x.status, startDate: x.startDate, endDate: x.endDate, termLinked: (x.type === 'academy-term' || x.type === 'toddler') && !!x.academyTerm })),
     cycles: cycles.docs.map((c, i) => ({ id: c.id, name: c.name, status: c.status, dueDate: c.dueDate, outstanding: outstanding[i] })),
     season: settings.season ?? null,
