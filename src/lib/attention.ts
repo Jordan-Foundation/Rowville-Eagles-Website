@@ -120,7 +120,7 @@ export async function managementAttention(p: Payload, user: User): Promise<Manag
       if (!programs.length) return 0
       const ids = programs.map((x) => x.id)
       const [waiting, slots] = await Promise.all([
-        p.count({ collection: 'academy-registrations', where: { program: { in: ids }, or: [{ status: { equals: 'interest' } }, { and: [{ status: { equals: 'offered' } }, { slot: { exists: false } }] }] }, ...q }),
+        p.count({ collection: 'academy-registrations', where: { program: { in: ids }, or: [{ status: { equals: 'interest' } }, { and: [{ status: { equals: 'offered' } }, { slot: { exists: false } }] }, { and: [{ status: { equals: 'paid' } }, { slot: { exists: false } }] }] }, ...q }),
         p.find({ pagination: false, collection: 'academy-term-slots', where: { program: { in: ids }, active: { not_equals: false } }, limit: 300, depth: 0, ...q, select: { coaches: true, groups: true } }),
       ])
       const noCoach = slots.docs.reduce((n, s) => {

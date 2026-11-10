@@ -14,6 +14,7 @@ export const programTypes = [
   { label: 'Holiday camp', value: 'holiday-camp' },
   { label: 'Tournament', value: 'tournament' },
   { label: 'Academy term', value: 'academy-term' },
+  { label: 'Academy full year', value: 'academy-year' },
   { label: 'Mini Ballers (ages 2–5)', value: 'toddler' },
   { label: 'Community night', value: 'community' },
   { label: 'Academy trial session', value: 'academy-trial' },
@@ -57,6 +58,26 @@ export const Programs: CollectionConfig = {
           if (term) {
             data.startDate = term.startDate
             data.endDate = term.endDate
+          }
+        }
+        // Per-term Academy pricing (Terms 1 and 4): $400 by default
+        if (type === 'academy-term' && (data.pricingMode ?? originalDoc?.pricingMode) === 'per-term' && data.termPrice == null && originalDoc?.termPrice == null) data.termPrice = 400
+        if (type === 'academy-year' && data.discountPct == null && originalDoc?.discountPct == null) data.discountPct = 10
+        // Full year: dates from its first and last term; the card price is an estimate (worked out exactly at booking)
+        if (type === 'academy-year') {
+          const merged = { ...originalDoc, ...data }
+          const ids = ((merged.yearPrograms ?? []) as unknown[]).map((v) => (v && typeof v === 'object' ? (v as { id: number }).id : (v as number))).filter(Boolean)
+          if (ids.length) {
+            const { docs: terms } = await req.payload.find({ pagination: false, collection: 'programs', where: { id: { in: ids } }, limit: 4, depth: 0, req, overrideAccess: true })
+            const starts = terms.map((t) => t.startDate).filter(Boolean).sort() as string[]
+            const ends = terms.map((t) => t.endDate).filter(Boolean).sort() as string[]
+            if (starts.length) data.startDate = starts[0]
+            if (ends.length) data.endDate = ends.at(-1)
+            try {
+              const { loadYear, yearEstimate } = await import('../academy/terms/full-year')
+              const est = yearEstimate(await loadYear(req.payload, { ...merged, yearPrograms: ids } as never))
+              if (est) data.price = est.total
+            } catch { /* estimate only */ }
           }
         }
         // Academy group terms are priced per session (default $25)
@@ -282,7 +303,32 @@ export const Programs: CollectionConfig = {
     },
     {
       type: 'row',
-      admin: { condition: (d) => d?.type === 'academy-term' || d?.type === 'toddler' },
+      admin: { condition: (d) => d?.type === 'academy-term' },
+      fields: [
+        {
+          name: 'pricingMode',
+          label: 'Pricing',
+          type: 'select',
+          defaultValue: 'per-session',
+          options: [
+            { label: 'Per session (e.g. Terms 2 and 3: $25 a session)', value: 'per-session' },
+            { label: 'Per term (e.g. Terms 1 and 4: $400, 2 sessions a week, pro-rata)', value: 'per-term' },
+          ],
+        },
+        { name: 'termPrice', label: 'Term price (AUD, 2 sessions a week)', type: 'number', min: 0, admin: { condition: (d) => d?.pricingMode === 'per-term', description: 'Late joiners pay pro-rata: term price × sessions left ÷ sessions in the term. Age groups with one training time pay half.' } },
+      ],
+    },
+    {
+      type: 'row',
+      admin: { condition: (d) => d?.type === 'academy-year' },
+      fields: [
+        { name: 'yearPrograms', label: 'Terms in this year', type: 'relationship', relationTo: 'programs', hasMany: true, maxRows: 4, filterOptions: { type: { equals: 'academy-term' } }, admin: { description: 'The four Academy term programs (in order)' } },
+        { name: 'discountPct', label: 'Full-year discount (%)', type: 'number', min: 0, max: 100, defaultValue: 10 },
+      ],
+    },
+    {
+      type: 'row',
+      admin: { condition: (d) => d?.type === 'academy-term' || d?.type === 'toddler' || d?.type === 'academy-year' },
       fields: [
         { name: 'opensAt', label: 'Registrations open', type: 'date', admin: { date: { pickerAppearance: 'dayAndTime' }, description: 'A draft program opens by itself at this time. Set by Yearly setup: Term 1 at the chosen time, later terms 2 weeks before the previous term ends.' } },
         { name: 'autoOpen', label: 'Open automatically', type: 'checkbox', defaultValue: true },

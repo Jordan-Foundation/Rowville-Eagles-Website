@@ -11,6 +11,8 @@ import { localYmd } from '@/lib/time'
 import { defaultPayee, programTypes } from '@/collections/Programs'
 import { isPayee, paymentsMode, stripeAccounts } from '@/lib/stripe-accounts'
 import { BookingForm, type CampOptions } from './BookingForm'
+import { FullYearForm, type YearOptionView } from './FullYearForm'
+import { loadYear, yearOptions } from '@/academy/terms/full-year'
 import { redirect } from 'next/navigation'
 import { currentUser } from '@/lib/auth'
 import { AcademyBackdrop } from '@/components/AcademyBackdrop'
@@ -18,6 +20,7 @@ import { TermBookingForm, type TermSlotOption } from './TermBookingForm'
 import { nightRate, programSlots, slotTaken } from '@/academy/terms/service'
 import { slotLabel as termSlotLabel, spotsLeft, termQuote, yearsLabel } from '@/academy/terms/slots'
 import { programPriceLabel } from '@/lib/format'
+import { clubFeeNote, isPerTerm, slotCounts } from '@/academy/terms/pricing'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Book', robots: { index: false } }
@@ -66,6 +69,7 @@ export default async function BookPage({
     }
   }
   const payee = isPayee(program.payee) ? program.payee : defaultPayee(program.type)
+  const academySettings = await p.findGlobal({ slug: 'academy-settings', depth: 0, overrideAccess: true }).catch(() => null)
   const now = new Date()
   const me = await currentUser()
   const kids = await familyKids(p, me?.id)
@@ -95,6 +99,7 @@ export default async function BookPage({
           priceLabel: q.perSession !== null ? `${q.count} × ${formatAUD(q.perSession)} = ${formatAUD(q.total)}` : formatAUD(q.total),
           twoTotal: q2.total,
           twoLabel: q2.perSession !== null ? `${q2.count} × ${formatAUD(q2.perSession)} = ${formatAUD(q2.total)}` : formatAUD(q2.total),
+          ...slotCounts(s, program),
         }
       })
       prefill = contactPrefill(me)
@@ -124,6 +129,12 @@ export default async function BookPage({
     }))
     const prices = campPrices(program)
     camp = { days, fullPrice: prices.full, dayPrice: prices.day, canFull: days.every((d) => !d.past && d.left !== 0), saving: fullCampSaving(prices, days.length) }
+  }
+  // Academy full year: every Term 1 choice (per year of birth), priced term by term
+  let yearOptionsView: YearOptionView[] | null = null
+  if (program.type === 'academy-year') {
+    const opts = yearOptions(await loadYear(p, program))
+    yearOptionsView = opts.map((o) => ({ key: o.key, slotIds: o.slotIds.join('+'), birthYear: o.birthYear, label: o.label, terms: o.plan.terms.map((t) => ({ title: t.program.title, price: t.price, label: t.label })), sum: o.plan.sum, total: o.plan.total, saving: o.plan.saving, pct: o.plan.pct }))
   }
   let paymentsReady = program.price === 0 && !((program.type === 'academy-term' || program.type === 'toddler') && program.pricePerSession)
   try {
@@ -158,8 +169,10 @@ export default async function BookPage({
               <p className="panel rounded-2xl border border-line bg-surface-2 p-6">
                 This program is fully booked. Please check back later or contact the club about the waitlist.
               </p>
+            ) : yearOptionsView ? (
+              <FullYearForm slug={program.slug} options={yearOptionsView} payeeLabel={stripeAccounts[payee].label} feeNote={clubFeeNote(academySettings?.clubRegistrationFee)} prefill={contactPrefill(me)} kids={kids} />
             ) : termSlots ? (
-              <TermBookingForm slug={program.slug} slots={termSlots} rates={{ one: program.pricePerSession ?? null, two: program.twoNightPricePerSession ?? null }} payeeLabel={stripeAccounts[payee].label} prefill={prefill} kids={kids} bounds={ageBounds(program)} />
+              <TermBookingForm slug={program.slug} slots={termSlots} perTerm={isPerTerm(program) ? program.termPrice ?? 400 : null} feeNote={program.type === 'academy-term' ? clubFeeNote(academySettings?.clubRegistrationFee) : null} rates={{ one: program.pricePerSession ?? null, two: program.twoNightPricePerSession ?? null }} payeeLabel={stripeAccounts[payee].label} prefill={prefill} kids={kids} bounds={ageBounds(program)} />
             ) : (
               <BookingForm
                 slug={program.slug}

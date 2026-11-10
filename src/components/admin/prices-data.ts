@@ -13,7 +13,7 @@ export type PriceSection = { title: string; intro: string; rows: PriceRow[] }
 /** Which fields may be edited from the Prices page (anything else is rejected). */
 export const EDITABLE: Record<string, { fields: string[]; nullable?: string[] }> = {
   'academy-terms': { fields: ['pricePerSession', 'casualPrice', 'termMemberPrice', 'termMemberWindowDays', 'packPricePerSession'], nullable: ['termMemberPrice'] },
-  programs: { fields: ['price', 'pricePerSession', 'twoNightPricePerSession', 'trialPrice', 'fullCampPrice', 'dayPrice'], nullable: ['pricePerSession', 'twoNightPricePerSession'] },
+  programs: { fields: ['price', 'pricePerSession', 'twoNightPricePerSession', 'trialPrice', 'fullCampPrice', 'dayPrice', 'termPrice', 'discountPct'], nullable: ['pricePerSession', 'twoNightPricePerSession'] },
   'selection-rounds': { fields: ['fee'], nullable: ['fee'] },
   squads: { fields: ['fee'], nullable: ['fee'] },
   products: { fields: ['price'] },
@@ -42,7 +42,7 @@ export async function loadPrices(payload: Payload): Promise<PriceSection[]> {
   const money = (n: number) => `$${Number.isInteger(n) ? n : n.toFixed(2)}`
   const [terms, groupPrograms, programs, rounds, squads, products] = await Promise.all([
     payload.find({ pagination: false, collection: 'academy-terms', sort: '-startDate', limit: 12, ...q }),
-    payload.find({ pagination: false, collection: 'programs', where: { type: { in: ['academy-term', 'toddler'] } }, sort: '-startDate', limit: 30, ...q }),
+    payload.find({ pagination: false, collection: 'programs', where: { type: { in: ['academy-term', 'toddler', 'academy-year'] } }, sort: '-startDate', limit: 30, ...q }),
     payload.find({ pagination: false, collection: 'programs', where: { type: { not_in: ['academy-term', 'toddler', 'community', 'private-session'] } }, sort: '-startDate', limit: 100, ...q }),
     payload.find({ pagination: false, collection: 'selection-rounds', where: { kind: { equals: 'tournament' } }, sort: '-createdAt', limit: 30, ...q }),
     payload.find({ pagination: false, collection: 'squads', sort: 'name', limit: 300, ...q }),
@@ -136,7 +136,7 @@ export async function loadPrices(payload: Payload): Promise<PriceSection[]> {
     },
     {
       title: 'Academy group training & Mini Ballers (terms)',
-      intro: 'Families pay the price per session × the sessions left in their training time(s) (at least 2, booked 24h ahead). 2 nights a week uses its own per-session price on both nights; leave it empty to offer 1 night only. Trial sessions use the trial price (0 = free). Mini Ballers is one session a week.',
+      intro: 'Per-session terms (e.g. Terms 2 and 3): the price per session × the sessions left in their training time(s) (at least 2, booked 24h ahead). Per-term terms (e.g. Terms 1 and 4): one term price for 2 sessions a week, pro-rata for late joiners. The full year is the four terms less its discount. 2 nights a week uses its own per-session price on both nights; leave it empty to offer 1 night only. Trial sessions use the trial price (0 = free). Mini Ballers is one session a week.',
       rows: groupPrograms.docs.map((p): PriceRow => p.type === 'toddler' ? {
         title: p.title,
         note: ['Mini Ballers', p.status].filter(Boolean).join(' · '),
@@ -144,6 +144,21 @@ export async function loadPrices(payload: Payload): Promise<PriceSection[]> {
         muted: done(p.status),
         fields: [
           { key: `programs.${p.id}.pricePerSession`, label: 'Per session', value: p.pricePerSession ?? 20, unit: 'aud' as const },
+          { key: `programs.${p.id}.trialPrice`, label: 'Trial session', value: p.trialPrice ?? 0, unit: 'aud' as const },
+        ],
+      } : p.type === 'academy-year' ? {
+        title: p.title,
+        note: ['Full year', p.status].filter(Boolean).join(' · '),
+        href: `/admin/collections/programs/${p.id}`,
+        muted: done(p.status),
+        fields: [{ key: `programs.${p.id}.discountPct`, label: 'Off the four terms', value: p.discountPct ?? 10, unit: 'pct' as const }],
+      } : p.pricingMode === 'per-term' ? {
+        title: p.title,
+        note: ['Per term · 2 sessions a week · pro-rata', p.status].filter(Boolean).join(' · '),
+        href: `/admin/collections/programs/${p.id}`,
+        muted: done(p.status),
+        fields: [
+          { key: `programs.${p.id}.termPrice`, label: 'Term price', value: p.termPrice ?? 400, unit: 'aud' as const },
           { key: `programs.${p.id}.trialPrice`, label: 'Trial session', value: p.trialPrice ?? 0, unit: 'aud' as const },
         ],
       } : ({

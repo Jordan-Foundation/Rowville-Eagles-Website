@@ -7,12 +7,13 @@ import type { KidOption } from '@/lib/family-kids'
 import { PolicyLink } from '@/components/PolicyLink'
 import { useActionState, useState } from 'react'
 import { useFormStatus } from 'react-dom'
+import { perTermQuote } from '@/academy/terms/pricing'
 import { bookTerm, type TermState } from './term-actions'
 import { Field, Fieldset, Input, inputCls } from '@/components/forms/Field'
 
-export type TermSlotOption = { id: number; label: string; years: string; birthYears: number[]; remaining: number | null; sessions: string; bookable: boolean; total: number; priceLabel: string; twoTotal: number; twoLabel: string }
+export type TermSlotOption = { id: number; label: string; years: string; birthYears: number[]; remaining: number | null; sessions: string; bookable: boolean; total: number; priceLabel: string; twoTotal: number; twoLabel: string; all: number; left: number }
 
-export function TermBookingForm(props: { slug: string; slots: TermSlotOption[]; rates: { one: number | null; two: number | null }; payeeLabel: string; prefill?: Record<string, string>; kids?: KidOption[]; bounds?: { min: number | null; max: number | null } }) {
+export function TermBookingForm(props: { slug: string; slots: TermSlotOption[]; rates: { one: number | null; two: number | null }; perTerm?: number | null; feeNote?: string | null; payeeLabel: string; prefill?: Record<string, string>; kids?: KidOption[]; bounds?: { min: number | null; max: number | null } }) {
   const [state, action] = useActionState<TermState, FormData>(bookTerm, {})
   const v = { ...props.prefill, ...state.values }
   const kids = props.kids ?? []
@@ -28,11 +29,16 @@ export function TermBookingForm(props: { slug: string; slots: TermSlotOption[]; 
   const open = fits.filter((s) => s.remaining !== 0)
   const [nights, setNights] = useState<'1' | '2'>(v.nights === '2' ? '2' : '1')
   const [pair, setPair] = useState<number[]>([])
-  const canTwo = props.rates.two != null && open.length >= 2
-  const two = canTwo && nights === '2'
+  const perTerm = props.perTerm ?? null
+  // Per-term pricing is 2 sessions a week: two training times whenever there are two
+  const canTwo = perTerm != null ? open.length >= 2 : props.rates.two != null && open.length >= 2
+  const two = canTwo && (perTerm != null || nights === '2')
   const twoPicked = open.length === 2 ? open : open.filter((s) => pair.includes(s.id))
   const chosen = open.length === 1 ? open[0] : open.find((s) => String(s.id) === picked)
-  const total = two ? (twoPicked.length === 2 ? twoPicked.reduce((n, s) => n + s.twoTotal, 0) : null) : (chosen?.total ?? null)
+  const termTotal = (list: TermSlotOption[]) => perTermQuote({ pricingMode: 'per-term', termPrice: perTerm }, list.map((s) => ({ all: s.all, left: s.left })))
+  const total = perTerm != null
+    ? two ? (twoPicked.length === 2 ? termTotal(twoPicked).total : null) : chosen ? termTotal([chosen]).total : null
+    : two ? (twoPicked.length === 2 ? twoPicked.reduce((n, s) => n + s.twoTotal, 0) : null) : (chosen?.total ?? null)
   const togglePair = (id: number) => setPair((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id].slice(-2)))
   const aud = (n: number) => n.toLocaleString('en-AU', { style: 'currency', currency: 'AUD', minimumFractionDigits: n % 1 ? 2 : 0 })
   const interest = year !== null && open.length === 0
@@ -102,7 +108,14 @@ export function TermBookingForm(props: { slug: string; slots: TermSlotOption[]; 
             </p>
           ) : (
             <div className="grid gap-3">
-              {canTwo && (
+              {perTerm != null && (
+                <p className="text-sm">
+                  <strong>{aud(perTerm)} for the term</strong> · {canTwo ? '2 sessions a week' : '1 session a week (half the term price)'}
+                  {total != null && (two ? twoPicked : chosen ? [chosen] : []).some((s) => s.left < s.all) && <span className="text-muted"> — joining late, so you pay for the sessions left: {aud(total)}</span>}
+                </p>
+              )}
+              {perTerm != null && two && <input type="hidden" name="nights" value="2" />}
+              {canTwo && perTerm == null && (
                 <div className="grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Nights a week">
                   {(['1', '2'] as const).map((n) => (
                     <label key={n} className="flex cursor-pointer items-center gap-3 rounded-lg border border-line bg-surface px-4 py-3 text-sm has-[:checked]:border-ink has-[:checked]:ring-1 has-[:checked]:ring-ink">
@@ -127,7 +140,7 @@ export function TermBookingForm(props: { slug: string; slots: TermSlotOption[]; 
                         <span>
                           <span className="block font-semibold">{s.label}</span>
                           <span className="block text-xs text-muted">{s.years} · {s.sessions}</span>
-                          <span className="block text-xs font-semibold">{s.twoLabel}</span>
+                          {perTerm == null && <span className="block text-xs font-semibold">{s.twoLabel}</span>}
                         </span>
                       </span>
                       {s.remaining !== null && <span className="shrink-0 text-xs text-muted">{s.remaining} left</span>}
@@ -144,7 +157,7 @@ export function TermBookingForm(props: { slug: string; slots: TermSlotOption[]; 
                         <span>
                           <span className="block font-semibold">{s.label}</span>
                           <span className="block text-xs text-muted">{s.years} · {s.sessions}</span>
-                          <span className="block text-xs font-semibold">{s.priceLabel}</span>
+                          <span className="block text-xs font-semibold">{perTerm != null ? `${aud(termTotal([s]).total)} for the term` : s.priceLabel}</span>
                         </span>
                       </span>
                       {s.remaining !== null && <span className="shrink-0 text-xs text-muted">{s.remaining} left</span>}
@@ -191,6 +204,7 @@ export function TermBookingForm(props: { slug: string; slots: TermSlotOption[]; 
         </p>
       )}
       {!interest && <PayeeChip label={props.payeeLabel} />}
+      {props.feeNote && !interest && <p role="note" className="text-sm text-muted">{props.feeNote}</p>}
       <Submit label={interest ? 'Register interest · no charge' : total != null ? `Continue to payment · ${aud(total)}` : 'Continue to payment'} />
     </form>
   )

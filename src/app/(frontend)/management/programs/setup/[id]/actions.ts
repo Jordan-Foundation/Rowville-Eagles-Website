@@ -33,7 +33,7 @@ export async function saveProgram(_prev: ProgramEditState, fd: FormData): Promis
       data: {
         title,
         ...(STATUSES.includes(status) ? { status: status as 'open' } : {}),
-        ...(prog.type === 'academy-term' || prog.type === 'toddler'
+        ...(prog.type === 'academy-term' || prog.type === 'toddler' || prog.type === 'academy-year'
           ? (() => {
               const at = s(fd, 'opensAt', 20)
               return { opensAt: /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(at) ? localToUtc(at.slice(0, 10), at.slice(11)).toISOString() : null, autoOpen: fd.get('autoOpen') === 'on' }

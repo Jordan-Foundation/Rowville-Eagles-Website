@@ -117,3 +117,19 @@ export async function groupsAction(_prev: TermStaffState, fd: FormData): Promise
   done()
   return { done: `Added ${name}.` }
 }
+
+/** Full year: put a paid player into this term's training time (they're emailed the time). */
+export async function placeFullYear(_prev: TermStaffState, fd: FormData): Promise<TermStaffState> {
+  const user = await staff()
+  if (!user) return { error: 'Only admins can place players.' }
+  const reg = Number(fd.get('reg'))
+  const slot = Number(fd.get('slot'))
+  if (!reg || !slot) return { error: 'Choose a training time.' }
+  const { moveToSlot } = await import('@/academy/terms/manage')
+  const { getAgeRules } = await import('@/lib/age-rules')
+  const p = await payload()
+  const r = await moveToSlot(p, [reg], slot, { reason: 'Full-year placement', actorId: user.id, notify: true, rules: await getAgeRules(p) })
+  revalidatePath('/management/academy/terms')
+  if (r.blocked.length) return { error: r.blocked.join(' ') }
+  return { done: r.moved ? 'Placed — the family has been emailed the training time.' : r.skipped.join(' ') || 'Nothing changed.' }
+}

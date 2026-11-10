@@ -4,6 +4,7 @@ import { programTypes } from '@/collections/Programs'
 import { formatDate } from '@/lib/format'
 import { PriceTag } from './PriceTag'
 import { RfaLogo } from './Logos'
+import { ClubFeeNote, isAcademyFeeProgram } from './ClubFeeNote'
 
 export function ProgramCard({ p }: { p: Program }) {
   const typeLabel = programTypes.find((t) => t.value === p.type)?.label
@@ -27,6 +28,7 @@ export function ProgramCard({ p }: { p: Program }) {
         {p.startDate && <div><dt className="sr-only">Starts</dt><dd>{formatDate(p.startDate)}</dd></div>}
         {p.ageRange && <div><dt className="sr-only">Ages</dt><dd>{p.ageRange}</dd></div>}
       </dl>
+      {isAcademyFeeProgram(p.type) && <div className="mt-3"><ClubFeeNote /></div>}
       <div className="mt-5 flex items-center justify-between border-t border-line pt-4">
         <PriceTag p={p} big="text-2xl" />
         <span className="text-sm font-semibold text-ink transition group-hover:text-accent">View details →</span>

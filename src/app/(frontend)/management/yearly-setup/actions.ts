@@ -51,6 +51,6 @@ export async function publishAction(fd: FormData) {
   const user = await managementOrNull()
   await guard(async () => {
     const r = await publishSetup(await payload(), year, user?.id)
-    return `Published ${year}: ${r.timeframes.length} timeframes and ${r.programs.filter((x) => x.action === 'created').length} Academy term programs (as drafts).`
+    return `Published ${year}: ${r.timeframes.length} timeframes and ${r.programs.filter((x) => x.action === 'created').length} Academy programs (as drafts).`
   }, year)
 }

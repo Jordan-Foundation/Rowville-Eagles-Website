@@ -86,7 +86,7 @@ export async function onBookingPaid(payload: Payload, booking: Booking) {
       for (const r of regs.docs) {
         await payload.update({ collection: 'selection-entries', id: r.id, data: { status: 'registered' }, overrideAccess: true, context: { skipOffer: true } })
       }
-    } else if (program.type === 'academy-term') {
+    } else if (program.type === 'academy-term' || program.type === 'academy-year') {
       await addMembership(payload, participant, 'rfa')
     }
   }
@@ -114,6 +114,18 @@ export async function onBookingPaid(payload: Payload, booking: Booking) {
         ['Days', bookedDays.map((d) => `${campDayLabel(d.date)} · ${campHoursLabel(d)}`).join('<br>')],
       ]
     : []
+  // Full year: each term's training time (or that Management will confirm it)
+  if (program.type === 'academy-year') {
+    const { docs: regs } = await payload.find({ pagination: false, collection: 'academy-registrations', where: { booking: { equals: booking.id } }, limit: 12, depth: 1, overrideAccess: true, sort: 'createdAt' })
+    const byTerm = new Map<string, string[]>()
+    for (const r of regs) {
+      const title = typeof r.program === 'object' ? r.program.title : 'Term'
+      const slot = r.slot && typeof r.slot === 'object' ? `${r.slot.weekday} ${r.slot.startTime}–${r.slot.endTime}` : 'time to be confirmed — we’ll email you'
+      byTerm.set(title, [...(byTerm.get(title) ?? []), slot])
+    }
+    termRows = [...byTerm.entries()].map(([t, s]) => [t, s.join(' + ')] as [string, string])
+  }
+  const feeLine = program.type === 'academy-term' || program.type === 'academy-year' ? await (await import('../academy/terms/service')).feeNote(payload) : null
   const link = await accountLink(payload, user)
   const who = booking.player?.teamName || [booking.player?.firstName, booking.player?.lastName].filter(Boolean).join(' ')
   const html = emailLayout(academy ? 'academy' : 'club', [
@@ -131,7 +143,7 @@ export async function onBookingPaid(payload: Payload, booking: Booking) {
       after:
         program.type === 'registration'
           ? `<strong>Next step:</strong> complete the Football Victoria section in <a href="${settings.links?.playFootball || 'https://www.playfootball.com.au'}">PlayFootball</a> and select Rowville Eagles FC.`
-          : `${bookingExtras(program, booking.reference)}<br><br>Your account shows every upcoming session, camp and booking for your family in one place.`,
+          : `${feeLine ? `${feeLine}<br><br>` : ''}${bookingExtras(program, booking.reference)}<br><br>Your account shows every upcoming session, camp and booking for your family in one place.`,
     },
   ])
   await sendEmail(payload, {

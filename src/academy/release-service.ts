@@ -9,7 +9,7 @@ const q = { overrideAccess: true, depth: 0 } as const
 
 /** Open every draft Academy term program whose opening time has come, and tell Management. */
 export async function openDuePrograms(p: Payload, now = new Date()) {
-  const { docs } = await p.find({ pagination: false, collection: 'programs', where: { type: { in: ['academy-term', 'toddler'] }, status: { equals: 'draft' }, opensAt: { less_than_equal: now.toISOString() } }, limit: 50, ...q })
+  const { docs } = await p.find({ pagination: false, collection: 'programs', where: { type: { in: ['academy-term', 'toddler', 'academy-year'] }, status: { equals: 'draft' }, opensAt: { less_than_equal: now.toISOString() } }, limit: 50, ...q })
   const opened = docs.filter((x) => dueToOpen(x, now))
   for (const x of opened) await p.update({ collection: 'programs', id: x.id, data: { status: 'open' }, ...q })
   if (opened.length) {

@@ -12,7 +12,7 @@ import { programSlots, slotTaken } from '@/academy/terms/service'
 import { slotLabel, spotsLeft, termQuote, upcomingSessions, yearsLabel } from '@/academy/terms/slots'
 import { boardRows, clashMap } from '@/academy/terms/board-data'
 import type { AcademyCoach } from '@/payload-types'
-import { CancelForm, OfferForm } from './Forms'
+import { CancelForm, OfferForm, PlaceForm } from './Forms'
 import { Board } from './Board'
 import { AddGroup, CoachPicker, RemoveGroup } from './SlotPanel'
 
@@ -41,7 +41,9 @@ export default async function StaffTermsPage({ searchParams }: { searchParams: P
   const coachName = new Map(coaches.map((c) => [c.id, c.name]))
   const clashes = await clashMap(p, program, slots, coachName)
   const unplaced = regs.filter((r) => r.status === 'interest' || (r.status === 'offered' && !r.slot))
-  const placed = regs.filter((r) => !unplaced.includes(r))
+  // Full-year players whose training time for this term Management still has to choose
+  const toPlace = regs.filter((r) => r.status === 'paid' && !r.slot)
+  const placed = regs.filter((r) => !unplaced.includes(r) && !toPlace.includes(r))
   const rows = boardRows(placed, slots, rules)
   const options = (by: number | null | undefined) => slots.map((s) => ({ id: s.id, label: `${slotLabel(s)} · ${yearsLabel(s.birthYears)} · ${spotsLeft(s, taken.get(s.id) ?? 0) ?? '∞'} left`, fits: by ? (s.birthYears ?? []).includes(by) : false }))
   const count = (slotId: number, groupId?: string) => placed.filter((r) => rel(r.slot) === slotId && (groupId === undefined || r.groupId === groupId)).length
@@ -63,6 +65,23 @@ export default async function StaffTermsPage({ searchParams }: { searchParams: P
         <Link href="/admin/collections/academy-term-slots/create" className="underline">Add a training time</Link> · <Link href="/management/prices" className="underline">Prices</Link>
       </p>
 
+      {toPlace.length > 0 && (
+        <section className="mt-10" aria-label="Full-year players to place">
+          <h2 className={h2}>Full-year players to place ({toPlace.length})</h2>
+          <p className="mt-1 text-sm text-muted">Paid for the full year — their usual night and time doesn’t run this term (or was full). Choose a training time; the family is emailed.</p>
+          <ul className="mt-4 divide-y divide-line rounded-2xl border border-line">
+            {toPlace.map((r) => {
+              const by = r.playingBirthYear ?? r.birthYear
+              return (
+                <li key={r.id} className="grid gap-2 p-4 lg:grid-cols-[1fr_auto] lg:items-center">
+                  <p className="font-semibold">{r.player.firstName} {r.player.lastName} <span className="font-normal text-muted">· {by ? groupLabel(by) : '?'} · {r.reference} · {r.nights === '2' ? '2 nights' : '1 night'}</span></p>
+                  {slots.length ? <PlaceForm reg={r.id} options={options(by)} /> : <span className="text-xs text-muted">Add a training time first</span>}
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+      )}
       {unplaced.length > 0 && (
         <section className="mt-10">
           <h2 className={h2}>Waiting for a place ({unplaced.length})</h2>

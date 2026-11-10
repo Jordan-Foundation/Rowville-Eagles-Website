@@ -27,8 +27,8 @@ export default async function ProgramSetup({ params }: { params: Promise<{ id: s
           <Link href="/management/prices" className="underline">Prices</Link>
           <Link href={`/admin/collections/programs/${prog.id}`} className="text-muted underline">Description &amp; photo (admin)</Link>
         </p>
-        {(prog.type === 'academy-term' || prog.type === 'toddler') && <p className="mt-2 text-sm"><strong>Registrations:</strong> {releaseLabel(prog, new Date(), (iso) => formatDate(iso, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }))}</p>}
-        <div className="mt-3"><DownloadCsv list={prog.type === 'academy-term' || prog.type === 'toddler' ? 'registrations' : 'bookings'} params={{ program: prog.id }} label="Download bookings (CSV)" /></div>
+        {(prog.type === 'academy-term' || prog.type === 'toddler' || prog.type === 'academy-year') && <p className="mt-2 text-sm"><strong>Registrations:</strong> {releaseLabel(prog, new Date(), (iso) => formatDate(iso, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }))}</p>}
+        <div className="mt-3"><DownloadCsv list={prog.type === 'academy-term' || prog.type === 'toddler' || prog.type === 'academy-year' ? 'registrations' : 'bookings'} params={{ program: prog.id }} label="Download bookings (CSV)" /></div>
       </div>
       <ProgramForm prog={{ id: prog.id, type: prog.type, opensAtLocal: prog.opensAt ? `${localYmd(new Date(prog.opensAt))}T${localWeekdayTime(prog.opensAt).time}` : '', autoOpen: prog.autoOpen === false ? 'off' : 'on', title: prog.title, status: prog.status, capacity: prog.capacity, summary: prog.summary, location: prog.location, scheduleNote: prog.scheduleNote, ageRange: prog.ageRange, minAge: prog.minAge, maxAge: prog.maxAge, whatToBring: prog.whatToBring, dropOffPickUp: prog.dropOffPickUp, priceNote: prog.priceNote }} />
     </div>

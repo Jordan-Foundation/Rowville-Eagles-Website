@@ -107,6 +107,7 @@ export const AcademyRegistrations: CollectionConfig = {
     { name: 'account', type: 'relationship', relationTo: 'users', index: true },
     { name: 'participant', type: 'relationship', relationTo: 'participants', index: true },
     { name: 'booking', label: 'Payment', type: 'relationship', relationTo: 'bookings', admin: { readOnly: true } },
+    { name: 'fullYear', label: 'Part of a full-year registration', type: 'checkbox', defaultValue: false, admin: { readOnly: true, position: 'sidebar' } },
     {
       type: 'row',
       fields: [

@@ -1,5 +1,6 @@
 import { nudgeOpenPrograms } from '@/academy/release-service'
 import { PriceTag } from '@/components/PriceTag'
+import { ClubFeeNote } from '@/components/ClubFeeNote'
 import { DashIcon } from '@/components/dashboard/icons'
 import Link from 'next/link'
 import type { Metadata } from 'next'
@@ -36,15 +37,17 @@ export default async function AcademyPage() {
   const p = await payload()
   await nudgeOpenPrograms(p)
   const nowIso = new Date().toISOString()
-  const [{ docs: terms }, { docs: camps }, oneOnOneTerms] = await Promise.all([
+  const [{ docs: terms }, { docs: camps }, oneOnOneTerms, { docs: years }] = await Promise.all([
     p.find({ pagination: false, collection: 'programs', where: { type: { equals: 'academy-term' }, status: { in: ['open', 'full'] }, or: [{ endDate: { greater_than: nowIso } }, { endDate: { exists: false } }] }, sort: 'startDate', depth: 0, limit: 1 }),
     p.find({ pagination: false, collection: 'programs', where: { type: { equals: 'holiday-camp' }, status: { in: ['open', 'full'] }, or: [{ endDate: { greater_than: nowIso } }, { and: [{ endDate: { exists: false } }, { startDate: { greater_than: nowIso } }] }] }, sort: 'startDate', depth: 0, limit: 1 }),
     openTerms(p),
+    p.find({ pagination: false, collection: 'programs', where: { type: { equals: 'academy-year' }, status: { in: ['open', 'full'] } }, sort: 'startDate', depth: 0, limit: 1 }),
   ])
   const oneTerm = oneOnOneTerms[0]
   const oneFrom = oneTerm ? Math.min(...[oneTerm.pricePerSession, oneTerm.casualPrice].filter((x): x is number => typeof x === 'number')) : null
   const choices = [
-    ...terms.map((t) => ({ key: 'term', eyebrow: 'Academy term', title: t.title, summary: t.summary ?? '', meta: [t.ageRange, t.scheduleNote, t.startDate && formatDate(t.startDate)], price: <PriceTag p={t} big="font-display text-3xl" />, href: `/programs/${t.slug}`, cta: t.status === 'full' ? 'Details & waitlist →' : 'Details & book →' })),
+    ...terms.map((t) => ({ key: 'term', eyebrow: 'Academy term', title: t.title, summary: t.summary ?? '', meta: [t.ageRange, t.scheduleNote, t.startDate && formatDate(t.startDate)], price: <><PriceTag p={t} big="font-display text-3xl" /><ClubFeeNote className="mt-1 text-xs text-muted" /></>, href: `/programs/${t.slug}`, cta: t.status === 'full' ? 'Details & waitlist →' : 'Details & book →' })),
+    ...years.map((y) => ({ key: 'year', eyebrow: 'Full year · save ' + (y.discountPct ?? 10) + '%', title: y.title, summary: y.summary ?? '', meta: [y.ageRange, y.startDate && formatDate(y.startDate)], price: <><PriceTag p={y} big="font-display text-3xl" /><ClubFeeNote className="mt-1 text-xs text-muted" /></>, href: `/programs/${y.slug}`, cta: 'Details & book →' })),
     ...camps.map((c) => ({ key: 'camp', eyebrow: 'Holiday camp', title: c.title, summary: c.summary ?? '', meta: [c.ageRange, c.scheduleNote, c.startDate && formatDate(c.startDate)], price: <PriceTag p={c} big="font-display text-3xl" />, href: `/programs/${c.slug}`, cta: c.status === 'full' ? 'Details & waitlist →' : 'Details & book →' })),
     {
       key: '1on1',

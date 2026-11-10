@@ -105,5 +105,12 @@ export const AcademySettings: GlobalConfig = {
         },
       ],
     },
+    {
+      type: 'collapsible',
+      label: 'Academy fees note',
+      fields: [
+        { name: 'clubRegistrationFee', label: 'Rowville Eagles player registration (AUD)', type: 'number', defaultValue: 950, min: 0, admin: { description: 'Shown on every Academy program page, card and checkout: “Academy fees do not include the $950 Rowville Eagles player registration.”' } },
+      ],
+    },
   ],
 }

@@ -4,6 +4,7 @@ import { localYmd } from '@/lib/time'
 import { priceBreakdown } from '@/lib/format'
 import { campDayLabel, campDayList, campHoursLabel, campPrices, fullCampSaving, placesByDay } from '@/lib/camps'
 import { PriceTag } from '@/components/PriceTag'
+import { ClubFeeNote, isAcademyFeeProgram } from '@/components/ClubFeeNote'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { RichText } from '@payloadcms/richtext-lexical/react'
@@ -144,6 +145,7 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
             )
           })()}
           {p.priceNote && <p className="mt-1 text-sm text-muted">{p.priceNote}</p>}
+          {isAcademyFeeProgram(p.type) && <ClubFeeNote className="mt-2 text-sm text-muted" />}
           <dl className="mt-6 space-y-3 border-t border-line pt-6 text-sm">
             {facts.map(([k, v]) => (
               <div key={k} className="flex justify-between gap-4">

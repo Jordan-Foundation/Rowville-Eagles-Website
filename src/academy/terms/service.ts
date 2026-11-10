@@ -1,3 +1,4 @@
+import { clubFeeNote, isPerTerm, perTermQuote, slotCounts } from './pricing'
 import { brandOf } from './brand-of'
 import type { Payload } from 'payload'
 import type { AcademyRegistration, AcademyTermSlot, Booking, Program, User } from '@/payload-types'
@@ -81,11 +82,20 @@ export const nightRate = (program: Pick<Program, 'pricePerSession' | 'twoNightPr
  * Create one payment for a registration — or both nights of a 2-nights-a-week place — and return where
  * to send the family (Stripe, or the success page when free).
  */
+/** The $950 note for checkouts and emails (amount from Academy settings). */
+export async function feeNote(payload: Payload) {
+  const s = await payload.findGlobal({ slug: 'academy-settings', depth: 0, overrideAccess: true }).catch(() => null)
+  return clubFeeNote(s?.clubRegistrationFee)
+}
+
 export async function checkoutRegistrations(payload: Payload, items: { reg: AcademyRegistration; slot: AcademyTermSlot }[], program: Program, cancelPath: string) {
   const nights = items.length === 2 ? 2 : 1
   const rate = nightRate(program, nights)
   const quotes = items.map((i) => ({ ...i, quote: termQuote(i.slot, program, rate) }))
   if (quotes.some((q) => !q.quote.bookable)) throw new TermClosedError()
+  // Terms 1 and 4: one term price (2 sessions a week), pro-rata — shared across the nights
+  const perTerm = isPerTerm(program) ? perTermQuote(program, items.map((i) => slotCounts(i.slot, program))) : null
+  if (perTerm) quotes.forEach((q, n) => { q.quote = { ...q.quote, total: perTerm.shares[n], perSession: null } })
   const full = Math.round(quotes.reduce((n, q) => n + q.quote.total, 0) * 100) / 100
   const primary = quotes[0].reg
   const payee = payeeOf(program)
@@ -131,15 +141,18 @@ export async function checkoutRegistrations(payload: Payload, items: { reg: Acad
     return `/checkout/success?kind=booking&ref=${reference}`
   }
   const who = `${primary.player.firstName} ${primary.player.lastName}`
+  const note = program.type === 'academy-term' ? ` · ${await feeNote(payload)}` : ''
   try {
     const checkout = await startCheckout({
       payee,
       kind: 'booking',
       reference,
       email: primary.contact.email,
-      items: quotes.map((q) =>
+      items: perTerm
+        ? [{ name: program.title, description: `${who} · ${quotes.map((q) => slotLabel(q.slot)).join(' + ')} · ${perTerm.left} session${perTerm.left === 1 ? '' : 's'}${perTerm.proRata ? ` (pro-rata: ${perTerm.left} of ${perTerm.all})` : ''}${note}`, unitAmount: full, quantity: 1 }]
+        : quotes.map((q) =>
         q.quote.perSession !== null
-          ? { name: `${program.title} — ${slotLabel(q.slot)}`, description: `${who} · ${q.quote.count} sessions${nights === 2 ? ' (2 nights a week)' : ''}`, unitAmount: q.quote.perSession, quantity: q.quote.count }
+          ? { name: `${program.title} — ${slotLabel(q.slot)}`, description: `${who} · ${q.quote.count} sessions${nights === 2 ? ' (2 nights a week)' : ''}${note}`, unitAmount: q.quote.perSession, quantity: q.quote.count }
           : { name: program.title, description: `${who} · ${slotLabel(q.slot)}`, unitAmount: q.quote.total, quantity: 1 },
       ),
       discount: promo ? { amount: promo.off, label: promo.label } : null,
@@ -287,5 +300,7 @@ export async function markTermRegistrationPaid(payload: Payload, booking: Bookin
   // 2 nights a week: the other night is paid by the same booking
   const other = rel(primary.pairedWith as never)
   const second = other ? await payload.update({ collection: 'academy-registrations', id: other, overrideAccess: true, data }) : null
+  // Full year: every term's registration is paid by this one booking
+  await payload.update({ collection: 'academy-registrations', where: { booking: { equals: booking.id }, status: { equals: 'pending_payment' } }, overrideAccess: true, data })
   return { ...primary, second }
 }

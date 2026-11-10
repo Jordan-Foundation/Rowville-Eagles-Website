@@ -858,6 +858,7 @@ export interface Program {
     | 'holiday-camp'
     | 'tournament'
     | 'academy-term'
+    | 'academy-year'
     | 'toddler'
     | 'community'
     | 'academy-trial'
@@ -976,6 +977,16 @@ export interface Program {
    * Start and end dates are taken from this term automatically.
    */
   academyTerm?: (number | null) | AcademyTerm;
+  pricingMode?: ('per-session' | 'per-term') | null;
+  /**
+   * Late joiners pay pro-rata: term price × sessions left ÷ sessions in the term. Age groups with one training time pay half.
+   */
+  termPrice?: number | null;
+  /**
+   * The four Academy term programs (in order)
+   */
+  yearPrograms?: (number | Program)[] | null;
+  discountPct?: number | null;
   /**
    * A draft program opens by itself at this time. Set by Yearly setup: Term 1 at the chosen time, later terms 2 weeks before the previous term ends.
    */
@@ -1499,6 +1510,7 @@ export interface AcademyRegistration {
   account?: (number | null) | User;
   participant?: (number | null) | Participant;
   booking?: (number | null) | Booking;
+  fullYear?: boolean | null;
   offeredAt?: string | null;
   offerExpiresAt?: string | null;
   paidAt?: string | null;
@@ -3395,6 +3407,7 @@ export interface AcademyRegistrationsSelect<T extends boolean = true> {
   account?: T;
   participant?: T;
   booking?: T;
+  fullYear?: T;
   offeredAt?: T;
   offerExpiresAt?: T;
   paidAt?: T;
@@ -3941,6 +3954,10 @@ export interface ProgramsSelect<T extends boolean = true> {
         id?: T;
       };
   academyTerm?: T;
+  pricingMode?: T;
+  termPrice?: T;
+  yearPrograms?: T;
+  discountPct?: T;
   opensAt?: T;
   autoOpen?: T;
   weeklySessions?:
@@ -4990,6 +5007,10 @@ export interface AcademySetting {
     confirmReminderHours?: number | null;
     escalateHours?: number | null;
   };
+  /**
+   * Shown on every Academy program page, card and checkout: “Academy fees do not include the $950 Rowville Eagles player registration.”
+   */
+  clubRegistrationFee?: number | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -5289,6 +5310,7 @@ export interface AcademySettingsSelect<T extends boolean = true> {
         confirmReminderHours?: T;
         escalateHours?: T;
       };
+  clubRegistrationFee?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

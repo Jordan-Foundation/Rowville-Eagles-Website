@@ -9,6 +9,7 @@ import { birthYearOf } from '@/lib/age-groups'
 import { checkoutRegistrations, emailInterest, existingRegistration, nightRate, programSlots, slotTaken, TermClosedError } from '@/academy/terms/service'
 import { slotChoice, termQuote } from '@/academy/terms/slots'
 import { toddlerAgeOk } from '@/academy/terms/toddler'
+import { isPerTerm } from '@/academy/terms/pricing'
 
 export type TermState = { error?: string; interest?: { reference: string; reason: 'no_slot' | 'full'; email: string }; values?: Record<string, string> }
 
@@ -78,7 +79,10 @@ export async function bookTerm(_prev: TermState, fd: FormData): Promise<TermStat
   }
 
   // 1 night: one time (picked for them if only one fits). 2 nights: two times at the 2-night rate.
-  const twoNights = program.type === 'academy-term' && str(fd, 'nights') === '2' && program.twoNightPricePerSession != null
+  // Per-term pricing (Terms 1 and 4) is 2 sessions a week: two training times whenever the age group has them
+  const perTerm = isPerTerm(program)
+  const openAny = slotChoice(slots, birthYear, taken, (s) => termQuote(s, program, program).bookable).slots
+  const twoNights = perTerm ? openAny.length >= 2 : program.type === 'academy-term' && str(fd, 'nights') === '2' && program.twoNightPricePerSession != null
   const open = slotChoice(slots, birthYear, taken, (s) => termQuote(s, program, nightRate(program, twoNights ? 2 : 1)).bookable).slots
   let picked: typeof open
   if (twoNights) {

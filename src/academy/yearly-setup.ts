@@ -75,6 +75,7 @@ export async function publishPlan(p: Payload, setup: YearSetup): Promise<PlanIte
     const opens = new Date(opensAtFor(n, (setup.terms ?? []).map((t) => t.end!), setup.term1OpensAt)).toLocaleString('en-AU', { timeZone: 'Australia/Sydney', weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
     items.push({ kind: 'program', name: `Academy Term ${n} ${setup.year}`, action: 'create', detail: `${prev ? `Draft, copying ${slots} training time${slots === 1 ? '' : 's'} from ${prev.title}` : 'Draft — add its training times'} · registrations open ${n === 1 && !setup.term1OpensAt ? 'when published' : opens}` })
   }
+  items.push({ kind: 'program', name: `Academy Full Year ${setup.year}`, action: 'create', detail: 'All four terms in one payment, 10% off · opens with Term 1' })
   return items
 }
 
@@ -120,6 +121,7 @@ export async function publishSetup(p: Payload, year: number, actorId?: number | 
     results.timeframes.push({ id: doc.id, name: doc.name, action: existing ? 'updated' : 'created' })
     if (r.period.startsWith('term-')) termIds[Number(r.period.slice(5))] = doc.id
   }
+  const programIds: number[] = []
   for (let n = 1; n <= 4; n++) {
     const tfId = termIds[n]
     const existing = (await p.find({ pagination: false, collection: 'programs', where: { academyTerm: { equals: tfId }, type: { equals: 'academy-term' } }, limit: 1, ...q })).docs[0]
@@ -128,6 +130,7 @@ export async function publishSetup(p: Payload, year: number, actorId?: number | 
       // Not open yet: it opens on the schedule too
       if (existing.status === 'draft' && !existing.opensAt) await p.update({ collection: 'programs', id: existing.id, data: { opensAt, autoOpen: true }, ...q })
       results.programs.push({ id: existing.id, title: existing.title, action: 'kept', slots: 0 })
+      programIds.push(existing.id)
       continue
     }
     const prev = await previousProgram(p, year - 1, n)
@@ -138,6 +141,8 @@ export async function publishSetup(p: Payload, year: number, actorId?: number | 
         brand: 'academy',
         summary: 'Weekly Foundation Academy training in small groups, with an individual development plan and end-of-term review.',
         ...copy,
+        // Terms 1 and 4: $400 for the term (2 sessions a week); Terms 2 and 3: $25 a session
+        ...(prev ? {} : n === 1 || n === 4 ? { pricingMode: 'per-term', termPrice: 400 } : { pricingMode: 'per-session', pricePerSession: 25 }),
         title: `Academy Term ${n} ${year}`,
         slug: await uniqueSlug(p, `academy-term-${n}-${year}`),
         type: 'academy-term',
@@ -165,6 +170,22 @@ export async function publishSetup(p: Payload, year: number, actorId?: number | 
       }
     }
     results.programs.push({ id: program.id, title: program.title, action: 'created', slots })
+    programIds.push(program.id)
+  }
+  // The full-year option (all four terms, 10% off), opening with Term 1
+  const { docs: years } = await p.find({ pagination: false, collection: 'programs', where: { type: { equals: 'academy-year' }, yearPrograms: { in: programIds } }, limit: 1, ...q })
+  if (years[0]) results.programs.push({ id: years[0].id, title: years[0].title, action: 'kept', slots: 0 })
+  else {
+    const fy = await p.create({
+      collection: 'programs',
+      data: {
+        title: `Academy Full Year ${year}`, slug: await uniqueSlug(p, `academy-full-year-${year}`), type: 'academy-year', brand: 'academy', status: 'draft',
+        summary: `All four ${year} Academy terms in one payment, at 10% off. Your Term 1 training time carries through the year.`,
+        yearPrograms: programIds, discountPct: 10, opensAt: opensAtFor(1, setup.terms.map((t) => t.end!), setup.term1OpensAt), autoOpen: true,
+      } as never,
+      ...q,
+    })
+    results.programs.push({ id: fy.id, title: fy.title, action: 'created', slots: 0 })
   }
   // Term 1 opening "straight away" happens now rather than at the next scheduled check
   await openDuePrograms(p)
@@ -173,8 +194,8 @@ export async function publishSetup(p: Payload, year: number, actorId?: number | 
 }
 
 function pickProgram(prev: Program) {
-  const { brand, summary, description, ageRange, scheduleNote, location, capacity, minAge, maxAge, pricePerSession, twoNightPricePerSession, trialPrice, whatToBring, dropOffPickUp, priceNote, payee, visibility } = prev as Program & { trialPrice?: number | null }
-  return { brand, summary, description, ageRange, scheduleNote, location, capacity, minAge, maxAge, pricePerSession, twoNightPricePerSession, trialPrice, whatToBring, dropOffPickUp, priceNote, payee, visibility }
+  const { brand, summary, description, ageRange, scheduleNote, location, capacity, minAge, maxAge, pricePerSession, twoNightPricePerSession, trialPrice, whatToBring, dropOffPickUp, priceNote, payee, visibility, pricingMode, termPrice } = prev as Program & { trialPrice?: number | null }
+  return { brand, summary, description, ageRange, scheduleNote, location, capacity, minAge, maxAge, pricePerSession, twoNightPricePerSession, trialPrice, whatToBring, dropOffPickUp, priceNote, payee, visibility, pricingMode, termPrice }
 }
 
 /** Years already published. */

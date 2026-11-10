@@ -19,7 +19,7 @@ export function ProgramForm({ prog }: { prog: P }) {
             <option value="draft">Draft (hidden)</option><option value="open">Open for bookings</option><option value="full">Full / waitlist</option><option value="closed">Closed</option>
           </select>
         </label>
-        {(v('type') === 'academy-term' || v('type') === 'toddler') && (
+        {(v('type') === 'academy-term' || v('type') === 'toddler' || v('type') === 'academy-year') && (
           <fieldset className="sm:col-span-2 border border-line p-3">
             <legend className="px-1 text-sm font-semibold">Registrations open</legend>
             <div className="flex flex-wrap items-end gap-4">
