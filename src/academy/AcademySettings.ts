@@ -75,5 +75,26 @@ export const AcademySettings: GlobalConfig = {
         },
       ],
     },
+    {
+      type: 'collapsible',
+      label: 'Holiday camps',
+      fields: [
+        {
+          name: 'camps',
+          type: 'group',
+          label: false,
+          admin: { description: 'Camp age groups are worked out automatically from dates of birth: as few groups as possible, each within these sizes (one group if fewer children than the smallest size).' },
+          fields: [
+            {
+              type: 'row',
+              fields: [
+                { name: 'groupMin', label: 'Smallest group', type: 'number', defaultValue: 8, min: 1, max: 50 },
+                { name: 'groupMax', label: 'Largest group', type: 'number', defaultValue: 12, min: 2, max: 50 },
+              ],
+            },
+          ],
+        },
+      ],
+    },
   ],
 }

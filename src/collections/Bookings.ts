@@ -19,6 +19,22 @@ export const Bookings: CollectionConfig = {
   access: { read: staffOrOwner('account'), create: isStaff, update: isStaff, delete: isStaff },
   defaultSort: '-createdAt',
   hooks: {
+    // Holiday camps: work the age groups out again when a child is paid for, cancelled or changes days
+    afterChange: [
+      async ({ doc, previousDoc, req, context }) => {
+        if (context?.skipRegroup) return doc
+        const changed = doc.status !== previousDoc?.status || JSON.stringify(doc.campDays ?? []) !== JSON.stringify(previousDoc?.campDays ?? []) || doc.keepWith !== previousDoc?.keepWith || doc.player?.dateOfBirth !== previousDoc?.player?.dateOfBirth
+        if (!changed || (doc.status !== 'paid' && previousDoc?.status !== 'paid')) return doc
+        const programId = typeof doc.program === 'object' ? doc.program?.id : doc.program
+        try {
+          const program = await req.payload.findByID({ collection: 'programs', id: programId, depth: 0, req, overrideAccess: true, disableErrors: true })
+          if (program?.type === 'holiday-camp') await (await import('../camps/groups')).regroupCamp(req.payload, program.id, req)
+        } catch (e) {
+          req.payload.logger.error({ err: e, msg: 'Could not update the camp groups' })
+        }
+        return doc
+      },
+    ],
     beforeValidate: [
       async ({ data, req, operation }) => {
         if (!data || operation !== 'create') return data

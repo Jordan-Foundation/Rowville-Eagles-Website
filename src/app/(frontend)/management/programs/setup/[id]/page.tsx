@@ -18,6 +18,7 @@ export default async function ProgramSetup({ params }: { params: Promise<{ id: s
       <div>
         <h1 className="font-display text-4xl font-semibold uppercase tracking-tight">{prog.title}</h1>
         <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+          {prog.type === 'holiday-camp' && <Link href={`/management/camps/${prog.id}`} className="font-semibold underline">Camp groups &amp; days</Link>}
           <Link href={`/programs/${prog.slug}`} className="underline">View the program page</Link>
           <Link href="/management/dates" className="underline">Dates</Link>
           <Link href="/management/prices" className="underline">Prices</Link>

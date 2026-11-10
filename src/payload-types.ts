@@ -101,6 +101,7 @@ export interface Config {
     'trial-sessions': TrialSession;
     programs: Program;
     bookings: Booking;
+    'camp-placements': CampPlacement;
     products: Product;
     orders: Order;
     teams: Team;
@@ -166,6 +167,7 @@ export interface Config {
     'trial-sessions': TrialSessionsSelect<false> | TrialSessionsSelect<true>;
     programs: ProgramsSelect<false> | ProgramsSelect<true>;
     bookings: BookingsSelect<false> | BookingsSelect<true>;
+    'camp-placements': CampPlacementsSelect<false> | CampPlacementsSelect<true>;
     products: ProductsSelect<false> | ProductsSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
     teams: TeamsSelect<false> | TeamsSelect<true>;
@@ -2103,6 +2105,27 @@ export interface Post {
   createdAt: string;
 }
 /**
+ * Camp age groups — managed from Management → the camp’s page.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "camp-placements".
+ */
+export interface CampPlacement {
+  id: number;
+  program: number | Program;
+  booking: number | Booking;
+  name: string;
+  group: number;
+  /**
+   * Placed by hand — automatic regrouping leaves this child here
+   */
+  locked?: boolean | null;
+  movedBy?: (number | null) | User;
+  movedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "orders".
  */
@@ -2675,6 +2698,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'bookings';
         value: number | Booking;
+      } | null)
+    | ({
+        relationTo: 'camp-placements';
+        value: number | CampPlacement;
       } | null)
     | ({
         relationTo: 'products';
@@ -3807,6 +3834,21 @@ export interface BookingsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "camp-placements_select".
+ */
+export interface CampPlacementsSelect<T extends boolean = true> {
+  program?: T;
+  booking?: T;
+  name?: T;
+  group?: T;
+  locked?: T;
+  movedBy?: T;
+  movedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "products_select".
  */
 export interface ProductsSelect<T extends boolean = true> {
@@ -4719,6 +4761,13 @@ export interface AcademySetting {
     inviteDeadlineHours: number;
     reminderHoursBefore: number;
   };
+  /**
+   * Camp age groups are worked out automatically from dates of birth: as few groups as possible, each within these sizes (one group if fewer children than the smallest size).
+   */
+  camps?: {
+    groupMin?: number | null;
+    groupMax?: number | null;
+  };
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -5007,6 +5056,12 @@ export interface AcademySettingsSelect<T extends boolean = true> {
         termDiscountPct?: T;
         inviteDeadlineHours?: T;
         reminderHoursBefore?: T;
+      };
+  camps?:
+    | T
+    | {
+        groupMin?: T;
+        groupMax?: T;
       };
   updatedAt?: T;
   createdAt?: T;
