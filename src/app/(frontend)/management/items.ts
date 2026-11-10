@@ -11,6 +11,7 @@ export const managementItems: DashItem[] = [
   { key: 'cover', href: '/management/academy#cover', label: 'Cover', icon: 'swap' },
   { key: 'availability', href: '/management/academy', label: 'Coach availability', icon: 'clock' },
   { key: 'terms', href: '/management/academy/terms', label: 'Academy terms', icon: 'grid' },
+  { key: 'camps', href: '/management/camps', label: 'Holiday camps', icon: 'users', hint: 'Groups & coaches' },
   { key: 'selections', href: '/management/selections', label: 'Selections', icon: 'flag' },
   { key: 'teams', href: '/management/teams', label: 'Teams', icon: 'users' },
   { key: 'messages', href: '/management/messages', label: 'Messages', icon: 'chat' },

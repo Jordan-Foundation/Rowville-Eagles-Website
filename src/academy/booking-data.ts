@@ -3,6 +3,8 @@ import type { Payload } from 'payload'
 import { commitTransaction, createLocalReq, initTransaction, killTransaction } from 'payload'
 import type { AcademyBooking, AcademyCoach, AcademyTerm, Media } from '@/payload-types'
 import type { CoachAvailability } from './slots'
+import { WEEKDAYS, startTimesFor } from './constants'
+import { blockedStarts } from '../lib/camp-staffing'
 import { accountLink, addMembership, ensureAccount, findOrCreateParticipant } from '../lib/accounts'
 import { recordConsent } from '../lib/consent'
 import { CONSENT_WORDING } from '../lib/consent-wording'
@@ -77,6 +79,12 @@ export async function loadTermBookingData(payload: Payload, term: AcademyTerm, o
   }))
   // A coach's share-link reservation is free for the family it was made for
   const taken = live.filter((s) => !o.ignoreBooking || id(s.booking) !== o.ignoreBooking).map((s) => ({ coachId: id(s.coach)!, startsAt: s.startsAt }))
+  // Times a coach is booked elsewhere (confirmed holiday camp days) can't be booked either
+  const { docs: blocks } = await payload.find({ pagination: false, collection: 'coach-blocks', where: { coach: { in: [...activeIds] }, to: { greater_than: new Date().toISOString() }, from: { less_than: term.endDate } }, limit: 2000, depth: 0, overrideAccess: true, select: { coach: true, from: true, to: true } })
+  if (blocks.length) {
+    const weekdayOf = (ymd: string) => WEEKDAYS[(new Date(`${ymd}T12:00:00Z`).getUTCDay() + 6) % 7]
+    taken.push(...blockedStarts(blocks.map((b) => ({ coachId: id(b.coach)!, from: b.from, to: b.to })), (ymd) => startTimesFor(term, weekdayOf(ymd)), term.sessionMinutes ?? 60))
+  }
   return { availability, taken, coaches: cards }
 }
 

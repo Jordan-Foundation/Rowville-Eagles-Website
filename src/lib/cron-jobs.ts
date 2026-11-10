@@ -1,3 +1,4 @@
+import { sweepCampCoaches } from '../camps/staffing'
 import type { Payload } from 'payload'
 import { purgeOldInvites } from './invites'
 import { sendAvailabilityReminders } from '../academy/reminders'
@@ -27,6 +28,7 @@ export const cronJobs: Record<string, Record<string, Job>> = {
   daily: {
     foundationGrace: (payload) => graceSweep(payload),
     smallGroupDeadlines: (payload) => sweepGroups(payload),
+    campCoaches: (payload) => sweepCampCoaches(payload),
     teamMembers: (payload) => syncTeamMembers(payload),
     selectionPaymentReminders: (payload) => runSelectionReminders(payload),
     availabilityReminders: (payload) => sendAvailabilityReminders(payload),
@@ -44,6 +46,7 @@ export const cronJobs: Record<string, Record<string, Job>> = {
     foundationLaunchEmails: (payload) => sendLaunchEmails(payload, 100, { deadline: Date.now() + 60_000 }),
     reviewRequests: (payload) => sendReviewRequests(payload),
     smallGroupDeadlines: (payload) => sweepGroups(payload),
+    campCoaches: (payload) => sweepCampCoaches(payload),
   },
   // ~3:30am Melbourne: housekeeping
   cleanup: {

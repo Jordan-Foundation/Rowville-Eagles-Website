@@ -83,13 +83,22 @@ export const AcademySettings: GlobalConfig = {
           name: 'camps',
           type: 'group',
           label: false,
-          admin: { description: 'Camp age groups are worked out automatically from dates of birth: as few groups as possible, each within these sizes (one group if fewer children than the smallest size).' },
+          admin: { description: 'Camp age groups are worked out automatically from dates of birth: as few groups as possible, each within these sizes (one group if fewer children than the smallest size). Coaches needed = groups on the busiest day × coaches per group + extra coaches.' },
           fields: [
             {
               type: 'row',
               fields: [
                 { name: 'groupMin', label: 'Smallest group', type: 'number', defaultValue: 8, min: 1, max: 50 },
                 { name: 'groupMax', label: 'Largest group', type: 'number', defaultValue: 12, min: 2, max: 50 },
+              ],
+            },
+            {
+              type: 'row',
+              fields: [
+                { name: 'coachesPerGroup', label: 'Coaches per group', type: 'number', defaultValue: 1, min: 0, max: 10 },
+                { name: 'extraCoaches', label: 'Extra coaches per camp', type: 'number', defaultValue: 1, min: 0, max: 20, admin: { description: 'On top of one per group (a camp can change this)' } },
+                { name: 'confirmReminderHours', label: 'Remind coaches after (hours)', type: 'number', defaultValue: 24, min: 1, max: 336 },
+                { name: 'escalateHours', label: 'Tell Management after (hours)', type: 'number', defaultValue: 48, min: 1, max: 336 },
               ],
             },
           ],

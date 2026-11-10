@@ -56,7 +56,7 @@ export async function coachTeams(p: Payload, user: User) {
   return docs
 }
 
-export type CoachCounts = Record<'messages' | 'sessions' | 'attendance' | 'availability' | 'groups' | 'teams' | 'reviews' | 'reports', number>
+export type CoachCounts = Record<'messages' | 'sessions' | 'attendance' | 'availability' | 'groups' | 'teams' | 'reviews' | 'reports' | 'camps', number>
 
 export async function coachAttention(p: Payload, user: User, coach: AcademyCoach): Promise<CoachCounts> {
   const seen = await seenAt(p, user.id, ['sessions', 'groups'])
@@ -83,10 +83,12 @@ export async function coachAttention(p: Payload, user: User, coach: AcademyCoach
     safe(async () => (await p.count({ collection: 'pdr-submissions', where: { status: { equals: 'pending' } }, ...q })).totalDocs),
   ])
   const reports = await safe(() => outstandingFor(p, user.id))
-  return { messages, sessions, attendance, availability, groups, teams, reviews, reports }
+  // Holiday camps this coach has been asked to and hasn't answered
+  const camps = await safe(async () => (await p.count({ collection: 'camp-coaches', where: { coach: { equals: coach.id }, status: { equals: 'invited' } }, ...q })).totalDocs)
+  return { messages, sessions, attendance, availability, groups, teams, reviews, reports, camps }
 }
 
-export type ManagementCounts = Record<'bookings' | 'payments' | 'cover' | 'availability' | 'terms' | 'selections' | 'messages' | 'store' | 'foundation' | 'consent' | 'reports' | 'dates' | 'promotions', number>
+export type ManagementCounts = Record<'bookings' | 'payments' | 'cover' | 'availability' | 'terms' | 'selections' | 'messages' | 'store' | 'foundation' | 'consent' | 'reports' | 'dates' | 'promotions' | 'camps', number>
 
 export async function managementAttention(p: Payload, user: User): Promise<ManagementCounts> {
   const now = new Date().toISOString()
@@ -145,5 +147,7 @@ export async function managementAttention(p: Payload, user: User): Promise<Manag
   const dates = await safe(async () => (await loadDateIssues(p)).length)
   // Promotions scheduled to send, or live and ending within a week
   const promotions = await safe(async () => (await p.count({ collection: 'promotions', where: { or: [{ status: { equals: 'scheduled' } }, { and: [{ status: { equals: 'live' } }, { endsAt: { less_than: new Date(Date.now() + 7 * 86_400_000).toISOString(), greater_than: new Date().toISOString() } }] }] }, ...q })).totalDocs)
-  return { bookings, payments, cover, availability, terms, selections, messages, store, foundation, consent, reports, dates, promotions }
+  // Holiday camps: short of coaches, over-staffed, declines and no-replies
+  const camps = await safe(async () => (await (await import('../camps/staffing')).campsAttention(p)).length)
+  return { bookings, payments, cover, availability, terms, selections, messages, store, foundation, consent, reports, dates, promotions, camps }
 }

@@ -102,6 +102,8 @@ export interface Config {
     programs: Program;
     bookings: Booking;
     'camp-placements': CampPlacement;
+    'camp-coaches': CampCoach;
+    'coach-blocks': CoachBlock;
     products: Product;
     orders: Order;
     teams: Team;
@@ -168,6 +170,8 @@ export interface Config {
     programs: ProgramsSelect<false> | ProgramsSelect<true>;
     bookings: BookingsSelect<false> | BookingsSelect<true>;
     'camp-placements': CampPlacementsSelect<false> | CampPlacementsSelect<true>;
+    'camp-coaches': CampCoachesSelect<false> | CampCoachesSelect<true>;
+    'coach-blocks': CoachBlocksSelect<false> | CoachBlocksSelect<true>;
     products: ProductsSelect<false> | ProductsSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
     teams: TeamsSelect<false> | TeamsSelect<true>;
@@ -917,6 +921,10 @@ export interface Program {
    * Families can book single days instead. Default $110.
    */
   dayPrice?: number | null;
+  /**
+   * On top of one per group. Blank = the Academy setting (1).
+   */
+  extraCoaches?: number | null;
   /**
    * Which school holidays this camp is in
    */
@@ -2126,6 +2134,49 @@ export interface CampPlacement {
   createdAt: string;
 }
 /**
+ * Coaches asked to work holiday camps — managed from Management → Holiday camps.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "camp-coaches".
+ */
+export interface CampCoach {
+  id: number;
+  program: number | Program;
+  coach: number | AcademyCoach;
+  status: 'invited' | 'confirmed' | 'declined' | 'removed';
+  tokenHash?: string | null;
+  altTokenHash?: string | null;
+  invitedAt: string;
+  remindedAt?: string | null;
+  escalatedAt?: string | null;
+  respondedAt?: string | null;
+  declineReason?: string | null;
+  /**
+   * Management has seen this decline
+   */
+  declineSeen?: boolean | null;
+  invitedBy?: (number | null) | User;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Created automatically when a coach confirms a holiday camp.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "coach-blocks".
+ */
+export interface CoachBlock {
+  id: number;
+  coach: number | AcademyCoach;
+  from: string;
+  to: string;
+  reason: string;
+  program?: (number | null) | Program;
+  campCoach?: (number | null) | CampCoach;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "orders".
  */
@@ -2702,6 +2753,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'camp-placements';
         value: number | CampPlacement;
+      } | null)
+    | ({
+        relationTo: 'camp-coaches';
+        value: number | CampCoach;
+      } | null)
+    | ({
+        relationTo: 'coach-blocks';
+        value: number | CoachBlock;
       } | null)
     | ({
         relationTo: 'products';
@@ -3743,6 +3802,7 @@ export interface ProgramsSelect<T extends boolean = true> {
   capacity?: T;
   fullCampPrice?: T;
   dayPrice?: T;
+  extraCoaches?: T;
   timeframe?: T;
   campDays?:
     | T
@@ -3844,6 +3904,40 @@ export interface CampPlacementsSelect<T extends boolean = true> {
   locked?: T;
   movedBy?: T;
   movedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "camp-coaches_select".
+ */
+export interface CampCoachesSelect<T extends boolean = true> {
+  program?: T;
+  coach?: T;
+  status?: T;
+  tokenHash?: T;
+  altTokenHash?: T;
+  invitedAt?: T;
+  remindedAt?: T;
+  escalatedAt?: T;
+  respondedAt?: T;
+  declineReason?: T;
+  declineSeen?: T;
+  invitedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "coach-blocks_select".
+ */
+export interface CoachBlocksSelect<T extends boolean = true> {
+  coach?: T;
+  from?: T;
+  to?: T;
+  reason?: T;
+  program?: T;
+  campCoach?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -4762,11 +4856,18 @@ export interface AcademySetting {
     reminderHoursBefore: number;
   };
   /**
-   * Camp age groups are worked out automatically from dates of birth: as few groups as possible, each within these sizes (one group if fewer children than the smallest size).
+   * Camp age groups are worked out automatically from dates of birth: as few groups as possible, each within these sizes (one group if fewer children than the smallest size). Coaches needed = groups on the busiest day × coaches per group + extra coaches.
    */
   camps?: {
     groupMin?: number | null;
     groupMax?: number | null;
+    coachesPerGroup?: number | null;
+    /**
+     * On top of one per group (a camp can change this)
+     */
+    extraCoaches?: number | null;
+    confirmReminderHours?: number | null;
+    escalateHours?: number | null;
   };
   updatedAt?: string | null;
   createdAt?: string | null;
@@ -5062,6 +5163,10 @@ export interface AcademySettingsSelect<T extends boolean = true> {
     | {
         groupMin?: T;
         groupMax?: T;
+        coachesPerGroup?: T;
+        extraCoaches?: T;
+        confirmReminderHours?: T;
+        escalateHours?: T;
       };
   updatedAt?: T;
   createdAt?: T;

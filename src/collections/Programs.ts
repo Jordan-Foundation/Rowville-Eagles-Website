@@ -217,6 +217,7 @@ export const Programs: CollectionConfig = {
       fields: [
         { name: 'fullCampPrice', label: 'Full camp price (AUD)', type: 'number', min: 0, admin: { description: 'Every day of the camp. Default $300.' } },
         { name: 'dayPrice', label: 'Price per day (AUD)', type: 'number', min: 0, admin: { description: 'Families can book single days instead. Default $110.' } },
+        { name: 'extraCoaches', label: 'Extra coaches', type: 'number', min: 0, max: 20, admin: { description: 'On top of one per group. Blank = the Academy setting (1).' } },
         {
           name: 'timeframe',
           label: 'School holidays',

@@ -7,10 +7,10 @@ export const BADGE_UNITS: Record<string, string> = {
   // Management
   bookings: 'to action', payments: 'overdue', cover: 'need cover', availability: 'not submitted', terms: 'waiting or no coach',
   selections: 'to decide', store: 'to fulfil', foundation: 'to review', consent: 'to review', reports: 'to review', dates: 'to fix',
-  promotions: 'live or scheduled', settings: 'to do',
+  promotions: 'live or scheduled', settings: 'to do', camps: 'to sort',
   // Coach (messages: both)
   messages: 'unread', sessions: 'to check', attendance: 'to mark', groups: 'new', teams: 'new posts', reviews: 'to review',
 }
 /** "3 to fulfil" — or null at 0. Coach reports read "to write". */
 export const badgeMeaning = (key: string, n: number | null | undefined, role?: 'coach' | 'management') =>
-  !n || n <= 0 ? null : `${n > 99 ? '99+' : n} ${role === 'coach' && key === 'reports' ? 'to write' : role === 'coach' && key === 'availability' ? 'due' : BADGE_UNITS[key] ?? 'need attention'}`
+  !n || n <= 0 ? null : `${n > 99 ? '99+' : n} ${role === 'coach' && key === 'reports' ? 'to write' : role === 'coach' && key === 'availability' ? 'due' : role === 'coach' && key === 'camps' ? 'to answer' : BADGE_UNITS[key] ?? 'need attention'}`

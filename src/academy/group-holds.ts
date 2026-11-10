@@ -28,7 +28,10 @@ export async function coachClashes(payload: Payload, coachId: number, times: str
     select: { startsAt: true },
   })
   const taken = new Set(docs.map((d) => new Date(d.startsAt).getTime()))
-  return times.filter((t) => taken.has(new Date(t).getTime()))
+  // Confirmed holiday camp days count as busy too
+  const { blockedAt } = await import('../camps/staffing')
+  const blocked = new Set((await blockedAt(payload, coachId, times)).map((t) => new Date(t).getTime()))
+  return times.filter((t) => taken.has(new Date(t).getTime()) || blocked.has(new Date(t).getTime()))
 }
 
 export type GroupHoldInput = {
