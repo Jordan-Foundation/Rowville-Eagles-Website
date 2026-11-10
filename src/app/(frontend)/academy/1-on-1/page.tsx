@@ -15,14 +15,16 @@ export const metadata: Metadata = {
   description: 'Book a 1-on-1 session with a Foundation Academy coach — pick a time, see which coaches are free, and book online.',
 }
 
-export default async function OneOnOnePage({ searchParams }: { searchParams: Promise<{ mode?: string; link?: string }> }) {
+export default async function OneOnOnePage({ searchParams }: { searchParams: Promise<{ mode?: string; link?: string; tf?: string }> }) {
   const sp = await searchParams
   const p = await payload()
   await releaseExpiredHolds(p)
   const terms = await openTerms(p)
-  const term = terms[0]
-  // School holidays: casual sessions only (no weekly term bookings)
-  const weeklyOk = allowsWeekly(term)
+  // Several timeframes can be open at once (e.g. Term 4 and the summer holidays): families pick one
+  const term = terms.find((t) => String(t.id) === sp.tf) ?? terms[0]
+  const tfq = term && term.id !== terms[0]?.id ? `tf=${term.id}` : ''
+  // School holidays: casual sessions only. Whole-term bookings are for the current school term.
+  const weeklyOk = !!term && terms.find(allowsWeekly)?.id === term.id
   const mode = sp.mode === 'term' && weeklyOk ? 'term' : 'casual'
   const data = term ? await loadTermBookingData(p, term) : null
   const engine = term && data ? { term, coaches: data.availability, taken: data.taken, now: new Date(), cutoffHours: term.bookingCutoffHours ?? 24 } : null
@@ -47,13 +49,22 @@ export default async function OneOnOnePage({ searchParams }: { searchParams: Pro
           <p className="mt-5 max-w-2xl text-lg text-muted">
             Pick a time, see which coaches are free, and choose the one that suits your player. {term ? `${term.sessionMinutes}-minute sessions.` : ''}
           </p>
+          {terms.length > 1 && (
+            <nav aria-label="Term or holidays" className="mt-8 flex flex-wrap gap-2 text-sm">
+              {terms.map((t) => (
+                <a key={t.id} href={t.id === terms[0].id ? '/academy/1-on-1' : `/academy/1-on-1?tf=${t.id}`} aria-current={t.id === term?.id ? 'page' : undefined} className={`px-3 py-1.5 ${t.id === term?.id ? 'border border-white text-ink' : 'border border-line text-muted hover:text-ink'}`}>
+                  {t.name}
+                </a>
+              ))}
+            </nav>
+          )}
           {term && (
             <div className="mt-8 flex flex-wrap gap-3 text-sm" role="tablist" aria-label="Booking type">
-              <a href="/academy/1-on-1" role="tab" aria-selected={mode === 'casual'} className={`px-4 py-2 ${mode === 'casual' ? 'bg-white text-black' : 'border border-line text-muted hover:text-ink'}`}>
+              <a href={`/academy/1-on-1${tfq ? `?${tfq}` : ''}`} role="tab" aria-selected={mode === 'casual'} className={`px-4 py-2 ${mode === 'casual' ? 'bg-white text-black' : 'border border-line text-muted hover:text-ink'}`}>
                 Casual session · <strong>{formatAUD(term.casualPrice)}</strong>
                 {member && <> · <strong>{formatAUD(member.price)}</strong> for you</>}
               </a>
-              {weeklyOk && <a href="/academy/1-on-1?mode=term" role="tab" aria-selected={mode === 'term'} className={`px-4 py-2 ${mode === 'term' ? 'bg-white text-black' : 'border border-line text-muted hover:text-ink'}`}>
+              {weeklyOk && <a href={`/academy/1-on-1?mode=term${tfq ? `&${tfq}` : ''}`} role="tab" aria-selected={mode === 'term'} className={`px-4 py-2 ${mode === 'term' ? 'bg-white text-black' : 'border border-line text-muted hover:text-ink'}`}>
                 Whole term · <strong>{formatAUD(term.pricePerSession)}</strong>/session
               </a>}
             </div>
