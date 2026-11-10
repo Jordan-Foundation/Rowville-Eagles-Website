@@ -41,7 +41,7 @@ export default async function CoachSessionPage({ params }: { params: Promise<{ i
           {player.position ? ` · ${player.position}` : ''}
           {player.currentClub ? ` · ${player.currentClub}` : ''}
           {' · '}
-          {b.type === 'term' ? `Term booking, session ${data.sessionNumber} of ${data.bookingSessions}` : 'Casual session'}
+          {b.type === 'term' ? `Term booking, session ${data.sessionNumber} of ${data.bookingSessions}` : b.packSize ? `Holiday pack, session ${data.sessionNumber} of ${data.bookingSessions}` : 'Casual session'}
         </p>
         <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-wider">
           <span className="border border-line px-2 py-1">{statusLabel[s.status] ?? s.status}</span>

@@ -261,6 +261,10 @@ export interface AcademyBooking {
   status: 'held' | 'confirmed' | 'payment_failed' | 'cancelled' | 'refunded' | 'expired' | 'completed';
   type: 'casual' | 'term';
   paymentMode: 'casual' | 'upfront' | 'weekly';
+  /**
+   * Set for holiday packs: several casual sessions bought together at the pack price
+   */
+  packSize?: number | null;
   kind: 'one-on-one' | 'group';
   group?: (number | null) | AcademyGroup;
   groupInvite?: (number | null) | AcademyGroupInvite;
@@ -616,6 +620,11 @@ export interface AcademyTerm {
   holdMinutes?: number | null;
   shareLinkHoldHours?: number | null;
   accountReminderDays?: number | null;
+  /**
+   * Sessions in a pack, e.g. "3, 5". Families choose any free times with one coach across the break and pay upfront.
+   */
+  packSizes?: string | null;
+  packPricePerSession?: number | null;
   organisation?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -2909,6 +2918,7 @@ export interface AcademyBookingsSelect<T extends boolean = true> {
   status?: T;
   type?: T;
   paymentMode?: T;
+  packSize?: T;
   kind?: T;
   group?: T;
   groupInvite?: T;
@@ -3188,6 +3198,8 @@ export interface AcademyTermsSelect<T extends boolean = true> {
   holdMinutes?: T;
   shareLinkHoldHours?: T;
   accountReminderDays?: T;
+  packSizes?: T;
+  packPricePerSession?: T;
   organisation?: T;
   updatedAt?: T;
   createdAt?: T;

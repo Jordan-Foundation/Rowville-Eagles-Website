@@ -17,10 +17,11 @@ const when = (iso: string) => formatDate(iso, { weekday: 'short', day: 'numeric'
 const time = (iso: string) => formatDate(iso, { hour: 'numeric', minute: '2-digit' })
 const day = (iso: string) => formatDate(iso, { day: 'numeric', month: 'short' })
 
-export function bookingSummary(b: Pick<AcademyBooking, 'type' | 'weekday'>, sessions: Pick<AcademySession, 'startsAt'>[], opts: { makeUp?: boolean } = {}) {
+export function bookingSummary(b: Pick<AcademyBooking, 'type' | 'weekday'> & { packSize?: number | null }, sessions: Pick<AcademySession, 'startsAt'>[], opts: { makeUp?: boolean } = {}) {
   const first = sessions[0]?.startsAt
   if (!first) return ''
   if (opts.makeUp) return `make-up 1-on-1 ${when(first)}`
+  if (b.packSize && sessions.length > 1) return `holiday pack of ${sessions.length}: ${sessions.map((x) => when(x.startsAt)).join('; ')}`
   if (b.type === 'casual' || sessions.length === 1) return `casual 1-on-1 ${when(first)}`
   return `${b.weekday ?? formatDate(first, { weekday: 'long' })}s ${time(first)}, ${sessions.length} sessions ${day(first)}–${day(sessions.at(-1)!.startsAt)}`
 }
@@ -33,7 +34,7 @@ export async function alertCoachNewBooking(payload: Payload, booking: AcademyBoo
   const age = p.dateOfBirth ? ageOn(p.dateOfBirth) : null
   const summary = bookingSummary(booking, sessions, opts)
   const link = `${siteUrl()}/coach/sessions${sessions[0] ? `/${sessions[0].id}` : ''}`
-  const heading = opts.makeUp ? 'Make-up session booked with you' : booking.type === 'term' ? 'New term booking' : 'New 1-on-1 booking'
+  const heading = opts.makeUp ? 'Make-up session booked with you' : booking.type === 'term' ? 'New term booking' : booking.packSize ? 'New holiday pack' : 'New 1-on-1 booking'
 
   const html = emailLayout('academy', [
     {

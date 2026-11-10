@@ -13,7 +13,7 @@ type Props = {
   coach: number
   term: number
   /** casual: the session start; term: weekday + time + how many sessions the family was shown */
-  slot: { mode: 'casual'; start: string } | { mode: 'term'; weekday: string; time: string; sessions: number }
+  slot: { mode: 'casual'; start: string } | { mode: 'term'; weekday: string; time: string; sessions: number } | { mode: 'pack'; starts: string[] }
   price: string
   /** Term only: the weekly plan on offer (null when there aren't enough sessions left) */
   weekly?: { perSession: string; total: string; laterPayments: number; firstCharge: string; lastCharge: string } | null
@@ -46,6 +46,8 @@ export function BookForm({ coach, slot, term, price, weekly, credit, loginHref, 
       {share && <input type="hidden" name="share" value={share.token} />}
       {slot.mode === 'casual' ? (
         <input type="hidden" name="start" value={slot.start} />
+      ) : slot.mode === 'pack' ? (
+        <input type="hidden" name="starts" value={slot.starts.join(',')} />
       ) : (
         <>
           <input type="hidden" name="weekday" value={slot.weekday} />
@@ -103,7 +105,7 @@ export function BookForm({ coach, slot, term, price, weekly, credit, loginHref, 
         <Input label="Current club" name="currentClub" defaultValue={v.currentClub} />
         <Input label="Position" name="position" placeholder="e.g. Winger, Goalkeeper" defaultValue={v.position} />
         <div className="sm:col-span-2">
-          <Field label={slot.mode === 'term' ? 'Main goals for the term' : 'Main goals for the session'}>
+          <Field label={slot.mode === 'term' ? 'Main goals for the term' : slot.mode === 'pack' ? 'Main goals for the holidays' : 'Main goals for the session'}>
             <textarea name="goals" rows={2} className={inputCls} defaultValue={v.goals} placeholder="e.g. Improve weak foot, confidence in 1v1s" />
           </Field>
         </div>
@@ -145,6 +147,8 @@ export function BookForm({ coach, slot, term, price, weekly, credit, loginHref, 
             I agree to the <PolicyLink k="academyTerms">Foundation Academy terms</PolicyLink>, <PolicyLink k="codeOfConduct">Code of Conduct</PolicyLink> and <PolicyLink k="childSafe">Child Safe policy</PolicyLink>.{' '}
             {slot.mode === 'casual'
               ? 'Casual sessions cancelled 24 hours or more before the start can be credited or refunded.'
+              : slot.mode === 'pack'
+              ? 'Each pack session cancelled 24 hours or more before its start can be credited or refunded.'
               : 'Term bookings can be cancelled any time; unplayed future sessions are credited or refunded, less one session.'}
             {slot.mode === 'term' && payMode === 'weekly' && ' I authorise Foundation Sports Australia Pty Ltd to charge my card weekly as shown until the last session is paid; weekly payments stop if the booking is cancelled.'}
           </span>

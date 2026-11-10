@@ -15,9 +15,9 @@ const outcomeLabel: Record<Outcome, string> = {
 }
 const money = (n: number) => `$${n.toFixed(2).replace(/\.00$/, '')}`
 
-export function CancelPanel(props: { bookingId: number; type: 'casual' | 'term'; sessions: Session[]; coaches: { id: number; name: string }[]; coachId: number; defaultTime?: string | null }) {
+export function CancelPanel(props: { bookingId: number; type: 'casual' | 'term'; pack?: boolean; sessions: Session[]; coaches: { id: number; name: string }[]; coachId: number; defaultTime?: string | null }) {
   const [by, setBy] = useState<'family' | 'coach'>('family')
-  const [scope, setScope] = useState<'booking' | 'sessions'>(props.type === 'casual' ? 'booking' : 'sessions')
+  const [scope, setScope] = useState<'booking' | 'sessions'>(props.type === 'casual' && !props.pack ? 'booking' : 'sessions')
   const [ids, setIds] = useState<number[]>([])
   const [quote, setQuote] = useState<Quote | null>(null)
   const [outcome, setOutcome] = useState<Outcome | ''>('')
@@ -57,13 +57,13 @@ export function CancelPanel(props: { bookingId: number; type: 'casual' | 'term';
             ))}
           </div>
         </fieldset>
-        {props.type === 'term' && (
+        {(props.type === 'term' || props.pack) && (
           <fieldset>
             <legend className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">What?</legend>
             <div className="mt-2 flex gap-2">
               {(['sessions', 'booking'] as const).map((v) => (
                 <button type="button" key={v} onClick={() => setScope(v)} aria-pressed={scope === v} className={`px-4 py-2 text-sm font-semibold ${scope === v ? 'bg-white text-black' : 'border border-line'}`}>
-                  {v === 'booking' ? 'Whole term (all remaining)' : 'Chosen weeks'}
+                  {v === 'booking' ? (props.pack ? 'Whole pack (all remaining)' : 'Whole term (all remaining)') : props.pack ? 'Chosen sessions' : 'Chosen weeks'}
                 </button>
               ))}
             </div>

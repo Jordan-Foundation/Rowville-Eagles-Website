@@ -66,7 +66,7 @@ export default async function CoachSessionsPage({ searchParams }: { searchParams
               <span className="ml-2 text-sm font-normal text-muted">age {ageOn(x.booking.player.dateOfBirth)}</span>
             </p>
             <p className="text-sm text-muted">
-              {x.booking.type === 'term' ? 'Term' : 'Casual'}
+              {x.booking.type === 'term' ? 'Term' : x.booking.packSize ? 'Holiday pack' : 'Casual'}
               {x.booking.player.medical?.trim() && <span className="ml-2 bg-red-600 px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-white">Medical</span>}
               {' · '}
               <span className={pay.tone === 'bad' ? 'font-semibold text-red-300' : ''}>{pay.label}</span>

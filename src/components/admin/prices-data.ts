@@ -1,4 +1,5 @@
 import type { Payload } from 'payload'
+import { packSettings } from '@/academy/packs'
 import { GROUP_MAX, GROUP_MIN, groupRate, groupSettings } from '@/academy/group-pricing'
 
 /**
@@ -11,7 +12,7 @@ export type PriceSection = { title: string; intro: string; rows: PriceRow[] }
 
 /** Which fields may be edited from the Prices page (anything else is rejected). */
 export const EDITABLE: Record<string, { fields: string[]; nullable?: string[] }> = {
-  'academy-terms': { fields: ['pricePerSession', 'casualPrice', 'termMemberPrice', 'termMemberWindowDays'], nullable: ['termMemberPrice'] },
+  'academy-terms': { fields: ['pricePerSession', 'casualPrice', 'termMemberPrice', 'termMemberWindowDays', 'packPricePerSession'], nullable: ['termMemberPrice'] },
   programs: { fields: ['price', 'pricePerSession', 'twoNightPricePerSession', 'trialPrice', 'fullCampPrice', 'dayPrice'], nullable: ['pricePerSession', 'twoNightPricePerSession'] },
   'selection-rounds': { fields: ['fee'], nullable: ['fee'] },
   squads: { fields: ['fee'], nullable: ['fee'] },
@@ -87,18 +88,23 @@ export async function loadPrices(payload: Payload): Promise<PriceSection[]> {
     },
     {
       title: 'Foundation Academy 1-on-1s',
-      intro: 'Per timeframe (school term or holidays). Term bookings pay the term price × sessions left; casual sessions pay the casual price; families with an active term pay the term-member price for sessions within the window.',
+      intro: 'Per timeframe. School terms: term bookings pay the term price × sessions left; casual sessions pay the casual price; families with an active term pay the term-member price for sessions within the window. School holidays: casual sessions, or a holiday pack of sessions at the pack price (any times across the break, paid upfront).',
       rows: terms.docs.map((t) => ({
         title: t.name,
         note: `${t.category === 'school-holidays' ? 'holidays · ' : ''}${t.status}`,
         href: `/admin/collections/academy-terms/${t.id}`,
         muted: done(t.status),
-        fields: [
-          { key: `academy-terms.${t.id}.pricePerSession`, label: 'Term, per session', value: t.pricePerSession, unit: 'aud' },
-          { key: `academy-terms.${t.id}.casualPrice`, label: 'Casual session', value: t.casualPrice, unit: 'aud' },
-          { key: `academy-terms.${t.id}.termMemberPrice`, label: 'Term-member casual', value: t.termMemberPrice ?? null, unit: 'aud', placeholder: 'off' },
-          { key: `academy-terms.${t.id}.termMemberWindowDays`, label: 'Member window', value: t.termMemberWindowDays ?? 14, unit: 'days' },
-        ],
+        fields: t.category === 'school-holidays'
+          ? [
+              { key: `academy-terms.${t.id}.casualPrice`, label: 'Casual session', value: t.casualPrice, unit: 'aud' as const },
+              { key: `academy-terms.${t.id}.packPricePerSession`, label: `Holiday pack (${packSettings(t).sizes.join(' or ')}), per session`, value: t.packPricePerSession ?? 80, unit: 'aud' as const },
+            ]
+          : [
+              { key: `academy-terms.${t.id}.pricePerSession`, label: 'Term, per session', value: t.pricePerSession, unit: 'aud' as const },
+              { key: `academy-terms.${t.id}.casualPrice`, label: 'Casual session', value: t.casualPrice, unit: 'aud' as const },
+              { key: `academy-terms.${t.id}.termMemberPrice`, label: 'Term-member casual', value: t.termMemberPrice ?? null, unit: 'aud' as const, placeholder: 'off' },
+              { key: `academy-terms.${t.id}.termMemberWindowDays`, label: 'Member window', value: t.termMemberWindowDays ?? 14, unit: 'days' as const },
+            ],
       })),
     },
     {

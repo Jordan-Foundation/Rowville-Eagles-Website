@@ -174,6 +174,17 @@ export const AcademyTerms: CollectionConfig = {
         ] },
       ],
     },
+    {
+      type: 'collapsible',
+      label: 'Holiday packs (school holidays only)',
+      admin: { condition: (d) => d?.category === 'school-holidays' || ['summer', 'april', 'mid-year', 'september'].includes(d?.period) },
+      fields: [
+        { type: 'row', fields: [
+          { name: 'packSizes', label: 'Pack sizes', type: 'text', defaultValue: '3, 5', admin: { description: 'Sessions in a pack, e.g. "3, 5". Families choose any free times with one coach across the break and pay upfront.' } },
+          { name: 'packPricePerSession', label: 'Pack price per session (AUD)', type: 'number', defaultValue: 80, min: 0 },
+        ] },
+      ],
+    },
     { name: 'organisation', type: 'text', defaultValue: 'rowville', admin: { position: 'sidebar', readOnly: true } },
   ],
 }

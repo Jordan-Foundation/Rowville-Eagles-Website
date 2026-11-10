@@ -37,6 +37,7 @@ export const AcademyBookings: CollectionConfig = {
     },
     { name: 'type', type: 'select', required: true, options: [{ label: 'Casual session', value: 'casual' }, { label: 'Term (weekly)', value: 'term' }], admin: { position: 'sidebar' } },
     { name: 'paymentMode', type: 'select', required: true, options: ['casual', 'upfront', 'weekly'], admin: { position: 'sidebar' } },
+    { name: 'packSize', label: 'Holiday pack (sessions)', type: 'number', admin: { position: 'sidebar', readOnly: true, description: 'Set for holiday packs: several casual sessions bought together at the pack price' } },
     {
       name: 'kind',
       type: 'select',

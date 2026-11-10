@@ -53,7 +53,7 @@ export default async function BookedPage({ searchParams }: { searchParams: Promi
         ) : (
           <>
             <div className="mx-auto grid h-14 w-14 place-items-center bg-white text-2xl text-black">✓</div>
-            <h1 className="mt-6 font-display text-4xl font-semibold uppercase">{confirmed ? (booking.kind === 'group' ? `${booking.player.firstName}’s small group place is paid` : booking.type === 'term' ? 'Your term is booked' : 'You’re booked in') : 'Payment processing'}</h1>
+            <h1 className="mt-6 font-display text-4xl font-semibold uppercase">{confirmed ? (booking.kind === 'group' ? `${booking.player.firstName}’s small group place is paid` : booking.type === 'term' ? 'Your term is booked' : booking.packSize ? 'Your holiday pack is booked' : 'You’re booked in') : 'Payment processing'}</h1>
             <p className="mt-2 text-sm text-muted">Reference <span className="font-mono text-ink">{booking.reference}</span></p>
             <dl className="panel mt-8 space-y-3 border border-line p-6 text-left text-sm">
               <div className="flex justify-between gap-4"><dt className="text-muted">Coach</dt><dd className="font-medium">{coach?.displayName}</dd></div>
@@ -62,6 +62,8 @@ export default async function BookedPage({ searchParams }: { searchParams: Promi
                   <div className="flex justify-between gap-4"><dt className="text-muted">Weekly</dt><dd className="text-right font-medium">{booking.weekday}s · {formatDate(sessions[0].startsAt, { hour: 'numeric', minute: '2-digit' })}</dd></div>
                   <div className="flex justify-between gap-4"><dt className="text-muted">Sessions</dt><dd className="text-right font-medium">{sessions.length} · {formatDate(sessions[0].startsAt, { day: 'numeric', month: 'short' })} – {formatDate(sessions.at(-1)!.startsAt, { day: 'numeric', month: 'short' })}</dd></div>
                 </>
+              ) : booking.packSize && sessions.length > 0 ? (
+                <div className="flex justify-between gap-4"><dt className="text-muted">Holiday pack · {sessions.length} sessions</dt><dd className="text-right font-medium">{sessions.map((x) => <span key={x.startsAt} className="block">{formatDate(x.startsAt, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}</span>)}</dd></div>
               ) : (
                 <div className="flex justify-between gap-4"><dt className="text-muted">When</dt><dd className="text-right font-medium">{booking.firstSessionAt ? formatDate(booking.firstSessionAt, { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' }) : ''}</dd></div>
               )}

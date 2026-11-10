@@ -7,6 +7,7 @@ import { RfaLogo } from '@/components/Logos'
 import { SlotBrowser } from './SlotBrowser'
 import { currentUser } from '@/lib/auth'
 import { allowsWeekly } from '@/academy/timeframes'
+import { packSettings } from '@/academy/packs'
 import { isTermMember, memberWindowEnd } from '@/academy/pricing'
 
 export const dynamic = 'force-dynamic'
@@ -64,6 +65,11 @@ export default async function OneOnOnePage({ searchParams }: { searchParams: Pro
                 Casual session · <strong>{formatAUD(term.casualPrice)}</strong>
                 {member && <> · <strong>{formatAUD(member.price)}</strong> for you</>}
               </a>
+              {!weeklyOk && (
+                <a href={`/academy/1-on-1/pack?tf=${term.id}`} className="border border-line px-4 py-2 text-muted hover:text-ink">
+                  Holiday pack · {packSettings(term).sizes.join(' or ')} sessions at <strong>{formatAUD(packSettings(term).price)}</strong> each
+                </a>
+              )}
               {weeklyOk && <a href={`/academy/1-on-1?mode=term${tfq ? `&${tfq}` : ''}`} role="tab" aria-selected={mode === 'term'} className={`px-4 py-2 ${mode === 'term' ? 'bg-white text-black' : 'border border-line text-muted hover:text-ink'}`}>
                 Whole term · <strong>{formatAUD(term.pricePerSession)}</strong>/session
               </a>}
@@ -83,7 +89,7 @@ export default async function OneOnOnePage({ searchParams }: { searchParams: Pro
               ) : (
                 <div className="border border-line p-4">
                   <dt className="font-semibold">{term.name}</dt>
-                  <dd className="mt-1 text-muted">School holiday sessions — book any free time during the break.</dd>
+                  <dd className="mt-1 text-muted">School holiday sessions — book any free time during the break, or a <a href={`/academy/1-on-1/pack?tf=${term.id}`} className="underline">holiday pack</a> of {packSettings(term).sizes.join(' or ')} sessions at {formatAUD(packSettings(term).price)} each (any times you like, paid upfront).</dd>
                 </div>
               )}
             </dl>

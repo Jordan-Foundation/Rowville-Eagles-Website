@@ -66,6 +66,7 @@ import * as migration_20261110_043135_timeframes from './20261110_043135_timefra
 import * as migration_20261110_055951_camp_days from './20261110_055951_camp_days';
 import * as migration_20261110_063251_camp_groups from './20261110_063251_camp_groups';
 import * as migration_20261110_070647_camp_coaches from './20261110_070647_camp_coaches';
+import * as migration_20261110_081403_holiday_packs from './20261110_081403_holiday_packs';
 
 export const migrations = [
   {
@@ -406,6 +407,11 @@ export const migrations = [
   {
     up: migration_20261110_070647_camp_coaches.up,
     down: migration_20261110_070647_camp_coaches.down,
-    name: '20261110_070647_camp_coaches'
+    name: '20261110_070647_camp_coaches',
+  },
+  {
+    up: migration_20261110_081403_holiday_packs.up,
+    down: migration_20261110_081403_holiday_packs.down,
+    name: '20261110_081403_holiday_packs'
   },
 ];

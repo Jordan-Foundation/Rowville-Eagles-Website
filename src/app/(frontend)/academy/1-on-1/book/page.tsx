@@ -1,4 +1,5 @@
-import { allowsWeekly } from '@/academy/timeframes'
+import { allowsWeekly, isHolidayTimeframe } from '@/academy/timeframes'
+import { checkPack, packSaving, packSettings, packTotal } from '@/academy/packs'
 import Image from 'next/image'
 import { PromoNotice } from '@/promotions/PromoNotice'
 import Link from 'next/link'
@@ -17,7 +18,7 @@ import { activeHold, findShareLink, linkMatches } from '@/academy/share-links'
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Book a 1-on-1', robots: { index: false } }
 
-type Search = { mode?: string; coach?: string; start?: string; weekday?: string; time?: string; cancelled?: string; share?: string }
+type Search = { mode?: string; coach?: string; start?: string; starts?: string; weekday?: string; time?: string; cancelled?: string; share?: string }
 
 /** "Mon 1 Mar – Sun 7 Mar" style ranges from consecutive away session dates. */
 function awayRanges(dates: string[], periods: { from: string; to: string }[]) {
@@ -28,39 +29,44 @@ function awayRanges(dates: string[], periods: { from: string; to: string }[]) {
 
 export default async function BookPage({ searchParams }: { searchParams: Promise<Search> }) {
   const q = await searchParams
-  const mode = q.mode === 'term' ? 'term' : 'casual'
+  const mode = q.mode === 'term' ? 'term' : q.mode === 'pack' ? 'pack' : 'casual'
+  const packStarts = mode === 'pack' ? (q.starts ?? '').split(',').filter(Boolean) : []
+  const firstStartRaw = mode === 'pack' ? [...packStarts].sort()[0] : q.start
   const p = await payload()
   if (q.cancelled) {
     // Came back from Stripe without paying — free that exact hold straight away
     const held = (await p.find({ pagination: false, collection: 'academy-bookings', where: { reference: { equals: q.cancelled }, status: { equals: 'held' } }, limit: 1, depth: 0, overrideAccess: true })).docs[0]
     const sameCoach = held && String(typeof held.coach === 'object' ? held.coach.id : held.coach) === q.coach
-    const sameSlot = mode === 'term' ? held?.weekday === q.weekday && held?.startTime === q.time : held?.firstSessionAt && q.start && new Date(held.firstSessionAt).getTime() === new Date(q.start).getTime()
+    const sameSlot = mode === 'term' ? held?.weekday === q.weekday && held?.startTime === q.time : held?.firstSessionAt && firstStartRaw && new Date(held.firstSessionAt).getTime() === new Date(firstStartRaw).getTime()
     if (sameCoach && sameSlot) await releaseAcademyHold(p, q.cancelled)
   }
   await releaseExpiredHolds(p)
   const user = await currentUser()
   const coachId = Number(q.coach)
   const terms = await openTerms(p)
-  const term = mode === 'term' ? terms.find(allowsWeekly) : terms.find((t) => q.start && q.start >= t.startDate && q.start <= t.endDate)
+  const firstStart = mode === 'pack' ? [...packStarts].sort()[0] : q.start
+  const term = mode === 'term' ? terms.find(allowsWeekly) : terms.find((t) => firstStart && new Date(firstStart).toISOString() >= t.startDate && new Date(firstStart).toISOString() <= t.endDate && (mode !== 'pack' || isHolidayTimeframe(t)))
   // A coach's share link: the time they reserved is free for this family, and their details are filled in
   const shareLink = q.share ? await findShareLink(p, q.share) : null
-  const share = shareLink && linkMatches(shareLink, { mode, coach: coachId, start: q.start, weekday: q.weekday, time: q.time }) ? shareLink : null
+  const share = shareLink && mode !== 'pack' && linkMatches(shareLink, { mode, coach: coachId, start: q.start, weekday: q.weekday, time: q.time }) ? shareLink : null
   const shareHold = share ? await activeHold(p, share) : null
   const data = term ? await loadTermBookingData(p, term, { ignoreBooking: shareHold?.id }) : null
   const engine = term && data ? { term, coaches: data.availability, taken: data.taken, now: new Date(), cutoffHours: term.bookingCutoffHours ?? 24 } : null
 
   const termSlot = engine && mode === 'term' && q.weekday && q.time ? findTermSlot({ ...engine, minSessions: term!.minTermSessions ?? 2, coachId, weekday: q.weekday, time: q.time }) : null
   const casualOpen = Boolean(engine && mode === 'casual' && q.start && isCasualOpen({ ...engine, coachId, startsAt: q.start }))
-  const open = mode === 'term' ? Boolean(termSlot) : casualOpen
+  const pack = term && mode === 'pack' ? packSettings(term) : null
+  const packCheck = pack && engine ? checkPack({ starts: packStarts, sizes: pack.sizes, isOpen: (iso) => isCasualOpen({ ...engine, coachId, startsAt: iso }) }) : null
+  const open = mode === 'term' ? Boolean(termSlot) : mode === 'pack' ? Boolean(packCheck?.ok) : casualOpen
   const coach = data?.coaches.find((c) => c.id === coachId)
   const players = user ? (await p.find({ pagination: false, collection: 'participants', where: { account: { equals: user.id } }, depth: 0, limit: 20, overrideAccess: true })).docs.map((k) => ({ id: k.id, name: `${k.firstName} ${k.lastName}` })) : []
 
-  const sessions = termSlot?.sessions ?? (q.start ? [q.start] : [])
+  const sessions = mode === 'pack' ? (packCheck?.ok ? packCheck.starts : []) : termSlot?.sessions ?? (q.start ? [q.start] : [])
   const awayDates = new Set(termSlot?.awayDates[coachId] ?? [])
   const coachAway = data?.availability.find((a) => a.coachId === coachId)?.away ?? []
   const ranges = termSlot && awayDates.size ? awayRanges([...awayDates], coachAway) : []
   const priced = term && mode === 'casual' && q.start ? casualPrice(term, { startsAt: new Date(q.start).toISOString(), now: new Date(), termMember: await isTermMember(p, user?.id) }) : null
-  const total = term ? (mode === 'term' ? term.pricePerSession * sessions.length : (priced?.price ?? term.casualPrice)) : 0
+  const total = term ? (mode === 'pack' ? packTotal(sessions.length, pack!.price) : mode === 'term' ? term.pricePerSession * sessions.length : (priced?.price ?? term.casualPrice)) : 0
   const plan = termSlot ? weeklyPlan(sessions) : null
   const short = (iso: string) => formatDate(iso, { weekday: 'short', day: 'numeric', month: 'short' })
   const weekly =
@@ -73,7 +79,7 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
       <div className="container-x grid gap-10 py-12 lg:grid-cols-[1fr_22rem]">
         <div>
           <Link href={`/academy/1-on-1${mode === 'term' ? '?mode=term' : ''}`} className="text-sm text-muted hover:text-ink">← All times</Link>
-          <h1 className="mt-4 font-display text-4xl font-semibold uppercase tracking-tight">{mode === 'term' ? 'Book your term of 1-on-1s' : 'Book your 1-on-1'}</h1>
+          <h1 className="mt-4 font-display text-4xl font-semibold uppercase tracking-tight">{mode === 'term' ? 'Book your term of 1-on-1s' : mode === 'pack' ? 'Book your holiday pack' : 'Book your 1-on-1'}</h1>
           {term && <div className="mt-6"><PromoNotice tone="dark" targets={[{ kind: '1on1', termId: term.id }]} /></div>}
           {q.cancelled && <p className="panel mt-6 border border-line px-4 py-3 text-sm">Payment was cancelled — nothing was charged.</p>}
           {share && open && coach && (
@@ -100,7 +106,7 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
               <BookForm
                 coach={coachId}
                 term={term.id}
-                slot={mode === 'term' ? { mode: 'term', weekday: termSlot!.weekday, time: termSlot!.time, sessions: sessions.length } : { mode: 'casual', start: q.start! }}
+                slot={mode === 'term' ? { mode: 'term', weekday: termSlot!.weekday, time: termSlot!.time, sessions: sessions.length } : mode === 'pack' ? { mode: 'pack', starts: sessions } : { mode: 'casual', start: q.start! }}
                 price={formatAUD(total)}
                 weekly={weekly}
                 credit={user ? { balance: await creditBalance(p, user.id), total, sessions: sessions.length } : undefined}
@@ -111,7 +117,8 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
               />
             ) : (
               <p className="panel border border-line p-6">
-                That {mode === 'term' ? 'weekly time' : 'time'} isn’t available any more. <Link href={`/academy/1-on-1${mode === 'term' ? '?mode=term' : ''}`} className="font-semibold underline">Choose another</Link>.
+                {mode === 'pack' && packCheck && !packCheck.ok ? <>{packCheck.error} <Link href={`/academy/1-on-1/pack?coach=${coachId}`} className="font-semibold underline">Choose your times</Link>.</> : <>
+                That {mode === 'term' ? 'weekly time' : 'time'} isn’t available any more. <Link href={`/academy/1-on-1${mode === 'term' ? '?mode=term' : ''}`} className="font-semibold underline">Choose another</Link>.</>}
               </p>
             )}
           </div>
@@ -121,9 +128,22 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
           <aside className="panel gloss-sheen h-fit border border-line lg:sticky lg:top-24">
             <div className="relative aspect-[4/3] bg-surface-2">{coach.photo && <Image src={coach.photo} alt={coach.name} fill sizes="22rem" className="object-cover" />}</div>
             <div className="p-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-muted">{mode === 'term' ? `${term.name} · weekly` : 'Casual 1-on-1'}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-muted">{mode === 'term' ? `${term.name} · weekly` : mode === 'pack' ? `${term.name} · holiday pack` : 'Casual 1-on-1'}</p>
               <p className="mt-2 font-display text-2xl font-semibold uppercase">{coach.name}</p>
-              {mode === 'term' ? (
+              {mode === 'pack' ? (
+                <>
+                  <p className="mt-3 text-sm">{term.sessionMinutes} min · {term.location}</p>
+                  <p className="mt-4 text-xs font-semibold uppercase tracking-[0.2em] text-muted">Your {sessions.length} sessions</p>
+                  <ol className="mt-2 space-y-1 text-sm">
+                    {sessions.map((iso) => <li key={iso}>{formatDate(iso, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}</li>)}
+                  </ol>
+                  <div className="mt-5 space-y-1 border-t border-line pt-4 text-sm">
+                    <div className="flex justify-between text-muted"><span>{formatAUD(pack!.price)} × {sessions.length} sessions</span><span>{formatAUD(total)}</span></div>
+                    {packSaving(sessions.length, pack!.price, term.casualPrice) > 0 && <p className="text-xs text-muted">You save {formatAUD(packSaving(sessions.length, pack!.price, term.casualPrice))} on booking them one by one.</p>}
+                    <div className="flex items-baseline justify-between pt-1"><span className="text-muted">Total</span><span className="font-display text-3xl font-semibold text-ink">{formatAUD(total)}</span></div>
+                  </div>
+                </>
+              ) : mode === 'term' ? (
                 <>
                   <p className="mt-3 text-sm">{termSlot!.weekday}s at {formatDate(sessions[0], { hour: 'numeric', minute: '2-digit' })} · {term.sessionMinutes} min</p>
                   <p className="mt-1 text-sm text-muted">{term.location}</p>

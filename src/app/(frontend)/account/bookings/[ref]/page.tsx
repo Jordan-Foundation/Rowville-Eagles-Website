@@ -46,7 +46,7 @@ export default async function MyBookingPage({ params }: { params: Promise<{ ref:
     const promoLine = await discountLine(p, b)
     const money: [string, string][] = [
       ...(promoLine ? [promoLine] : []),
-      ['Price', b.type === 'term' ? `${formatAUD(b.amount)} (${b.sessionsTotal} × ${formatAUD(per)})` : formatAUD(b.amount)],
+      ['Price', b.type === 'term' || b.packSize ? `${formatAUD(b.amount)} (${b.sessionsTotal} × ${formatAUD(per)}${b.packSize ? ', holiday pack' : ''})` : formatAUD(b.amount)],
       ...(b.paymentMode === 'weekly' ? ([['Weekly payments', `${b.sessionsPaid ?? 0} of ${b.sessionsTotal} paid${b.nextChargeAt ? ` · next ${formatDate(b.nextChargeAt, { weekday: 'short', day: 'numeric', month: 'short' })}` : ''}`]] as [string, string][]) : []),
       ...((b.creditSessionsUsed ?? 0) > 0 ? ([['Session credits used', String(b.creditSessionsUsed)]] as [string, string][]) : []),
       ['Paid by card', card > 0 ? formatAUD(card) : '$0'],
@@ -112,7 +112,9 @@ export default async function MyBookingPage({ params }: { params: Promise<{ ref:
             <section className="border border-line p-5 text-sm">
               <h2 className="font-display text-xl font-semibold uppercase">Need to change or cancel?</h2>
               <p className="mt-2 text-muted">
-                {b.type === 'casual'
+                {b.packSize
+                  ? 'Each session in your holiday pack can be cancelled 24 hours or more before it starts for a refund or account credit. Inside 24 hours, no refund is given for that session.'
+                  : b.type === 'casual'
                   ? 'Cancel 24 hours or more before the session for a refund or account credit. Inside 24 hours, no refund is given.'
                   : 'You can cancel the rest of the term at any time: unplayed sessions are refunded or credited, less one session. A single week cancelled 24 hours or more ahead is credited.'}
               </p>

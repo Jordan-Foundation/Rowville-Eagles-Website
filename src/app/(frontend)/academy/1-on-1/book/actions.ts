@@ -1,6 +1,7 @@
 'use server'
 
-import { allowsWeekly } from '@/academy/timeframes'
+import { allowsWeekly, isHolidayTimeframe } from '@/academy/timeframes'
+import { checkPack, packSettings, packTotal } from '@/academy/packs'
 import { rateLimit } from '@/lib/form-guard'
 import { redirect } from 'next/navigation'
 import { payload } from '@/lib/payload'
@@ -28,7 +29,7 @@ export async function bookSession(_prev: BookState, fd: FormData): Promise<BookS
   const values = Object.fromEntries([...fd.entries()].filter(([k]) => !k.startsWith('$')).map(([k, v]) => [k, String(v).slice(0, 2000)]))
   const fail = (error: string): BookState => ({ error, values })
   const s = (k: string) => (values[k] ?? '').trim()
-  const mode = s('mode') === 'term' ? 'term' : 'casual'
+  const mode = s('mode') === 'term' ? 'term' : s('mode') === 'pack' ? 'pack' : 'casual'
 
   const p = await payload()
   const limited = await rateLimit(p, 'one-on-one', { perIp: 20 })
@@ -41,9 +42,10 @@ export async function bookSession(_prev: BookState, fd: FormData): Promise<BookS
   const term = termId ? await p.findByID({ collection: 'academy-terms', id: termId, depth: 0, disableErrors: true }) : null
   if (!term || term.status !== 'open' || !coachId) return fail('This booking isn’t available any more.')
   if (mode === 'term' && !allowsWeekly(term)) return fail('Weekly bookings aren’t available in the school holidays — book casual sessions instead.')
+  if (mode === 'pack' && !isHolidayTimeframe(term)) return fail('Holiday packs are only for the school holidays.')
   // Booking from a coach's share link: the coach's reservation is this family's to use
   const shareLink = s('share') ? await findShareLink(p, s('share')) : null
-  const share = shareLink && linkMatches(shareLink, { mode, coach: coachId, start: s('start'), weekday: s('weekday'), time: s('time') }) ? shareLink : null
+  const share = shareLink && mode !== 'pack' && linkMatches(shareLink, { mode, coach: coachId, start: s('start'), weekday: s('weekday'), time: s('time') }) ? shareLink : null
   const shareHold = share ? await activeHold(p, share) : null
   const data = await loadTermBookingData(p, term, { ignoreBooking: shareHold?.id })
   const engine = { term, coaches: data.availability, taken: data.taken, now: new Date(), cutoffHours: term.bookingCutoffHours ?? 24 }
@@ -70,6 +72,13 @@ export async function bookSession(_prev: BookState, fd: FormData): Promise<BookS
       plan = weeklyPlan(sessions.map((x) => x.startsAt))
       if (!plan) return fail('Weekly payments aren’t available for this booking — please pay for the term upfront.')
     }
+  } else if (mode === 'pack') {
+    // Holiday pack: the chosen times (any days), all with this coach, at the pack price
+    const pack = packSettings(term)
+    const checked = checkPack({ starts: s('starts').split(',').filter(Boolean), sizes: pack.sizes, isOpen: (iso) => isCasualOpen({ ...engine, coachId, startsAt: iso }) })
+    if (!checked.ok) return fail(checked.error)
+    sessions = checked.starts.map((startsAt) => ({ startsAt }))
+    amount = packTotal(sessions.length, pack.price)
   } else {
     const startsAt = s('start')
     if (Number.isNaN(Date.parse(startsAt)) || !isCasualOpen({ ...engine, coachId, startsAt })) return fail('Sorry — that time has just been booked. Please choose another.')
@@ -127,8 +136,9 @@ export async function bookSession(_prev: BookState, fd: FormData): Promise<BookS
   if (share) await releaseShareHold(p, share)
   const hold = await createHold(p, {
     reference,
-    type: mode,
-    paymentMode: mode === 'casual' ? 'casual' : plan ? 'weekly' : 'upfront',
+    type: mode === 'term' ? 'term' : 'casual',
+    paymentMode: mode === 'term' ? (plan ? 'weekly' : 'upfront') : 'casual',
+    packSize: mode === 'pack' ? sessions.length : undefined,
     creditApplied: creditUse,
     creditSessionsUsed,
     termMemberPrice: memberPrice,
@@ -181,7 +191,7 @@ export async function bookSession(_prev: BookState, fd: FormData): Promise<BookS
 
   const first = sessions[0].startsAt
   const last = sessions.at(-1)!.startsAt
-  const back = (mode === 'term' ? `mode=term&coach=${coachId}&weekday=${weekday}&time=${startTime}` : `coach=${coachId}&start=${encodeURIComponent(first)}`) + (share ? `&share=${s('share')}` : '')
+  const back = (mode === 'term' ? `mode=term&coach=${coachId}&weekday=${weekday}&time=${startTime}` : mode === 'pack' ? `mode=pack&coach=${coachId}&starts=${encodeURIComponent(sessions.map((x) => x.startsAt).join(','))}` : `coach=${coachId}&start=${encodeURIComponent(first)}`) + (share ? `&share=${s('share')}` : '')
   let url: string
   try {
     const checkout = await startCheckout({
@@ -199,7 +209,9 @@ export async function bookSession(_prev: BookState, fd: FormData): Promise<BookS
       items: plan
         ? [{ name: `First session — ${formatDate(first, { weekday: 'short', day: 'numeric', month: 'short' })}`, description: `Term of 1-on-1s with ${coach.displayName} · ${sessions.length} sessions, paid weekly${promo ? ` · ${promo.label}` : ''}`, unitAmount: Math.round(perSession * 100) / 100, quantity: 1 }]
         : creditUse > 0
-          ? [{ name: mode === 'term' ? `Term of 1-on-1s with ${coach.displayName}` : `1-on-1 with ${coach.displayName}`, description: `${player.firstName} ${player.lastName} · ${sessions.length} session${sessions.length === 1 ? '' : 's'} from ${formatDate(first, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })} · ${formatPrice(amount)} less ${creditSessionsUsed} session credit${creditSessionsUsed === 1 ? '' : 's'}`, unitAmount: charge, quantity: 1 }]
+          ? [{ name: mode === 'term' ? `Term of 1-on-1s with ${coach.displayName}` : mode === 'pack' ? `Holiday 1-on-1 pack with ${coach.displayName}` : `1-on-1 with ${coach.displayName}`, description: `${player.firstName} ${player.lastName} · ${sessions.length} session${sessions.length === 1 ? '' : 's'} from ${formatDate(first, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })} · ${formatPrice(amount)} less ${creditSessionsUsed} session credit${creditSessionsUsed === 1 ? '' : 's'}`, unitAmount: charge, quantity: 1 }]
+          : mode === 'pack'
+          ? [{ name: `Holiday 1-on-1 pack with ${coach.displayName}`, description: `${player.firstName} ${player.lastName} · ${sessions.length} sessions: ${sessions.map((x) => formatDate(x.startsAt, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })).join(', ')}`, unitAmount: packSettings(term).price, quantity: sessions.length }]
           : mode === 'term'
           ? [{ name: `Term of 1-on-1s with ${coach.displayName}`, description: `${player.firstName} ${player.lastName} · ${weekday}s ${formatDate(first, { hour: 'numeric', minute: '2-digit' })} · ${sessions.length} sessions, ${formatDate(first, { day: 'numeric', month: 'short' })} – ${formatDate(last, { day: 'numeric', month: 'short' })}`, unitAmount: term.pricePerSession, quantity: sessions.length }]
           : [{ name: `1-on-1 with ${coach.displayName}${memberPrice ? ' (term member price)' : ''}`, description: `${player.firstName} ${player.lastName} · ${formatDate(first, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}`, unitAmount: fullAmount, quantity: 1 }],

@@ -263,7 +263,7 @@ async function afterConfirmed(payload: Payload, booking: AcademyBooking) {
   const group = booking.kind === 'group'
   const html = emailLayout('academy', [
     {
-      heading: group ? `${booking.player.firstName}’s small group place is paid` : booking.type === 'casual' ? 'Your 1-on-1 is booked' : 'Your term of 1-on-1s is booked',
+      heading: group ? `${booking.player.firstName}’s small group place is paid` : booking.packSize ? 'Your holiday 1-on-1 pack is booked' : booking.type === 'casual' ? 'Your 1-on-1 is booked' : 'Your term of 1-on-1s is booked',
       intro: group
         ? `Thanks ${esc(booking.contact.firstName)} — ${esc(booking.player.firstName)}’s place in the small group with ${esc(coach.displayName)} is paid. Each family pays for their own player; we’ll go ahead once everyone has.`
         : `Thanks ${esc(booking.contact.firstName)} — ${esc(booking.player.firstName)} is booked in with ${esc(coach.displayName)}.`,
@@ -271,8 +271,10 @@ async function afterConfirmed(payload: Payload, booking: AcademyBooking) {
         ...(promoLine ? [promoLine] : []),
         ['Coach', coach.displayName],
         ...(group ? ([['Group', `Small group of ${booking.groupSize ?? ''} players`.replace('of  ', '')]] as [string, string][]) : []),
-        [booking.type === 'casual' ? 'When' : 'First session', when(sessions[0]?.startsAt ?? booking.firstSessionAt ?? '')],
-        ...(sessions.length > 1
+        ...(booking.packSize
+          ? ([['Holiday pack', `${sessions.length} sessions`], ['Sessions', sessions.map((x) => when(x.startsAt)).join('<br>')]] as [string, string][])
+          : ([[booking.type === 'casual' ? 'When' : 'First session', when(sessions[0]?.startsAt ?? booking.firstSessionAt ?? '')]] as [string, string][])),
+        ...(sessions.length > 1 && !booking.packSize
           ? ([
               ['Weekly', `${formatDate(sessions[0].startsAt, { weekday: 'long' })}s at ${formatDate(sessions[0].startsAt, { hour: 'numeric', minute: '2-digit' })}`],
               ['Sessions', `${sessions.length} (${formatDate(sessions[0].startsAt, { day: 'numeric', month: 'short' })} – ${formatDate(sessions.at(-1)!.startsAt, { day: 'numeric', month: 'short' })})`],

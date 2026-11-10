@@ -123,6 +123,7 @@ export default async function StaffBookingPage({ params, searchParams }: { param
               <CancelPanel
                 bookingId={b.id}
                 type={b.type}
+                pack={!!b.packSize}
                 coachId={coach.id}
                 defaultTime={b.startTime}
                 coaches={coaches.map((c) => ({ id: c.id, name: c.displayName }))}
