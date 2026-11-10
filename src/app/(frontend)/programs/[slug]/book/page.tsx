@@ -5,10 +5,12 @@ import { ageBounds } from '@/lib/age-check'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { payload, formatAUD, formatDate } from '@/lib/payload'
-import { placesTaken } from '@/lib/payments'
+import { campBookings, placesTaken } from '@/lib/payments'
+import { campDayLabel, campDayList, campHoursLabel, campPrices, fullCampSaving, placesByDay } from '@/lib/camps'
+import { localYmd } from '@/lib/time'
 import { defaultPayee, programTypes } from '@/collections/Programs'
 import { isPayee, paymentsMode, stripeAccounts } from '@/lib/stripe-accounts'
-import { BookingForm } from './BookingForm'
+import { BookingForm, type CampOptions } from './BookingForm'
 import { redirect } from 'next/navigation'
 import { currentUser } from '@/lib/auth'
 import { AcademyBackdrop } from '@/components/AcademyBackdrop'
@@ -107,6 +109,22 @@ export default async function BookPage({
         remaining: Math.max(0, (s.capacity ?? 1) - (await placesTaken(p, program.id, s.start))),
       })),
   )
+  // Holiday camps: the full camp or single days, with places per day
+  const campDays = program.type === 'holiday-camp' ? campDayList(program) : []
+  let camp: CampOptions | null = null
+  if (campDays.length) {
+    const today = localYmd(now)
+    const counts = program.capacity ? placesByDay(campDays.map((d) => d.date), await campBookings(p, program.id)) : null
+    const days = campDays.map((d) => ({
+      date: d.date,
+      label: campDayLabel(d.date),
+      hours: campHoursLabel(d),
+      left: d.date < today ? 0 : counts ? Math.max(0, program.capacity! - (counts.get(d.date) ?? 0)) : null,
+      past: d.date < today,
+    }))
+    const prices = campPrices(program)
+    camp = { days, fullPrice: prices.full, dayPrice: prices.day, canFull: days.every((d) => !d.past && d.left !== 0), saving: fullCampSaving(prices, days.length) }
+  }
   let paymentsReady = program.price === 0 && !((program.type === 'academy-term' || program.type === 'toddler') && program.pricePerSession)
   try {
     paymentsReady ||= Boolean(paymentsMode(payee))
@@ -115,7 +133,8 @@ export default async function BookPage({
   }
   const full =
     program.status !== 'open' ||
-    (program.capacity ? (await placesTaken(p, program.id)) >= program.capacity : false) ||
+    (camp ? camp.days.every((d) => d.past || d.left === 0) : false) ||
+    (!camp && program.capacity ? (await placesTaken(p, program.id)) >= program.capacity : false) ||
     (!termSlots && (program.slots?.length ?? 0) > 0 && slots.every((s) => s.remaining === 0))
 
   return (
@@ -154,6 +173,7 @@ export default async function BookPage({
                 priceLabel={formatAUD(program.price ?? 0)}
                 unitPrice={program.price ?? 0}
                 maxChildren={program.type === 'registration' || offered?.length ? 1 : 4}
+                camp={camp}
                 payeeLabel={stripeAccounts[payee].label}
               />
             )}
@@ -163,10 +183,18 @@ export default async function BookPage({
           <p className="text-sm text-muted">Order summary</p>
           <p className="mt-2 text-xl font-semibold">{program.title}</p>
           <p className="mt-1 text-sm text-muted">{[program.ageRange, program.scheduleNote].filter(Boolean).join(' · ')}</p>
+          {camp ? (
+            <dl className="mt-6 space-y-2 border-t border-line pt-5">
+              <div className="flex items-baseline justify-between"><dt className="text-muted">Full camp ({camp.days.length} days)</dt><dd className="text-2xl font-bold">{formatAUD(camp.fullPrice)}</dd></div>
+              <div className="flex items-baseline justify-between"><dt className="text-muted">Single day</dt><dd className="text-lg font-semibold">{formatAUD(camp.dayPrice)}</dd></div>
+              {camp.saving > 0 && <p className="text-xs text-muted">The full camp saves {formatAUD(camp.saving)} on booking every day separately. Prices are per child.</p>}
+            </dl>
+          ) : (
           <div className="mt-6 flex items-baseline justify-between border-t border-line pt-5">
             <span className="text-muted">{termSlots || program.type === 'registration' ? 'Total' : 'Per child'}</span>
             <span className="text-3xl font-bold">{termSlots ? programPriceLabel(program) : formatAUD(program.price ?? 0)}</span>
           </div>
+          )}
           {program.priceNote && <p className="mt-3 text-xs text-muted">{program.priceNote}</p>}
         </aside>
       </div>

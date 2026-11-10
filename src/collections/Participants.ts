@@ -54,6 +54,7 @@ export const Participants: CollectionConfig = {
       fields: [
         { name: 'conditions', type: 'textarea' },
         { name: 'emergencyContact', type: 'text' },
+        { name: 'emergencyRelationship', type: 'text' },
         { name: 'emergencyPhone', type: 'text' },
       ],
     },

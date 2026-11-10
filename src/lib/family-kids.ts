@@ -2,7 +2,7 @@ import type { Payload } from 'payload'
 import { findOrCreateParticipant } from './accounts'
 
 /** What a booking form needs to know about each child on the account (to prefill and reuse). */
-export type KidOption = { id: number; firstName: string; lastName: string; dob: string; medical: string; emergencyName: string; emergencyPhone: string; photoConsent: boolean }
+export type KidOption = { id: number; firstName: string; lastName: string; dob: string; medical: string; emergencyName: string; emergencyRelationship: string; emergencyPhone: string; photoConsent: boolean }
 
 export async function familyKids(p: Payload, accountId: number | null | undefined): Promise<KidOption[]> {
   if (!accountId) return []
@@ -14,6 +14,7 @@ export async function familyKids(p: Payload, accountId: number | null | undefine
     dob: (k.dateOfBirth ?? '').slice(0, 10),
     medical: k.medical?.conditions ?? '',
     emergencyName: k.medical?.emergencyContact ?? '',
+    emergencyRelationship: k.medical?.emergencyRelationship ?? '',
     emergencyPhone: k.medical?.emergencyPhone ?? '',
     photoConsent: !!k.photoConsent,
   }))
@@ -30,7 +31,7 @@ export const contactPrefill = (u: { firstName?: string | null; lastName?: string
 export async function rememberKid(
   p: Payload,
   accountId: number,
-  kid: { participantId?: number | null; firstName: string; lastName: string; dateOfBirth: string; medical?: string; emergencyName?: string; emergencyPhone?: string; photoConsent?: boolean },
+  kid: { participantId?: number | null; firstName: string; lastName: string; dateOfBirth: string; medical?: string; emergencyName?: string; emergencyRelationship?: string; emergencyPhone?: string; photoConsent?: boolean },
 ) {
   try {
     let id = kid.participantId ?? null
@@ -46,7 +47,13 @@ export async function rememberKid(
       overrideAccess: true,
       depth: 0,
       data: {
-        medical: { conditions: kid.medical || undefined, emergencyContact: kid.emergencyName || undefined, emergencyPhone: kid.emergencyPhone || undefined },
+        medical: {
+          conditions: kid.medical || undefined,
+          emergencyContact: kid.emergencyName || undefined,
+          emergencyPhone: kid.emergencyPhone || undefined,
+          // Only asked on some forms (camps): keep the saved one when not given
+          emergencyRelationship: kid.emergencyRelationship || (await p.findByID({ collection: 'participants', id, depth: 0, overrideAccess: true, disableErrors: true }))?.medical?.emergencyRelationship || undefined,
+        },
         ...(kid.photoConsent !== undefined ? { photoConsent: kid.photoConsent } : {}),
       },
     })

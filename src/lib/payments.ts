@@ -146,6 +146,21 @@ export async function cancelPending(payload: Payload, kind: CheckoutKind, refere
 }
 
 /** Places taken: paid + pending bookings still inside their 35-minute checkout window. */
+/** A camp's live bookings (paid, or still in checkout), with their days — for places per day. */
+export async function campBookings(payload: Payload, programId: number) {
+  const holdCutoff = new Date(Date.now() - 35 * 60 * 1000).toISOString()
+  const { docs } = await payload.find({
+    pagination: false,
+    collection: 'bookings',
+    where: { and: [{ program: { equals: programId } }, { or: [{ status: { equals: 'paid' } }, { and: [{ status: { equals: 'pending' } }, { createdAt: { greater_than: holdCutoff } }] }] }] },
+    limit: 5000,
+    depth: 0,
+    overrideAccess: true,
+    select: { campDays: true, fullCamp: true },
+  })
+  return docs
+}
+
 export async function placesTaken(
   payload: Payload,
   programId: number | string,

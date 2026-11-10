@@ -36,6 +36,8 @@ export function PlayerFields(props: {
   defaultWho?: string
   /** e.g. a Remove button for an extra child */
   action?: React.ReactNode
+  /** Holiday camps: a required yes/no medical answer, the emergency contact's relationship, and "keep with". */
+  camp?: boolean
 }) {
   const sfx = props.suffix ?? ''
   const n = (name: string) => `${name}${sfx}`
@@ -88,13 +90,24 @@ export function PlayerFields(props: {
       {!props.detailsOnly && (
         // key: switching child refills the saved details
         <div key={who} className="contents">
-          <div className="sm:col-span-2">
-            <Field label="Medical conditions, allergies or injuries" hint={props.medicalHint ?? 'Shared only with the coaches running this program.'}>
-              <textarea name={n('medical')} rows={2} className={inputCls} defaultValue={v.medical ?? kid?.medical ?? ''} />
-            </Field>
-          </div>
+          {props.camp ? (
+            <CampMedical n={n} saved={v.medicalAnswer ? { answer: v.medicalAnswer, text: v.medical ?? '' } : { answer: kid?.medical ? (/^none\.?$/i.test(kid.medical.trim()) ? 'none' : 'yes') : '', text: kid?.medical && !/^none\.?$/i.test(kid.medical.trim()) ? kid.medical : '' }} />
+          ) : (
+            <div className="sm:col-span-2">
+              <Field label="Medical conditions, allergies or injuries" hint={props.medicalHint ?? 'Shared only with the coaches running this program.'}>
+                <textarea name={n('medical')} rows={2} className={inputCls} defaultValue={v.medical ?? kid?.medical ?? ''} />
+              </Field>
+            </div>
+          )}
           <Input label="Emergency contact name" name={n('emergencyName')} required defaultValue={v.emergencyName ?? kid?.emergencyName ?? ''} />
+          {props.camp && <Input label="Relationship to the child" name={n('emergencyRelationship')} required placeholder="e.g. Grandparent, aunt, neighbour" defaultValue={v.emergencyRelationship ?? kid?.emergencyRelationship ?? ''} />}
           <Input label="Emergency contact phone" name={n('emergencyPhone')} type="tel" required defaultValue={v.emergencyPhone ?? kid?.emergencyPhone ?? ''} />
+          {props.camp && <div className="hidden sm:block" />}
+          {props.camp && (
+            <div className="sm:col-span-2">
+              <Input label="Keep with a sibling or friend (optional)" name={n('keepWith')} placeholder="Their name — we’ll try to put them in the same group" defaultValue={v.keepWith ?? ''} />
+            </div>
+          )}
           <label className="flex items-start gap-3 text-sm sm:col-span-2">
             <input type="checkbox" name={n('photoConsent')} defaultChecked={v.photoConsent ? v.photoConsent === 'on' : !!kid?.photoConsent} className="mt-1" />
             <span>{props.photoText ?? 'I consent to photos/video of this player being used in club and Academy communications.'}</span>
@@ -103,5 +116,30 @@ export function PlayerFields(props: {
         </div>
       )}
     </Fieldset>
+  )
+}
+
+/** Camps: families must say "none" or give details, so coaches always have an answer. */
+function CampMedical({ n, saved }: { n: (name: string) => string; saved: { answer: string; text: string } }) {
+  const [answer, setAnswer] = useState(saved.answer)
+  return (
+    <fieldset className="space-y-2 sm:col-span-2">
+      <legend className="text-sm font-semibold">Any medical conditions, allergies or injuries? <span className="text-muted font-normal">(required)</span></legend>
+      <div className="flex flex-wrap gap-2 text-sm">
+        <label className="flex cursor-pointer items-center gap-2 rounded-full border border-line bg-surface px-4 py-2.5 has-[:checked]:border-ink has-[:checked]:ring-1 has-[:checked]:ring-ink">
+          <input type="radio" name={n('medicalAnswer')} value="none" required checked={answer === 'none'} onChange={() => setAnswer('none')} />
+          None
+        </label>
+        <label className="flex cursor-pointer items-center gap-2 rounded-full border border-line bg-surface px-4 py-2.5 has-[:checked]:border-ink has-[:checked]:ring-1 has-[:checked]:ring-ink">
+          <input type="radio" name={n('medicalAnswer')} value="yes" required checked={answer === 'yes'} onChange={() => setAnswer('yes')} />
+          Yes — details below
+        </label>
+      </div>
+      {answer === 'yes' && (
+        <Field label="Details" hint="Conditions, allergies, medication and what to do. Shared only with the camp coaches.">
+          <textarea name={n('medical')} rows={3} required className={inputCls} defaultValue={saved.text} />
+        </Field>
+      )}
+    </fieldset>
   )
 }

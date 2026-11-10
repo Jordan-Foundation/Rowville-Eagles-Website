@@ -10,12 +10,14 @@ export const formatDate = (iso?: string | null, opts: Intl.DateTimeFormatOptions
   iso ? new Intl.DateTimeFormat('en-AU', { timeZone: TZ, ...opts }).format(new Date(iso)) : ''
 
 /** Price as families see it: Academy terms with a per-session price show "$25 / session". */
-export const programPriceLabel = (p: { type?: string | null; price?: number | null; pricePerSession?: number | null; twoNightPricePerSession?: number | null }) =>
-  p.type === 'academy-term' && p.pricePerSession != null
+export const programPriceLabel = (p: { type?: string | null; price?: number | null; pricePerSession?: number | null; twoNightPricePerSession?: number | null; fullCampPrice?: number | null; dayPrice?: number | null }) =>
+  p.type === 'holiday-camp' && p.dayPrice != null
+    ? `${formatAUD(p.fullCampPrice ?? p.price ?? 0)} full camp · ${formatAUD(p.dayPrice)} / day`
+    : p.type === 'academy-term' && p.pricePerSession != null
     ? `${formatAUD(p.pricePerSession)} / session${p.twoNightPricePerSession != null ? ` · 2 nights ${formatAUD(p.twoNightPricePerSession)}` : ''}`
     : formatAUD(p.price ?? 0)
 
-type Priced = { type?: string | null; price?: number | null; pricePerSession?: number | null; twoNightPricePerSession?: number | null }
+type Priced = { type?: string | null; price?: number | null; pricePerSession?: number | null; twoNightPricePerSession?: number | null; fullCampPrice?: number | null; dayPrice?: number | null }
 const perSession = (p: Priced) => p.pricePerSession != null && (p.type === 'academy-term' || p.type === 'toddler')
 
 /**
@@ -23,6 +25,8 @@ const perSession = (p: Priced) => p.pricePerSession != null && (p.type === 'acad
  * own prices so it updates when they change. `from` when there's more than one option (pure — unit tested).
  */
 export function cardPrice(p: Priced): { from: boolean; amount: number; unit: string | null } {
+  // Camps: from the day price (the full camp is shown on the camp's page)
+  if (p.type === 'holiday-camp' && p.dayPrice != null) return { from: true, amount: p.dayPrice, unit: '/ day' }
   if (perSession(p)) {
     const options = [p.pricePerSession!, ...(p.type === 'academy-term' && p.twoNightPricePerSession != null ? [p.twoNightPricePerSession] : [])]
     const amount = Math.min(...options)
@@ -33,6 +37,7 @@ export function cardPrice(p: Priced): { from: boolean; amount: number; unit: str
 
 /** Every price option, for the program's detail page. */
 export function priceBreakdown(p: Priced): { label: string; price: string }[] {
+  if (p.type === 'holiday-camp' && p.dayPrice != null) return [{ label: 'Full camp', price: formatAUD(p.fullCampPrice ?? p.price ?? 0) }, { label: 'Single day', price: `${formatAUD(p.dayPrice)} / day` }]
   if (!perSession(p)) return []
   const rows = [{ label: p.type === 'academy-term' ? '1 night a week' : 'Per session', price: `${formatAUD(p.pricePerSession!)} / session` }]
   if (p.type === 'academy-term' && p.twoNightPricePerSession != null) rows.push({ label: '2 nights a week', price: `${formatAUD(p.twoNightPricePerSession)} / session` })

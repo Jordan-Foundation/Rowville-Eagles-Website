@@ -1,3 +1,4 @@
+import { campDayLabel } from './camps'
 import type { Payload, Where } from 'payload'
 import type { CsvValue } from './csv'
 import { formatPhone } from './phone'
@@ -56,8 +57,8 @@ export const EXPORTS: Record<string, (p: Payload, params: URLSearchParams) => Pr
     const { docs } = await p.find({ ...q, collection: 'bookings', where, limit: 5000, depth: 1, sort: '-createdAt' })
     return {
       name: 'Camp and program bookings',
-      headers: ['Reference', 'Booked', 'Program', 'Type', 'Player', 'Born', 'Parent', 'Email', 'Mobile', 'Status', 'Paid', 'Discount', 'Paid to'],
-      rows: docs.map((b) => [b.reference, when(b.createdAt), title(b.program), b.bookingType ?? 'enrolment', b.player?.teamName || `${b.player?.firstName ?? ''} ${b.player?.lastName ?? ''}`.trim(), day(b.player?.dateOfBirth), `${b.contact.firstName} ${b.contact.lastName}`, b.contact.email, formatPhone(b.contact.phone), b.status, b.amount, b.discount ?? 0, b.payee]),
+      headers: ['Reference', 'Booked', 'Program', 'Type', 'Player', 'Born', 'Parent', 'Email', 'Mobile', 'Status', 'Paid', 'Discount', 'Paid to', 'Camp days', 'Keep with'],
+      rows: docs.map((b) => [b.reference, when(b.createdAt), title(b.program), b.bookingType ?? 'enrolment', b.player?.teamName || `${b.player?.firstName ?? ''} ${b.player?.lastName ?? ''}`.trim(), day(b.player?.dateOfBirth), `${b.contact.firstName} ${b.contact.lastName}`, b.contact.email, formatPhone(b.contact.phone), b.status, b.amount, b.discount ?? 0, b.payee, b.fullCamp ? 'Full camp' : (b.campDays ?? []).map((d) => campDayLabel(d.day)).join('; '), b.keepWith ?? '']),
     }
   },
   registrations: async (p, sp) => {

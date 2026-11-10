@@ -5,11 +5,13 @@ import { dobProblem, phoneOk } from '@/lib/validate'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { payload } from '@/lib/payload'
-import { confirmPayment, newReference, placesTaken, startCheckout } from '@/lib/payments'
+import { campBookings, confirmPayment, newReference, placesTaken, startCheckout } from '@/lib/payments'
 import { defaultPayee } from '@/collections/Programs'
 import { isPayee } from '@/lib/stripe-accounts'
 import { findDiscount, recordUse } from '@/promotions/service'
 import { rememberKid } from '@/lib/family-kids'
+import { localYmd } from '@/lib/time'
+import { campChoiceLabel, campDayLabel, campDayList, campPrices, campQuote, placesByDay } from '@/lib/camps'
 
 export type BookingState = { error?: string; values?: Record<string, string> }
 
@@ -18,6 +20,7 @@ const emailOk = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)
 
 export async function bookProgram(_prev: BookingState, fd: FormData): Promise<BookingState> {
   const values = Object.fromEntries([...fd.entries()].filter(([k]) => !k.startsWith('$')).map(([k, v]) => [k, String(v).slice(0, 2000)]))
+  values.campDays = fd.getAll('campDay').map(String).join(',')
   const fail = (error: string): BookingState => ({ error, values })
 
   const p = await payload()
@@ -56,6 +59,17 @@ export async function bookProgram(_prev: BookingState, fd: FormData): Promise<Bo
     offeredParticipant = { id: kid.id, firstName: kid.firstName, lastName: kid.lastName, dateOfBirth: kid.dateOfBirth }
   }
   const usesSlots = (program.slots?.length ?? 0) > 0
+  // Holiday camps: the full camp or chosen days, priced here on the server
+  const campDays = program.type === 'holiday-camp' ? campDayList(program) : []
+  const isCamp = campDays.length > 0
+  const quote = isCamp
+    ? campQuote({ allDays: campDays.map((d) => d.date), full: str(fd, 'campOption') === 'full', days: fd.getAll('campDay').map(String), prices: campPrices(program) })
+    : null
+  if (isCamp && !quote) return fail('Please choose the full camp or at least one day.')
+  if (quote) {
+    const today = localYmd(new Date())
+    if (quote.days.some((d) => d < today)) return fail(quote.fullCamp ? 'This camp has already started — choose from the days left.' : 'One of those days has already happened — please choose again.')
+  }
 
   const contact = {
     firstName: str(fd, 'contactFirstName'),
@@ -77,7 +91,10 @@ export async function bookProgram(_prev: BookingState, fd: FormData): Promise<Bo
     dateOfBirth: x === '' && offeredParticipant ? offeredParticipant.dateOfBirth : str(fd, `playerDob${x}`) || undefined,
     teamName: x === '' ? str(fd, 'teamName') || undefined : undefined,
     medical: str(fd, `medical${x}`) || undefined,
+    medicalAnswer: str(fd, `medicalAnswer${x}`),
     emergencyName: str(fd, `emergencyName${x}`),
+    emergencyRelationship: str(fd, `emergencyRelationship${x}`) || undefined,
+    keepWith: str(fd, `keepWith${x}`).slice(0, 120) || undefined,
     emergencyPhone: str(fd, `emergencyPhone${x}`),
     photoConsent: fd.get(`photoConsent${x}`) === 'on',
   }))
@@ -90,6 +107,13 @@ export async function bookProgram(_prev: BookingState, fd: FormData): Promise<Bo
     if (!pl.firstName || !pl.lastName || !pl.dateOfBirth) return fail(`Please complete the player’s name and date of birth${who}.`)
     if (dobProblem(pl.dateOfBirth)) return fail(dobProblem(pl.dateOfBirth)! + (who ? ` (child ${i + 1})` : ''))
     if (!pl.emergencyName || !pl.emergencyPhone) return fail(`Please add an emergency contact${who}.`)
+    if (isCamp) {
+      if (!pl.emergencyRelationship) return fail(`Please say how the emergency contact is related to the child${who}.`)
+      if (!phoneOk(pl.emergencyPhone)) return fail(`Please enter an Australian phone number for the emergency contact${who}.`)
+      if (pl.medicalAnswer === 'none') pl.medical = 'None'
+      else if (pl.medicalAnswer !== 'yes') return fail(`Please answer the medical question${who} — choose “None” or give details.`)
+      else if (!pl.medical || /^none\.?$/i.test(pl.medical)) return fail(`Please give the medical details${who}, or choose “None”.`)
+    }
   }
   const keyOf = (pl: (typeof players)[number]) => pl.participantId ? `id:${pl.participantId}` : `${pl.firstName.toLowerCase()}|${pl.dateOfBirth}`
   if (new Set(players.map(keyOf)).size < players.length) return fail('The same child is in this booking twice — remove one.')
@@ -105,13 +129,22 @@ export async function bookProgram(_prev: BookingState, fd: FormData): Promise<Bo
     const left = (slot.capacity ?? 1) - (await placesTaken(p, program.id, sessionStart))
     if (left < players.length) return fail(left <= 0 ? 'Sorry, that time was just booked. Please choose another.' : `Sorry, that time only has ${left} place${left === 1 ? '' : 's'} left.`)
   }
-  if (program.capacity) {
+  if (isCamp && program.capacity) {
+    // Places are per day
+    const taken = await campBookings(p, program.id)
+    const counts = placesByDay(campDays.map((d) => d.date), taken)
+    for (const d of quote!.days) {
+      const left = program.capacity - (counts.get(d) ?? 0)
+      if (left < players.length) return fail(left <= 0 ? `Sorry, ${campDayLabel(d)} is full — choose other days.` : `Sorry, ${campDayLabel(d)} only has ${left} place${left === 1 ? '' : 's'} left.`)
+    }
+  } else if (program.capacity) {
     const left = program.capacity - (await placesTaken(p, program.id))
     if (left < players.length) return fail(left <= 0 ? 'Sorry, this program has just filled up.' : `Sorry, there ${left === 1 ? 'is only 1 place' : `are only ${left} places`} left.`)
   }
 
   const payee = isPayee(program.payee) ? program.payee : defaultPayee(program.type)
-  const price = program.price ?? 0
+  const price = quote ? quote.total : program.price ?? 0
+  const campChoice = quote ? campChoiceLabel({ fullCamp: quote.fullCamp, days: quote.days, totalDays: campDays.length }) : ''
   const bookings: { id: number; reference: string; due: number; promo: Awaited<ReturnType<typeof findDiscount>>; pl: (typeof players)[number] }[] = []
   let lead = ''
   for (const pl of players) {
@@ -120,7 +153,7 @@ export async function bookProgram(_prev: BookingState, fd: FormData): Promise<Bo
     // Promotion for this family (worked out on the server, per child — usage limits count each one)
     const promo = await findDiscount(p, accountId, [{ target: { kind: 'program', programId: program.id, programType: program.type }, amount: price }])
     const due = Math.round((price - (promo?.off ?? 0)) * 100) / 100
-    const { suffix: _s, participantId: _pid, ...player } = pl
+    const { suffix: _s, participantId: _pid, medicalAnswer: _m, keepWith, ...player } = pl
     const booking = await p.create({
       collection: 'bookings',
       data: {
@@ -133,6 +166,7 @@ export async function bookProgram(_prev: BookingState, fd: FormData): Promise<Bo
         discount: promo?.off,
         promotion: promo?.promotion,
         sessionStart,
+        ...(quote ? { fullCamp: quote.fullCamp, campDays: quote.days.map((day) => ({ day })), keepWith } : {}),
         account: accountId,
         participant: offeredParticipant?.id,
         contact,
@@ -154,6 +188,7 @@ export async function bookProgram(_prev: BookingState, fd: FormData): Promise<Bo
         dateOfBirth: b.pl.dateOfBirth,
         medical: b.pl.medical,
         emergencyName: b.pl.emergencyName,
+        emergencyRelationship: b.pl.emergencyRelationship,
         emergencyPhone: b.pl.emergencyPhone,
         photoConsent: b.pl.photoConsent,
       })
@@ -173,7 +208,7 @@ export async function bookProgram(_prev: BookingState, fd: FormData): Promise<Bo
         kind: 'booking',
         reference,
         email: contact.email,
-        items: bookings.map((b) => ({ name: program.title, description: isTeamEntry ? b.pl.teamName : `${b.pl.firstName} ${b.pl.lastName}`, unitAmount: price, quantity: 1 })),
+        items: bookings.map((b) => ({ name: program.title, description: isTeamEntry ? b.pl.teamName : `${b.pl.firstName} ${b.pl.lastName}${campChoice ? ` — ${campChoice}` : ''}`, unitAmount: price, quantity: 1 })),
         discount: off > 0 ? { amount: off, label: bookings.find((b) => b.promo)!.promo!.label } : null,
         cancelPath: `/programs/${program.slug}/book?cancelled=1`,
       })

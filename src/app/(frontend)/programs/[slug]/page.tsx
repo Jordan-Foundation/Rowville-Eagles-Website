@@ -1,6 +1,8 @@
 import { programPlace } from '@/lib/place'
-import { placesTaken } from '@/lib/payments'
+import { campBookings, placesTaken } from '@/lib/payments'
+import { localYmd } from '@/lib/time'
 import { priceBreakdown } from '@/lib/format'
+import { campDayLabel, campDayList, campHoursLabel, campPrices, fullCampSaving, placesByDay } from '@/lib/camps'
 import { PriceTag } from '@/components/PriceTag'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
@@ -45,9 +47,15 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
   const settings = await pl.findGlobal({ slug: 'site-settings', depth: 0 })
   const { place, directions } = programPlace(p.location, settings.ground?.address)
   // "8 of 20 places left" for whole-program bookings (camps, clinics); timed sessions show places when you pick a time
-  const placesLeft = p.capacity && !p.slots?.length && p.type === 'holiday-camp' ? Math.max(0, p.capacity - (await placesTaken(pl, p.id))) : null
-  const placesLabel = placesLeft === null ? (p.capacity ? `${p.capacity} total` : null) : placesLeft === 0 ? 'Full' : `${placesLeft} of ${p.capacity} left`
+  // Camps: places are per day — show the most places still free on any day to come
+  const campAll = p.type === 'holiday-camp' ? campDayList(p) : []
+  const today = localYmd(new Date())
+  const dayCounts = p.capacity && campAll.length ? placesByDay(campAll.map((d) => d.date), await campBookings(pl, p.id)) : null
+  const dayLeft = dayCounts ? campAll.filter((d) => d.date >= today).map((d) => Math.max(0, p.capacity! - (dayCounts.get(d.date) ?? 0))) : []
+  const placesLeft = dayCounts ? (dayLeft.length ? Math.max(...dayLeft) : 0) : p.capacity && !p.slots?.length && p.type === 'holiday-camp' ? Math.max(0, p.capacity - (await placesTaken(pl, p.id))) : null
+  const placesLabel = placesLeft === null ? (p.capacity ? `${p.capacity} total` : null) : placesLeft === 0 ? 'Full' : dayCounts ? (Math.min(...dayLeft) === placesLeft ? `${placesLeft} of ${p.capacity} left each day` : `Up to ${placesLeft} of ${p.capacity} left a day`) : `${placesLeft} of ${p.capacity} left`
 
+  const campDays = campAll
   const facts = [
     ['When', [formatDate(p.startDate), p.endDate && formatDate(p.endDate)].filter(Boolean).join(' – ')],
     ['Schedule', p.scheduleNote],
@@ -120,6 +128,21 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
               ))}
             </dl>
           )}
+          {campDays.length > 0 && (() => {
+            const prices = campPrices(p)
+            const saving = fullCampSaving(prices, campDays.length)
+            return (
+              <div className="mt-4 space-y-3 text-sm">
+                <p className="font-semibold">Full camp {formatAUD(prices.full)} · or {formatAUD(prices.day)} per day{saving > 0 ? ` — save ${formatAUD(saving)} with the full camp` : ''}</p>
+                <div>
+                  <p className="text-muted">Camp days</p>
+                  <ul className="mt-1 space-y-0.5">
+                    {campDays.map((d) => <li key={d.date} className="flex justify-between gap-4"><span>{campDayLabel(d.date)}</span><span className="text-muted">{campHoursLabel(d)}</span></li>)}
+                  </ul>
+                </div>
+              </div>
+            )
+          })()}
           {p.priceNote && <p className="mt-1 text-sm text-muted">{p.priceNote}</p>}
           <dl className="mt-6 space-y-3 border-t border-line pt-6 text-sm">
             {facts.map(([k, v]) => (

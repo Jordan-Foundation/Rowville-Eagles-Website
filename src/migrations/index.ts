@@ -63,6 +63,7 @@ import * as migration_20261109_092722_group_settings from './20261109_092722_gro
 import * as migration_20261109_101625_small_groups from './20261109_101625_small_groups';
 import * as migration_20261109_121219_group_reminder_link from './20261109_121219_group_reminder_link';
 import * as migration_20261110_043135_timeframes from './20261110_043135_timeframes';
+import * as migration_20261110_055951_camp_days from './20261110_055951_camp_days';
 
 export const migrations = [
   {
@@ -388,6 +389,11 @@ export const migrations = [
   {
     up: migration_20261110_043135_timeframes.up,
     down: migration_20261110_043135_timeframes.down,
-    name: '20261110_043135_timeframes'
+    name: '20261110_043135_timeframes',
+  },
+  {
+    up: migration_20261110_055951_camp_days.up,
+    down: migration_20261110_055951_camp_days.down,
+    name: '20261110_055951_camp_days'
   },
 ];

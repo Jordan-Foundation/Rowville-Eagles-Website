@@ -1,5 +1,7 @@
 import type { CollectionConfig } from 'payload'
 import { APIError } from 'payload'
+import { CAMP_DEFAULTS, campDayList } from '../lib/camps'
+import { localToUtc, localYmd } from '../lib/time'
 import { refreshAfterChange, refreshAfterDelete } from '../lib/revalidate'
 import { isStaff, publishedOrStaff } from '../access'
 
@@ -63,6 +65,29 @@ export const Programs: CollectionConfig = {
         // Mini Ballers: $20 a session, one night a week
         if (type === 'toddler' && data.pricePerSession == null && !originalDoc?.id) data.pricePerSession = 20
         if (type === 'toddler') data.twoNightPricePerSession = null
+        // Holiday camps: full camp $300 or $110 a day by default; the flat price follows the full-camp price.
+        // Camp days default to every weekday between the start and end dates.
+        if (type === 'holiday-camp') {
+          const merged = { ...originalDoc, ...data }
+          if (merged.fullCampPrice == null) data.fullCampPrice = merged.price || CAMP_DEFAULTS.fullPrice
+          if (merged.dayPrice == null) data.dayPrice = CAMP_DEFAULTS.dayPrice
+          data.price = data.fullCampPrice ?? merged.fullCampPrice
+          if (Array.isArray(data.campDays)) {
+            for (const d of data.campDays) {
+              if (d?.date) d.date = localToUtc(localYmd(new Date(d.date)), '00:00').toISOString()
+              for (const k of ['startTime', 'endTime'] as const) if (d?.[k] && !/^([01]\d|2[0-3]):[0-5]\d$/.test(d[k])) throw new APIError(`Camp day times must be 24-hour HH:MM, e.g. 09:00 (got "${d[k]}").`, 400, undefined, true)
+            }
+          }
+          const days = data.campDays ?? originalDoc?.campDays ?? []
+          if (!days.length && merged.startDate) {
+            data.campDays = campDayList({ startDate: merged.startDate, endDate: merged.endDate }).map((d) => ({ date: localToUtc(d.date, '00:00').toISOString(), startTime: d.start, endTime: d.end }))
+          }
+          const tf = typeof merged.timeframe === 'object' ? merged.timeframe?.id : merged.timeframe
+          if (tf) {
+            const t = await req.payload.findByID({ collection: 'academy-terms', id: tf, depth: 0, req, disableErrors: true })
+            if (t && t.category !== 'school-holidays') throw new APIError(`${t.name} is a school term — camps go in a school holidays timeframe.`, 400, undefined, true)
+          }
+        }
         // The flat price isn't used for per-session terms; keep the column filled
         if (data.price == null || (data.price as unknown) === '') data.price = originalDoc?.price ?? 0
         return {
@@ -158,8 +183,8 @@ export const Programs: CollectionConfig = {
           min: 0,
           defaultValue: 0,
           admin: {
-            // Academy terms priced per session don't need a flat price
-            condition: (d) => !((d?.type === 'academy-term' || d?.type === 'toddler') && d?.pricePerSession != null),
+            // Academy terms priced per session don't need a flat price; camps use the full-camp / day prices
+            condition: (d) => d?.type !== 'holiday-camp' && !((d?.type === 'academy-term' || d?.type === 'toddler') && d?.pricePerSession != null),
             description: 'AUD incl. GST.',
           },
         },
@@ -183,7 +208,40 @@ export const Programs: CollectionConfig = {
             description: 'Families pay this × the sessions left in their training time (like 1-on-1 terms), e.g. $25 (Academy) or $20 (Mini Ballers).',
           },
         },
-        { name: 'capacity', type: 'number', min: 0 },
+        { name: 'capacity', type: 'number', min: 0, admin: { description: 'Camps: places per day' } },
+      ],
+    },
+    {
+      type: 'row',
+      admin: { condition: (d) => d?.type === 'holiday-camp' },
+      fields: [
+        { name: 'fullCampPrice', label: 'Full camp price (AUD)', type: 'number', min: 0, admin: { description: 'Every day of the camp. Default $300.' } },
+        { name: 'dayPrice', label: 'Price per day (AUD)', type: 'number', min: 0, admin: { description: 'Families can book single days instead. Default $110.' } },
+        {
+          name: 'timeframe',
+          label: 'School holidays',
+          type: 'relationship',
+          relationTo: 'academy-terms',
+          filterOptions: { category: { equals: 'school-holidays' } },
+          admin: { description: 'Which school holidays this camp is in' },
+        },
+      ],
+    },
+    {
+      name: 'campDays',
+      label: 'Camp days',
+      type: 'array',
+      admin: {
+        condition: (d) => d?.type === 'holiday-camp',
+        description: 'Filled in with every weekday between the start and end dates when the camp is saved — remove any days the camp doesn’t run (e.g. public holidays).',
+        initCollapsed: true,
+      },
+      fields: [
+        { type: 'row', fields: [
+          { name: 'date', type: 'date', required: true, admin: { date: { pickerAppearance: 'dayOnly', displayFormat: 'EEE d MMM yyyy' } } },
+          { name: 'startTime', type: 'text', defaultValue: '09:00', admin: { description: '24-hour, e.g. 09:00' } },
+          { name: 'endTime', type: 'text', defaultValue: '15:00', admin: { description: '24-hour, e.g. 15:00' } },
+        ] },
       ],
     },
     {

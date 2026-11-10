@@ -670,6 +670,7 @@ export interface Participant {
   medical?: {
     conditions?: string | null;
     emergencyContact?: string | null;
+    emergencyRelationship?: string | null;
     emergencyPhone?: string | null;
   };
   photoConsent?: boolean | null;
@@ -902,7 +903,39 @@ export interface Program {
    * Families pay this × the sessions left in their training time (like 1-on-1 terms), e.g. $25 (Academy) or $20 (Mini Ballers).
    */
   pricePerSession?: number | null;
+  /**
+   * Camps: places per day
+   */
   capacity?: number | null;
+  /**
+   * Every day of the camp. Default $300.
+   */
+  fullCampPrice?: number | null;
+  /**
+   * Families can book single days instead. Default $110.
+   */
+  dayPrice?: number | null;
+  /**
+   * Which school holidays this camp is in
+   */
+  timeframe?: (number | null) | AcademyTerm;
+  /**
+   * Filled in with every weekday between the start and end dates when the camp is saved — remove any days the camp doesn’t run (e.g. public holidays).
+   */
+  campDays?:
+    | {
+        date: string;
+        /**
+         * 24-hour, e.g. 09:00
+         */
+        startTime?: string | null;
+        /**
+         * 24-hour, e.g. 15:00
+         */
+        endTime?: string | null;
+        id?: string | null;
+      }[]
+    | null;
   /**
    * e.g. "Club fee only — FV fees paid in PlayFootball"
    */
@@ -1416,6 +1449,23 @@ export interface Booking {
   bookingType?: ('enrolment' | 'trial') | null;
   birthYear?: number | null;
   sessionStart?: string | null;
+  /**
+   * Booked every day of the camp
+   */
+  fullCamp?: boolean | null;
+  /**
+   * The days this child comes (every day for a full camp)
+   */
+  campDays?:
+    | {
+        /**
+         * YYYY-MM-DD
+         */
+        day: string;
+        id?: string | null;
+      }[]
+    | null;
+  keepWith?: string | null;
   account?: (number | null) | User;
   participant?: (number | null) | Participant;
   academyRegistration?: (number | null) | AcademyRegistration;
@@ -1436,6 +1486,7 @@ export interface Booking {
     teamName?: string | null;
     medical?: string | null;
     emergencyName?: string | null;
+    emergencyRelationship?: string | null;
     emergencyPhone?: string | null;
     photoConsent?: boolean | null;
   };
@@ -3663,6 +3714,17 @@ export interface ProgramsSelect<T extends boolean = true> {
   twoNightPricePerSession?: T;
   pricePerSession?: T;
   capacity?: T;
+  fullCampPrice?: T;
+  dayPrice?: T;
+  timeframe?: T;
+  campDays?:
+    | T
+    | {
+        date?: T;
+        startTime?: T;
+        endTime?: T;
+        id?: T;
+      };
   priceNote?: T;
   slots?:
     | T
@@ -3705,6 +3767,14 @@ export interface BookingsSelect<T extends boolean = true> {
   bookingType?: T;
   birthYear?: T;
   sessionStart?: T;
+  fullCamp?: T;
+  campDays?:
+    | T
+    | {
+        day?: T;
+        id?: T;
+      };
+  keepWith?: T;
   account?: T;
   participant?: T;
   academyRegistration?: T;
@@ -3726,6 +3796,7 @@ export interface BookingsSelect<T extends boolean = true> {
         teamName?: T;
         medical?: T;
         emergencyName?: T;
+        emergencyRelationship?: T;
         emergencyPhone?: T;
         photoConsent?: T;
       };
@@ -3965,6 +4036,7 @@ export interface ParticipantsSelect<T extends boolean = true> {
     | {
         conditions?: T;
         emergencyContact?: T;
+        emergencyRelationship?: T;
         emergencyPhone?: T;
       };
   photoConsent?: T;

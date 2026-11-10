@@ -12,7 +12,7 @@ export type PriceSection = { title: string; intro: string; rows: PriceRow[] }
 /** Which fields may be edited from the Prices page (anything else is rejected). */
 export const EDITABLE: Record<string, { fields: string[]; nullable?: string[] }> = {
   'academy-terms': { fields: ['pricePerSession', 'casualPrice', 'termMemberPrice', 'termMemberWindowDays'], nullable: ['termMemberPrice'] },
-  programs: { fields: ['price', 'pricePerSession', 'twoNightPricePerSession', 'trialPrice'], nullable: ['pricePerSession', 'twoNightPricePerSession'] },
+  programs: { fields: ['price', 'pricePerSession', 'twoNightPricePerSession', 'trialPrice', 'fullCampPrice', 'dayPrice'], nullable: ['pricePerSession', 'twoNightPricePerSession'] },
   'selection-rounds': { fields: ['fee'], nullable: ['fee'] },
   squads: { fields: ['fee'], nullable: ['fee'] },
   products: { fields: ['price'] },
@@ -155,13 +155,18 @@ export async function loadPrices(payload: Payload): Promise<PriceSection[]> {
     },
     {
       title: 'Programs, camps & registrations',
-      intro: 'One price per booking.',
+      intro: 'One price per booking. Holiday camps have a full-camp price and a per-day price (per child).',
       rows: programs.docs.map((p) => ({
         title: p.title,
         note: [typeLabel[p.type] ?? p.type, p.status].filter(Boolean).join(' · '),
         href: `/admin/collections/programs/${p.id}`,
         muted: done(p.status),
-        fields: [{ key: `programs.${p.id}.price`, label: p.type === 'tournament' ? 'Default fee' : 'Price', value: p.price ?? 0, unit: 'aud' }],
+        fields: p.type === 'holiday-camp'
+          ? [
+              { key: `programs.${p.id}.fullCampPrice`, label: 'Full camp', value: p.fullCampPrice ?? p.price ?? 300, unit: 'aud' as const },
+              { key: `programs.${p.id}.dayPrice`, label: 'Per day', value: p.dayPrice ?? 110, unit: 'aud' as const },
+            ]
+          : [{ key: `programs.${p.id}.price`, label: p.type === 'tournament' ? 'Default fee' : 'Price', value: p.price ?? 0, unit: 'aud' as const }],
       })),
     },
     {
