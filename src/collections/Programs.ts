@@ -281,6 +281,14 @@ export const Programs: CollectionConfig = {
       },
     },
     {
+      type: 'row',
+      admin: { condition: (d) => d?.type === 'academy-term' || d?.type === 'toddler' },
+      fields: [
+        { name: 'opensAt', label: 'Registrations open', type: 'date', admin: { date: { pickerAppearance: 'dayAndTime' }, description: 'A draft program opens by itself at this time. Set by Yearly setup: Term 1 at the chosen time, later terms 2 weeks before the previous term ends.' } },
+        { name: 'autoOpen', label: 'Open automatically', type: 'checkbox', defaultValue: true },
+      ],
+    },
+    {
       name: 'weeklySessions',
       label: 'Weekly training nights',
       type: 'array',

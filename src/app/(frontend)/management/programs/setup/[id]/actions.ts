@@ -1,5 +1,6 @@
 'use server'
 
+import { localToUtc } from '@/lib/time'
 import { revalidatePath } from 'next/cache'
 import { managementOrNull } from '@/lib/management'
 import { payload } from '@/lib/payload'
@@ -32,6 +33,12 @@ export async function saveProgram(_prev: ProgramEditState, fd: FormData): Promis
       data: {
         title,
         ...(STATUSES.includes(status) ? { status: status as 'open' } : {}),
+        ...(prog.type === 'academy-term' || prog.type === 'toddler'
+          ? (() => {
+              const at = s(fd, 'opensAt', 20)
+              return { opensAt: /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(at) ? localToUtc(at.slice(0, 10), at.slice(11)).toISOString() : null, autoOpen: fd.get('autoOpen') === 'on' }
+            })()
+          : {}),
         summary: s(fd, 'summary', 400) || prog.summary || undefined,
         location: s(fd, 'location', 200) || null,
         scheduleNote: s(fd, 'scheduleNote', 200) || null,

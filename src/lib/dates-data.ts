@@ -50,6 +50,19 @@ export async function loadDates(p: Payload): Promise<DateSection[]> {
       })),
     },
     {
+      id: 'registrations',
+      title: 'Academy registrations open',
+      intro: 'A draft Academy term program opens for registrations by itself at this time (Term 1 at the time chosen in Yearly setup; later terms 2 weeks before the term before them ends). Open or close one now from Program setup.',
+      rows: programs.docs.filter((x) => x.type === 'academy-term' || x.type === 'toddler').map((x) => ({
+        target: `programs:${x.id}`,
+        title: x.title,
+        note: [x.status, x.autoOpen === false ? 'automatic opening off' : null].filter(Boolean).join(' · '),
+        href: `/management/programs/setup/${x.id}`,
+        muted: x.status !== 'draft',
+        fields: [f('programs', 'opensAt', 'Opens', x.opensAt)],
+      })),
+    },
+    {
       id: 'programs',
       title: 'Programs & camps',
       intro: 'Start and finish (date and time). Programs linked to a school term take the term’s dates — change those above.',

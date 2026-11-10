@@ -37,7 +37,7 @@ export async function saveDateRow(_prev: DateRowState, fd: FormData): Promise<Da
       if (!(COLLECTIONS as readonly string[]).includes(collection) || !Number.isInteger(id)) return { error: 'Unknown item.' }
       if (collection === 'programs') {
         const prog = await p.findByID({ collection: 'programs', id, depth: 0, overrideAccess: true })
-        if ((prog.type === 'academy-term' || prog.type === 'toddler') && prog.academyTerm) return { error: 'This program follows its Academy term — change the term’s dates.' }
+        if ((prog.type === 'academy-term' || prog.type === 'toddler') && prog.academyTerm && ('startDate' in data || 'endDate' in data)) return { error: 'This program follows its Academy term — change the term’s dates.' }
       }
       await p.update({ collection: collection as 'programs', id, data: data as never, user, overrideAccess: false })
       // Group programs + Mini Ballers linked to the term take its new dates

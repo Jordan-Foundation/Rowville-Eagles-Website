@@ -17,6 +17,7 @@ export const DATE_FIELDS: Record<string, DateKind> = {
   'academy-terms.availabilityDeadline': { kind: 'datetime' },
   'programs.startDate': { kind: 'datetime' },
   'programs.endDate': { kind: 'datetime' },
+  'programs.opensAt': { kind: 'datetime' },
   'trial-sessions.start': { kind: 'datetime' },
   'report-cycles.dueDate': { kind: 'day', at: '22:00' },
   'pdr-challenges.month': { kind: 'month' },

@@ -977,6 +977,11 @@ export interface Program {
    */
   academyTerm?: (number | null) | AcademyTerm;
   /**
+   * A draft program opens by itself at this time. Set by Yearly setup: Term 1 at the chosen time, later terms 2 weeks before the previous term ends.
+   */
+  opensAt?: string | null;
+  autoOpen?: boolean | null;
+  /**
    * Academy terms: the nights the program runs. Trial bookings are offered on these nights between the start and end dates.
    */
   weeklySessions?:
@@ -3936,6 +3941,8 @@ export interface ProgramsSelect<T extends boolean = true> {
         id?: T;
       };
   academyTerm?: T;
+  opensAt?: T;
+  autoOpen?: T;
   weeklySessions?:
     | T
     | {

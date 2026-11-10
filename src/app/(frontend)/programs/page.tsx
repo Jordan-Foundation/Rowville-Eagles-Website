@@ -1,3 +1,4 @@
+import { nudgeOpenPrograms } from '@/academy/release-service'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import type { Where } from 'payload'
@@ -15,6 +16,7 @@ export default async function ProgramsPage({ searchParams }: { searchParams: Pro
     status: { in: ['open', 'full'] },
     type: active ? { equals: active } : { not_in: ['registration', 'academy-trial', 'private-session'] },
   }
+  await nudgeOpenPrograms(await payload())
   const { docs } = await (await payload()).find({ pagination: false, collection: 'programs', where, depth: 0, limit: 100 })
 
   return (

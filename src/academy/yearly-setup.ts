@@ -4,6 +4,8 @@ import { localToUtc, localYmd } from '../lib/time'
 import { emailLayout } from '../lib/email-templates'
 import { sendEmail } from '../lib/email'
 import { siteUrl } from '../lib/payments'
+import { opensAtFor } from './release'
+import { openDuePrograms } from './release-service'
 import { DEADLINE_TIME, HOLIDAY_ORDER, defaultDeadline, holidaysFor, setupDue, termProblems, type HolidayPeriod, type Range } from './yearly'
 
 const q = { overrideAccess: true, depth: 0 } as const
@@ -70,7 +72,8 @@ export async function publishPlan(p: Payload, setup: YearSetup): Promise<PlanIte
     if (existing) { items.push({ kind: 'program', name: existing.title, action: 'keep', detail: 'Already set up for this term' }); continue }
     const prev = await previousProgram(p, setup.year - 1, n)
     const slots = prev ? (await p.count({ collection: 'academy-term-slots', where: { program: { equals: prev.id } }, overrideAccess: true })).totalDocs : 0
-    items.push({ kind: 'program', name: `Academy Term ${n} ${setup.year}`, action: 'create', detail: prev ? `Draft, copying ${slots} training time${slots === 1 ? '' : 's'} from ${prev.title}` : 'Draft — add its training times' })
+    const opens = new Date(opensAtFor(n, (setup.terms ?? []).map((t) => t.end!), setup.term1OpensAt)).toLocaleString('en-AU', { timeZone: 'Australia/Sydney', weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
+    items.push({ kind: 'program', name: `Academy Term ${n} ${setup.year}`, action: 'create', detail: `${prev ? `Draft, copying ${slots} training time${slots === 1 ? '' : 's'} from ${prev.title}` : 'Draft — add its training times'} · registrations open ${n === 1 && !setup.term1OpensAt ? 'when published' : opens}` })
   }
   return items
 }
@@ -120,7 +123,13 @@ export async function publishSetup(p: Payload, year: number, actorId?: number | 
   for (let n = 1; n <= 4; n++) {
     const tfId = termIds[n]
     const existing = (await p.find({ pagination: false, collection: 'programs', where: { academyTerm: { equals: tfId }, type: { equals: 'academy-term' } }, limit: 1, ...q })).docs[0]
-    if (existing) { results.programs.push({ id: existing.id, title: existing.title, action: 'kept', slots: 0 }); continue }
+    const opensAt = opensAtFor(n, setup.terms.map((t) => t.end!), setup.term1OpensAt)
+    if (existing) {
+      // Not open yet: it opens on the schedule too
+      if (existing.status === 'draft' && !existing.opensAt) await p.update({ collection: 'programs', id: existing.id, data: { opensAt, autoOpen: true }, ...q })
+      results.programs.push({ id: existing.id, title: existing.title, action: 'kept', slots: 0 })
+      continue
+    }
     const prev = await previousProgram(p, year - 1, n)
     const copy = prev ? pickProgram(prev) : {}
     const program = await p.create({
@@ -134,6 +143,8 @@ export async function publishSetup(p: Payload, year: number, actorId?: number | 
         type: 'academy-term',
         status: 'draft',
         academyTerm: tfId,
+        opensAt,
+        autoOpen: true,
       } as never,
       ...q,
     })
@@ -155,6 +166,8 @@ export async function publishSetup(p: Payload, year: number, actorId?: number | 
     }
     results.programs.push({ id: program.id, title: program.title, action: 'created', slots })
   }
+  // Term 1 opening "straight away" happens now rather than at the next scheduled check
+  await openDuePrograms(p)
   await p.update({ collection: 'year-setups', id: setup.id, data: { status: 'published', publishedAt: new Date().toISOString(), publishedBy: actorId ?? undefined, results }, ...q })
   return results
 }

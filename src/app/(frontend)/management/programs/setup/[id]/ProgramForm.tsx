@@ -19,6 +19,16 @@ export function ProgramForm({ prog }: { prog: P }) {
             <option value="draft">Draft (hidden)</option><option value="open">Open for bookings</option><option value="full">Full / waitlist</option><option value="closed">Closed</option>
           </select>
         </label>
+        {(v('type') === 'academy-term' || v('type') === 'toddler') && (
+          <fieldset className="sm:col-span-2 border border-line p-3">
+            <legend className="px-1 text-sm font-semibold">Registrations open</legend>
+            <div className="flex flex-wrap items-end gap-4">
+              <label className="text-sm">Open automatically at<input type="datetime-local" name="opensAt" defaultValue={v('opensAtLocal')} className={input} aria-label="Registrations open at" /></label>
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="autoOpen" defaultChecked={v('autoOpen') !== 'off'} /> Open by itself at that time</label>
+            </div>
+            <p className="mt-2 text-xs text-muted">While it’s a draft, it switches to “Open for bookings” at this time. To open or close it now, change the status.</p>
+          </fieldset>
+        )}
         <label className="text-sm">Places (empty = no limit)<input name="capacity" type="number" min={0} defaultValue={v('capacity')} className={input} /></label>
         <label className="text-sm sm:col-span-2">Short summary (cards and search results)<textarea name="summary" rows={2} maxLength={400} defaultValue={v('summary')} className={`${input} py-2`} /></label>
         <label className="text-sm">Where<input name="location" defaultValue={v('location')} placeholder="Home ground, or a full address" className={input} /></label>

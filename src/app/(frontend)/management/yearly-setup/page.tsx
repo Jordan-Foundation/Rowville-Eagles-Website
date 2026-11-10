@@ -98,7 +98,7 @@ export default async function YearlySetupPage({ searchParams }: { searchParams: 
 
           <section className="panel space-y-4 border border-line p-5">
             <h2 className="font-display text-2xl font-semibold uppercase">3. Summary</h2>
-            <p className="text-sm text-muted">Publishing does this. Timeframes start collecting coach availability; the Academy term programs are created as drafts (open them when you’re ready).</p>
+            <p className="text-sm text-muted">Publishing does this. Timeframes start collecting coach availability; the Academy term programs are created as drafts and open for registrations by themselves at the times shown.</p>
             <ul className="divide-y divide-line border border-line text-sm" aria-label="What publishing does">
               {plan.map((x) => (
                 <li key={x.name} className="flex flex-wrap justify-between gap-2 p-3">
@@ -107,7 +107,7 @@ export default async function YearlySetupPage({ searchParams }: { searchParams: 
                 </li>
               ))}
             </ul>
-            <p className="text-sm">Term 1 and full-year registrations open: <strong>{setup!.term1OpensAt ? new Date(setup!.term1OpensAt).toLocaleString('en-AU', { timeZone: 'Australia/Sydney', weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : 'straight away'}</strong> <span className="text-muted">(automatic opening and announcements come in the next update)</span></p>
+            <p className="text-sm">Term 1 and full-year registrations open: <strong>{setup!.term1OpensAt ? new Date(setup!.term1OpensAt).toLocaleString('en-AU', { timeZone: 'Australia/Sydney', weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : 'straight away'}</strong> <span className="text-muted">· Terms 2–4 open 2 weeks before the term before them ends. Programs open by themselves at these times — change them on Set dates.</span></p>
             <p className="text-sm text-muted">Term 1: {fmt(setup!.terms![0].start)} – {fmt(setup!.terms![0].end)} · Term 4 ends {fmt(setup!.terms![3].end)}</p>
             <form action={publishAction}>
               <input type="hidden" name="year" value={year} />

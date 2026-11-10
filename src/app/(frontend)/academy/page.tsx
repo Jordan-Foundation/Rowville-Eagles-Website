@@ -1,3 +1,4 @@
+import { nudgeOpenPrograms } from '@/academy/release-service'
 import { PriceTag } from '@/components/PriceTag'
 import { DashIcon } from '@/components/dashboard/icons'
 import Link from 'next/link'
@@ -33,6 +34,7 @@ const steps = [
 export default async function AcademyPage() {
   // Always three choices: the current/next Academy term, the next holiday camp, and 1-on-1 coaching
   const p = await payload()
+  await nudgeOpenPrograms(p)
   const nowIso = new Date().toISOString()
   const [{ docs: terms }, { docs: camps }, oneOnOneTerms] = await Promise.all([
     p.find({ pagination: false, collection: 'programs', where: { type: { equals: 'academy-term' }, status: { in: ['open', 'full'] }, or: [{ endDate: { greater_than: nowIso } }, { endDate: { exists: false } }] }, sort: 'startDate', depth: 0, limit: 1 }),
