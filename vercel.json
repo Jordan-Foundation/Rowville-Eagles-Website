@@ -3,7 +3,7 @@
   "regions": ["syd1"],
   "crons": [
     { "path": "/cron/daily", "schedule": "7 19 * * *" },
-    { "path": "/cron/messages", "schedule": "7 21 * * *" },
+    { "path": "/cron/messages", "schedule": "7 * * * *" },
     { "path": "/cron/cleanup", "schedule": "37 16 * * *" }
   ]
 }

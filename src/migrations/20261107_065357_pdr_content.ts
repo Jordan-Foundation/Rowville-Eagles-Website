@@ -1,5 +1,4 @@
 import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres'
-import { seedPdr } from '../academy/pdr/seed'
 
 export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   await db.execute(sql`
@@ -156,9 +155,8 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "payload_locked_documents_rels_pdr_stages_id_idx" ON "payload_locked_documents_rels" USING btree ("pdr_stages_id");
   CREATE INDEX "payload_locked_documents_rels_pdr_videos_id_idx" ON "payload_locked_documents_rels" USING btree ("pdr_videos_id");
   CREATE INDEX "payload_locked_documents_rels_pdr_badges_id_idx" ON "payload_locked_documents_rels" USING btree ("pdr_badges_id");`)
-  // Starting content: 6 areas × 3 levels × 4 stages (Passing 1.1 real, the rest placeholders) + 18 level badges
-  const made = await seedPdr(payload, req)
-  payload.logger.info(`PDR content created: ${JSON.stringify(made)}`)
+  // Starting content (areas, levels, stages, badges) is added after all migrations by ensureLaunchContent
+  // (src/lib/launch-content.ts) — running today's code here would break on a brand-new database.
 }
 
 export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
