@@ -45,7 +45,7 @@ export const cronJobs: Record<string, Record<string, Job>> = {
     foundationChallengeStart: (payload) => announceChallenges(payload),
     foundationChallengeResults: (payload) => finaliseChallenges(payload),
   },
-  // ~8am Melbourne: bulk messages, each with its own time limit and able to carry on the next day
+  // Every hour (Vercel Pro): bulk messages and time-sensitive sweeps, each with its own time limit and able to carry on next run
   messages: {
     scheduledPromotions: (payload) => runScheduledPromotions(payload),
     reportNotifications: (payload) => notifyReleasedJob(payload),

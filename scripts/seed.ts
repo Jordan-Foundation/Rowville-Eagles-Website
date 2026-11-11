@@ -34,7 +34,20 @@ const SPONSORS = [
 const hosted = process.env.SEED_ONLY_IF_EMPTY === 'true'
 if (hosted) {
   if (process.env.SEED_SAMPLE_CONTENT !== 'true') {
-    payload.logger.info('Seed skipped (SEED_SAMPLE_CONTENT is not "true").')
+    // Launch (real) database: no sample programs, families or bookings — only what the site needs to work.
+    // Safe on every deploy: each step only adds what's missing.
+    const { totalDocs: users } = await payload.count({ collection: 'users' })
+    const email = process.env.SEED_ADMIN_EMAIL
+    const password = process.env.SEED_ADMIN_PASSWORD
+    if (!users && email && password) {
+      await payload.create({ collection: 'users', data: { email, password, firstName: 'Club', lastName: 'Admin', roles: ['admin'], activated: true } })
+      payload.logger.info(`Launch setup: admin account created for ${email}`)
+    } else if (!users) payload.logger.warn('Launch setup: no users yet — set SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD and redeploy to create the first admin.')
+    const { ensureLaunchContent } = await import('../src/lib/launch-content')
+    payload.logger.info(`Launch setup — ${JSON.stringify(await ensureLaunchContent(payload))}`)
+    if (!(await payload.count({ collection: 'sponsors' })).totalDocs) {
+      for (const [i, sp] of SPONSORS.entries()) await payload.create({ collection: 'sponsors', data: { ...sp, tier: 'community', order: i } })
+    }
     process.exit(0)
   }
   const { totalDocs } = await payload.count({ collection: 'programs' })
