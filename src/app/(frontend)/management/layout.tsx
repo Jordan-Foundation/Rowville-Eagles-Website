@@ -22,7 +22,7 @@ export default async function ManagementLayout({ children }: { children: React.R
   const counts = (await managementAttention(await payload(), user).catch(() => ({}))) as Record<string, number>
   return (
     <div data-brand="academy" data-page-brand="academy" data-portal="management" className="min-h-screen bg-surface text-ink lg:flex">
-      <ManagementNav groups={GROUPS} counts={counts} />
+      <ManagementNav groups={user.roles?.includes('admin') ? GROUPS.map((g) => (g.title === 'Money & setup' ? { ...g, items: [g.items[0], g.items[1], { href: '/management/refunds', label: 'Refunds' }, ...g.items.slice(2)] } : g)) : GROUPS} counts={counts} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-4 border-b border-line px-4 py-2 text-xs text-muted sm:px-8">
           <span>Signed in as {user.firstName || user.email}</span>

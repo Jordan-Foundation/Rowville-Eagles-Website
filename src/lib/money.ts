@@ -19,6 +19,10 @@ export type Line = { category: Category; count: number; gross: number; discount:
 
 const r2 = (n: number) => Math.round(n * 100) / 100
 
+/** Which Money summary line a camp/program/trial booking belongs to. */
+export const bookingMoneyCategory = (x: { bookingType?: string | null }, programType?: string | null): Category =>
+  x.bookingType === 'trial' ? 'trials' : programType === 'academy-term' || programType === 'toddler' || programType === 'academy-year' ? 'academy-terms' : programType === 'registration' ? 'registrations' : programType === 'tournament' ? 'tournaments' : 'camps'
+
 /** Totals per category and per Stripe account for entries between from and to (inclusive, ISO). */
 export function summarise(entries: Entry[], from: string, to: string) {
   const inside = entries.filter((e) => e.at >= from && e.at <= to)
@@ -47,13 +51,17 @@ const q = { overrideAccess: true, pagination: false } as const
 /** Every card payment and refund the site knows about, as entries (amounts in dollars). */
 export async function moneyEntries(p: Payload, since: string): Promise<Entry[]> {
   const out: Entry[] = []
-  const [ab, b, o, inv] = await Promise.all([
+  const [ab, b, o, inv, ledger] = await Promise.all([
     p.find({ ...q, collection: 'academy-bookings', where: { updatedAt: { greater_than: since }, status: { not_equals: 'held' } }, limit: 20000, depth: 0 }),
     p.find({ ...q, collection: 'bookings', where: { updatedAt: { greater_than: since }, status: { in: ['paid', 'refunded'] } }, limit: 20000, depth: 1 }),
     p.find({ ...q, collection: 'orders', where: { updatedAt: { greater_than: since }, status: { in: ['paid', 'ready', 'completed', 'refunded'] } }, limit: 20000, depth: 0 }),
     // Only card payments: cash or bank transfers marked paid by Management never reach Stripe
     p.find({ ...q, collection: 'invoices', where: { updatedAt: { greater_than: since }, status: { in: ['paid', 'refunded'] }, paidVia: { equals: 'card' } }, limit: 20000, depth: 0 }),
+    // Refunds made from Management → Refunds (1-on-1 refunds are counted from the booking's own record)
+    p.find({ ...q, collection: 'refunds', where: { createdAt: { greater_than: since }, kind: { not_equals: 'academy' }, status: { in: ['refunded', 'simulated'] } }, limit: 20000, depth: 0 }),
   ])
+  const viaLedger = new Set((await p.find({ ...q, collection: 'refunds', where: { kind: { not_equals: 'academy' }, status: { in: ['refunded', 'simulated'] } }, limit: 20000, depth: 0, select: { kind: true, docId: true } })).docs.map((d) => `${d.kind}:${d.docId}`))
+  for (const x of ledger.docs) out.push({ category: (x.category as Category) ?? 'camps', payee: x.payee === 'club' ? 'club' : 'academy', at: x.createdAt, refund: x.amount })
   for (const x of ab.docs) {
     const category: Category = x.kind === 'group' ? 'small-group' : 'one-on-one'
     const paidUpFront = ['confirmed', 'completed', 'payment_failed'].includes(x.status) || (x.status === 'cancelled' && (x.adjustments ?? []).length > 0)
@@ -68,20 +76,20 @@ export async function moneyEntries(p: Payload, since: string): Promise<Entry[]> 
   }
   for (const x of b.docs) {
     const prog = typeof x.program === 'object' ? x.program : null
-    const cat: Category = x.bookingType === 'trial' ? 'trials' : prog?.type === 'academy-term' || prog?.type === 'toddler' ? 'academy-terms' : prog?.type === 'registration' ? 'registrations' : prog?.type === 'tournament' ? 'tournaments' : 'camps'
+    const cat = bookingMoneyCategory(x, prog?.type)
     const payee = x.payee === 'club' ? 'club' : 'academy'
     if (x.amount > 0) out.push({ category: cat, payee, at: x.createdAt, gross: x.amount, discount: x.discount ?? 0 })
-    if (x.status === 'refunded' && x.amount > 0) out.push({ category: cat, payee, at: x.updatedAt, refund: x.amount })
+    if (x.status === 'refunded' && x.amount > 0 && !viaLedger.has(`booking:${x.id}`)) out.push({ category: cat, payee, at: x.updatedAt, refund: x.amount })
   }
   for (const x of o.docs) {
     const payee = x.payee === 'club' ? 'club' : 'academy'
     out.push({ category: 'shop', payee, at: x.createdAt, gross: x.total, discount: x.discount ?? 0 })
-    if (x.status === 'refunded') out.push({ category: 'shop', payee, at: x.updatedAt, refund: x.total })
+    if (x.status === 'refunded' && !viaLedger.has(`order:${x.id}`)) out.push({ category: 'shop', payee, at: x.updatedAt, refund: x.total })
   }
   for (const x of inv.docs) {
     const payee = x.payee === 'club' ? 'club' : 'academy'
     out.push({ category: 'invoices', payee, at: x.paidAt ?? x.createdAt, gross: x.total ?? 0 })
-    if (x.status === 'refunded') out.push({ category: 'invoices', payee, at: x.updatedAt, refund: x.total ?? 0 })
+    if (x.status === 'refunded' && !viaLedger.has(`invoice:${x.id}`)) out.push({ category: 'invoices', payee, at: x.updatedAt, refund: x.total ?? 0 })
   }
   return out
 }

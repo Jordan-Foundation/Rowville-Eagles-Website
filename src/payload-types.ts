@@ -109,6 +109,7 @@ export interface Config {
     products: Product;
     orders: Order;
     invoices: Invoice;
+    refunds: Refund;
     teams: Team;
     'team-members': TeamMember;
     'team-posts': TeamPost;
@@ -180,6 +181,7 @@ export interface Config {
     products: ProductsSelect<false> | ProductsSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
     invoices: InvoicesSelect<false> | InvoicesSelect<true>;
+    refunds: RefundsSelect<false> | RefundsSelect<true>;
     teams: TeamsSelect<false> | TeamsSelect<true>;
     'team-members': TeamMembersSelect<false> | TeamMembersSelect<true>;
     'team-posts': TeamPostsSelect<false> | TeamPostsSelect<true>;
@@ -2416,6 +2418,36 @@ export interface Invoice {
   createdAt: string;
 }
 /**
+ * Made from Management → Refunds (admins only).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "refunds".
+ */
+export interface Refund {
+  id: number;
+  kind: 'booking' | 'academy' | 'order' | 'invoice';
+  docId: number;
+  reference?: string | null;
+  payee?: ('academy' | 'club') | null;
+  /**
+   * Money summary line
+   */
+  category?: string | null;
+  account?: (number | null) | User;
+  description?: string | null;
+  playerName?: string | null;
+  amount: number;
+  status: 'refunded' | 'simulated' | 'failed';
+  cancelled?: boolean | null;
+  reason?: string | null;
+  error?: string | null;
+  stripeRefundIds?: string | null;
+  nonce?: string | null;
+  by?: (number | null) | User;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "team-members".
  */
@@ -2976,6 +3008,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'invoices';
         value: number | Invoice;
+      } | null)
+    | ({
+        relationTo: 'refunds';
+        value: number | Refund;
       } | null)
     | ({
         relationTo: 'teams';
@@ -4313,6 +4349,30 @@ export interface InvoicesSelect<T extends boolean = true> {
   token?: T;
   stripeCheckoutId?: T;
   createdBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "refunds_select".
+ */
+export interface RefundsSelect<T extends boolean = true> {
+  kind?: T;
+  docId?: T;
+  reference?: T;
+  payee?: T;
+  category?: T;
+  account?: T;
+  description?: T;
+  playerName?: T;
+  amount?: T;
+  status?: T;
+  cancelled?: T;
+  reason?: T;
+  error?: T;
+  stripeRefundIds?: T;
+  nonce?: T;
+  by?: T;
   updatedAt?: T;
   createdAt?: T;
 }
