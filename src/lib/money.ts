@@ -2,7 +2,7 @@ import type { Payload } from 'payload'
 
 /** Money summary for Management, to check against the two Stripe accounts (pure parts unit tested). */
 
-export type Category = 'one-on-one' | 'small-group' | 'academy-terms' | 'camps' | 'trials' | 'registrations' | 'tournaments' | 'shop'
+export type Category = 'one-on-one' | 'small-group' | 'academy-terms' | 'camps' | 'trials' | 'registrations' | 'tournaments' | 'shop' | 'invoices'
 export const CATEGORY_LABEL: Record<Category, string> = {
   'one-on-one': '1-on-1 sessions',
   'small-group': 'Small group sessions',
@@ -12,6 +12,7 @@ export const CATEGORY_LABEL: Record<Category, string> = {
   registrations: 'Club registrations',
   tournaments: 'Tournaments',
   shop: 'Shop',
+  invoices: 'Invoices',
 }
 export type Entry = { category: Category; payee: 'club' | 'academy'; at: string; gross?: number; discount?: number; refund?: number }
 export type Line = { category: Category; count: number; gross: number; discount: number; refunds: number; net: number }
@@ -46,10 +47,12 @@ const q = { overrideAccess: true, pagination: false } as const
 /** Every card payment and refund the site knows about, as entries (amounts in dollars). */
 export async function moneyEntries(p: Payload, since: string): Promise<Entry[]> {
   const out: Entry[] = []
-  const [ab, b, o] = await Promise.all([
+  const [ab, b, o, inv] = await Promise.all([
     p.find({ ...q, collection: 'academy-bookings', where: { updatedAt: { greater_than: since }, status: { not_equals: 'held' } }, limit: 20000, depth: 0 }),
     p.find({ ...q, collection: 'bookings', where: { updatedAt: { greater_than: since }, status: { in: ['paid', 'refunded'] } }, limit: 20000, depth: 1 }),
     p.find({ ...q, collection: 'orders', where: { updatedAt: { greater_than: since }, status: { in: ['paid', 'ready', 'completed', 'refunded'] } }, limit: 20000, depth: 0 }),
+    // Only card payments: cash or bank transfers marked paid by Management never reach Stripe
+    p.find({ ...q, collection: 'invoices', where: { updatedAt: { greater_than: since }, status: { in: ['paid', 'refunded'] }, paidVia: { equals: 'card' } }, limit: 20000, depth: 0 }),
   ])
   for (const x of ab.docs) {
     const category: Category = x.kind === 'group' ? 'small-group' : 'one-on-one'
@@ -74,6 +77,11 @@ export async function moneyEntries(p: Payload, since: string): Promise<Entry[]> 
     const payee = x.payee === 'club' ? 'club' : 'academy'
     out.push({ category: 'shop', payee, at: x.createdAt, gross: x.total, discount: x.discount ?? 0 })
     if (x.status === 'refunded') out.push({ category: 'shop', payee, at: x.updatedAt, refund: x.total })
+  }
+  for (const x of inv.docs) {
+    const payee = x.payee === 'club' ? 'club' : 'academy'
+    out.push({ category: 'invoices', payee, at: x.paidAt ?? x.createdAt, gross: x.total ?? 0 })
+    if (x.status === 'refunded') out.push({ category: 'invoices', payee, at: x.updatedAt, refund: x.total ?? 0 })
   }
   return out
 }

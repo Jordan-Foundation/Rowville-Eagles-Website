@@ -72,6 +72,7 @@ import * as migration_20261110_093406_registrations_open from './20261110_093406
 import * as migration_20261110_111715_academy_pricing from './20261110_111715_academy_pricing';
 import * as migration_20261110_115455_announcements from './20261110_115455_announcements';
 import * as migration_20261115_011700_media_object_key from './20261115_011700_media_object_key';
+import * as migration_20261115_090940_invoices from './20261115_090940_invoices';
 
 export const migrations = [
   {
@@ -442,6 +443,11 @@ export const migrations = [
   {
     up: migration_20261115_011700_media_object_key.up,
     down: migration_20261115_011700_media_object_key.down,
-    name: '20261115_011700_media_object_key'
+    name: '20261115_011700_media_object_key',
+  },
+  {
+    up: migration_20261115_090940_invoices.up,
+    down: migration_20261115_090940_invoices.down,
+    name: '20261115_090940_invoices'
   },
 ];

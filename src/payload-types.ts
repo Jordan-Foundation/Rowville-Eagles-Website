@@ -108,6 +108,7 @@ export interface Config {
     'coach-blocks': CoachBlock;
     products: Product;
     orders: Order;
+    invoices: Invoice;
     teams: Team;
     'team-members': TeamMember;
     'team-posts': TeamPost;
@@ -178,6 +179,7 @@ export interface Config {
     'coach-blocks': CoachBlocksSelect<false> | CoachBlocksSelect<true>;
     products: ProductsSelect<false> | ProductsSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
+    invoices: InvoicesSelect<false> | InvoicesSelect<true>;
     teams: TeamsSelect<false> | TeamsSelect<true>;
     'team-members': TeamMembersSelect<false> | TeamMembersSelect<true>;
     'team-posts': TeamPostsSelect<false> | TeamPostsSelect<true>;
@@ -2362,6 +2364,52 @@ export interface Order {
   createdAt: string;
 }
 /**
+ * Use Management → Invoices to create, send and track invoices.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "invoices".
+ */
+export interface Invoice {
+  id: number;
+  reference: string;
+  /**
+   * Which Stripe account the payment goes to
+   */
+  payee: 'academy' | 'club';
+  status: 'draft' | 'sent' | 'paid' | 'cancelled' | 'refunded';
+  account?: (number | null) | User;
+  contactName: string;
+  contactEmail?: string | null;
+  contactPhone?: string | null;
+  /**
+   * Optional — shown on the invoice
+   */
+  playerName?: string | null;
+  items: {
+    description: string;
+    quantity: number;
+    unitPrice: number;
+    source?: string | null;
+    id?: string | null;
+  }[];
+  /**
+   * AUD incl. GST — worked out from the items
+   */
+  total?: number | null;
+  note?: string | null;
+  dueDate?: string | null;
+  sentAt?: string | null;
+  remindedAt?: string | null;
+  paidAt?: string | null;
+  paidVia?: ('card' | 'manual') | null;
+  paymentNote?: string | null;
+  token: string;
+  stripeCheckoutId?: string | null;
+  createdBy?: (number | null) | User;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "team-members".
  */
@@ -2918,6 +2966,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'orders';
         value: number | Order;
+      } | null)
+    | ({
+        relationTo: 'invoices';
+        value: number | Invoice;
       } | null)
     | ({
         relationTo: 'teams';
@@ -4217,6 +4269,42 @@ export interface OrdersSelect<T extends boolean = true> {
   shippingAddress?: T;
   stripeCheckoutId?: T;
   notes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "invoices_select".
+ */
+export interface InvoicesSelect<T extends boolean = true> {
+  reference?: T;
+  payee?: T;
+  status?: T;
+  account?: T;
+  contactName?: T;
+  contactEmail?: T;
+  contactPhone?: T;
+  playerName?: T;
+  items?:
+    | T
+    | {
+        description?: T;
+        quantity?: T;
+        unitPrice?: T;
+        source?: T;
+        id?: T;
+      };
+  total?: T;
+  note?: T;
+  dueDate?: T;
+  sentAt?: T;
+  remindedAt?: T;
+  paidAt?: T;
+  paidVia?: T;
+  paymentNote?: T;
+  token?: T;
+  stripeCheckoutId?: T;
+  createdBy?: T;
   updatedAt?: T;
   createdAt?: T;
 }

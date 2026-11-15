@@ -31,7 +31,7 @@ export const checkoutFailMessage = (e: unknown, fallback: string) => (e instance
 type LineItem = { name: string; description?: string; unitAmount: number; quantity: number }
 
 /** Creates a Stripe Checkout Session on the right account and returns the URL to redirect to. */
-export type CheckoutKind = 'booking' | 'order' | 'academy'
+export type CheckoutKind = 'booking' | 'order' | 'academy' | 'invoice'
 
 export async function startCheckout(opts: {
   payee: Payee
@@ -102,6 +102,7 @@ export async function confirmPayment(payload: Payload, kind: CheckoutKind, refer
 
 async function confirmPaymentInner(payload: Payload, kind: CheckoutKind, reference: string) {
   if (kind === 'academy') return confirmAcademyBooking(payload, reference)
+  if (kind === 'invoice') return (await import('../invoices/service')).markInvoicePaid(payload, reference, { via: 'card' })
   if (kind === 'booking') {
     // One checkout can cover several children (one booking each, sharing the lead booking's reference)
     const { docs } = await payload.find({ pagination: false, collection: 'bookings', where: { or: [{ reference: { equals: reference } }, { checkoutGroup: { equals: reference } }] }, limit: 10, depth: 0 })
@@ -147,6 +148,8 @@ async function confirmPaymentInner(payload: Payload, kind: CheckoutKind, referen
 export async function cancelPending(payload: Payload, kind: CheckoutKind, reference: string) {
   await settleUses(payload, reference, 'cancelled')
   if (kind === 'academy') return releaseAcademyHold(payload, reference)
+  // An expired invoice checkout changes nothing: the family can pay again from the same link
+  if (kind === 'invoice') return
   if (kind === 'booking') {
     const { docs } = await payload.find({ pagination: false, collection: 'bookings', where: { or: [{ reference: { equals: reference } }, { checkoutGroup: { equals: reference } }] }, limit: 10, depth: 0 })
     for (const b of docs) {

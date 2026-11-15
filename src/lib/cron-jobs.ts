@@ -1,4 +1,5 @@
 import { sweepCampCoaches } from '../camps/staffing'
+import { sweepInvoiceReminders } from '../invoices/service'
 import { yearlyReminder } from '../academy/yearly-setup'
 import { openDuePrograms } from '../academy/release-service'
 import { runAnnouncements } from '../academy/announcements'
@@ -34,6 +35,7 @@ export const cronJobs: Record<string, Record<string, Job>> = {
     campCoaches: (payload) => sweepCampCoaches(payload),
     openAcademyPrograms: (payload) => openDuePrograms(payload),
     announcements: (payload) => runAnnouncements(payload),
+    invoiceReminders: (payload) => sweepInvoiceReminders(payload),
     yearlySetup: (payload) => yearlyReminder(payload),
     teamMembers: (payload) => syncTeamMembers(payload),
     selectionPaymentReminders: (payload) => runSelectionReminders(payload),
