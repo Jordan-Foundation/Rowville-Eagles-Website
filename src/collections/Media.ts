@@ -38,6 +38,13 @@ export const Media: CollectionConfig = {
       required: true,
       admin: { description: 'Short description of the image for screen readers and Google, e.g. "U9 players at the January holiday camp".' },
     },
+    // The Vercel Blob plugin adds this field (and replaces this copy) when storage is connected. Declaring it here
+    // keeps the database the same with or without a Blob token, so a migration never adds or drops the column.
+    {
+      name: '_objectKey',
+      type: 'text',
+      admin: { hidden: true, readOnly: true, disableBulkEdit: true, disableListColumn: true, disableListFilter: true, disableGroupBy: true },
+    },
   ],
   upload: {
     mimeTypes: ['image/*'],

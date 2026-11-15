@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { rateLimit } from '@/lib/form-guard'
 import { payload } from '@/lib/payload'
 import { makeReference } from '@/lib/reference'
-import { startCheckout } from '@/lib/payments'
+import { startCheckout, checkoutFailMessage } from '@/lib/payments'
 import { paymentsMode } from '@/lib/stripe-accounts'
 import { formatDate } from '@/lib/format'
 import { confirmAcademyBooking, createHold, holdMinutesFor, releaseAcademyHold, releaseBooking, releaseExpiredHolds } from '@/academy/booking-data'
@@ -167,7 +167,7 @@ export async function payGroupPlace(_prev: GroupPayState, fd: FormData): Promise
   } catch (e) {
     p.logger.error(e)
     await releaseAcademyHold(p, reference)
-    return fail('We couldn’t start the payment. Please try again shortly.')
+    return fail(checkoutFailMessage(e, 'We couldn’t start the payment. Please try again shortly.'))
   }
   redirect(url)
 }

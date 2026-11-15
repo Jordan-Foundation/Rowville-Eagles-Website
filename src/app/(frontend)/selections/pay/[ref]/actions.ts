@@ -1,7 +1,7 @@
 'use server'
 
 import { redirect } from 'next/navigation'
-import { newReference, startCheckout, confirmPayment } from '@/lib/payments'
+import { newReference, startCheckout, confirmPayment, checkoutFailMessage } from '@/lib/payments'
 import { paymentsMode } from '@/lib/stripe-accounts'
 import { awaitingPayment } from '@/selections/payment'
 import { loadPayable } from './load'
@@ -82,7 +82,7 @@ export async function payForSelection(_prev: PayState, fd: FormData): Promise<Pa
   } catch (e) {
     p.logger.error(e)
     await p.update({ collection: 'bookings', id: booking.id, data: { status: 'cancelled' }, overrideAccess: true })
-    return fail('We couldn’t start the payment. Please try again shortly.')
+    return fail(checkoutFailMessage(e, 'We couldn’t start the payment. Please try again shortly.'))
   }
   redirect(url)
 }

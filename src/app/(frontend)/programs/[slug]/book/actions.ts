@@ -5,7 +5,7 @@ import { dobProblem, phoneOk } from '@/lib/validate'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { payload } from '@/lib/payload'
-import { campBookings, confirmPayment, newReference, placesTaken, startCheckout } from '@/lib/payments'
+import { campBookings, confirmPayment, newReference, placesTaken, startCheckout, checkoutFailMessage } from '@/lib/payments'
 import { defaultPayee } from '@/collections/Programs'
 import { isPayee } from '@/lib/stripe-accounts'
 import { findDiscount, recordUse } from '@/promotions/service'
@@ -217,7 +217,7 @@ export async function bookProgram(_prev: BookingState, fd: FormData): Promise<Bo
     } catch (e) {
       for (const b of bookings) await p.update({ collection: 'bookings', id: b.id, data: { status: 'cancelled' } })
       p.logger.error(e)
-      return fail('We couldn’t start the payment. Please try again, or contact the club if this keeps happening.')
+      return fail(checkoutFailMessage(e, 'We couldn’t start the payment. Please try again, or contact the club if this keeps happening.'))
     }
   }
   redirect(url)

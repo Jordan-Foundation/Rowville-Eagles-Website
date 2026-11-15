@@ -7,7 +7,7 @@ import { redirect } from 'next/navigation'
 import { payload } from '@/lib/payload'
 import { currentUser } from '@/lib/auth'
 import { makeReference } from '@/lib/reference'
-import { startCheckout } from '@/lib/payments'
+import { startCheckout, checkoutFailMessage } from '@/lib/payments'
 import { findDiscount, recordUse, settleUses } from '@/promotions/service'
 import { paymentsMode } from '@/lib/stripe-accounts'
 import { findTermSlot, isCasualOpen } from '@/academy/slots'
@@ -226,7 +226,7 @@ export async function bookSession(_prev: BookState, fd: FormData): Promise<BookS
   } catch (e) {
     p.logger.error(e)
     await releaseAcademyHold(p, reference)
-    return fail('We couldn’t start the payment. Please try again shortly.')
+    return fail(checkoutFailMessage(e, 'We couldn’t start the payment. Please try again shortly.'))
   }
   redirect(url)
 }

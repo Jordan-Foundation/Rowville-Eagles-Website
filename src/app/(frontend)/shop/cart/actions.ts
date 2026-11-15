@@ -4,7 +4,7 @@ import { rateLimit } from '@/lib/form-guard'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { payload } from '@/lib/payload'
-import { confirmPayment, newReference, startCheckout } from '@/lib/payments'
+import { confirmPayment, newReference, startCheckout, checkoutFailMessage } from '@/lib/payments'
 import { findDiscount, recordUse } from '@/promotions/service'
 import { canBuy, shopViewer } from '@/lib/shop-access'
 
@@ -106,7 +106,7 @@ export async function checkoutCart(_prev: CartState, fd: FormData): Promise<Cart
   } catch (e) {
     await p.update({ collection: 'orders', id: order.id, data: { status: 'cancelled' } })
     p.logger.error(e)
-    return { error: 'We couldn’t start the payment. Please try again shortly.' }
+    return { error: checkoutFailMessage(e, 'We couldn’t start the payment. Please try again shortly.') }
   }
   redirect(url)
 }

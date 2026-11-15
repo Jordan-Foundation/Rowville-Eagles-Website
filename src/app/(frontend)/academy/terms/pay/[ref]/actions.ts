@@ -1,5 +1,6 @@
 'use server'
 
+import { checkoutFailMessage } from '@/lib/payments'
 import { redirect } from 'next/navigation'
 import { checkoutRegistrations, slotTaken, TermClosedError } from '@/academy/terms/service'
 import { spotsLeft } from '@/academy/terms/slots'
@@ -29,7 +30,7 @@ export async function payTerm(_prev: { error?: string }, fd: FormData): Promise<
   } catch (e) {
     if (e instanceof TermClosedError) return { error: `${e.message} Please contact us.` }
     p.logger.error(e)
-    return { error: 'We couldn’t start the payment. Please try again, or contact us if this keeps happening.' }
+    return { error: checkoutFailMessage(e, 'We couldn’t start the payment. Please try again, or contact us if this keeps happening.') }
   }
   redirect(url)
 }
