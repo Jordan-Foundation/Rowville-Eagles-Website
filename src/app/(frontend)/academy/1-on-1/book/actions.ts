@@ -1,6 +1,7 @@
 'use server'
 
 import { allowsWeekly, isHolidayTimeframe } from '@/academy/timeframes'
+import { heardFromValue } from '@/tracking/heard'
 import { checkPack, packSettings, packTotal } from '@/academy/packs'
 import { rateLimit } from '@/lib/form-guard'
 import { redirect } from 'next/navigation'
@@ -148,6 +149,7 @@ export async function bookSession(_prev: BookState, fd: FormData): Promise<BookS
     amount,
     sessionsTotal: sessions.length,
     sessionsPaid: 0,
+    heardFrom: heardFromValue(fd.get('heardFrom')),
     coach: coachId,
     term: term.id,
     weekday,

@@ -1,4 +1,6 @@
 import { BookingNextSteps } from '@/components/BookingNextSteps'
+import { TrackConversion } from '@/tracking/TrackConversion'
+import { conversionFor } from '@/tracking/config'
 import { programPlace } from '@/lib/place'
 import Link from 'next/link'
 import type { Metadata } from 'next'
@@ -47,6 +49,7 @@ export default async function BookedPage({ searchParams }: { searchParams: Promi
   return (
     <div data-brand="academy" data-page-brand="academy" className="relative overflow-hidden">
       <AcademyBackdrop />
+      {confirmed && booking?.reference && <TrackConversion c={conversionFor({ category: booking.kind === 'group' ? 'small-group' : booking.packSize ? 'holiday-pack' : '1-on-1', amount: Math.max(0, (booking.amount ?? 0) - (booking.creditApplied ?? 0)), ref: booking.reference })} />}
       <div className="container-x relative max-w-2xl py-20 text-center">
         {!booking ? (
           <p className="text-muted">We couldn’t find that booking. If you were charged, please contact the Academy.</p>

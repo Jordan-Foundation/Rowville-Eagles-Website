@@ -1,6 +1,7 @@
 'use server'
 
 import { rateLimit } from '@/lib/form-guard'
+import { heardFromValue } from '@/tracking/heard'
 import { dobProblem, phoneOk } from '@/lib/validate'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
@@ -159,6 +160,7 @@ export async function bookProgram(_prev: BookingState, fd: FormData): Promise<Bo
       data: {
         reference,
         checkoutGroup: players.length > 1 ? lead : undefined,
+        heardFrom: heardFromValue(fd.get('heardFrom')),
         program: program.id,
         status: 'pending',
         payee,

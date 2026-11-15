@@ -7,6 +7,8 @@ import { payload } from '@/lib/payload'
 import { foundationSettings } from '@/academy/pdr/load'
 import './styles.css'
 import { siteBase } from '@/lib/seo'
+import { Tracking } from '@/tracking/Tracking'
+import { trackingAllowed, trackingConfig } from '@/tracking/config'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 const barlow = Barlow_Condensed({ subsets: ['latin'], weight: ['600', '700', '800'], variable: '--font-barlow' })
@@ -26,6 +28,8 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const p = await payload()
   const [settings, fplus] = await Promise.all([p.findGlobal({ slug: 'site-settings' }), foundationSettings(p)])
+  // Meta Pixel / Google tag: live site only, set in Admin → Site settings → Ad tracking
+  const tracking = trackingAllowed(process.env) ? trackingConfig(settings.tracking) : null
   return (
     <html lang="en-AU" data-scroll-behavior="smooth" className={`${inter.variable} ${barlow.variable} ${grotesk.variable}`}>
       <body>
@@ -55,6 +59,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <Header fplusLive={fplus.enabled} />
         <main id="main">{children}</main>
         <Footer settings={settings} />
+        {tracking && <Tracking cfg={tracking} />}
       </body>
     </html>
   )

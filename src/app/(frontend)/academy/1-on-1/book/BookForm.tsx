@@ -1,6 +1,7 @@
 'use client'
 
 import { PayeeChip } from '@/components/PayeeChip'
+import { HeardFrom } from '@/components/forms/HeardFrom'
 
 import { PolicyLink } from '@/components/PolicyLink'
 import { useActionState, useState } from 'react'
@@ -139,6 +140,8 @@ export function BookForm({ coach, slot, term, price, weekly, credit, loginHref, 
           </div>
         </Fieldset>
       )}
+
+      <HeardFrom defaultValue={v.heardFrom} />
 
       <div className="space-y-3 text-sm">
         <label className="flex items-start gap-3">

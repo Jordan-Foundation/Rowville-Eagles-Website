@@ -7,7 +7,7 @@ const note = cache(async () => {
   return clubFeeNote(s?.clubRegistrationFee)
 })
 
-/** “Academy fees do not include the $950 Rowville Eagles player registration.” (amount from Academy settings) */
+/** “Academy-only players don’t pay the $950 Rowville Eagles player registration — it’s only for players in a Rowville Eagles club team.” (amount from Academy settings) */
 export async function ClubFeeNote({ className = 'text-xs text-muted' }: { className?: string }) {
   return <p className={className} data-fee-note>{await note()}</p>
 }

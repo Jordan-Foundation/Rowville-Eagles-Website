@@ -1,4 +1,6 @@
 import { BookingNextSteps } from '@/components/BookingNextSteps'
+import { TrackConversion } from '@/tracking/TrackConversion'
+import { bookingCategory, conversionFor } from '@/tracking/config'
 import { programPlace } from '@/lib/place'
 import { groupLabel } from '@/lib/age-groups'
 import Link from 'next/link'
@@ -59,6 +61,7 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
     return (
       <div data-brand={academy ? 'academy' : undefined} data-page-brand={academy ? 'academy' : undefined} className="relative overflow-hidden">
         {academy && <AcademyBackdrop />}
+        {paid && doc.reference && <TrackConversion c={conversionFor({ category: bookingCategory(doc, program.type), amount: paidTotal, ref: doc.reference, lead: doc.bookingType === 'trial' })} />}
         <Shell title={paid ? (doc.bookingType === 'trial' ? 'Trial booked!' : 'You’re booked in!') : 'Payment processing'} reference={doc.reference ?? undefined}>
           <dl className={`panel mt-8 space-y-3 border border-line bg-surface-2 p-6 text-left text-sm ${academy ? 'gloss-sheen rounded-sm' : 'rounded-2xl'}`}>
             <Row k="Program" v={program.title} />
@@ -102,6 +105,7 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
   return (
     <Shell title={paid ? 'Order confirmed' : 'Payment processing'} reference={doc.reference ?? undefined}>
       {paid && <ClearCart />}
+      {paid && doc.reference && <TrackConversion c={conversionFor({ category: 'shop', amount: doc.total ?? 0, ref: doc.reference })} />}
       <ul className="mt-8 divide-y divide-line rounded-2xl border border-line bg-surface-2 px-6 text-left text-sm">
         {doc.items.map((i) => (
           <li key={i.id} className="flex justify-between gap-4 py-3">

@@ -1,4 +1,6 @@
 import type { CollectionConfig } from 'payload'
+import { heardFromField } from '../tracking/heard'
+
 import { isStaff, staffOrOwner } from '../access'
 import { defaultPayee } from './Programs'
 import { isPayee, stripeAccounts } from '../lib/stripe-accounts'
@@ -50,6 +52,7 @@ export const Bookings: CollectionConfig = {
     ],
   },
   fields: [
+    heardFromField,
     { name: 'reference', type: 'text', unique: true, admin: { readOnly: true, description: 'Created automatically when saved' } },
     { name: 'checkoutGroup', type: 'text', index: true, admin: { readOnly: true, position: 'sidebar', description: 'Brothers and sisters booked together: the reference of the shared checkout.' } },
     { name: 'program', type: 'relationship', relationTo: 'programs', required: true },

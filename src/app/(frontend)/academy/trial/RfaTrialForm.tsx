@@ -1,6 +1,7 @@
 'use client'
 
 import { KidQuickFill } from '@/components/forms/KidQuickFill'
+import { HeardFrom } from '@/components/forms/HeardFrom'
 import type { KidOption } from '@/lib/family-kids'
 import { PolicyLink } from '@/components/PolicyLink'
 import { useActionState, useMemo, useState } from 'react'
@@ -79,6 +80,8 @@ export function RfaTrialForm({ rules, nights, priceLabel, kids = [], prefill }: 
           <span>I consent to photos/video of this player being used in Academy communications.</span>
         </label>
       </Fieldset>
+
+      <HeardFrom defaultValue={v.heardFrom} />
 
       <label className="flex items-start gap-3 text-sm">
         <input type="checkbox" name="terms" required defaultChecked={v.terms === 'on'} className="mt-1" />

@@ -57,6 +57,6 @@ export function fullYearQuote(termPrices: number[], discountPct: number) {
   return { sum, total, saving: round(sum - total), pct }
 }
 
-/** "Academy fees do not include the $950 Rowville Eagles player registration." */
+/** "Academy-only players don’t pay the $950 Rowville Eagles player registration — …" */
 export const clubFeeNote = (fee: number | null | undefined) =>
-  `Academy fees do not include the $${(fee ?? CLUB_REGISTRATION_FEE_DEFAULT).toLocaleString('en-AU')} Rowville Eagles player registration.`
+  `Academy-only players don’t pay the $${(fee ?? CLUB_REGISTRATION_FEE_DEFAULT).toLocaleString('en-AU')} Rowville Eagles player registration — it’s only for players in a Rowville Eagles club team.`
