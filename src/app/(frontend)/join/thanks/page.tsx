@@ -1,4 +1,6 @@
 import { groupLabel } from '@/lib/age-groups'
+import { TrackConversion } from '@/tracking/TrackConversion'
+import { conversionFor } from '@/tracking/config'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { payload, formatDate } from '@/lib/payload'
@@ -19,6 +21,7 @@ export default async function ThanksPage({ searchParams }: { searchParams: Promi
 
   return (
     <div className="container-x max-w-3xl py-16">
+      {reg?.reference && <TrackConversion c={conversionFor({ category: 'club-trial', amount: 0, ref: reg.reference, lead: true })} />}
       <div className="text-center">
         <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-accent text-2xl text-accent-ink">✓</div>
         <h1 className="mt-6 font-[family-name:var(--font-barlow)] text-5xl font-extrabold uppercase">{booked ? 'Trial booked!' : 'You’re on the list!'}</h1>

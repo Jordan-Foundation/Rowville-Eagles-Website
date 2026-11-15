@@ -6,6 +6,7 @@ import { formatMoney } from '@/lib/format'
 import { CATEGORY_LABEL, moneyEntries, summarise } from '@/lib/money'
 import { localToUtc, localYmd } from '@/lib/time'
 import { DownloadCsv } from '@/components/management/DownloadCsv'
+import { heardFromCounts } from '@/tracking/heard'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Money', robots: { index: false } }
@@ -28,6 +29,7 @@ export default async function MoneyPage({ searchParams }: { searchParams: Promis
   const ym = /^\d{4}-\d{2}$/.test(sp.m ?? '') ? sp.m! : thisMonth
   const range = term ? { from: term.startDate, to: term.endDate } : monthBounds(ym)
   const label = term ? term.name : formatDate(`${ym}-15T00:00:00Z`, { month: 'long', year: 'numeric' })
+  const heard = await heardFromCounts(p, range.from, range.to)
   const s = summarise(await moneyEntries(p, new Date(Date.parse(range.from) - 400 * 86_400_000).toISOString()), range.from, range.to)
   const tab = (active: boolean) => `min-h-10 border px-3 py-2 text-sm ${active ? 'border-white bg-white text-black' : 'border-line text-muted hover:text-ink'}`
   return (
@@ -67,6 +69,13 @@ export default async function MoneyPage({ searchParams }: { searchParams: Promis
           </tbody>
           <tfoot><tr className="border-t border-line font-semibold"><td className="p-3">Total</td><td className="p-3 text-right">{s.total.count}</td><td className="p-3 text-right">{formatMoney(s.total.gross)}</td><td className="p-3 text-right text-muted">{formatMoney(s.total.discount)}</td><td className="p-3 text-right">{formatMoney(s.total.refunds)}</td><td className="p-3 text-right">{formatMoney(s.total.net)}</td></tr></tfoot>
         </table>
+      </section>
+      <section aria-label="How families heard about us" className="panel border border-line p-5">
+        <h2 className="font-display text-lg font-semibold uppercase">How families heard about us</h2>
+        <p className="mt-1 text-sm text-muted">Trials, camps, programs and 1-on-1s booked in this period, by their answer on the booking form.</p>
+        {heard.length ? (
+          <ul className="mt-3 divide-y divide-line text-sm">{heard.map((h) => <li key={h.key || 'none'} className="flex justify-between gap-3 py-2"><span>{h.label}</span><span className="font-semibold">{h.count}</span></li>)}</ul>
+        ) : <p className="mt-3 text-sm text-muted">No bookings in this period.</p>}
       </section>
       <div className="flex flex-wrap gap-2">
         <DownloadCsv list="money" params={term ? { term: term.id } : { m: ym }} label="Download this summary (CSV)" />

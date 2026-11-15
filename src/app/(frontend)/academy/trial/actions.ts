@@ -1,6 +1,7 @@
 'use server'
 
 import { rateLimit } from '@/lib/form-guard'
+import { heardFromValue } from '@/tracking/heard'
 import { dobProblem, phoneOk } from '@/lib/validate'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
@@ -74,7 +75,7 @@ export async function bookRfaTrial(_prev: RfaTrialState, fd: FormData): Promise<
   const booking = await p.create({
     collection: 'bookings',
     overrideAccess: true,
-    data: { reference, program: term.id, bookingType: 'trial', birthYear, sessionStart: night.start, status: 'pending', payee: 'academy', amount: due, discount: promo?.off, promotion: promo?.promotion, account: accountId, contact, player },
+    data: { reference, program: term.id, bookingType: 'trial', birthYear, sessionStart: night.start, status: 'pending', payee: 'academy', amount: due, discount: promo?.off, promotion: promo?.promotion, account: accountId, contact, player, heardFrom: heardFromValue(fd.get('heardFrom')) },
   })
   if (promo && accountId) await recordUse(p, { applied: promo, account: accountId, kind: 'program', reference, paidAmount: due })
   if (accountId) {

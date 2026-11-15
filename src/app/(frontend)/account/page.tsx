@@ -18,6 +18,7 @@ import { TeamCards } from '@/teams/TeamCards'
 import { inbox } from '@/messaging/service'
 import { homeFor } from '@/lib/home'
 import { graceDaysLeft } from '@/academy/pdr/manage-rules'
+import { invoiceLink } from '@/invoices/service'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'My account', robots: { index: false } }
@@ -56,6 +57,8 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   const offeredBySelection = new Set(selections.filter((e) => e.status === 'offered').map((e) => (typeof e.participant === 'object' ? e.participant?.id : e.participant)))
   const pendingOffers = participants.docs.filter((x) => x.registrationOffer?.status === 'offered' && x.registrationOffer.program && !offeredBySelection.has(x.id))
   // Foundation+ plans whose card payment failed (still in the grace period)
+  // Invoices from the club or the academy still to pay (sent ones only — drafts aren't shown)
+  const { docs: invoices } = await p.find({ collection: 'invoices', where: { account: { equals: user.id }, status: { equals: 'sent' } }, sort: 'dueDate', limit: 20, pagination: false, depth: 0, overrideAccess: true, showHiddenFields: true })
   const fplusPastDue = participants.docs.filter((x) => ['past_due', 'unpaid'].includes(x.pdr?.subscriptionStatus ?? '') && x.pdr?.tier && x.pdr.tier !== 'free')
   const now = Date.now()
   type Item = { key: string; date: string | null; title: string; detail: string; badge: 'RFA' | 'Club'; status?: string; href?: string }
@@ -128,7 +131,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
       </div>
       {welcome && <p className="mt-6 rounded-xl border border-accent bg-accent/10 px-5 py-4">Your account is ready. Welcome to the Eagles!</p>}
 
-      {(plans.docs.length > 0 || fplusPastDue.length > 0) && (
+      {(plans.docs.length > 0 || fplusPastDue.length > 0 || invoices.length > 0) && (
         <section className="mt-10 space-y-3">
           <h2 className="font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase">Payment needed</h2>
           {fplusPastDue.map((x) => {
@@ -145,6 +148,15 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
               </div>
             )
           })}
+          {invoices.map((inv) => (
+            <div key={`inv${inv.id}`} className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border-2 border-accent bg-accent/10 p-6">
+              <div>
+                <p className="font-semibold">Invoice {inv.reference} · {formatAUD(inv.total ?? 0)}</p>
+                <p className="text-sm text-muted">{(inv.items ?? []).map((l) => l.description).join(', ')}{inv.dueDate ? ` · due ${formatDate(inv.dueDate, { day: 'numeric', month: 'short' })}` : ''}</p>
+              </div>
+              <a href={invoiceLink(inv)} className="rounded-full bg-black px-6 py-3 font-semibold text-white hover:bg-black/85">Pay now →</a>
+            </div>
+          ))}
           {plans.docs.map((b) => {
             const failed = (b.payments ?? []).filter((x) => x.status === 'failed')
             const payUrl = failed.at(-1)?.payUrl
@@ -263,6 +275,12 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
               {participants.docs.length === 0 && <li className="text-sm text-muted">Players appear here after your first booking or offer.</li>}
             </ul>
           </div>
+          {credit === 0 && (
+            <Link href="/academy/1-on-1" className="block rounded-2xl bg-black p-6 text-white transition hover:bg-black/85">
+              <p className="font-semibold">Book a 1-on-1</p>
+              <p className="mt-1 text-sm text-white/70">Pick a time and choose a Foundation Academy coach. Book now →</p>
+            </Link>
+          )}
           {credit > 0 && (
             <Link href="/academy/1-on-1" className="block rounded-2xl border-2 border-accent p-6 hover:brightness-105">
               <p className="font-semibold">{credit} free 1-on-1 session{credit === 1 ? '' : 's'}</p>

@@ -25,7 +25,7 @@ describe('Academy term pricing', () => {
     expect(fullYearQuote([400, 250, 225, 400], 10)).toEqual({ sum: 1275, total: 1147.5, saving: 127.5, pct: 10 })
   })
   it('club fee note', () => {
-    expect(clubFeeNote(950)).toBe('Academy fees do not include the $950 Rowville Eagles player registration.')
+    expect(clubFeeNote(950)).toBe('Academy-only players don’t pay the $950 Rowville Eagles player registration — it’s only for players in a Rowville Eagles club team.')
     expect(clubFeeNote(null)).toContain('$950')
   })
 })

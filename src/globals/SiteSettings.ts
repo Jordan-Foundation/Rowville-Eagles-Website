@@ -54,5 +54,25 @@ export const SiteSettings: GlobalConfig = {
         { name: 'instagram', type: 'text' },
       ],
     },
+    {
+      name: 'tracking',
+      label: 'Ad tracking (Meta & Google)',
+      type: 'group',
+      admin: { description: 'Lets Meta and Google Ads see which ads bring bookings. Only runs on the live website, never on Management, coach or private-link pages, and never sends names, emails or children’s details. Leave a box empty to switch that one off. Changes apply straight away.' },
+      fields: [
+        { name: 'metaPixelId', label: 'Meta Pixel ID', type: 'text', admin: { description: 'Numbers only, e.g. 472931888098255 (Meta Events Manager → Data sources)' }, validate: (v: unknown) => (!v || /^\d{8,20}$/.test(String(v).trim()) ? true : 'A Meta Pixel ID is 8–20 digits.') },
+        {
+          name: 'googleTagIds',
+          label: 'Google tag ID(s)',
+          type: 'text',
+          admin: { description: 'e.g. AW-123456789 (Google Ads) — add a Google Analytics ID too with a comma: AW-123456789, G-ABC123' },
+          validate: (v: unknown) => (!v || String(v).split(',').every((x) => /^(AW|G|GT)-[A-Z0-9]+$/i.test(x.trim())) ? true : 'Use IDs like AW-123456789 or G-ABC123, separated by commas.'),
+        },
+        { type: 'row', fields: [
+          { name: 'adsLeadLabel', label: 'Google Ads conversion label — free trial / enquiry', type: 'text', admin: { description: 'The part after the “/” in send_to, e.g. AbC-D_efG' } },
+          { name: 'adsPurchaseLabel', label: 'Google Ads conversion label — paid booking', type: 'text' },
+        ] },
+      ],
+    },
   ],
 }

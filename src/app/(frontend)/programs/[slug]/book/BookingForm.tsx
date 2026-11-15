@@ -1,6 +1,7 @@
 'use client'
 
 import { PayeeChip } from '@/components/PayeeChip'
+import { HeardFrom } from '@/components/forms/HeardFrom'
 
 import { PolicyLink } from '@/components/PolicyLink'
 import { useActionState, useState } from 'react'
@@ -197,6 +198,8 @@ export function BookingForm(props: {
           )}
         </>
       )}
+
+      <HeardFrom defaultValue={v.heardFrom} />
 
       <label className="flex items-start gap-3 text-sm">
         <input type="checkbox" name="terms" required defaultChecked={v.terms === 'on'} className="mt-1" />

@@ -113,10 +113,13 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
             ))}
           </div>
         </div>
+        <div className="flex flex-wrap items-end gap-6">
+        <Link href="/academy/1-on-1" className="rounded-full bg-black px-6 py-3 font-semibold text-white transition hover:bg-black/85">Book a 1-on-1 for {kid.firstName} →</Link>
         <dl className="flex gap-6 text-center">
           <div><dt className="text-xs uppercase tracking-wider text-muted">Upcoming</dt><dd className="font-[family-name:var(--font-barlow)] text-3xl font-bold">{upcoming.length}</dd></div>
           <div><dt className="text-xs uppercase tracking-wider text-muted">Attended</dt><dd className="font-[family-name:var(--font-barlow)] text-3xl font-bold">{done}</dd></div>
         </dl>
+        </div>
       </div>
 
       <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_24rem]">

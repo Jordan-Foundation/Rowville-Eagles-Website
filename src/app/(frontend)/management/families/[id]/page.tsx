@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { INVOICE_STATUS } from '@/invoices/totals'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { requireManagement } from '@/lib/management'
@@ -23,7 +24,7 @@ export default async function FamilyPage({ params }: { params: Promise<{ id: str
   const p = await payload()
   const u = await p.findByID({ collection: 'users', id, depth: 0, overrideAccess: true, disableErrors: true })
   if (!u) notFound()
-  const [kids, oneOnOnes, bookings, regs, teams, orders, credits, conv, tags] = await Promise.all([
+  const [kids, oneOnOnes, bookings, regs, teams, orders, credits, conv, tags, invoices] = await Promise.all([
     p.find({ ...q, collection: 'participants', where: { account: { equals: id } }, limit: 20, depth: 0, sort: 'firstName' }),
     p.find({ ...q, collection: 'academy-bookings', where: { account: { equals: id } }, limit: 50, depth: 1, sort: '-createdAt' }),
     p.find({ ...q, collection: 'bookings', where: { account: { equals: id } }, limit: 50, depth: 1, sort: '-createdAt' }),
@@ -33,6 +34,7 @@ export default async function FamilyPage({ params }: { params: Promise<{ id: str
     p.find({ ...q, collection: 'academy-credits', where: { account: { equals: id }, status: { equals: 'active' } }, limit: 50, depth: 0 }),
     p.find({ ...q, collection: 'conversations', where: { account: { equals: id } }, limit: 1, depth: 0 }),
     accountMemberships(p, id).catch(() => [] as string[]),
+    p.find({ ...q, collection: 'invoices', where: { account: { equals: id } }, limit: 30, depth: 0, sort: '-createdAt' }),
   ])
   const name = [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email
   // Membership: the stored tags plus what the family has actually done
@@ -53,6 +55,7 @@ export default async function FamilyPage({ params }: { params: Promise<{ id: str
         <div className="flex flex-wrap gap-2">
           <ContactButtons compact name={name} phone={u.phone} />
           {conv.docs[0] && <Link href={`/management/messages/${conv.docs[0].id}`} className="inline-flex min-h-10 items-center border border-line px-3 text-xs font-semibold uppercase tracking-[0.12em] hover:border-white">Messages</Link>}
+          <Link href={`/management/invoices/new?account=${u.id}`} className="inline-flex min-h-10 items-center border border-line px-3 text-xs font-semibold uppercase tracking-[0.12em] hover:border-white">New invoice</Link>
           <Link href={`/admin/collections/users/${u.id}`} className="inline-flex min-h-10 items-center border border-line px-3 text-xs font-semibold uppercase tracking-[0.12em] hover:border-white">Edit in admin</Link>
         </div>
       </div>
@@ -108,6 +111,11 @@ export default async function FamilyPage({ params }: { params: Promise<{ id: str
         <Panel title="Shop orders" count={orders.docs.length} empty="No orders.">
           <ul className="divide-y divide-line">
             {orders.docs.map((o) => <li key={o.id}><Link href={`/admin/collections/orders/${o.id}`} className="block px-5 py-3 hover:bg-white/5">{o.reference} <span className="text-muted">· {o.status} · {formatMoney(o.total)} · {day(o.createdAt)}</span></Link></li>)}
+          </ul>
+        </Panel>
+        <Panel title="Invoices" count={invoices.docs.length} empty="No invoices.">
+          <ul className="divide-y divide-line">
+            {invoices.docs.map((x) => <li key={x.id}><Link href={`/management/invoices/${x.id}`} className="block px-5 py-3 hover:bg-white/5">{x.reference} <span className="text-muted">· {INVOICE_STATUS[x.status]} · {formatMoney(x.total ?? 0)} · {day(x.createdAt)}</span></Link></li>)}
           </ul>
         </Panel>
         <Panel title="Foundation+" count={fplus.length} empty="No Foundation+ plan.">

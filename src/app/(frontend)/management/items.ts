@@ -7,6 +7,7 @@ export const managementItems: DashItem[] = [
   { key: 'dates', href: '/management/dates', label: 'Set dates', icon: 'calendar' },
   { key: 'prices', href: '/management/prices', label: 'Set prices', icon: 'dollar' },
   { key: 'money', href: '/management/money', label: 'Money summary', icon: 'chart', hint: 'Month & term, by Stripe account' },
+  { key: 'invoices', href: '/management/invoices', label: 'Invoices', icon: 'dollar', hint: 'Charge after the fact' },
   { key: 'bookings', href: '/management/academy/bookings', label: 'Bookings & cancellations', icon: 'booking' },
   { key: 'payments', href: '/management/academy#payments', label: 'Weekly payments', icon: 'card' },
   { key: 'cover', href: '/management/academy#cover', label: 'Cover', icon: 'swap' },

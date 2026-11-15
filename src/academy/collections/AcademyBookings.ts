@@ -1,4 +1,6 @@
 import type { CollectionConfig } from 'payload'
+import { heardFromField } from '../../tracking/heard'
+
 import { isStaff, staffOrOwner } from '../../access'
 import { weekdayOptions } from '../constants'
 
@@ -18,6 +20,7 @@ export const AcademyBookings: CollectionConfig = {
   access: { read: staffOrOwner('account'), create: isStaff, update: isStaff, delete: isStaff },
   defaultSort: '-createdAt',
   fields: [
+    heardFromField,
     { name: 'reference', type: 'text', required: true, unique: true, admin: { readOnly: true } },
     {
       name: 'status', index: true,

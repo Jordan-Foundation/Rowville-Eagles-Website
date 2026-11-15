@@ -108,6 +108,7 @@ export interface Config {
     'coach-blocks': CoachBlock;
     products: Product;
     orders: Order;
+    invoices: Invoice;
     teams: Team;
     'team-members': TeamMember;
     'team-posts': TeamPost;
@@ -178,6 +179,7 @@ export interface Config {
     'coach-blocks': CoachBlocksSelect<false> | CoachBlocksSelect<true>;
     products: ProductsSelect<false> | ProductsSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
+    invoices: InvoicesSelect<false> | InvoicesSelect<true>;
     teams: TeamsSelect<false> | TeamsSelect<true>;
     'team-members': TeamMembersSelect<false> | TeamMembersSelect<true>;
     'team-posts': TeamPostsSelect<false> | TeamPostsSelect<true>;
@@ -261,6 +263,9 @@ export interface UserAuthOperations {
  */
 export interface AcademyBooking {
   id: number;
+  heardFrom?:
+    | ('facebook-instagram-ad' | 'google' | 'friend-family' | 'school' | 'rowville-eagles' | 'social-post' | 'other')
+    | null;
   reference: string;
   status: 'held' | 'confirmed' | 'payment_failed' | 'cancelled' | 'refunded' | 'expired' | 'completed';
   type: 'casual' | 'term';
@@ -1574,6 +1579,9 @@ export interface AcademyRegistration {
  */
 export interface Booking {
   id: number;
+  heardFrom?:
+    | ('facebook-instagram-ad' | 'google' | 'friend-family' | 'school' | 'rowville-eagles' | 'social-post' | 'other')
+    | null;
   /**
    * Created automatically when saved
    */
@@ -2362,6 +2370,52 @@ export interface Order {
   createdAt: string;
 }
 /**
+ * Use Management → Invoices to create, send and track invoices.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "invoices".
+ */
+export interface Invoice {
+  id: number;
+  reference: string;
+  /**
+   * Which Stripe account the payment goes to
+   */
+  payee: 'academy' | 'club';
+  status: 'draft' | 'sent' | 'paid' | 'cancelled' | 'refunded';
+  account?: (number | null) | User;
+  contactName: string;
+  contactEmail?: string | null;
+  contactPhone?: string | null;
+  /**
+   * Optional — shown on the invoice
+   */
+  playerName?: string | null;
+  items: {
+    description: string;
+    quantity: number;
+    unitPrice: number;
+    source?: string | null;
+    id?: string | null;
+  }[];
+  /**
+   * AUD incl. GST — worked out from the items
+   */
+  total?: number | null;
+  note?: string | null;
+  dueDate?: string | null;
+  sentAt?: string | null;
+  remindedAt?: string | null;
+  paidAt?: string | null;
+  paidVia?: ('card' | 'manual') | null;
+  paymentNote?: string | null;
+  token: string;
+  stripeCheckoutId?: string | null;
+  createdBy?: (number | null) | User;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "team-members".
  */
@@ -2920,6 +2974,10 @@ export interface PayloadLockedDocument {
         value: number | Order;
       } | null)
     | ({
+        relationTo: 'invoices';
+        value: number | Invoice;
+      } | null)
+    | ({
         relationTo: 'teams';
         value: number | Team;
       } | null)
@@ -3054,6 +3112,7 @@ export interface PayloadMigration {
  * via the `definition` "academy-bookings_select".
  */
 export interface AcademyBookingsSelect<T extends boolean = true> {
+  heardFrom?: T;
   reference?: T;
   status?: T;
   type?: T;
@@ -4055,6 +4114,7 @@ export interface ProgramsSelect<T extends boolean = true> {
  * via the `definition` "bookings_select".
  */
 export interface BookingsSelect<T extends boolean = true> {
+  heardFrom?: T;
   reference?: T;
   checkoutGroup?: T;
   program?: T;
@@ -4217,6 +4277,42 @@ export interface OrdersSelect<T extends boolean = true> {
   shippingAddress?: T;
   stripeCheckoutId?: T;
   notes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "invoices_select".
+ */
+export interface InvoicesSelect<T extends boolean = true> {
+  reference?: T;
+  payee?: T;
+  status?: T;
+  account?: T;
+  contactName?: T;
+  contactEmail?: T;
+  contactPhone?: T;
+  playerName?: T;
+  items?:
+    | T
+    | {
+        description?: T;
+        quantity?: T;
+        unitPrice?: T;
+        source?: T;
+        id?: T;
+      };
+  total?: T;
+  note?: T;
+  dueDate?: T;
+  sentAt?: T;
+  remindedAt?: T;
+  paidAt?: T;
+  paidVia?: T;
+  paymentNote?: T;
+  token?: T;
+  stripeCheckoutId?: T;
+  createdBy?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -4831,6 +4927,24 @@ export interface SiteSetting {
     facebook?: string | null;
     instagram?: string | null;
   };
+  /**
+   * Lets Meta and Google Ads see which ads bring bookings. Only runs on the live website, never on Management, coach or private-link pages, and never sends names, emails or children’s details. Leave a box empty to switch that one off. Changes apply straight away.
+   */
+  tracking?: {
+    /**
+     * Numbers only, e.g. 472931888098255 (Meta Events Manager → Data sources)
+     */
+    metaPixelId?: string | null;
+    /**
+     * e.g. AW-123456789 (Google Ads) — add a Google Analytics ID too with a comma: AW-123456789, G-ABC123
+     */
+    googleTagIds?: string | null;
+    /**
+     * The part after the “/” in send_to, e.g. AbC-D_efG
+     */
+    adsLeadLabel?: string | null;
+    adsPurchaseLabel?: string | null;
+  };
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -5083,7 +5197,7 @@ export interface AcademySetting {
     escalateHours?: number | null;
   };
   /**
-   * Shown on every Academy program page, card and checkout: “Academy fees do not include the $950 Rowville Eagles player registration.”
+   * Shown on every Academy program page, card and checkout: “Academy-only players don’t pay the $950 Rowville Eagles player registration — it’s only for players in a Rowville Eagles club team.”
    */
   clubRegistrationFee?: number | null;
   updatedAt?: string | null;
@@ -5179,6 +5293,14 @@ export interface SiteSettingsSelect<T extends boolean = true> {
         driblFixtures?: T;
         facebook?: T;
         instagram?: T;
+      };
+  tracking?:
+    | T
+    | {
+        metaPixelId?: T;
+        googleTagIds?: T;
+        adsLeadLabel?: T;
+        adsPurchaseLabel?: T;
       };
   updatedAt?: T;
   createdAt?: T;
