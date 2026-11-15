@@ -14,6 +14,8 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "bookings_heard_from_idx" ON "bookings" USING btree ("heard_from");`)
   // The club's Meta Pixel (from marketing). Only runs on the live site; change or clear it in Admin → Site settings.
   await db.execute(sql`UPDATE "site_settings" SET "tracking_meta_pixel_id" = '472931888098255' WHERE "tracking_meta_pixel_id" IS NULL;`)
+  // and its Google Analytics tag
+  await db.execute(sql`UPDATE "site_settings" SET "tracking_google_tag_ids" = 'G-LNTSLNVKT7' WHERE "tracking_google_tag_ids" IS NULL;`)
 }
 
 export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
