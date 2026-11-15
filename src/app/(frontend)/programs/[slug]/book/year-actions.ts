@@ -1,5 +1,6 @@
 'use server'
 
+import { checkoutFailMessage } from '@/lib/payments'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { rateLimit } from '@/lib/form-guard'
@@ -39,7 +40,7 @@ export async function bookFullYear(_prev: YearState, fd: FormData): Promise<Year
   } catch (e) {
     if (e instanceof FullYearError) return fail(e.message)
     p.logger.error(e)
-    return fail('We couldn’t start the payment. Please try again, or contact us if this keeps happening.')
+    return fail(checkoutFailMessage(e, 'We couldn’t start the payment. Please try again, or contact us if this keeps happening.'))
   }
   redirect(url)
 }

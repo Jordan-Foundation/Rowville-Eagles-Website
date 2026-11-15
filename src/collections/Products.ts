@@ -129,7 +129,14 @@ export const Products: CollectionConfig = {
         },
       ],
     },
-    { name: 'price', type: 'number', required: true, min: 0, admin: { description: 'AUD incl. GST' } },
+    {
+      name: 'price',
+      type: 'number',
+      required: true,
+      min: 0,
+      admin: { description: 'AUD incl. GST. $0 for free, otherwise at least $0.50 (card payments can’t be smaller).' },
+      validate: (v: number | null | undefined) => (v != null && v > 0 && v < 0.5 ? 'Card payments must be at least $0.50 — use $0 for a free item.' : true),
+    },
     { name: 'description', type: 'textarea' },
     { name: 'images', label: 'Photos', type: 'upload', relationTo: 'media', hasMany: true, admin: { description: 'The first photo is the main one. Add front, back and close-ups — families can flick through them.' } },
     {

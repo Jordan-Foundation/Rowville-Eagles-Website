@@ -8,7 +8,7 @@ import { findDiscount, recordUse } from '@/promotions/service'
 import { rememberKid } from '@/lib/family-kids'
 import { payload } from '@/lib/payload'
 import { birthYearOf, groupLabel } from '@/lib/age-groups'
-import { confirmPayment, newReference, startCheckout } from '@/lib/payments'
+import { confirmPayment, newReference, startCheckout, checkoutFailMessage } from '@/lib/payments'
 import { currentAcademyTerm, trialNights } from '@/lib/rfa-trials'
 
 export type RfaTrialState = { error?: string; values?: Record<string, string> }
@@ -101,7 +101,7 @@ export async function bookRfaTrial(_prev: RfaTrialState, fd: FormData): Promise<
     } catch (e) {
       await p.update({ collection: 'bookings', id: booking.id, data: { status: 'cancelled' }, overrideAccess: true })
       p.logger.error(e)
-      return fail('We couldn’t start the payment. Please try again shortly.')
+      return fail(checkoutFailMessage(e, 'We couldn’t start the payment. Please try again shortly.'))
     }
   }
   redirect(url)

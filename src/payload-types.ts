@@ -530,6 +530,7 @@ export interface Media {
    * Short description of the image for screen readers and Google, e.g. "U9 players at the January holiday camp".
    */
   alt: string;
+  _objectKey?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -1132,7 +1133,7 @@ export interface Product {
    */
   othersSee?: ('locked' | 'hidden') | null;
   /**
-   * AUD incl. GST
+   * AUD incl. GST. $0 for free, otherwise at least $0.50 (card payments can’t be smaller).
    */
   price: number;
   description?: string | null;
@@ -4730,6 +4731,7 @@ export interface ActivityLogSelect<T extends boolean = true> {
  */
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
+  _objectKey?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;

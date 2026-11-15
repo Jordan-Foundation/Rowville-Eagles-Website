@@ -1,5 +1,6 @@
 'use server'
 
+import { checkoutFailMessage } from '@/lib/payments'
 import { rateLimit } from '@/lib/form-guard'
 import { rememberKid } from '@/lib/family-kids'
 import { headers } from 'next/headers'
@@ -114,7 +115,7 @@ export async function bookTerm(_prev: TermState, fd: FormData): Promise<TermStat
   } catch (e) {
     if (e instanceof TermClosedError) return fail(e.message)
     p.logger.error(e)
-    return fail('We couldn’t start the payment. Please try again, or contact us if this keeps happening.')
+    return fail(checkoutFailMessage(e, 'We couldn’t start the payment. Please try again, or contact us if this keeps happening.'))
   }
   redirect(url)
 }

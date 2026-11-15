@@ -14,6 +14,20 @@ export const newReference = (payee: Payee) => makeReference(stripeAccounts[payee
 
 const toCents = (aud: number) => Math.round(aud * 100)
 
+/** Stripe won't take a card payment under A$0.50. */
+export const STRIPE_MIN_AUD = 0.5
+
+/** Thrown when a checkout total is above $0 but below Stripe's minimum. The message is safe to show families. */
+export class PaymentTooSmallError extends Error {
+  constructor() {
+    super('Card payments must be at least $0.50. Please add to your order, or contact us.')
+    this.name = 'PaymentTooSmallError'
+  }
+}
+
+/** What to tell the family when a checkout can't start: the reason if it's one they can act on, otherwise `fallback`. */
+export const checkoutFailMessage = (e: unknown, fallback: string) => (e instanceof PaymentTooSmallError ? e.message : fallback)
+
 type LineItem = { name: string; description?: string; unitAmount: number; quantity: number }
 
 /** Creates a Stripe Checkout Session on the right account and returns the URL to redirect to. */
@@ -40,6 +54,8 @@ export async function startCheckout(opts: {
   discount?: { amount: number; label: string } | null
 }): Promise<{ url: string; sessionId?: string; simulated: boolean }> {
   const success = `${siteUrl()}${opts.successPath ?? '/checkout/success'}?kind=${opts.kind}&ref=${opts.reference}`
+  const totalCents = opts.items.reduce((t, i) => t + toCents(i.unitAmount) * i.quantity, 0) - (opts.discount ? toCents(opts.discount.amount) : 0)
+  if (totalCents > 0 && totalCents < toCents(STRIPE_MIN_AUD)) throw new PaymentTooSmallError()
 
   if (paymentsMode(opts.payee) === 'simulate') {
     return { url: `${success}&simulated=1`, simulated: true }
