@@ -38,6 +38,8 @@ export default async function InvoicePayPage({ params, searchParams }: { params:
     }
   }
   const academy = payee === 'academy'
+  const owner = inv.account ? await p.findByID({ collection: 'users', id: typeof inv.account === 'object' ? inv.account.id : inv.account, depth: 0, overrideAccess: true, disableErrors: true }) : null
+  const here = `/invoice/${inv.reference}/${token}`
   const settings = await p.findGlobal({ slug: 'site-settings', depth: 0 }).catch(() => null)
   return (
     <div data-brand={academy ? 'academy' : undefined} data-page-brand={academy ? 'academy' : undefined}>
@@ -61,11 +63,21 @@ export default async function InvoicePayPage({ params, searchParams }: { params:
         </div>
         <aside className={`panel h-fit border border-line bg-surface-2 p-6 text-sm ${academy ? '' : 'rounded-2xl'}`}>
           {inv.status === 'paid' ? (
-            <p role="status">Your payment of {formatAUD(inv.total ?? 0)} has been received{inv.paidAt ? ` (${formatDate(inv.paidAt)})` : ''}. A receipt has been emailed to you.</p>
+            <div className="space-y-3">
+              <p role="status">Your payment of {formatAUD(inv.total ?? 0)} has been received{inv.paidAt ? ` (${formatDate(inv.paidAt)})` : ''}. A receipt has been emailed to you.</p>
+              {owner && !owner.activated && <p data-account-note>We’ve saved this payment to an account under <strong>{owner.email}</strong>. Check your email for the link to create your password — then your invoices, bookings and receipts are all in one place.</p>}
+              {owner?.activated && <a href="/account" className="inline-block font-semibold underline">Go to your account →</a>}
+            </div>
           ) : inv.status === 'sent' ? (
             <div className="space-y-4">
               {inv.dueDate && <p>Due <strong>{formatDate(inv.dueDate, { weekday: 'long', day: 'numeric', month: 'long' })}</strong></p>}
               <PayButton refCode={inv.reference} token={token} label={`Pay ${formatAUD(inv.total ?? 0)}`} academy={academy} />
+              {!owner?.activated && (
+                <p className="text-xs text-muted" data-account-note>
+                  {inv.contactEmail ? <>No account needed to pay. Afterwards we’ll save this to an account under {inv.contactEmail} and email you a link to set your password. </> : null}
+                  Already have an account? <a href={`/login?next=${encodeURIComponent(here)}`} className="underline">Log in</a> and it’s added automatically.
+                </p>
+              )}
               <p className="text-xs text-muted">Secure card payment by Stripe. Questions? {settings?.email ? <>Email <a href={`mailto:${settings.email}`} className="underline">{settings.email}</a>.</> : 'Contact us.'}</p>
             </div>
           ) : (

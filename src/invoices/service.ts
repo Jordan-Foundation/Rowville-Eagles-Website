@@ -8,6 +8,7 @@ import { formatAUD, formatDate } from '../lib/format'
 import { localYmd } from '../lib/time'
 import { newReference, siteUrl, startCheckout } from '../lib/payments'
 import { paymentsMode, stripeFor, type Payee } from '../lib/stripe-accounts'
+import { accountLink, ensureAccount } from '../lib/accounts'
 import { invoiceProblem, invoiceTotal, isOverdue, lineTotal, type InvoiceLine } from './totals'
 
 const q = { overrideAccess: true, depth: 0 } as const
@@ -64,11 +65,17 @@ export async function saveInvoice(p: Payload, input: InvoiceInput, o: { id?: num
     contactEmail ||= u.email
     contactPhone ||= u.phone ?? null
   }
+  // Someone typed in by hand who already has an account under that email: link it
+  let account = input.account || null
+  if (!account && contactEmail?.trim()) {
+    const u = (await p.find({ collection: 'users', where: { email: { equals: contactEmail.trim().toLowerCase() } }, limit: 1, pagination: false, ...q })).docs[0]
+    if (u) account = u.id
+  }
   if (!contactName?.trim()) throw new InvoiceError('Add who the invoice is for.')
   if (!contactEmail && !contactPhone) throw new InvoiceError('Add an email or a mobile number so the family can get the invoice.')
   const data = {
     payee: input.payee,
-    account: input.account || null,
+    account,
     contactName: contactName.trim().slice(0, 120),
     contactEmail: contactEmail?.trim().toLowerCase() || null,
     contactPhone: contactPhone?.replace(/\s+/g, '') || null,
@@ -88,7 +95,7 @@ export async function saveInvoice(p: Payload, input: InvoiceInput, o: { id?: num
   return p.create({ collection: 'invoices', data: { ...data, reference: newReference(input.payee), token: randomBytes(18).toString('base64url'), status: 'draft', createdBy: o.by ?? null }, ...q })
 }
 
-function emailBlocks(inv: Invoice, kind: 'invoice' | 'reminder' | 'receipt'): Block[] {
+function emailBlocks(inv: Invoice, kind: 'invoice' | 'reminder' | 'receipt', account?: { label: string; href: string }): Block[] {
   const rows: [string, string][] = [
     ...(inv.items ?? []).map((l) => [`${l.quantity && l.quantity > 1 ? `${l.quantity} × ` : ''}${l.description}`, formatAUD(lineTotal(l))] as [string, string]),
     ['Total', formatAUD(inv.total ?? 0)],
@@ -106,7 +113,9 @@ function emailBlocks(inv: Invoice, kind: 'invoice' | 'reminder' | 'receipt'): Bl
     heading: { invoice: `Invoice ${inv.reference}`, reminder: `Reminder: invoice ${inv.reference}`, receipt: `Payment received — ${inv.reference}` }[kind],
     intro: `${intro}${inv.note && kind !== 'receipt' ? `<br><br>${esc(inv.note).replace(/\n/g, '<br>')}` : ''}`,
     rows,
-    ...(kind === 'receipt' ? {} : { cta: { label: `Pay ${formatAUD(inv.total ?? 0)}`, href: invoiceLink(inv) } }),
+    ...(kind === 'receipt'
+      ? account ? { cta: account, after: account.label === 'Create your account' ? 'We’ve saved this payment to an account under your email. Create your password to see your invoices, bookings and receipts in one place.' : 'You’ll find this invoice in your account.' } : {}
+      : { cta: { label: `Pay ${formatAUD(inv.total ?? 0)}`, href: invoiceLink(inv) } }),
   }]
 }
 
@@ -187,11 +196,23 @@ export async function markInvoicePaid(p: Payload, reference: string, o: { via: '
   if (inv.status === 'paid') return inv
   // A card payment still counts if the invoice was cancelled meanwhile (the money has been taken)
   if (o.via === 'manual' && inv.status !== 'sent' && inv.status !== 'draft') throw new InvoiceError('Only unpaid invoices can be marked paid.')
-  const paid = await p.update({ collection: 'invoices', id: inv.id, data: { status: 'paid', paidAt: new Date().toISOString(), paidVia: o.via, paymentNote: o.note?.slice(0, 200) || null }, ...q })
+  let paid = await p.update({ collection: 'invoices', id: inv.id, data: { status: 'paid', paidAt: new Date().toISOString(), paidVia: o.via, paymentNote: o.note?.slice(0, 200) || null }, ...q })
   if (o.via === 'card' && inv.status === 'cancelled') p.logger.warn(`Invoice ${reference} was paid by card after it was cancelled — refund it in Stripe if needed.`)
-  if (paid.contactEmail) {
+  const email = paid.contactEmail
+  if (email) {
     const brand = brandOf(paid)
-    await sendEmail(p, { to: paid.contactEmail, subject: `Payment received — invoice ${paid.reference}`, html: emailLayout(brand, emailBlocks(paid, 'receipt')), sender: brand, userId: idOf(paid.account) ?? undefined }).catch((e) => p.logger.error({ err: e, msg: `Receipt for ${reference} failed` }))
+    // Paid without an account: set one up under their email (like any other booking) so the invoice is kept with it
+    let link: { label: string; href: string } | undefined
+    try {
+      const user = paid.account
+        ? await p.findByID({ collection: 'users', id: idOf(paid.account)!, ...q })
+        : (await ensureAccount(p, { email, firstName: paid.contactName.split(' ')[0], lastName: paid.contactName.split(' ').slice(1).join(' ') || null, phone: paid.contactPhone })).user
+      if (!paid.account) paid = await p.update({ collection: 'invoices', id: paid.id, data: { account: user.id }, ...q, showHiddenFields: true })
+      link = await accountLink(p, user)
+    } catch (e) {
+      p.logger.error({ err: e, msg: `Could not link invoice ${reference} to an account` })
+    }
+    await sendEmail(p, { to: email, subject: `Payment received — invoice ${paid.reference}`, html: emailLayout(brand, emailBlocks(paid, 'receipt', link)), sender: brand, userId: idOf(paid.account) ?? undefined }).catch((e) => p.logger.error({ err: e, msg: `Receipt for ${reference} failed` }))
   }
   return paid
 }

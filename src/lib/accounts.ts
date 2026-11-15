@@ -91,5 +91,8 @@ export async function linkGuestRecords(payload: Payload, user: Pick<User, 'id' |
     for (const d of docs) await payload.update({ collection, id: d.id, data: { account: user.id }, overrideAccess: true, req })
     linked[collection] = docs.length
   }
-  return linked
+  // Invoices sent to this email before the account existed
+  const { docs: inv } = await payload.find({ pagination: false, collection: 'invoices', where: { contactEmail: { equals: email }, account: { exists: false } }, limit: 200, depth: 0, overrideAccess: true, req })
+  for (const d of inv) await payload.update({ collection: 'invoices', id: d.id, data: { account: user.id }, overrideAccess: true, req })
+  return { ...linked, invoices: inv.length }
 }

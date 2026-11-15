@@ -275,6 +275,12 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
               {participants.docs.length === 0 && <li className="text-sm text-muted">Players appear here after your first booking or offer.</li>}
             </ul>
           </div>
+          {credit === 0 && (
+            <Link href="/academy/1-on-1" className="block rounded-2xl bg-black p-6 text-white transition hover:bg-black/85">
+              <p className="font-semibold">Book a 1-on-1</p>
+              <p className="mt-1 text-sm text-white/70">Pick a time and choose a Foundation Academy coach. Book now →</p>
+            </Link>
+          )}
           {credit > 0 && (
             <Link href="/academy/1-on-1" className="block rounded-2xl border-2 border-accent p-6 hover:brightness-105">
               <p className="font-semibold">{credit} free 1-on-1 session{credit === 1 ? '' : 's'}</p>
