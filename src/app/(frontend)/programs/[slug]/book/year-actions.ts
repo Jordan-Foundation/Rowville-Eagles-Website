@@ -1,6 +1,7 @@
 'use server'
 
 import { checkoutFailMessage } from '@/lib/payments'
+import { checkoutReferralCode } from '@/referrals/capture'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { rateLimit } from '@/lib/form-guard'
@@ -18,6 +19,8 @@ export async function bookFullYear(_prev: YearState, fd: FormData): Promise<Year
   const values = Object.fromEntries([...fd.entries()].filter(([k]) => !k.startsWith('$')).map(([k, v]) => [k, String(v).slice(0, 2000)]))
   const fail = (error: string): YearState => ({ error, values })
   const p = await payload()
+  const ref = await checkoutReferralCode(p, fd)
+  if (ref.error) return fail(ref.error)
   const limited = await rateLimit(p, 'year-booking', { perIp: 20 })
   if (limited) return fail(limited)
   const year = (await p.find({ pagination: false, collection: 'programs', where: { slug: { equals: str(fd, 'program') }, type: { equals: 'academy-year' }, status: { equals: 'open' } }, limit: 1, depth: 0 })).docs[0]
@@ -36,7 +39,7 @@ export async function bookFullYear(_prev: YearState, fd: FormData): Promise<Year
   const kidId = accountId ? await rememberKid(p, accountId, { participantId: Number(str(fd, 'participant')) || null, firstName: player.firstName, lastName: player.lastName, dateOfBirth: player.dateOfBirth, medical: player.medical, emergencyName: player.emergencyName, emergencyPhone: player.emergencyPhone, photoConsent: player.photoConsent }) : null
   let url: string
   try {
-    url = await checkoutFullYear(p, { year, slotIds, birthYear: birthYearOf(player.dateOfBirth)!, contact, player, accountId, participantId: kidId, cancelPath: `/programs/${year.slug}/book?cancelled=1` })
+    url = await checkoutFullYear(p, { year, slotIds, birthYear: birthYearOf(player.dateOfBirth)!, contact, player, accountId, participantId: kidId, cancelPath: `/programs/${year.slug}/book?cancelled=1`, referralCode: ref.code })
   } catch (e) {
     if (e instanceof FullYearError) return fail(e.message)
     p.logger.error(e)

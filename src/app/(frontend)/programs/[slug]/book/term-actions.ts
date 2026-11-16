@@ -1,6 +1,7 @@
 'use server'
 
 import { checkoutFailMessage } from '@/lib/payments'
+import { checkoutReferralCode } from '@/referrals/capture'
 import { rateLimit } from '@/lib/form-guard'
 import { rememberKid } from '@/lib/family-kids'
 import { headers } from 'next/headers'
@@ -25,6 +26,8 @@ export async function bookTerm(_prev: TermState, fd: FormData): Promise<TermStat
   const values = Object.fromEntries([...fd.entries()].filter(([k]) => !k.startsWith('$')).map(([k, v]) => [k, String(v).slice(0, 2000)]))
   const fail = (error: string): TermState => ({ error, values })
   const p = await payload()
+  const ref = await checkoutReferralCode(p, fd)
+  if (ref.error) return fail(ref.error)
   const limited = await rateLimit(p, 'term-booking', { perIp: 20 })
   if (limited) return fail(limited)
   const { docs } = await p.find({ pagination: false, collection: 'programs', where: { slug: { equals: str(fd, 'program') }, type: { in: ['academy-term', 'toddler'] }, status: { equals: 'open' } }, limit: 1, depth: 0 })
@@ -111,7 +114,7 @@ export async function bookTerm(_prev: TermState, fd: FormData): Promise<TermStat
   }
   let url: string
   try {
-    url = await checkoutRegistrations(p, regs.map((reg, i) => ({ reg, slot: picked[i] })), program, `/programs/${program.slug}/book?cancelled=1`)
+    url = await checkoutRegistrations(p, regs.map((reg, i) => ({ reg, slot: picked[i] })), program, `/programs/${program.slug}/book?cancelled=1`, ref.code)
   } catch (e) {
     if (e instanceof TermClosedError) return fail(e.message)
     p.logger.error(e)

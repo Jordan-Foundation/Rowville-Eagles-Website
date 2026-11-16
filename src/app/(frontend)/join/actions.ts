@@ -1,6 +1,7 @@
 'use server'
 
 import { rateLimit } from '@/lib/form-guard'
+import { checkoutReferralCode } from '@/referrals/capture'
 import { dobProblem, phoneOk } from '@/lib/validate'
 import { redirect } from 'next/navigation'
 import { payload } from '@/lib/payload'
@@ -42,6 +43,8 @@ export async function joinUs(_prev: JoinState, fd: FormData): Promise<JoinState>
   const p = await payload()
   const limited = await rateLimit(p, 'join', { email: contact.email })
   if (limited) return fail(limited)
+  const ref = await checkoutReferralCode(p, fd)
+  if (ref.error) return fail(ref.error)
   const rules = await getAgeRules(p)
   const season = rules.season
   const birthYear = birthYearOf(player.dateOfBirth)
@@ -87,6 +90,7 @@ export async function joinUs(_prev: JoinState, fd: FormData): Promise<JoinState>
         birthYear,
         trialSession: trialSessionId,
         trialSession2: trialSession2Id,
+        referralCode: ref.code ?? undefined,
         contact,
         player,
         token: newToken(),
@@ -98,6 +102,16 @@ export async function joinUs(_prev: JoinState, fd: FormData): Promise<JoinState>
     reg = (await linkFamily(p, reg, await currentUser())).entry
   } catch (e) {
     p.logger.error({ err: e, msg: `Linking account for ${reg.reference} failed` })
+  }
+  // Refer a Friend: keep the code on the family's account (registration may be paid weeks later) and update the invite
+  try {
+    const { saveCodeOnAccount, advanceInvites } = await import('@/referrals/service')
+    const { inviteTokenFromCookie } = await import('@/referrals/capture')
+    const acc = typeof reg.account === 'object' ? reg.account?.id : reg.account
+    if (ref.code) await saveCodeOnAccount(p, acc, ref.code)
+    await advanceInvites(p, { email: contact.email, phone: contact.phone, token: await inviteTokenFromCookie(), status: 'trial_registered', account: acc })
+  } catch (e) {
+    p.logger.error({ err: e, msg: 'Referral capture at trial registration failed' })
   }
   try {
     if (trialSessionId) {

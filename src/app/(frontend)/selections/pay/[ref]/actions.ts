@@ -1,6 +1,7 @@
 'use server'
 
 import { redirect } from 'next/navigation'
+import { checkoutReferralCode } from '@/referrals/capture'
 import { newReference, startCheckout, confirmPayment, checkoutFailMessage } from '@/lib/payments'
 import { paymentsMode } from '@/lib/stripe-accounts'
 import { awaitingPayment } from '@/selections/payment'
@@ -18,6 +19,8 @@ export async function payForSelection(_prev: PayState, fd: FormData): Promise<Pa
   const data = await loadPayable(s('ref'), s('t'))
   if (!data) return fail('This link isn’t valid any more. Please log in to your account or contact us.')
   const { p, entry, round, program, squad, fee, payee } = data
+  const ref = await checkoutReferralCode(p, fd)
+  if (ref.error) return fail(ref.error)
   if (!awaitingPayment(entry)) return fail(entry.status === 'registered' ? 'This registration is already paid.' : 'This place is no longer available — please contact us.')
   if (!program || !payee) return fail('Registration isn’t set up for this round yet — please contact us.')
   if (!s('emergencyName') || !PHONE.test(s('emergencyPhone').replace(/\s+/g, ''))) return fail('Please add an emergency contact with an Australian phone number.')
@@ -37,6 +40,7 @@ export async function payForSelection(_prev: PayState, fd: FormData): Promise<Pa
     overrideAccess: true,
     data: {
       reference,
+      referralCode: ref.code ?? entry.referralCode ?? undefined,
       program: program.id,
       status: 'pending',
       payee,

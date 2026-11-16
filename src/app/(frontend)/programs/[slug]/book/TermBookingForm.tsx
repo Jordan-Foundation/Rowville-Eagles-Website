@@ -1,6 +1,7 @@
 'use client'
 
 import { PayeeChip } from '@/components/PayeeChip'
+import { ReferralCodeField } from '@/components/forms/ReferralCodeField'
 
 import { AgeHint } from '@/components/forms/PlayerFields'
 import type { KidOption } from '@/lib/family-kids'
@@ -193,6 +194,7 @@ export function TermBookingForm(props: { slug: string; slots: TermSlotOption[]; 
         </div>
       </Fieldset>
 
+      <ReferralCodeField defaultValue={v.referralCode} />
       <label className="flex items-start gap-3 text-sm">
         <input type="checkbox" name="terms" required defaultChecked={v.terms === 'on'} className="mt-1" />
         <span>I agree to the <PolicyLink k="codeOfConduct">Code of Conduct</PolicyLink>, <PolicyLink k="childSafe">Child Safe policy</PolicyLink> and <PolicyLink k="refunds">refund policy</PolicyLink>, and confirm the details above are correct.</span>

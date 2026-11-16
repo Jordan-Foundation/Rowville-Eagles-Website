@@ -28,7 +28,7 @@ export async function creditBalance(payload: Payload, accountId: number, req?: P
 
 export async function giveCredit(
   payload: Payload,
-  c: { account: number; sessions: number; value?: number; reason: 'cancellation' | 'coach_cancellation' | 'goodwill' | 'adjustment'; booking?: number; note?: string; createdBy?: number; scope?: CreditScope },
+  c: { account: number; sessions: number; value?: number; reason: 'cancellation' | 'coach_cancellation' | 'goodwill' | 'adjustment' | 'referral'; booking?: number; note?: string; createdBy?: number; scope?: CreditScope },
   req?: PayloadRequest,
 ) {
   const sessions = Math.floor(c.sessions)

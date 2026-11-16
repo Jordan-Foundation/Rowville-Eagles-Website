@@ -43,6 +43,19 @@ export async function POST(req: Request, { params }: { params: Promise<{ payee: 
     }
   }
 
+  // A payment refunded in full (from the Stripe dashboard or anywhere): a pending referral no longer counts
+  if (event.type === 'charge.refunded') {
+    const charge = event.data.object as Stripe.Charge
+    if (charge.refunded && charge.payment_intent) {
+      try {
+        const pi = await stripeFor(payee).paymentIntents.retrieve(typeof charge.payment_intent === 'string' ? charge.payment_intent : charge.payment_intent.id)
+        if (pi.metadata?.reference) await (await import('@/referrals/service')).voidReferralForReference(p, pi.metadata.reference, 'Refunded in Stripe')
+      } catch (e) {
+        p.logger.error({ err: e, msg: 'Referral check on refund failed' })
+      }
+    }
+  }
+
   // Foundation+ subscriptions (metadata.kind = 'fplus'): keep the player's plan and tag in sync
   if (payee === 'academy' && event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session

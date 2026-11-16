@@ -1,6 +1,7 @@
 'use client'
 
 import { PayeeChip } from '@/components/PayeeChip'
+import { ReferralCodeField } from '@/components/forms/ReferralCodeField'
 import { HeardFrom } from '@/components/forms/HeardFrom'
 
 import { PolicyLink } from '@/components/PolicyLink'
@@ -141,6 +142,7 @@ export function BookForm({ coach, slot, term, price, weekly, credit, loginHref, 
         </Fieldset>
       )}
 
+      <ReferralCodeField defaultValue={v.referralCode} />
       <HeardFrom defaultValue={v.heardFrom} />
 
       <div className="space-y-3 text-sm">

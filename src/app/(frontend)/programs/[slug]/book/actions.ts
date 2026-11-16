@@ -1,6 +1,7 @@
 'use server'
 
 import { rateLimit } from '@/lib/form-guard'
+import { checkoutReferralCode } from '@/referrals/capture'
 import { heardFromValue } from '@/tracking/heard'
 import { dobProblem, phoneOk } from '@/lib/validate'
 import { headers } from 'next/headers'
@@ -25,6 +26,8 @@ export async function bookProgram(_prev: BookingState, fd: FormData): Promise<Bo
   const fail = (error: string): BookingState => ({ error, values })
 
   const p = await payload()
+  const ref = await checkoutReferralCode(p, fd)
+  if (ref.error) return fail(ref.error)
   const limited = await rateLimit(p, 'program-booking', { perIp: 20 })
   if (limited) return fail(limited)
   const { docs } = await p.find({
@@ -161,6 +164,7 @@ export async function bookProgram(_prev: BookingState, fd: FormData): Promise<Bo
         reference,
         checkoutGroup: players.length > 1 ? lead : undefined,
         heardFrom: heardFromValue(fd.get('heardFrom')),
+        referralCode: ref.code,
         program: program.id,
         status: 'pending',
         payee,

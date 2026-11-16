@@ -1,6 +1,7 @@
 'use client'
 
 import { KidQuickFill } from '@/components/forms/KidQuickFill'
+import { ReferralCodeField } from '@/components/forms/ReferralCodeField'
 import type { KidOption } from '@/lib/family-kids'
 import { PolicyLink } from '@/components/PolicyLink'
 import { useActionState, useMemo, useState } from 'react'
@@ -101,6 +102,7 @@ export function JoinForm({ rules, trials, kids = [], prefill }: { rules: AgeRule
         </fieldset>
       )}
 
+      <ReferralCodeField defaultValue={v.referralCode} />
       <label className="flex items-start gap-3 text-sm">
         <input type="checkbox" name="consent" required defaultChecked={v.consent === 'on'} className="mt-1" />
         <span>I agree to Rowville Eagles FC contacting me about trials and the {season} season, and to the club’s <PolicyLink k="privacy">privacy policy</PolicyLink>.</span>

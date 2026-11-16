@@ -57,6 +57,7 @@ export const cronJobs: Record<string, Record<string, Job>> = {
     campCoaches: (payload) => sweepCampCoaches(payload),
     openAcademyPrograms: (payload) => openDuePrograms(payload),
     announcements: (payload) => runAnnouncements(payload),
+    referrals: async (payload) => (await import('../referrals/service')).runReferralConfirmations(payload),
   },
   // ~3:30am Melbourne: housekeeping
   cleanup: {

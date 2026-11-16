@@ -1,6 +1,7 @@
 'use server'
 
 import { allowsWeekly, isHolidayTimeframe } from '@/academy/timeframes'
+import { checkoutReferralCode } from '@/referrals/capture'
 import { heardFromValue } from '@/tracking/heard'
 import { checkPack, packSettings, packTotal } from '@/academy/packs'
 import { rateLimit } from '@/lib/form-guard'
@@ -33,6 +34,8 @@ export async function bookSession(_prev: BookState, fd: FormData): Promise<BookS
   const mode = s('mode') === 'term' ? 'term' : s('mode') === 'pack' ? 'pack' : 'casual'
 
   const p = await payload()
+  const ref = await checkoutReferralCode(p, fd)
+  if (ref.error) return fail(ref.error)
   const limited = await rateLimit(p, 'one-on-one', { perIp: 20 })
   if (limited) return fail(limited)
   const user = await currentUser()
@@ -152,6 +155,7 @@ export async function bookSession(_prev: BookState, fd: FormData): Promise<BookS
     sessionsTotal: sessions.length,
     sessionsPaid: 0,
     heardFrom: heardFromValue(fd.get('heardFrom')),
+    referralCode: ref.code,
     coach: coachId,
     term: term.id,
     weekday,

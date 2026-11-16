@@ -96,6 +96,8 @@ export async function onBookingPaid(payload: Payload, booking: Booking) {
   // Academy term: the registration is paid and the training time goes in the email
   let termRows: [string, string][] = []
   const termReg = await markTermRegistrationPaid(payload, { ...booking, account: user.id, participant: participantId || null })
+  // Refer a Friend: a qualifying first purchase → pending referral
+  await (await import('../referrals/service')).recordBookingReferral(payload, booking.id).catch((e) => payload.logger.error({ err: e, msg: `Referral for ${booking.reference} failed` }))
   for (const reg of [termReg, termReg?.second]) {
     if (!reg?.slot) continue
     const slot = await payload.findByID({ collection: 'academy-term-slots', id: typeof reg.slot === 'object' ? reg.slot.id : reg.slot, depth: 0, overrideAccess: true, disableErrors: true })

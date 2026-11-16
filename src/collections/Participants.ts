@@ -21,6 +21,7 @@ export const Participants: CollectionConfig = {
     ],
   },
   fields: [
+    { name: 'referralCode', label: 'Referral code', type: 'text', unique: true, index: true, admin: { position: 'sidebar', readOnly: true, description: 'This player’s Refer a Friend code' } },
     { name: 'fullName', type: 'text', admin: { hidden: true } },
     {
       type: 'row',

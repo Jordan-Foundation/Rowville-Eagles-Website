@@ -30,6 +30,13 @@ export const Users: CollectionConfig = {
         }
       },
     ],
+    afterChange: [
+      async ({ doc, operation, req }) => {
+        // Refer a Friend: an invited family has signed up
+        if (operation === 'create') await (await import('../referrals/service')).advanceInvites(req.payload, { email: doc.email, phone: doc.phone, status: 'signed_up', account: doc.id }).catch(() => null)
+        return doc
+      },
+    ],
     afterLogin: [
       async ({ user, req }) => {
         if (!user.activated) await req.payload.update({ collection: 'users', id: user.id, data: { activated: true }, overrideAccess: true, req })
@@ -59,6 +66,8 @@ export const Users: CollectionConfig = {
     delete: ({ req: { user } }) => hasRole(user as never, 'admin'),
   },
   fields: [
+    { name: 'referralCode', label: 'Referred with code', type: 'text', index: true, admin: { position: 'sidebar', readOnly: true, description: 'The referral code this family arrived with' } },
+    { name: 'referralCodeAt', type: 'date', admin: { position: 'sidebar', readOnly: true, hidden: true } },
     {
       type: 'row',
       fields: [
