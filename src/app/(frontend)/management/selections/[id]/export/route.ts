@@ -1,4 +1,5 @@
 import { payload } from '@/lib/payload'
+import { trialNightsOf } from '@/lib/trials'
 import { getAgeRules } from '@/lib/age-rules'
 import { groupInfo } from '@/lib/age-groups'
 import { inTab, playingYear, type Tab } from '@/selections/board'
@@ -28,7 +29,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       status: entryStatusLabel(e).label,
       queued: e.outcomeQueued ?? '',
       squad: e.squad && typeof e.squad === 'object' ? (e.squad as Squad).name : '',
-      trial: e.trialSession && typeof e.trialSession === 'object' ? (e.trialSession as TrialSession).title : '',
+      trial: trialNightsOf(e).map((t) => t.title).join(' + '),
       parent: `${e.contact.firstName} ${e.contact.lastName}`,
       email: e.contact.email,
       phone: e.contact.phone,

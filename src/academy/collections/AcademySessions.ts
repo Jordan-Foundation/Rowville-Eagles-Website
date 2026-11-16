@@ -23,6 +23,22 @@ export const AcademySessions: CollectionConfig = {
     delete: isStaff,
   },
   defaultSort: 'startsAt',
+  hooks: {
+    afterChange: [
+      async ({ doc, previousDoc, operation, req, context }) => {
+        // A cover coach was just set (from Management or Admin): ask them to confirm. A small group date asks once (its slot row).
+        if (operation !== 'update' || context?.coverHandled || doc.kind === 'group-player') return doc
+        const id = (v: unknown) => (v && typeof v === 'object' ? (v as { id: number }).id : (v as number | null | undefined)) ?? null
+        if (!id(doc.coverCoach) || id(doc.coverCoach) === id(previousDoc?.coverCoach)) return doc
+        try {
+          await (await import('../cover-requests')).askCoverCoach(req.payload, doc.id, req)
+        } catch (e) {
+          req.payload.logger.error({ err: e, msg: `Cover request for session ${doc.id} failed` })
+        }
+        return doc
+      },
+    ],
+  },
   fields: [
     {
       name: 'booking',
@@ -73,8 +89,13 @@ export const AcademySessions: CollectionConfig = {
       fields: [
         { name: 'needsCover', type: 'checkbox', defaultValue: false, index: true, admin: { description: 'The booked coach is away for this session' } },
         { type: 'row', fields: [
-          { name: 'coverCoach', type: 'relationship', relationTo: 'academy-coaches' },
+          { name: 'coverCoach', type: 'relationship', relationTo: 'academy-coaches', admin: { description: 'Setting this asks the coach to confirm (email + text)' } },
           { name: 'coverNote', label: 'Handover notes', type: 'textarea' },
+        ] },
+        { type: 'row', fields: [
+          { name: 'coverStatus', type: 'select', options: [{ label: 'Asked — waiting for the coach', value: 'asked' }, { label: 'Confirmed by the coach', value: 'confirmed' }, { label: 'Declined', value: 'declined' }], admin: { readOnly: true } },
+          { name: 'coverAskedAt', type: 'date', admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } } },
+          { name: 'coverAnsweredAt', type: 'date', admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } } },
         ] },
       ],
     },

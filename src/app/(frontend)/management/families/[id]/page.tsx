@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { academyPurchaseType, bookingPurchaseType, purchaseTypeLabel } from '@/promotions/purchase-types'
 import { INVOICE_STATUS } from '@/invoices/totals'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
@@ -42,6 +43,14 @@ export default async function FamilyPage({ params }: { params: Promise<{ id: str
   if (oneOnOnes.docs.some((b) => ['confirmed', 'completed', 'payment_failed'].includes(b.status)) || regs.docs.some((r) => r.status === 'paid') || bookings.docs.some((b) => b.payee === 'academy' && b.status === 'paid')) member.add('rfa')
   if (teams.docs.length || bookings.docs.some((b) => b.payee === 'club' && b.status === 'paid')) member.add('rowville')
   if (kids.docs.some((k) => k.pdr?.tier && k.pdr.tier !== 'free')) member.add('foundation-plus')
+  // What this family has booked or bought (the same tags Promotions can target)
+  const bought = [...new Set([
+    ...bookings.docs.filter((b) => b.status === 'paid' || b.status === 'refunded').map((b) => bookingPurchaseType(b, typeof b.program === 'object' ? b.program?.type : null)),
+    ...regs.docs.filter((r) => r.status === 'paid').map(() => 'type:academy-term' as const),
+    ...oneOnOnes.docs.filter((b) => ['confirmed', 'completed', 'payment_failed', 'refunded'].includes(b.status)).map(academyPurchaseType),
+    ...(orders.docs.some((o) => ['paid', 'ready', 'completed'].includes(o.status)) ? ['type:shop' as const] : []),
+    ...(invoices.docs.some((i) => i.status === 'paid') ? ['type:invoice' as const] : []),
+  ].filter(Boolean) as string[])]
   const creditSessions = credits.docs.reduce((n, c) => n + (c.sessions ?? 0), 0)
   const fplus = kids.docs.filter((k) => k.pdr?.tier && k.pdr.tier !== 'free')
   return (
@@ -66,6 +75,7 @@ export default async function FamilyPage({ params }: { params: Promise<{ id: str
             ['Member of', member.size ? [...member].map((t) => ({ rowville: 'Rowville Eagles', rfa: 'Foundation Academy', 'foundation-plus': 'Foundation+' })[t] ?? t).join(', ') : '—'],
             ['Marketing', [u.marketingEmail ? 'email ✓' : 'email ✗', u.marketingSms ? 'texts ✓' : 'texts ✗'].join(' · ')],
             ['Texts', u.smsOptOut ? 'Turned off (replied STOP)' : 'On'],
+            ['Has booked', bought.length ? bought.map(purchaseTypeLabel).join(', ') : '—'],
             ['Session credits', creditSessions ? `${creditSessions} session${creditSessions === 1 ? '' : 's'}` : '—'],
             ['Joined', day(u.createdAt)],
           ]} />

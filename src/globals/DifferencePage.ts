@@ -44,7 +44,7 @@ export const DifferencePage: GlobalConfig = {
     ]),
     section('sessions', 'c) Lesson sequence', D.sessions, [
       text('lengths', D.sessions.lengths, 'Session lengths'),
-      { name: 'stages', type: 'array', minRows: 5, maxRows: 5, defaultValue: D.sessions.stages.map((x) => ({ ...x })), fields: [{ type: 'row', fields: [{ name: 'name', type: 'text', required: true }, { name: 'line', type: 'text' }] }] },
+      { name: 'stages', type: 'array', minRows: 5, maxRows: 6, defaultValue: D.sessions.stages.map((x) => ({ ...x })), fields: [{ type: 'row', fields: [{ name: 'name', type: 'text', required: true }, { name: 'line', type: 'text' }] }] },
     ]),
     section('reports', 'd) Player reports', D.reports, [img('image', 'Optional: your own sample report image (otherwise a built-in sample with made-up data is shown)')]),
     section('year', 'e) Year-round program', D.year, [

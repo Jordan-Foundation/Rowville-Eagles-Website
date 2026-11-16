@@ -113,8 +113,8 @@ export async function newThread(_prev: TeamState, fd: FormData): Promise<TeamSta
   if (g.team.type === 'tournament' || g.team.sections?.forum === false) return { error: 'This team doesn’t have Team Chat.' }
   const title = s(fd, 'title').slice(0, 140)
   const body = s(fd, 'body').slice(0, 4000)
-  if (!title || !body) return { error: 'Add a title and your question.' }
-  await g.p.create({ collection: 'forum-threads', overrideAccess: true, data: { team: g.team.id, title, body, author: g.user.id, lastActivityAt: new Date().toISOString() } })
+  if (!title) return { error: 'Add your question.' }
+  await g.p.create({ collection: 'forum-threads', overrideAccess: true, data: { team: g.team.id, title, body: body || undefined, author: g.user.id, lastActivityAt: new Date().toISOString() } })
   return done(g.team, 'Posted — coaches will answer here.')
 }
 

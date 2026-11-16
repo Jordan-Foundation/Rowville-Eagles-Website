@@ -156,7 +156,8 @@ export const SelectionEntries: CollectionConfig = {
         ] },
       ],
     },
-    { name: 'trialSession', type: 'relationship', relationTo: 'trial-sessions', admin: { position: 'sidebar', condition: (d) => d?.kind !== 'tournament' } },
+    { name: 'trialSession', label: 'Trial night', type: 'relationship', relationTo: 'trial-sessions', admin: { position: 'sidebar', condition: (d) => d?.kind !== 'tournament' } },
+    { name: 'trialSession2', label: 'Second trial night', type: 'relationship', relationTo: 'trial-sessions', admin: { position: 'sidebar', condition: (d) => d?.kind !== 'tournament' } },
     {
       type: 'collapsible',
       label: 'Offer a place (Rowville)',

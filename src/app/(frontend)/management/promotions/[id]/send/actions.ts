@@ -19,7 +19,7 @@ function readAudience(fd: FormData): Audience {
   return {
     mode: mode === 'all' || mode === 'picked' ? mode : 'filter',
     memberships: fd.getAll('memberships').map(String).filter((m) => MEMBERSHIPS.has(m)),
-    history: fd.getAll('history').map(String).filter((h) => /^(1on1|shop|program:\d+)$/.test(h)),
+    history: fd.getAll('history').map(String).filter((h) => /^(1on1|shop|program:\d+|type:[a-z0-9-]+)$/.test(h)),
     birthYears: fd.getAll('birthYears').map(Number).filter((y) => y > 1990 && y < 2100),
     teams: fd.getAll('teams').map(Number).filter((t) => Number.isInteger(t) && t > 0),
     emails: String(fd.get('emails') ?? '').slice(0, 20000),

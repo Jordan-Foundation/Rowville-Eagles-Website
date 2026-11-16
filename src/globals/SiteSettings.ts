@@ -55,6 +55,16 @@ export const SiteSettings: GlobalConfig = {
       ],
     },
     {
+      name: 'smsAlertNumbers',
+      label: 'Text alerts for new messages',
+      type: 'text',
+      admin: { description: 'Mobiles that get a text whenever someone texts the club’s number, e.g. 0412 345 678, 0498 765 432 (separate with commas). Leave empty for none.' },
+      validate: (v: unknown) => {
+        const list = String(v ?? '').split(',').map((x) => x.replace(/[\s()-]/g, '')).filter(Boolean)
+        return list.every((x) => /^(\+?61|0)4\d{8}$/.test(x)) ? true : 'Use Australian mobile numbers separated by commas, e.g. 0412 345 678.'
+      },
+    },
+    {
       name: 'tracking',
       label: 'Ad tracking (Meta & Google)',
       type: 'group',

@@ -29,12 +29,13 @@ export const DIFFERENCE = {
   },
   sessions: {
     nav: 'Sessions',
-    headline: 'Every session, five stages',
-    body: 'Every session is built around one learning objective and follows the same five stages, so players get the most out of every minute.',
+    headline: 'Every session, six stages',
+    body: 'Every session is built around one learning objective and follows the same six stages, so players get the most out of every minute.',
     more: 'Sessions run for 75 minutes for U5–U11 and 90 minutes for U12 and up.',
     lengths: '75 minutes for U5–U11 · 90 minutes for U12+',
     stages: [
       { name: 'IGNITE', line: 'A fun, high-energy start that switches players on to the session’s focus.' },
+      { name: 'BALL MASTERY', line: 'Lots of touches to build close control, confidence and comfort on the ball with both feet.' },
       { name: 'BUILD', line: 'Coaches break the skill down with clear demonstrations and lots of touches.' },
       { name: 'APPLY', line: 'Practise the skill under pressure, with opponents, decisions and constraints.' },
       { name: 'CONNECT', line: 'Link the skill to real match moments in small-sided games.' },

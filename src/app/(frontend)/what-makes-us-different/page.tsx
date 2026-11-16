@@ -16,7 +16,7 @@ import { LEVELS, STRANDS } from '@/academy/curriculum/levels'
 export const revalidate = 3600
 export const metadata: Metadata = {
   title: 'What makes us different',
-  description: 'Paid, professionally developed coaches, a real football curriculum, a five-stage lesson sequence, player reports and a year-round program — plus a free Friday Community Night.',
+  description: 'Paid, professionally developed coaches, a real football curriculum, a six-stage lesson sequence, player reports and a year-round program — plus a free Friday Community Night.',
   alternates: { canonical: '/what-makes-us-different' },
   openGraph: { title: 'What makes Rowville different', description: 'Paid coaches, a real football curriculum and a year-round program for every player.', type: 'website' },
 }
@@ -130,11 +130,11 @@ export default async function DifferencePage() {
       </Section>
 
       <Section id="sessions" icon="sessions" eyebrow="Every session" headline={c.sessions.headline} body={c.sessions.body}>
-        <ol className="grid gap-3 lg:grid-cols-5" aria-label="The five stages of every session">
+        <ol className={`grid gap-3 ${c.sessions.stages.length > 5 ? 'lg:grid-cols-6' : 'lg:grid-cols-5'}`} aria-label={`The ${c.sessions.stages.length === 6 ? 'six' : 'five'} stages of every session`}>
           {c.sessions.stages.map((s, i) => (
             <li key={s.name} className="relative rounded-xl bg-[#0f2a55] p-5 text-white lg:[clip-path:polygon(0_0,92%_0,100%_50%,92%_100%,0_100%,8%_50%)] lg:px-9 lg:first:[clip-path:polygon(0_0,92%_0,100%_50%,92%_100%,0_100%)]">
               <p className="text-xs font-semibold text-accent">Step {i + 1}</p>
-              <p className="font-[family-name:var(--font-barlow)] text-2xl font-extrabold">{s.name}</p>
+              <p className="font-[family-name:var(--font-barlow)] text-2xl font-extrabold leading-tight lg:text-xl xl:text-2xl">{s.name}</p>
               <p className="mt-1 text-sm text-white/80">{s.line}</p>
               {i < c.sessions.stages.length - 1 && <span aria-hidden className="absolute -bottom-3 left-8 text-2xl text-brand lg:hidden">↓</span>}
             </li>

@@ -111,12 +111,12 @@ export async function moveGroupDate(p: Payload, o: { groupId: number; from: stri
 }
 
 /** Cover for one date of the group: flag it (coach away) and/or assign the cover coach — all rows together. */
-export async function setGroupCover(p: Payload, o: { groupId: number; startsAt: string; needsCover: boolean; coverCoach?: number | null; note?: string; actorId?: number }) {
+export async function setGroupCover(p: Payload, o: { groupId: number; startsAt: string; needsCover: boolean; coverCoach?: number | null; coverStatus?: 'confirmed' | 'declined' | null; note?: string; actorId?: number }) {
   const { players, slot } = await rowsAt(p, o.groupId, o.startsAt)
   const rows = [...players, ...(slot ? [slot] : [])]
   if (!rows.length) throw new GroupError('Nothing booked at that time.')
   for (const s of rows) {
-    await p.update({ collection: 'academy-sessions', id: s.id, ...q, data: { needsCover: o.needsCover, ...(o.coverCoach !== undefined ? { coverCoach: o.coverCoach } : {}), ...(o.note ? { coverNote: o.note } : {}) } })
+    await p.update({ collection: 'academy-sessions', id: s.id, ...q, ...(o.coverStatus !== undefined ? { context: { coverHandled: true } } : {}), data: { needsCover: o.needsCover, ...(o.coverCoach !== undefined ? { coverCoach: o.coverCoach } : {}), ...(o.coverStatus !== undefined ? { coverStatus: o.coverStatus, coverAnsweredAt: new Date().toISOString() } : {}), ...(o.note ? { coverNote: o.note } : {}) } })
   }
   const g = await p.findByID({ collection: 'academy-groups', id: o.groupId, depth: 0, ...q })
   await p.update({ collection: 'academy-groups', id: g.id, ...q, data: { history: history(g, o.coverCoach ? `Cover coach assigned for ${when(o.startsAt)}` : o.needsCover ? `Cover needed for ${when(o.startsAt)}` : `Cover cleared for ${when(o.startsAt)}`, o.actorId, o.note) } })
@@ -156,6 +156,9 @@ export async function coachNeedsGroupCover(p: Payload, coach: AcademyCoach, grou
   if (!g || rel(g.coach) !== coach.id) throw new GroupError('Only the group’s coach can ask for cover.')
   if (new Date(startsAt) <= new Date()) throw new GroupError('This session has already started.')
   await setGroupCover(p, { groupId, startsAt, needsCover: true, note })
+  // Ask the other coaches whether anyone can pick it up
+  const { slot } = await rowsAt(p, groupId, startsAt)
+  if (slot) await (await import('./cover-requests')).askCoachesToCover(p, [slot.id], { exclude: [coach.id] }).catch((e) => p.logger.error({ err: e, msg: 'Cover pick-up emails failed' }))
   const { academyBrand } = await import('./brand')
   await sendEmail(p, {
     to: academyBrand.email,

@@ -1,4 +1,6 @@
 import Link from 'next/link'
+import { EVERYONE_GROUPS, coachChoices } from '@/messaging/broadcast'
+import { pickCoaches } from './actions'
 import type { Metadata } from 'next'
 import { requireManagement } from '@/lib/management'
 import { payload } from '@/lib/payload'
@@ -22,13 +24,14 @@ export default async function ManagementBroadcast({ searchParams }: { searchPara
       p.find({ pagination: false, collection: 'teams', where: { archived: { not_equals: true } }, sort: 'name', limit: 100, depth: 0, overrideAccess: true }),
       p.find({ pagination: false, collection: 'report-cycles', sort: '-createdAt', limit: 10, depth: 0, overrideAccess: true }),
     ])
+    const coaches = await coachChoices(p)
     const { docs: slots } = programs.length ? await p.find({ pagination: false, collection: 'academy-term-slots', where: { program: { in: programs.map((x) => x.id) } }, limit: 300, depth: 0, overrideAccess: true }) : { docs: [] }
     const item = 'block p-3 hover:bg-white/5'
     return (
       <div className="max-w-4xl space-y-6">
         <div>
           <h1 className="font-display text-4xl font-semibold uppercase tracking-tight">Email a group</h1>
-          <p className="mt-2 text-muted">Everyday notices — training changes, reminders, what to bring. Each family gets it by text (or email if they can’t get texts) in their own conversation. For offers and discounts use Promotions instead.</p>
+          <p className="mt-2 text-muted">Everyday notices — training changes, reminders, what to bring — to a group, a team, every parent, player or coach, or coaches you choose. Each family gets it by text (or email if they can’t get texts) in their own conversation. For offers and discounts use Promotions instead.</p>
           {to && <p role="alert" className="mt-3 text-sm text-red-300">That group couldn’t be found.</p>}
         </div>
         <section aria-label="Academy groups" className="panel border border-line">
@@ -42,6 +45,20 @@ export default async function ManagementBroadcast({ searchParams }: { searchPara
             )))}
             {slots.length === 0 && <li className="p-3 text-muted">No Academy groups.</li>}
           </ul>
+        </section>
+        <section aria-label="Everyone" className="panel border border-line">
+          <h2 className="border-b border-line px-4 py-3 font-display text-lg font-semibold uppercase">Everyone</h2>
+          <ul className="grid divide-y divide-line text-sm sm:grid-cols-2">{EVERYONE_GROUPS.map((g) => <li key={g.to}><Link className={item} href={`/management/broadcast?to=${g.to}`}>{g.label}</Link></li>)}</ul>
+        </section>
+        <section aria-label="Choose coaches" className="panel border border-line">
+          <h2 className="border-b border-line px-4 py-3 font-display text-lg font-semibold uppercase">Choose coaches</h2>
+          <form action={pickCoaches} className="space-y-3 p-4 text-sm">
+            <ul className="grid gap-2 sm:grid-cols-2">
+              {coaches.map((c) => <li key={c.id}><label className="flex items-start gap-2"><input type="checkbox" name="coach" value={c.id} className="mt-1" /><span>{c.name}{c.tags.length ? <span className="block text-xs text-muted">{c.tags.join(' · ')}</span> : null}</span></label></li>)}
+              {coaches.length === 0 && <li className="text-muted">No coach accounts yet.</li>}
+            </ul>
+            {coaches.length > 0 && <button className="min-h-10 border border-line px-4 text-xs font-semibold uppercase tracking-[0.12em]">Message the ticked coaches</button>}
+          </form>
         </section>
         <section aria-label="Teams" className="panel border border-line">
           <h2 className="border-b border-line px-4 py-3 font-display text-lg font-semibold uppercase">Teams</h2>
@@ -66,7 +83,7 @@ export default async function ManagementBroadcast({ searchParams }: { searchPara
         <BroadcastForm to={to} count={audience.recipients.length} templates={QUICK_REPLIES} send={managementBroadcastAction} />
       </div>
       <aside className="panel h-fit border border-line" aria-label="Who gets it">
-        <p className="border-b border-line p-4 text-sm"><strong>{audience.recipients.length}</strong> famil{audience.recipients.length === 1 ? 'y' : 'ies'} · {texts} by text · {audience.recipients.length - texts} by email</p>
+        <p className="border-b border-line p-4 text-sm"><strong>{audience.recipients.length}</strong> {to.startsWith('coaches:') || to.startsWith('everyone:') ? (audience.recipients.length === 1 ? 'person' : 'people') : audience.recipients.length === 1 ? 'family' : 'families'} · {texts} by text · {audience.recipients.length - texts} by email</p>
         <ul className="max-h-[60vh] divide-y divide-line overflow-y-auto text-sm">
           {audience.recipients.map((r) => <li key={r.accountId} className="flex justify-between gap-3 p-3"><Link href={`/management/families/${r.accountId}`} className="underline decoration-white/30">{r.name}</Link><span className="text-xs uppercase tracking-wider text-muted">{r.via}</span></li>)}
         </ul>

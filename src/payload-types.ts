@@ -1222,6 +1222,10 @@ export interface SelectionRound {
 export interface AcademyShareLink {
   id: number;
   label?: string | null;
+  /**
+   * Coach links are for new families only
+   */
+  allowExisting?: boolean | null;
   tokenHash: string;
   coach: number | AcademyCoach;
   term: number | AcademyTerm;
@@ -1272,8 +1276,14 @@ export interface AcademySession {
    * The booked coach is away for this session
    */
   needsCover?: boolean | null;
+  /**
+   * Setting this asks the coach to confirm (email + text)
+   */
   coverCoach?: (number | null) | AcademyCoach;
   coverNote?: string | null;
+  coverStatus?: ('asked' | 'confirmed' | 'declined') | null;
+  coverAskedAt?: string | null;
+  coverAnsweredAt?: string | null;
   paid?: boolean | null;
   cancelledBy?: ('family' | 'coach' | 'admin') | null;
   cancelledAt?: string | null;
@@ -1723,6 +1733,7 @@ export interface SelectionEntry {
   outcomeSentAt?: string | null;
   outcomeSentBy?: (number | null) | User;
   trialSession?: (number | null) | TrialSession;
+  trialSession2?: (number | null) | TrialSession;
   offeredTeam?: (number | null) | Team;
   registrationProgram?: (number | null) | Program;
   offerSentAt?: string | null;
@@ -2487,7 +2498,7 @@ export interface ForumThread {
   id: number;
   team: number | Team;
   title: string;
-  body: string;
+  body?: string | null;
   author: number | User;
   pinned?: boolean | null;
   locked?: boolean | null;
@@ -3248,6 +3259,7 @@ export interface AcademyBookingsSelect<T extends boolean = true> {
  */
 export interface AcademyShareLinksSelect<T extends boolean = true> {
   label?: T;
+  allowExisting?: T;
   tokenHash?: T;
   coach?: T;
   term?: T;
@@ -3293,6 +3305,9 @@ export interface AcademySessionsSelect<T extends boolean = true> {
   needsCover?: T;
   coverCoach?: T;
   coverNote?: T;
+  coverStatus?: T;
+  coverAskedAt?: T;
+  coverAnsweredAt?: T;
   paid?: T;
   cancelledBy?: T;
   cancelledAt?: T;
@@ -4030,6 +4045,7 @@ export interface SelectionEntriesSelect<T extends boolean = true> {
   outcomeSentAt?: T;
   outcomeSentBy?: T;
   trialSession?: T;
+  trialSession2?: T;
   offeredTeam?: T;
   registrationProgram?: T;
   offerSentAt?: T;
@@ -4988,6 +5004,10 @@ export interface SiteSetting {
     instagram?: string | null;
   };
   /**
+   * Mobiles that get a text whenever someone texts the club’s number, e.g. 0412 345 678, 0498 765 432 (separate with commas). Leave empty for none.
+   */
+  smsAlertNumbers?: string | null;
+  /**
    * Lets Meta and Google Ads see which ads bring bookings. Only runs on the live website, never on Management, coach or private-link pages, and never sends names, emails or children’s details. Leave a box empty to switch that one off. Changes apply straight away.
    */
   tracking?: {
@@ -5354,6 +5374,7 @@ export interface SiteSettingsSelect<T extends boolean = true> {
         facebook?: T;
         instagram?: T;
       };
+  smsAlertNumbers?: T;
   tracking?:
     | T
     | {

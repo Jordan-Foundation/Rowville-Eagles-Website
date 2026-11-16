@@ -58,6 +58,12 @@ export async function broadcastAudience(p: Payload, user: User, coach: AcademyCo
       const kid = m.participant && typeof m.participant === 'object' ? m.participant.firstName : ''
       if (acc) families.set(acc, [...(families.get(acc) ?? []), kid])
     }
+  } else if ((kind === 'everyone' || kind === 'coaches') && management) {
+    // Whole-club messages: parents, players with their own accounts, coaches (or some coaches)
+    const ids = await everyoneIds(p, kind, a, b)
+    if (!ids) return null
+    title = ids.title
+    for (const id of ids.users) families.set(id, [])
   } else return null
   const ids = [...families.keys()]
   const { docs: users } = ids.length ? await p.find({ pagination: false, collection: 'users', where: { id: { in: ids } }, limit: ids.length, depth: 0, ...q }) : { docs: [] }
@@ -90,4 +96,56 @@ export async function sendBroadcast(p: Payload, user: User, coach: AcademyCoach 
     }
   }
   return { texted, emailed, failed, total: audience.recipients.length }
+}
+
+
+export const EVERYONE_GROUPS = [
+  { to: 'everyone:parents', label: 'All parents' },
+  { to: 'everyone:players', label: 'All players (with their own account)' },
+  { to: 'everyone:families', label: 'All parents and players' },
+  { to: 'coaches:all', label: 'All coaches' },
+  { to: 'coaches:academy', label: 'Foundation Academy coaches' },
+  { to: 'coaches:club', label: 'Rowville Eagles team coaches' },
+  { to: 'everyone:all', label: 'Everyone — parents, players and coaches' },
+] as const
+
+/** User ids for a whole-club group (to = "everyone:parents" … or "coaches:pick:<id>-<id>"). */
+async function everyoneIds(p: Payload, kind: string, a: string, b: string): Promise<{ title: string; users: number[] } | null> {
+  const byRole = async (roles: string[]) => (await p.find({ pagination: false, collection: 'users', where: { or: roles.map((r) => ({ roles: { contains: r } })) }, limit: 20000, depth: 0, ...q, select: { email: true } })).docs.map((u) => u.id)
+  if (kind === 'everyone') {
+    const roles = { parents: ['parent'], players: ['player'], families: ['parent', 'player'], all: ['parent', 'player', 'coach'] }[a]
+    const label = EVERYONE_GROUPS.find((g) => g.to === `everyone:${a}`)?.label
+    return roles && label ? { title: label.charAt(0).toLowerCase() + label.slice(1), users: await byRole(roles) } : null
+  }
+  if (a === 'all') return { title: 'all coaches', users: await byRole(['coach']) }
+  if (a === 'academy') {
+    const { docs } = await p.find({ pagination: false, collection: 'academy-coaches', where: { active: { not_equals: false } }, limit: 500, depth: 0, ...q, select: { user: true } })
+    return { title: 'Foundation Academy coaches', users: [...new Set(docs.map((c) => rel(c.user)).filter(Boolean) as number[])] }
+  }
+  if (a === 'club') {
+    const { docs } = await p.find({ pagination: false, collection: 'teams', where: { archived: { not_equals: true } }, limit: 500, depth: 0, ...q, select: { coaches: true } })
+    return { title: 'Rowville Eagles team coaches', users: [...new Set(docs.flatMap((t) => (t.coaches ?? []).map(rel)).filter(Boolean) as number[])] }
+  }
+  if (a === 'pick') {
+    const wanted = b.split('-').map(Number).filter((n) => Number.isInteger(n) && n > 0).slice(0, 200)
+    if (!wanted.length) return null
+    const { docs } = await p.find({ pagination: false, collection: 'users', where: { id: { in: wanted }, roles: { contains: 'coach' } }, limit: wanted.length, depth: 0, ...q, select: { email: true } })
+    return { title: docs.length === 1 ? 'one coach' : `${docs.length} coaches`, users: docs.map((u) => u.id) }
+  }
+  return null
+}
+
+/** Coaches to pick from (name, and whether Academy and/or team coach). */
+export async function coachChoices(p: Payload) {
+  const [users, academy, teams] = await Promise.all([
+    p.find({ pagination: false, collection: 'users', where: { roles: { contains: 'coach' } }, sort: 'firstName', limit: 1000, depth: 0, ...q, select: { firstName: true, lastName: true, email: true } }),
+    p.find({ pagination: false, collection: 'academy-coaches', limit: 500, depth: 0, ...q, select: { user: true, active: true } }),
+    p.find({ pagination: false, collection: 'teams', where: { archived: { not_equals: true } }, limit: 500, depth: 0, ...q, select: { coaches: true, name: true } }),
+  ])
+  const ac = new Set(academy.docs.filter((c) => c.active !== false).map((c) => rel(c.user)))
+  return users.docs.map((u) => ({
+    id: u.id,
+    name: [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email,
+    tags: [ac.has(u.id) && 'Academy', ...teams.docs.filter((t) => (t.coaches ?? []).map(rel).includes(u.id)).map((t) => t.name)].filter(Boolean) as string[],
+  }))
 }

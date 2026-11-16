@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { trialNightsOf } from '@/lib/trials'
 import type { SelectionEntry } from '@/payload-types'
 import { fullLabel, groupInfo, type AgeRules } from '@/lib/age-groups'
 import { formatDate } from '@/lib/format'
@@ -22,7 +23,7 @@ export function SelectionList({ entries, rules, showPlayer = true }: { entries: 
         const program = round?.program && typeof round.program === 'object' ? round.program : null
         const by = e.playingBirthYear ?? e.birthYear
         const status = entryStatusLabel(e)
-        const trial = e.status === 'trial-booked' && e.trialSession && typeof e.trialSession === 'object' ? e.trialSession : null
+        const trials = e.status === 'trial-booked' ? trialNightsOf(e) : []
         return (
           <li key={e.id} className="flex flex-wrap items-center justify-between gap-3 p-5">
             <div>
@@ -30,7 +31,7 @@ export function SelectionList({ entries, rules, showPlayer = true }: { entries: 
                 {program && e.kind === 'tournament' ? <Link href={`/programs/${program.slug}`} className="hover:underline">{program.title}</Link> : round?.title ?? 'Trials'}
               </p>
               <p className="text-sm text-muted">
-                {[showPlayer && `${e.player.firstName} ${e.player.lastName}`, by && fullLabel(groupInfo(by, rules)), e.squad && typeof e.squad === 'object' && e.squad.name, trial && formatDate(trial.start, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }), e.reference].filter(Boolean).join(' · ')}
+                {[showPlayer && `${e.player.firstName} ${e.player.lastName}`, by && fullLabel(groupInfo(by, rules)), e.squad && typeof e.squad === 'object' && e.squad.name, trials.length > 0 && trials.map((t) => formatDate(t.start, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })).join(' + '), e.reference].filter(Boolean).join(' · ')}
               </p>
             </div>
             {awaitingPayment(e) ? (

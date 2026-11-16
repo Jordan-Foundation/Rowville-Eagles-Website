@@ -56,6 +56,8 @@ const when = (iso: string) => formatDate(iso, { weekday: 'short', day: 'numeric'
 /** Email the Academy admin a list of sessions that need a replacement coach. */
 export async function alertCoverNeeded(payload: Payload, coach: AcademyCoach, sessions: AcademySession[], reason: string) {
   if (!sessions.length) return
+  // Ask the other coaches whether anyone can pick these up
+  await (await import('./cover-requests')).askCoachesToCover(payload, sessions.map((s) => s.id), { exclude: [coach.id] }).catch((e) => payload.logger.error({ err: e, msg: 'Cover pick-up emails failed' }))
   const rows = sessions.map((s) => {
     const b = typeof s.booking === 'object' ? s.booking : null
     return [when(s.startsAt), b ? `${b.player.firstName} ${b.player.lastName} (${b.reference})` : `Session ${s.id}`] as [string, string]
