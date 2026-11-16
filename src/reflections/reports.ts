@@ -26,7 +26,8 @@ async function periodData(payload: Payload, period: { from: string; to: string }
   const teams = await reflectionTeams(payload, s)
   const played: { team: Team; fixtures: Fixture[]; members: number }[] = []
   for (const team of teams) {
-    const fixtures = ((team.fixtures ?? []) as Fixture[]).filter((f) => inPeriod(f.startsAt, from, to))
+    // Only games already played (a report built mid-week doesn't count games still to come)
+    const fixtures = ((team.fixtures ?? []) as Fixture[]).filter((f) => inPeriod(f.startsAt, from, to) && Date.parse(f.startsAt) <= Date.now())
     if (!fixtures.length) continue
     played.push({ team, fixtures, members: (await activeMembers(payload, team.id)).length })
   }
