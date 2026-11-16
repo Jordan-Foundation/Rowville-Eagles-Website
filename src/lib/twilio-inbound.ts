@@ -5,7 +5,7 @@ import { sendEmail } from './email'
 import { emailLayout, esc } from './email-templates'
 import { siteUrl } from './payments'
 import { toE164 } from './sms'
-import { auRegionToken, confirmCallWithTwilio, validTwilioSignature } from './twilio'
+import { auRegionToken, confirmCallWithTwilio, confirmMessageWithTwilio, validTwilioSignature } from './twilio'
 
 /**
  * Webhooks from Twilio: check the signature and return the posted fields, or null if it isn't genuinely
@@ -32,14 +32,16 @@ export async function readTwilioRequest(req: Request): Promise<Record<string, st
   // Requests handled in Twilio's Australian region are signed with that region's own Auth Token
   for (const t of [token, auRegionToken()]) if (t && validTwilioSignature(t, req.headers.get('x-twilio-signature'), urls, isGet ? [] : pairs)) return params
   // Calls: if the signature doesn't match, confirm the call with Twilio directly
-  if (params.CallSid && req.headers.has('x-twilio-signature')) {
-    const check = await confirmCallWithTwilio(params)
+  // Calls and texts: if the signature doesn't match, confirm the call / message with Twilio directly
+  const isMessage = !params.CallSid && Boolean(params.MessageSid ?? params.SmsSid)
+  if ((params.CallSid || isMessage) && req.headers.has('x-twilio-signature')) {
+    const check = isMessage ? await confirmMessageWithTwilio(params) : await confirmCallWithTwilio(params)
     notes.set(req, check.why)
     if (check.ok) {
-      console.warn(`Twilio webhook ${new URL(req.url).pathname}: signature didn’t match; accepted after confirming the call with Twilio`)
+      console.warn(`Twilio webhook ${new URL(req.url).pathname}: signature didn’t match; accepted after confirming the ${isMessage ? 'text' : 'call'} with Twilio`)
       return params
     }
-  } else notes.set(req, params.CallSid ? 'no signature header' : `no CallSid among ${pairs.length} fields read`)
+  } else notes.set(req, params.CallSid || params.MessageSid ? 'no signature header' : `no CallSid or MessageSid among ${pairs.length} fields read`)
   return null
 }
 

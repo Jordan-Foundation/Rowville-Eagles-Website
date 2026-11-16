@@ -21,7 +21,8 @@ export const metadata: Metadata = {
   ),
   title: { default: 'Rowville Eagles Football Club', template: '%s · Rowville Eagles FC' },
   description: 'Community football in Rowville, Victoria — MiniRoos, juniors, seniors and the Rowville Foundation Academy. Est. 1985.',
-  icons: { apple: '/icons/apple-touch-icon.png' },
+  // Browser tab: the Rowville Eagles crest (the home-screen app icon stays RFA)
+  icons: { icon: [{ url: '/favicon.ico', sizes: '48x48' }, { url: '/icons/favicon-32.png', type: 'image/png', sizes: '32x32' }, { url: '/icons/crest-192.png', type: 'image/png', sizes: '192x192' }], apple: '/icons/apple-touch-icon.png' },
   appleWebApp: { capable: true, title: 'RFA', statusBarStyle: 'black-translucent' },
 }
 

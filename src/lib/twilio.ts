@@ -66,29 +66,41 @@ export async function sendTwilioSms(to: string, body: string, statusCallback?: s
  * webhook address) — a forged request can't name a real, current call.
  */
 export async function confirmCallWithTwilio(p: { CallSid?: string; From?: string; To?: string; AccountSid?: string }): Promise<{ ok: boolean; why: string }> {
+  if (!p.CallSid || !/^CA[0-9a-f]{32}$/i.test(p.CallSid)) return { ok: false, why: `no valid CallSid (${p.CallSid ? p.CallSid.length + ' chars' : 'missing'})` }
+  return confirmWithTwilio('Calls', p.CallSid, p)
+}
+
+/** Same second check for incoming texts: the message must really exist on our account, from and to those numbers. */
+export async function confirmMessageWithTwilio(p: { MessageSid?: string; SmsSid?: string; From?: string; To?: string; AccountSid?: string }): Promise<{ ok: boolean; why: string }> {
+  const sid = p.MessageSid ?? p.SmsSid
+  if (!sid || !/^(SM|MM)[0-9a-f]{32}$/i.test(sid)) return { ok: false, why: `no valid MessageSid (${sid ? sid.length + ' chars' : 'missing'})` }
+  return confirmWithTwilio('Messages', sid, p)
+}
+
+async function confirmWithTwilio(kind: 'Calls' | 'Messages', sid: string, p: { From?: string; To?: string; AccountSid?: string }): Promise<{ ok: boolean; why: string }> {
   const cfg = twilioConfig()
   if (!cfg) return { ok: false, why: 'Twilio settings missing' }
-  if (!p.CallSid || !/^CA[0-9a-f]{32}$/i.test(p.CallSid)) return { ok: false, why: `no valid CallSid (${p.CallSid ? p.CallSid.length + ' chars' : 'missing'})` }
+  const what = kind === 'Calls' ? 'call' : 'text'
   if (p.AccountSid && p.AccountSid !== cfg.sid) return { ok: false, why: 'different account' }
   try {
-    // The default (US) region first, then Australia (AU1) if its token is set — each region keeps its own calls
+    // The default (US) region first, then Australia (AU1) if its token is set — each region keeps its own records
     const regions: [string, string][] = [[apiBase(), cfg.token], ...(auRegionToken() ? ([[process.env.NODE_ENV !== 'production' && process.env.TWILIO_API_BASE_AU1 ? process.env.TWILIO_API_BASE_AU1 : 'https://api.sydney.au1.twilio.com', auRegionToken()!]] as [string, string][]) : [])]
     let res: Response | null = null
     const tried: string[] = []
     for (const [base, token] of regions) {
-      res = await fetch(`${base}/2010-04-01/Accounts/${cfg.sid}/Calls/${p.CallSid}.json`, {
+      res = await fetch(`${base}/2010-04-01/Accounts/${cfg.sid}/${kind}/${sid}.json`, {
         headers: { authorization: `Basic ${Buffer.from(`${cfg.sid}:${token}`).toString('base64')}` },
         signal: AbortSignal.timeout(5000),
       })
       tried.push(`${base.includes('au1') ? 'AU1' : 'US1'} ${res.status}`)
       if (res.ok) break
     }
-    if (!res?.ok) return { ok: false, why: `Twilio API answered ${tried.join(', ')}${regions.length === 1 && res?.status === 404 ? ' — the call is probably handled in Twilio’s Australian region (AU1): add TWILIO_AUTH_TOKEN_AU1 in Vercel, or set the number to process calls in the US region' : ''}` }
-    const call = (await res.json()) as { from?: string; to?: string; date_created?: string }
-    const age = Date.now() - new Date(call.date_created ?? 0).getTime()
-    if (!(age < 2 * 3_600_000)) return { ok: false, why: `call too old or no date (${call.date_created ?? 'none'})` }
-    if (p.From && call.from !== p.From) return { ok: false, why: `caller differs (${(call.from ?? '').slice(-3)} vs ${p.From.slice(-3)})` }
-    if (p.To && call.to !== p.To && call.from !== p.To) return { ok: false, why: `called number differs (${(call.to ?? '').slice(-3)} vs ${p.To.slice(-3)})` }
+    if (!res?.ok) return { ok: false, why: `Twilio API answered ${tried.join(', ')}${regions.length === 1 && res?.status === 404 ? ` — the ${what} is probably handled in Twilio’s Australian region (AU1): add TWILIO_AUTH_TOKEN_AU1 in Vercel, or set the number to use the US region` : ''}` }
+    const rec = (await res.json()) as { from?: string; to?: string; date_created?: string }
+    const age = Date.now() - new Date(rec.date_created ?? 0).getTime()
+    if (!(age < 2 * 3_600_000)) return { ok: false, why: `${what} too old or no date (${rec.date_created ?? 'none'})` }
+    if (p.From && rec.from !== p.From) return { ok: false, why: `sender differs (${(rec.from ?? '').slice(-3)} vs ${p.From.slice(-3)})` }
+    if (p.To && rec.to !== p.To && rec.from !== p.To) return { ok: false, why: `our number differs (${(rec.to ?? '').slice(-3)} vs ${p.To.slice(-3)})` }
     return { ok: true, why: 'confirmed with Twilio' }
   } catch (e) {
     return { ok: false, why: `Twilio API not reached (${e instanceof Error ? e.message : 'error'})` }
