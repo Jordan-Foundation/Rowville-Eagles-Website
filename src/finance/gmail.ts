@@ -36,7 +36,7 @@ export function decrypt(blob: string) {
 const sign = (s: string) => createHmac('sha256', process.env.PAYLOAD_SECRET || 'dev-secret').update(`gmail-state:${s}`).digest('base64url').slice(0, 24)
 export function authUrl(userId: number) {
   const nonce = `${userId}.${Date.now().toString(36)}`
-  const params = new URLSearchParams({ client_id: process.env.GOOGLE_CLIENT_ID ?? '', redirect_uri: redirectUri(), response_type: 'code', scope: SCOPE, access_type: 'offline', prompt: 'consent', state: `${nonce}.${sign(nonce)}`, login_hint: 'jordan@foundation.football' })
+  const params = new URLSearchParams({ client_id: process.env.GOOGLE_CLIENT_ID ?? '', redirect_uri: redirectUri(), response_type: 'code', scope: SCOPE, access_type: 'offline', prompt: 'consent', state: `${nonce}.${sign(nonce)}` })
   return `https://accounts.google.com/o/oauth2/v2/auth?${params}`
 }
 export function checkState(state: string, userId: number) {
@@ -112,7 +112,7 @@ export async function importGmailReceipts(p: Payload, o: { force?: boolean } = {
       const r = await readReceipt({ text, file: file ? { data: file.data, mediaType: file.mediaType } : undefined, categories: cats })
       if (!r.isReceipt || !(r.total > 0) || !r.date) { notReceipts++; continue }
       if (await duplicateOf(p, { supplier: r.supplier, date: r.date, amount: r.total })) { duplicates++; continue }
-      const receipt = file ? await saveReceiptFile(p, { data: file.data, mimetype: file.mediaType, name: file.name, size: file.data.length }) : null
+      const receipt = file ? await saveReceiptFile(p, { data: file.data, mimetype: file.mediaType, name: file.name, size: file.data.length }).catch((e) => { console.warn('[finance] receipt attachment not saved:', e instanceof Error ? e.message : e); return null }) : null
       const res = await createExpense(p, { date: r.date, supplier: r.supplier.slice(0, 120), amount: r.total, gst: r.gst, description: (r.summary || subject).slice(0, 300), category: await categoryIdFor(p, r.category), paymentMethod: r.paymentMethod, source: 'email', status: 'needs_review', receipt, sourceRef: `gmail:${id}` })
       if (res.duplicate) duplicates++
       else created++

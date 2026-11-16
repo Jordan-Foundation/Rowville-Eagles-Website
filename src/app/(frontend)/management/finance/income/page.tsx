@@ -7,6 +7,7 @@ import { CATEGORY_LABEL, moneyEntries, summarise } from '@/lib/money'
 import { localToUtc, localYmd } from '@/lib/time'
 import { DownloadCsv } from '@/components/management/DownloadCsv'
 import { heardFromCounts } from '@/tracking/heard'
+import { foundationPlusIncome } from '@/finance/report'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Finance · Income', robots: { index: false } }
@@ -30,6 +31,7 @@ export default async function IncomePage({ searchParams }: { searchParams: Promi
   const range = term ? { from: term.startDate, to: term.endDate } : monthBounds(ym)
   const label = term ? term.name : formatDate(`${ym}-15T00:00:00Z`, { month: 'long', year: 'numeric' })
   const heard = await heardFromCounts(p, range.from, range.to)
+  const fplus = await foundationPlusIncome(range.from, range.to)
   const s = summarise(await moneyEntries(p, new Date(Date.parse(range.from) - 400 * 86_400_000).toISOString()), range.from, range.to)
   const tab = (active: boolean) => `min-h-10 border px-3 py-2 text-sm ${active ? 'border-white bg-white text-black' : 'border-line text-muted hover:text-ink'}`
   return (
@@ -70,6 +72,11 @@ export default async function IncomePage({ searchParams }: { searchParams: Promi
           <tfoot><tr className="border-t border-line font-semibold"><td className="p-3">Total</td><td className="p-3 text-right">{s.total.count}</td><td className="p-3 text-right">{formatMoney(s.total.gross)}</td><td className="p-3 text-right text-muted">{formatMoney(s.total.discount)}</td><td className="p-3 text-right">{formatMoney(s.total.refunds)}</td><td className="p-3 text-right">{formatMoney(s.total.net)}</td></tr></tfoot>
         </table>
       </section>
+      <section aria-label="Foundation+" className="panel border border-line p-5 text-sm">
+        <p className="text-xs uppercase tracking-[0.2em] text-muted">Foundation+ · Stripe subscriptions</p>
+        <p className="mt-2 font-display text-3xl font-semibold">{fplus == null ? '—' : formatMoney(fplus)}</p>
+        <p className="text-muted">{fplus == null ? 'Shown once live Stripe payments are switched on (read from Stripe’s paid subscription invoices).' : 'Paid subscription invoices in this period, read from Stripe.'}</p>
+      </section>
       <section aria-label="How families heard about us" className="panel border border-line p-5">
         <h2 className="font-display text-lg font-semibold uppercase">How families heard about us</h2>
         <p className="mt-1 text-sm text-muted">Trials, camps, programs and 1-on-1s booked in this period, by their answer on the booking form.</p>
@@ -80,7 +87,7 @@ export default async function IncomePage({ searchParams }: { searchParams: Promi
       <div className="flex flex-wrap gap-2">
         <DownloadCsv list="money" params={term ? { term: term.id } : { m: ym }} label="Download this summary (CSV)" />
       </div>
-      <p className="text-xs text-muted">Stripe fees aren’t included (Stripe shows them on each payout). Foundation+ subscriptions are billed by Stripe directly — see Stripe → Billing for those. Sessions paid with credits aren’t counted again (no new card payment).</p>
+      <p className="text-xs text-muted">Stripe fees aren’t included (Stripe shows them on each payout). Foundation+ is read from Stripe’s subscription invoices (above, not in the table). Sessions paid with credits aren’t counted again (no new card payment).</p>
     </div>
   )
 }

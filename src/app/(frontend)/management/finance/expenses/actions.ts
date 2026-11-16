@@ -22,7 +22,12 @@ export async function readReceiptAction(_prev: ReadState, fd: FormData): Promise
   if (!/^image\/|^application\/pdf$/.test(file.type)) return { error: 'Use a photo (JPG/PNG) or a PDF.' }
   const p = await payload()
   const data = Buffer.from(await file.arrayBuffer())
-  const receiptId = await saveReceiptFile(p, { data, mimetype: file.type, name: file.name || `receipt-${Date.now()}.jpg`, size: data.length }, user)
+  let receiptId: number
+  try {
+    receiptId = await saveReceiptFile(p, { data, mimetype: file.type, name: file.name || `receipt-${Date.now()}.jpg`, size: data.length }, user)
+  } catch {
+    return { error: 'That file couldn’t be opened as a photo or PDF — try taking the photo again.' }
+  }
   if (!receiptAiConfigured()) return { receiptId, fields: {}, error: 'Receipt reading needs ANTHROPIC_API_KEY — fill the details in by hand.' }
   try {
     const cats = (await categories(p)).filter((c) => c.active !== false).map((c) => c.name)
@@ -81,13 +86,14 @@ export async function importStatementAction(fd: FormData) {
   if (!user) return back('bank', 'error', 'Admins only.')
   const file = fd.get('file')
   if (!(file instanceof File) || !file.size) return back('bank', 'error', 'Choose the CSV or OFX file you downloaded from Westpac.')
+  let r: Awaited<ReturnType<typeof importStatement>>
   try {
-    const r = await importStatement(await payload(), file.name, await file.text(), user)
-    revalidatePath('/management/finance', 'layout')
-    return back('missing', 'done', `${r.added} new transaction${r.added === 1 ? '' : 's'} imported (${r.skipped} already here); ${r.matched} matched to expenses.`)
+    r = await importStatement(await payload(), file.name, await file.text(), user)
   } catch (e) {
     return back('bank', 'error', e instanceof Error ? e.message : 'Couldn’t read that file.')
   }
+  revalidatePath('/management/finance', 'layout')
+  return back('missing', 'done', `${r.added} new transaction${r.added === 1 ? '' : 's'} imported (${r.skipped} already here); ${r.matched} matched to expenses.`)
 }
 
 /** Missing receipts: not an expense (transfer, coach pay, refund…) / Stripe payout / link to an existing expense. */

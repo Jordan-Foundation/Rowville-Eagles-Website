@@ -70,7 +70,7 @@ export default async function FinanceSettingsPage({ searchParams }: { searchPara
             <form action={gmailAction} className="flex gap-2"><button name="do" value="check" className={btn}>Check now</button><button name="do" value="disconnect" className={btn}>Disconnect</button></form>
           </>
         ) : gmailConfigured() ? (
-          <a className={btn} href="/management/finance/gmail/connect">Connect jordan@foundation.football</a>
+          <a className={btn} href="/management/finance/gmail/connect">Connect the Gmail inbox</a>
         ) : (
           <div className="space-y-2 text-muted">
             <p>One-off setup (about 10 minutes), signed in to Google as the Workspace admin:</p>

@@ -106,3 +106,35 @@ describe('bank import and matching', async () => {
     expect(bestMatch({ date: '2026-11-16', amount: 120, description: 'x', direction: 'credit' }, exps)).toBeNull()
   })
 })
+
+describe('projections (what-if)', async () => {
+  const { applyScenario, headline, termTotals, totals, weekRevenue } = await import('@/finance/projection-calc')
+  const rev = (a: number) => ({ academy: a, oneOnOne: 200, smallGroup: 0, camps: 100, registrations: 0, other: 0 })
+  const base = {
+    today: '2026-11-18', academyPlayers: 40, avgRate: 30, superRate: 12,
+    terms: [{ name: 'Term 4', start: '2026-10-05', end: '2026-12-18' }],
+    weeks: [
+      { week: '2026-11-09', actual: true, revenue: rev(400), known: 0, coaching: 300, expenses: 50 },
+      { week: '2026-11-16', actual: false, revenue: rev(400), known: 400, coaching: 300, expenses: 50 },
+      { week: '2026-11-23', actual: false, revenue: rev(400), known: 0, coaching: 300, expenses: 50 },
+    ],
+  }
+  it('baseline totals and headline', () => {
+    expect(totals(base.weeks, '2026-11-16', '2027-01-01')).toEqual({ revenue: 1400, costs: 700, profit: 700 })
+    expect(termTotals(base.weeks, base)?.profit).toBe(1050)
+    expect(headline({ revenue: 0, costs: 0, profit: 4230 }, 'this term')).toBe('On track for about $4,200 profit this term')
+    expect(headline({ revenue: 0, costs: 0, profit: -560 }, 'in the next 3 months')).toMatch(/\$600 loss/)
+  })
+  it('sliders change future weeks only, never actuals', () => {
+    const out = applyScenario(base, { academyPlayers: 50, priceChange: { oneOnOne: 10 }, extraHoursPerWeek: 2, campAttendancePct: 50, oneOff: { amount: 1000, date: '2026-11-25' } })
+    expect(out[0]).toEqual(base.weeks[0])
+    expect(out[1].revenue.academy).toBe(500)
+    expect(out[1].revenue.oneOnOne).toBe(220)
+    expect(out[1].revenue.camps).toBe(50)
+    expect(out[1].coaching).toBe(367.2) // 300 + 2h × $30 × 1.12
+    expect(out[1].expenses).toBe(50)
+    expect(out[2].expenses).toBe(1050) // one-off in its week
+    expect(weekRevenue(out[1])).toBe(770)
+    expect(base.weeks[1].revenue.academy).toBe(400) // baseline untouched
+  })
+})
