@@ -140,6 +140,7 @@ export interface Config {
     messages: Message;
     'invite-tokens': InviteToken;
     'activity-log': ActivityLog;
+    'staff-feed': StaffFeed;
     media: Media;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
@@ -221,6 +222,7 @@ export interface Config {
     messages: MessagesSelect<false> | MessagesSelect<true>;
     'invite-tokens': InviteTokensSelect<false> | InviteTokensSelect<true>;
     'activity-log': ActivityLogSelect<false> | ActivityLogSelect<true>;
+    'staff-feed': StaffFeedSelect<false> | StaffFeedSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -3109,6 +3111,28 @@ export interface ActivityLog {
   createdAt: string;
 }
 /**
+ * Use Management → Notifications.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "staff-feed".
+ */
+export interface StaffFeed {
+  id: number;
+  kind: 'problem' | 'trial' | 'enquiry' | 'booking' | 'payment';
+  urgent?: boolean | null;
+  textStatus?: ('none' | 'sent' | 'held' | 'failed') | null;
+  title: string;
+  detail?: string | null;
+  href?: string | null;
+  /**
+   * Stops the same event being recorded twice
+   */
+  sourceKey?: string | null;
+  digestedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -3423,6 +3447,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'activity-log';
         value: number | ActivityLog;
+      } | null)
+    | ({
+        relationTo: 'staff-feed';
+        value: number | StaffFeed;
       } | null)
     | ({
         relationTo: 'media';
@@ -5408,6 +5436,22 @@ export interface ActivityLogSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "staff-feed_select".
+ */
+export interface StaffFeedSelect<T extends boolean = true> {
+  kind?: T;
+  urgent?: T;
+  textStatus?: T;
+  title?: T;
+  detail?: T;
+  href?: T;
+  sourceKey?: T;
+  digestedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media_select".
  */
 export interface MediaSelect<T extends boolean = true> {
@@ -5513,7 +5557,11 @@ export interface SiteSetting {
     instagram?: string | null;
   };
   /**
-   * Mobiles that get a text whenever someone texts the club’s number, e.g. 0412 345 678, 0498 765 432 (separate with commas). Leave empty for none.
+   * Who gets the 8pm summary of bookings, payments, trial sign-ups and problems (separate with commas). Leave empty to use the Management people whose mobile is in “Text alerts” below.
+   */
+  alertEmails?: string | null;
+  /**
+   * Mobiles that get a text whenever someone texts the club’s number, and for urgent website events (a session in the next 48 hours booked, cancelled or moved; cover needed; a trial sign-up — held overnight and sent at 7am), e.g. 0412 345 678, 0498 765 432 (separate with commas). Leave empty for none.
    */
   smsAlertNumbers?: string | null;
   /**
@@ -5932,6 +5980,7 @@ export interface SiteSettingsSelect<T extends boolean = true> {
         facebook?: T;
         instagram?: T;
       };
+  alertEmails?: T;
   smsAlertNumbers?: T;
   tracking?:
     | T

@@ -55,10 +55,16 @@ export const SiteSettings: GlobalConfig = {
       ],
     },
     {
+      name: 'alertEmails',
+      label: 'Daily summary emails',
+      type: 'text',
+      admin: { description: 'Who gets the 8pm summary of bookings, payments, trial sign-ups and problems (separate with commas). Leave empty to use the Management people whose mobile is in “Text alerts” below.' },
+    },
+    {
       name: 'smsAlertNumbers',
       label: 'Text alerts for new messages',
       type: 'text',
-      admin: { description: 'Mobiles that get a text whenever someone texts the club’s number, e.g. 0412 345 678, 0498 765 432 (separate with commas). Leave empty for none.' },
+      admin: { description: 'Mobiles that get a text whenever someone texts the club’s number, and for urgent website events (a session in the next 48 hours booked, cancelled or moved; cover needed; a trial sign-up — held overnight and sent at 7am), e.g. 0412 345 678, 0498 765 432 (separate with commas). Leave empty for none.' },
       validate: (v: unknown) => {
         const list = String(v ?? '').split(',').map((x) => x.replace(/[\s()-]/g, '')).filter(Boolean)
         return list.every((x) => /^(\+?61|0)4\d{8}$/.test(x)) ? true : 'Use Australian mobile numbers separated by commas, e.g. 0412 345 678.'
