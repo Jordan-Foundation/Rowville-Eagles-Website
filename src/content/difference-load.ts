@@ -23,6 +23,7 @@ export async function differenceContent(payload: Payload) {
     curriculum: { ...sec('curriculum'), image: img(g?.curriculum?.image, 'Players working on a drill') },
     sessions: sec('sessions'),
     reports: { ...sec('reports'), image: img(g?.reports?.image, 'Sample player report') },
+    reflections: { ...sec('reflections'), image: img(g?.reflections?.image, 'A player completing a match reflection') },
     year: sec('year'),
     pathways: { ...sec('pathways'), image: img(g?.pathways?.image, 'Rowville and RFA players training') },
     community: { ...sec('community'), photos: ((g?.community?.photos ?? []) as unknown[]).map((p) => img(p, 'Families at Friday Community Night')).filter(Boolean) as NonNullable<Img>[] },

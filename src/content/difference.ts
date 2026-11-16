@@ -48,6 +48,17 @@ export const DIFFERENCE = {
     body: 'Once or twice a year, coaches assess each player against the curriculum’s achievement standards in every strand. Reports live on your child’s profile in the player portal, so you can see their progress over time.',
     more: 'Each strand is assessed on a five-point scale — Well below, Below, At, Above or Well above the standard for their level — with a short comment from the coach on what’s going well and what to work on next.',
   },
+  reflections: {
+    nav: 'Reflections',
+    headline: 'Match Reflections after every game',
+    body: 'Win or lose, after every game our players take two minutes to reflect: three things they did well, three things to work on, and one focus for the next game. It builds the habit every good player has — honest, positive self-review — and their coach reads and replies to every one.',
+    more: 'Reflections open three hours after kick-off, from the family account or a private link the player can use on their own device. Each moment is tagged to a skill area, so over a season players (and parents) can see their strengths grow and where to keep working. Before the next game, the player’s focus is right there on their profile. Coaches read every reflection, tap Seen and leave a note, and each week they get a summary of the team’s themes to plan training around. Reflections are private to the family and the club’s coaches.',
+    steps: [
+      { name: '3 things I did well', line: 'Positives first — every time.' },
+      { name: '3 things to work on', line: 'Honest, specific and in their own words.' },
+      { name: 'My focus for next game', line: 'One clear goal to take into the next match.' },
+    ],
+  },
   year: {
     nav: 'Year-round',
     headline: 'A year-round program, four terms',
