@@ -156,6 +156,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
             <div className="mb-10">
               <h2 className="font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase">Teams</h2>
               <TeamCards teams={teams} />
+              {teams.some((t) => t.team.type === 'rowville') && <Link href={`/account/players/${kid.id}/reflections`} className="mt-3 inline-block text-sm font-semibold underline" data-reflections-link>Match reflections →</Link>}
             </div>
           )}
           {termRegs.length > 0 && (

@@ -1,3 +1,4 @@
+import { ReflectionsCard } from './ReflectionsCard'
 import { academyBrand } from '@/academy/brand'
 import Link from 'next/link'
 import { localToUtc, localYmd } from '@/lib/time'
@@ -200,6 +201,8 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
           })}
         </section>
       )}
+
+      <ReflectionsCard user={user} />
 
       <div className="mt-10 grid gap-8 lg:grid-cols-[1fr_22rem]">
         <section>

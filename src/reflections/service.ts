@@ -121,8 +121,8 @@ export const familyLink = (participantId: number, teamId: number, fixtureId: str
 
 // ── Reading & saving ─────────────────────────────────────────────────────────
 
-export async function findReflection(payload: Payload, participantId: number, fixtureId: string): Promise<MatchReflection | null> {
-  const { docs } = await payload.find({ collection: 'match-reflections', where: { participant: { equals: participantId }, fixtureId: { equals: fixtureId } }, limit: 1, depth: 0, overrideAccess: true })
+export async function findReflection(payload: Payload, participantId: number, fixtureId: string, depth = 0): Promise<MatchReflection | null> {
+  const { docs } = await payload.find({ collection: 'match-reflections', where: { participant: { equals: participantId }, fixtureId: { equals: fixtureId } }, limit: 1, depth, overrideAccess: true })
   return docs[0] ?? null
 }
 
