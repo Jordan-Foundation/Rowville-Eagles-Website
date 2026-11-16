@@ -3,11 +3,28 @@ export type TrackingConfig = { meta: string | null; google: string[]; ads: strin
 
 type Stored = { metaPixelId?: string | null; googleTagIds?: string | null; adsLeadLabel?: string | null; adsPurchaseLabel?: string | null } | null | undefined
 
+/**
+ * Every Google tag ID in the box, whatever separates them (commas, spaces, new lines, semicolons) and even when pasted
+ * with look-alike characters — en/em dashes, full-width commas, non-breaking or zero-width spaces — from Google's pages.
+ */
+const tidy = (raw: string | null | undefined) =>
+  (raw ?? '').normalize('NFKC').replace(/[\u200B-\u200D\u2060\uFEFF\u00AD]/g, '').replace(/[\u2010-\u2015\u2212\uFE58\uFE63]/g, '-').toUpperCase()
+export function parseGoogleIds(raw: string | null | undefined): string[] {
+  return [...new Set(tidy(raw).match(/(?<![A-Z0-9])(?:AW|G|GT)-[A-Z0-9]+(?![A-Z0-9-])/g) ?? [])]
+}
+/** Anything in the box that isn't a Google tag ID (shown as an error when saving). */
+export function unrecognisedGoogleParts(raw: string | null | undefined): string[] {
+  const ids = parseGoogleIds(raw)
+  return tidy(raw).split(/[\s,;]+/).map((x) => x.trim()).filter((x) => x && !ids.includes(x))
+}
+
 export function trackingConfig(t: Stored): TrackingConfig | null {
   const meta = t?.metaPixelId?.trim() && /^\d{8,20}$/.test(t.metaPixelId.trim()) ? t.metaPixelId.trim() : null
-  const google = (t?.googleTagIds ?? '').split(',').map((x) => x.trim().toUpperCase()).filter((x) => /^(AW|G|GT)-[A-Z0-9]+$/.test(x))
+  const google = parseGoogleIds(t?.googleTagIds)
   if (!meta && !google.length) return null
-  return { meta, google, ads: google.find((g) => g.startsWith('AW-')) ?? null, adsLead: t?.adsLeadLabel?.trim() || null, adsPurchase: t?.adsPurchaseLabel?.trim() || null }
+  // A label pasted as the whole send_to ("AW-123/AbC") keeps only the part after the "/"
+  const label = (x?: string | null) => (x ?? '').normalize('NFKC').replace(/[\s\u200B-\u200D\u2060\uFEFF]/g, '').split('/').pop() || null
+  return { meta, google, ads: google.find((g) => g.startsWith('AW-')) ?? null, adsLead: label(t?.adsLeadLabel), adsPurchase: label(t?.adsPurchaseLabel) }
 }
 
 /** Live site only: previews and local copies never send anything. */

@@ -1,5 +1,6 @@
 import type { GlobalConfig } from 'payload'
 import { refreshGlobal } from '../lib/revalidate'
+import { parseGoogleIds, unrecognisedGoogleParts } from '../tracking/config'
 import { isStaff } from '../access'
 
 export const SiteSettings: GlobalConfig = {
@@ -81,8 +82,13 @@ export const SiteSettings: GlobalConfig = {
           name: 'googleTagIds',
           label: 'Google tag ID(s)',
           type: 'text',
-          admin: { description: 'e.g. AW-123456789 (Google Ads) — add a Google Analytics ID too with a comma: AW-123456789, G-ABC123' },
-          validate: (v: unknown) => (!v || String(v).split(',').every((x) => /^(AW|G|GT)-[A-Z0-9]+$/i.test(x.trim())) ? true : 'Use IDs like AW-123456789 or G-ABC123, separated by commas.'),
+          admin: { description: 'Every ID here is loaded on every public page, e.g. G-ABC123 (Google Analytics), AW-123456789 (Google Ads) — separate them with commas. The conversion labels below are sent to the AW- ID.' },
+          validate: (v: unknown) => {
+            const bad = unrecognisedGoogleParts(String(v ?? ''))
+            return bad.length ? `Not a Google tag ID: ${bad.map((b) => `“${b}”`).join(', ')}. Use IDs like G-ABC123 or AW-123456789, separated by commas.` : true
+          },
+          // Saved in a clean form (plain hyphens and commas) whatever was pasted in
+          hooks: { beforeChange: [({ value }) => (typeof value === 'string' && !unrecognisedGoogleParts(value).length ? parseGoogleIds(value).join(', ') : value)] },
         },
         { type: 'row', fields: [
           { name: 'adsLeadLabel', label: 'Google Ads conversion label — free trial / enquiry', type: 'text', admin: { description: 'The part after the “/” in send_to, e.g. AbC-D_efG' } },
