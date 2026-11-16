@@ -114,6 +114,11 @@ export interface Config {
     referrals: Referral;
     'referral-milestones': ReferralMilestone;
     'referral-rewards': ReferralReward;
+    'reflection-pillars': ReflectionPillar;
+    'match-reflections': MatchReflection;
+    'welfare-flags': WelfareFlag;
+    'reflection-reports': ReflectionReport;
+    'reflection-reminders': ReflectionReminder;
     teams: Team;
     'team-members': TeamMember;
     'team-posts': TeamPost;
@@ -190,6 +195,11 @@ export interface Config {
     referrals: ReferralsSelect<false> | ReferralsSelect<true>;
     'referral-milestones': ReferralMilestonesSelect<false> | ReferralMilestonesSelect<true>;
     'referral-rewards': ReferralRewardsSelect<false> | ReferralRewardsSelect<true>;
+    'reflection-pillars': ReflectionPillarsSelect<false> | ReflectionPillarsSelect<true>;
+    'match-reflections': MatchReflectionsSelect<false> | MatchReflectionsSelect<true>;
+    'welfare-flags': WelfareFlagsSelect<false> | WelfareFlagsSelect<true>;
+    'reflection-reports': ReflectionReportsSelect<false> | ReflectionReportsSelect<true>;
+    'reflection-reminders': ReflectionRemindersSelect<false> | ReflectionRemindersSelect<true>;
     teams: TeamsSelect<false> | TeamsSelect<true>;
     'team-members': TeamMembersSelect<false> | TeamMembersSelect<true>;
     'team-posts': TeamPostsSelect<false> | TeamPostsSelect<true>;
@@ -229,6 +239,7 @@ export interface Config {
     'academy-settings': AcademySetting;
     'pdr-settings': PdrSetting;
     'referral-settings': ReferralSetting;
+    'reflection-settings': ReflectionSetting;
     'setup-progress': SetupProgress;
   };
   globalsSelect: {
@@ -239,6 +250,7 @@ export interface Config {
     'academy-settings': AcademySettingsSelect<false> | AcademySettingsSelect<true>;
     'pdr-settings': PdrSettingsSelect<false> | PdrSettingsSelect<true>;
     'referral-settings': ReferralSettingsSelect<false> | ReferralSettingsSelect<true>;
+    'reflection-settings': ReflectionSettingsSelect<false> | ReflectionSettingsSelect<true>;
     'setup-progress': SetupProgressSelect<false> | SetupProgressSelect<true>;
   };
   locale: null;
@@ -2582,6 +2594,151 @@ export interface ReferralReward {
   createdAt: string;
 }
 /**
+ * Skill areas players choose from. Edit in Management → Reflections → Settings.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "reflection-pillars".
+ */
+export interface ReflectionPillar {
+  id: number;
+  name: string;
+  active?: boolean | null;
+  sortOrder?: number | null;
+  /**
+   * Short example shown to players, e.g. “first touch, receiving on the half-turn”
+   */
+  hint?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Use Management → Reflections.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "match-reflections".
+ */
+export interface MatchReflection {
+  id: number;
+  participant: number | Participant;
+  account: number | User;
+  team: number | Team;
+  fixtureId: string;
+  fixtureAt: string;
+  opponent?: string | null;
+  ageGroup?: string | null;
+  feeling?: number | null;
+  status: 'draft' | 'submitted';
+  submittedAt?: string | null;
+  source?: ('family' | 'link') | null;
+  moments?:
+    | {
+        type: 'great' | 'improve';
+        position?: number | null;
+        pillar?: (number | null) | ReflectionPillar;
+        pillarName?: string | null;
+        comment?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  focus?: string | null;
+  feedback?:
+    | {
+        coach?: (number | null) | User;
+        seenAt?: string | null;
+        comment?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * When the safeguarding check last ran on the submitted text
+   */
+  welfareCheckedAt?: string | null;
+  welfareCheckedHash?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Use Management → Reflections → Welfare.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "welfare-flags".
+ */
+export interface WelfareFlag {
+  id: number;
+  reflection: number | MatchReflection;
+  participant?: (number | null) | Participant;
+  team?: (number | null) | Team;
+  excerpt?: string | null;
+  reason?: string | null;
+  source: 'keyword' | 'ai';
+  severity?: ('low' | 'medium' | 'high') | null;
+  status: 'open' | 'reviewed';
+  reviewedBy?: (number | null) | User;
+  reviewedAt?: string | null;
+  notes?: string | null;
+  notifiedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Use Management → Reflections → Reports.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "reflection-reports".
+ */
+export interface ReflectionReport {
+  id: number;
+  scopeType: 'team' | 'age_group' | 'club';
+  scopeKey: string;
+  scopeLabel?: string | null;
+  /**
+   * YYYY-MM-DD (inclusive)
+   */
+  periodFrom: string;
+  /**
+   * YYYY-MM-DD (exclusive)
+   */
+  periodTo: string;
+  stats?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  summary?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  status: 'ok' | 'failed' | 'stats_only' | 'empty';
+  model?: string | null;
+  promptVersion?: string | null;
+  generatedAt?: string | null;
+  error?: string | null;
+  notifiedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "reflection-reminders".
+ */
+export interface ReflectionReminder {
+  id: number;
+  participant: number | Participant;
+  fixtureId: string;
+  kind: 'open' | 'closing';
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "team-members".
  */
@@ -3162,6 +3319,26 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'referral-rewards';
         value: number | ReferralReward;
+      } | null)
+    | ({
+        relationTo: 'reflection-pillars';
+        value: number | ReflectionPillar;
+      } | null)
+    | ({
+        relationTo: 'match-reflections';
+        value: number | MatchReflection;
+      } | null)
+    | ({
+        relationTo: 'welfare-flags';
+        value: number | WelfareFlag;
+      } | null)
+    | ({
+        relationTo: 'reflection-reports';
+        value: number | ReflectionReport;
+      } | null)
+    | ({
+        relationTo: 'reflection-reminders';
+        value: number | ReflectionReminder;
       } | null)
     | ({
         relationTo: 'teams';
@@ -4619,6 +4796,110 @@ export interface ReferralRewardsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "reflection-pillars_select".
+ */
+export interface ReflectionPillarsSelect<T extends boolean = true> {
+  name?: T;
+  active?: T;
+  sortOrder?: T;
+  hint?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "match-reflections_select".
+ */
+export interface MatchReflectionsSelect<T extends boolean = true> {
+  participant?: T;
+  account?: T;
+  team?: T;
+  fixtureId?: T;
+  fixtureAt?: T;
+  opponent?: T;
+  ageGroup?: T;
+  feeling?: T;
+  status?: T;
+  submittedAt?: T;
+  source?: T;
+  moments?:
+    | T
+    | {
+        type?: T;
+        position?: T;
+        pillar?: T;
+        pillarName?: T;
+        comment?: T;
+        id?: T;
+      };
+  focus?: T;
+  feedback?:
+    | T
+    | {
+        coach?: T;
+        seenAt?: T;
+        comment?: T;
+        id?: T;
+      };
+  welfareCheckedAt?: T;
+  welfareCheckedHash?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "welfare-flags_select".
+ */
+export interface WelfareFlagsSelect<T extends boolean = true> {
+  reflection?: T;
+  participant?: T;
+  team?: T;
+  excerpt?: T;
+  reason?: T;
+  source?: T;
+  severity?: T;
+  status?: T;
+  reviewedBy?: T;
+  reviewedAt?: T;
+  notes?: T;
+  notifiedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "reflection-reports_select".
+ */
+export interface ReflectionReportsSelect<T extends boolean = true> {
+  scopeType?: T;
+  scopeKey?: T;
+  scopeLabel?: T;
+  periodFrom?: T;
+  periodTo?: T;
+  stats?: T;
+  summary?: T;
+  status?: T;
+  model?: T;
+  promptVersion?: T;
+  generatedAt?: T;
+  error?: T;
+  notifiedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "reflection-reminders_select".
+ */
+export interface ReflectionRemindersSelect<T extends boolean = true> {
+  participant?: T;
+  fixtureId?: T;
+  kind?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "teams_select".
  */
 export interface TeamsSelect<T extends boolean = true> {
@@ -5571,6 +5852,31 @@ export interface ReferralSetting {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "reflection-settings".
+ */
+export interface ReflectionSetting {
+  id: number;
+  enabled?: boolean | null;
+  opensAfterHours?: number | null;
+  closesAfterDays?: number | null;
+  remindOnOpen?: boolean | null;
+  closingReminderHours?: number | null;
+  teams?: (number | Team)[] | null;
+  showStreak?: boolean | null;
+  aiReports?: boolean | null;
+  reportDay?: ('0' | '1' | '2' | '3' | '4' | '5' | '6') | null;
+  reportHour?: number | null;
+  aiWelfareCheck?: boolean | null;
+  /**
+   * Gets every welfare flag straight away. Falls back to the club’s contact email.
+   */
+  safeguardingEmail?: string | null;
+  keywords?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "setup-progress".
  */
 export interface SetupProgress {
@@ -5888,6 +6194,28 @@ export interface ReferralSettingsSelect<T extends boolean = true> {
       };
   dailyInviteLimit?: T;
   inviteExpiryDays?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "reflection-settings_select".
+ */
+export interface ReflectionSettingsSelect<T extends boolean = true> {
+  enabled?: T;
+  opensAfterHours?: T;
+  closesAfterDays?: T;
+  remindOnOpen?: T;
+  closingReminderHours?: T;
+  teams?: T;
+  showStreak?: T;
+  aiReports?: T;
+  reportDay?: T;
+  reportHour?: T;
+  aiWelfareCheck?: T;
+  safeguardingEmail?: T;
+  keywords?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
