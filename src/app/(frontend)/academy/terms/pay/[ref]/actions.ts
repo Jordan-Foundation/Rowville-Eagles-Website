@@ -1,6 +1,7 @@
 'use server'
 
 import { checkoutFailMessage } from '@/lib/payments'
+import { checkoutReferralCode } from '@/referrals/capture'
 import { redirect } from 'next/navigation'
 import { checkoutRegistrations, slotTaken, TermClosedError } from '@/academy/terms/service'
 import { spotsLeft } from '@/academy/terms/slots'
@@ -26,7 +27,7 @@ export async function payTerm(_prev: { error?: string }, fd: FormData): Promise<
   let url: string
   try {
     const items = pair && pairSlot ? [{ reg, slot }, { reg: pair, slot: pairSlot }] : [{ reg, slot }]
-    url = await checkoutRegistrations(p, items, program, `/academy/terms/pay/${reg.reference}${token ? `?t=${token}&cancelled=1` : '?cancelled=1'}`)
+    url = await checkoutRegistrations(p, items, program, `/academy/terms/pay/${reg.reference}${token ? `?t=${token}&cancelled=1` : '?cancelled=1'}`, (await checkoutReferralCode(p, null)).code)
   } catch (e) {
     if (e instanceof TermClosedError) return { error: `${e.message} Please contact us.` }
     p.logger.error(e)

@@ -19,7 +19,19 @@ export const AcademyBookings: CollectionConfig = {
   },
   access: { read: staffOrOwner('account'), create: isStaff, update: isStaff, delete: isStaff },
   defaultSort: '-createdAt',
+  hooks: {
+    afterChange: [
+      async ({ doc, previousDoc, req }) => {
+        // Refer a Friend: cancelled or refunded before the referral counted → it no longer counts
+        if (previousDoc && previousDoc.status !== doc.status && (doc.status === 'cancelled' || doc.status === 'refunded')) {
+          await (await import('../../referrals/service')).voidReferralFor(req.payload, 'academy', doc.id, doc.status === 'refunded' ? 'Refunded' : 'Cancelled').catch(() => null)
+        }
+        return doc
+      },
+    ],
+  },
   fields: [
+    { name: 'referralCode', label: 'Referral code used', type: 'text', index: true, admin: { position: 'sidebar', readOnly: true } },
     heardFromField,
     { name: 'reference', type: 'text', required: true, unique: true, admin: { readOnly: true } },
     {

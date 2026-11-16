@@ -76,6 +76,7 @@ import * as migration_20261115_090940_invoices from './20261115_090940_invoices'
 import * as migration_20261115_123856_tracking_heard_from from './20261115_123856_tracking_heard_from';
 import * as migration_20261115_192742_refunds from './20261115_192742_refunds';
 import * as migration_20261116_001436_prelaunch_batch from './20261116_001436_prelaunch_batch';
+import * as migration_20261116_021644_referrals from './20261116_021644_referrals';
 
 export const migrations = [
   {
@@ -466,6 +467,11 @@ export const migrations = [
   {
     up: migration_20261116_001436_prelaunch_batch.up,
     down: migration_20261116_001436_prelaunch_batch.down,
-    name: '20261116_001436_prelaunch_batch'
+    name: '20261116_001436_prelaunch_batch',
+  },
+  {
+    up: migration_20261116_021644_referrals.up,
+    down: migration_20261116_021644_referrals.down,
+    name: '20261116_021644_referrals'
   },
 ];

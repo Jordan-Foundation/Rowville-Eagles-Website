@@ -88,7 +88,7 @@ export async function coachAttention(p: Payload, user: User, coach: AcademyCoach
   return { messages, sessions, attendance, availability, groups, teams, reviews, reports, camps }
 }
 
-export type ManagementCounts = Record<'bookings' | 'payments' | 'cover' | 'availability' | 'terms' | 'selections' | 'messages' | 'store' | 'foundation' | 'consent' | 'reports' | 'dates' | 'promotions' | 'camps' | 'yearly' | 'announcements' | 'invoices', number>
+export type ManagementCounts = Record<'bookings' | 'payments' | 'cover' | 'availability' | 'terms' | 'selections' | 'messages' | 'store' | 'foundation' | 'consent' | 'reports' | 'dates' | 'promotions' | 'camps' | 'yearly' | 'announcements' | 'invoices' | 'referrals', number>
 
 export async function managementAttention(p: Payload, user: User): Promise<ManagementCounts> {
   const now = new Date().toISOString()
@@ -158,5 +158,6 @@ export async function managementAttention(p: Payload, user: User): Promise<Manag
   // "Registrations are open" messages waiting for approval (the first one each year)
   const announcements = await safe(async () => (await p.count({ collection: 'announcements', where: { status: { equals: 'needs-approval' } }, ...q })).totalDocs)
   const invoices = await safe(async () => (await import('../invoices/service')).overdueInvoices(p))
-  return { bookings, payments, cover, availability, terms, selections, messages, store, foundation, consent, reports, dates, promotions, camps, yearly, announcements, invoices }
+  const referrals = await safe(async () => (await p.count({ collection: 'referral-rewards', where: { status: { in: ['claimed', 'held'] } }, ...q })).totalDocs + (await p.count({ collection: 'referrals', where: { reviewFlag: { exists: true }, status: { equals: 'confirmed' } }, ...q })).totalDocs)
+  return { bookings, payments, cover, availability, terms, selections, messages, store, foundation, consent, reports, dates, promotions, camps, yearly, announcements, invoices, referrals }
 }

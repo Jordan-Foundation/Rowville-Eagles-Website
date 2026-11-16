@@ -23,6 +23,13 @@ export const Bookings: CollectionConfig = {
   hooks: {
     // Holiday camps: work the age groups out again when a child is paid for, cancelled or changes days
     afterChange: [
+      async ({ doc, previousDoc, req }) => {
+        // Refer a Friend: cancelled or refunded before the referral counted → it no longer counts
+        if (previousDoc?.status === 'paid' && (doc.status === 'cancelled' || doc.status === 'refunded')) {
+          await (await import('../referrals/service')).voidReferralFor(req.payload, 'booking', doc.id, doc.status === 'refunded' ? 'Refunded' : 'Cancelled').catch(() => null)
+        }
+        return doc
+      },
       async ({ doc, previousDoc, req, context }) => {
         if (context?.skipRegroup) return doc
         const changed = doc.status !== previousDoc?.status || JSON.stringify(doc.campDays ?? []) !== JSON.stringify(previousDoc?.campDays ?? []) || doc.keepWith !== previousDoc?.keepWith || doc.player?.dateOfBirth !== previousDoc?.player?.dateOfBirth
@@ -52,6 +59,7 @@ export const Bookings: CollectionConfig = {
     ],
   },
   fields: [
+    { name: 'referralCode', label: 'Referral code used', type: 'text', index: true, admin: { position: 'sidebar', readOnly: true } },
     heardFromField,
     { name: 'reference', type: 'text', unique: true, admin: { readOnly: true, description: 'Created automatically when saved' } },
     { name: 'checkoutGroup', type: 'text', index: true, admin: { readOnly: true, position: 'sidebar', description: 'Brothers and sisters booked together: the reference of the shared checkout.' } },

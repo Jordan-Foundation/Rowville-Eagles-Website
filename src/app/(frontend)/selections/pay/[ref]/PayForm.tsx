@@ -1,6 +1,7 @@
 'use client'
 
 import { PayeeChip } from '@/components/PayeeChip'
+import { ReferralCodeField } from '@/components/forms/ReferralCodeField'
 
 import { PolicyLink } from '@/components/PolicyLink'
 import { useActionState } from 'react'
@@ -28,6 +29,7 @@ export function PayForm({ refCode, token, price, defaults, payeeLabel }: { payee
           <span>Photos/video of this player may be used in club communications.</span>
         </label>
       </Fieldset>
+      <ReferralCodeField defaultValue={v.referralCode} />
       <label className="flex items-start gap-3 text-sm">
         <input type="checkbox" name="terms" required className="mt-1" />
         <span>I agree to the club’s <PolicyLink k="codeOfConduct">Code of Conduct</PolicyLink>, <PolicyLink k="childSafe">Child Safe policy</PolicyLink> and <PolicyLink k="refunds">registration and refund terms</PolicyLink>.</span>

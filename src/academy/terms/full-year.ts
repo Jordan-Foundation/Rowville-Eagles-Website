@@ -112,7 +112,7 @@ type Player = { firstName: string; lastName: string; dateOfBirth: string; medica
  * Register a player for the full year: a registration for each term's training time(s) (Terms 2–4 left
  * without a time when Management has to place them), all paid by one booking. Returns where to send the family.
  */
-export async function checkoutFullYear(p: Payload, o: { year: Program; slotIds: number[]; birthYear: number; contact: Contact; player: Player; accountId?: number; participantId?: number | null; cancelPath: string }) {
+export async function checkoutFullYear(p: Payload, o: { year: Program; slotIds: number[]; birthYear: number; contact: Contact; player: Player; accountId?: number; participantId?: number | null; cancelPath: string; referralCode?: string | null }) {
   const { confirmPayment, newReference, startCheckout } = await import('../../lib/payments')
   const { feeNote, payeeOf, existingRegistration } = await import('./service')
   const d = await loadYear(p, o.year)
@@ -130,7 +130,7 @@ export async function checkoutFullYear(p: Payload, o: { year: Program; slotIds: 
   const reference = newReference(payee)
   const booking = await p.create({
     collection: 'bookings',
-    data: { reference, program: o.year.id, status: 'pending', payee, amount: plan.total, birthYear: o.birthYear, account: o.accountId, participant: o.participantId ?? undefined, contact: o.contact, player: { ...o.player } },
+    data: { reference, referralCode: o.referralCode ?? undefined, program: o.year.id, status: 'pending', payee, amount: plan.total, birthYear: o.birthYear, account: o.accountId, participant: o.participantId ?? undefined, contact: o.contact, player: { ...o.player } },
     ...q,
   })
   // Each term's share of the discounted total, split between its nights

@@ -88,7 +88,7 @@ export async function feeNote(payload: Payload) {
   return clubFeeNote(s?.clubRegistrationFee)
 }
 
-export async function checkoutRegistrations(payload: Payload, items: { reg: AcademyRegistration; slot: AcademyTermSlot }[], program: Program, cancelPath: string) {
+export async function checkoutRegistrations(payload: Payload, items: { reg: AcademyRegistration; slot: AcademyTermSlot }[], program: Program, cancelPath: string, referralCode?: string | null) {
   const nights = items.length === 2 ? 2 : 1
   const rate = nightRate(program, nights)
   const quotes = items.map((i) => ({ ...i, quote: termQuote(i.slot, program, rate) }))
@@ -111,6 +111,7 @@ export async function checkoutRegistrations(payload: Payload, items: { reg: Acad
     collection: 'bookings',
     overrideAccess: true,
     data: {
+      referralCode: referralCode ?? undefined,
       reference,
       program: program.id,
       status: 'pending',

@@ -1,6 +1,7 @@
 'use client'
 
 import { PayeeChip } from '@/components/PayeeChip'
+import { ReferralCodeField } from '@/components/forms/ReferralCodeField'
 import { HeardFrom } from '@/components/forms/HeardFrom'
 
 import { PolicyLink } from '@/components/PolicyLink'
@@ -199,6 +200,7 @@ export function BookingForm(props: {
         </>
       )}
 
+      <ReferralCodeField defaultValue={v.referralCode} />
       <HeardFrom defaultValue={v.heardFrom} />
 
       <label className="flex items-start gap-3 text-sm">

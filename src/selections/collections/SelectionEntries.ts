@@ -67,6 +67,7 @@ export const SelectionEntries: CollectionConfig = {
     ],
   },
   fields: [
+    { name: 'referralCode', label: 'Referral code used', type: 'text', index: true, admin: { position: 'sidebar', readOnly: true } },
     { name: 'displayName', type: 'text', admin: { hidden: true } },
     { name: 'reference', type: 'text', unique: true, admin: { readOnly: true, description: 'Created automatically when saved' } },
     { name: 'round', type: 'relationship', relationTo: 'selection-rounds', required: true, index: true, admin: { position: 'sidebar' } },

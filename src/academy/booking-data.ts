@@ -196,6 +196,8 @@ async function confirmAcademyBookingInner(payload: Payload, reference: string): 
   if (booking.source === 'coach-link') await payload.update({ collection: 'academy-share-links', where: { booking: { equals: booking.id } }, data: { status: 'booked' }, overrideAccess: true })
   try {
     await afterConfirmed(payload, confirmed)
+    // Refer a Friend: a first 1-on-1 → pending referral
+    await (await import('../referrals/service')).recordAcademyReferral(payload, confirmed.id).catch((e) => payload.logger.error({ err: e, msg: `Referral for ${reference} failed` }))
   } catch (e) {
     payload.logger.error({ err: e, msg: `Post-confirmation steps failed for ${reference}` })
   }

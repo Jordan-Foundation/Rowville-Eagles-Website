@@ -275,6 +275,12 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
               {participants.docs.length === 0 && <li className="text-sm text-muted">Players appear here after your first booking or offer.</li>}
             </ul>
           </div>
+          {user.roles?.includes('parent') && participants.docs.length > 0 && (
+            <Link href="/account/referrals" className="block rounded-2xl border-2 border-accent p-6 hover:brightness-105">
+              <p className="font-semibold">Refer a Friend 🎁</p>
+              <p className="mt-1 text-sm text-muted">Invite new families and earn a free kit, bag, hoodie, 1-on-1 and Academy term. Get your link →</p>
+            </Link>
+          )}
           {credit === 0 && (
             <Link href="/academy/1-on-1" className="block rounded-2xl bg-black p-6 text-white transition hover:bg-black/85">
               <p className="font-semibold">Book a 1-on-1</p>

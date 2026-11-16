@@ -1,6 +1,7 @@
 'use client'
 
 import { useActionState, useState } from 'react'
+import { ReferralCodeField } from '@/components/forms/ReferralCodeField'
 import { useFormStatus } from 'react-dom'
 import { PayeeChip } from '@/components/PayeeChip'
 import { PolicyLink } from '@/components/PolicyLink'
@@ -55,6 +56,7 @@ export function FullYearForm(props: { slug: string; options: YearOptionView[]; p
         <Input label="Email" name="contactEmail" type="email" required defaultValue={v.contactEmail} />
         <Input label="Mobile" name="contactPhone" type="tel" required defaultValue={v.contactPhone} />
       </Fieldset>
+      <ReferralCodeField defaultValue={v.referralCode} />
       <label className="flex items-start gap-3 text-sm">
         <input type="checkbox" name="terms" required className="mt-1" />
         <span>I agree to the <PolicyLink k="academyTerms">Foundation Academy terms</PolicyLink>, <PolicyLink k="codeOfConduct">Code of Conduct</PolicyLink> and <PolicyLink k="childSafe">Child Safe policy</PolicyLink>.</span>

@@ -110,6 +110,10 @@ export interface Config {
     orders: Order;
     invoices: Invoice;
     refunds: Refund;
+    'referral-invites': ReferralInvite;
+    referrals: Referral;
+    'referral-milestones': ReferralMilestone;
+    'referral-rewards': ReferralReward;
     teams: Team;
     'team-members': TeamMember;
     'team-posts': TeamPost;
@@ -182,6 +186,10 @@ export interface Config {
     orders: OrdersSelect<false> | OrdersSelect<true>;
     invoices: InvoicesSelect<false> | InvoicesSelect<true>;
     refunds: RefundsSelect<false> | RefundsSelect<true>;
+    'referral-invites': ReferralInvitesSelect<false> | ReferralInvitesSelect<true>;
+    referrals: ReferralsSelect<false> | ReferralsSelect<true>;
+    'referral-milestones': ReferralMilestonesSelect<false> | ReferralMilestonesSelect<true>;
+    'referral-rewards': ReferralRewardsSelect<false> | ReferralRewardsSelect<true>;
     teams: TeamsSelect<false> | TeamsSelect<true>;
     'team-members': TeamMembersSelect<false> | TeamMembersSelect<true>;
     'team-posts': TeamPostsSelect<false> | TeamPostsSelect<true>;
@@ -220,6 +228,7 @@ export interface Config {
     'difference-page': DifferencePage;
     'academy-settings': AcademySetting;
     'pdr-settings': PdrSetting;
+    'referral-settings': ReferralSetting;
     'setup-progress': SetupProgress;
   };
   globalsSelect: {
@@ -229,6 +238,7 @@ export interface Config {
     'difference-page': DifferencePageSelect<false> | DifferencePageSelect<true>;
     'academy-settings': AcademySettingsSelect<false> | AcademySettingsSelect<true>;
     'pdr-settings': PdrSettingsSelect<false> | PdrSettingsSelect<true>;
+    'referral-settings': ReferralSettingsSelect<false> | ReferralSettingsSelect<true>;
     'setup-progress': SetupProgressSelect<false> | SetupProgressSelect<true>;
   };
   locale: null;
@@ -265,6 +275,7 @@ export interface UserAuthOperations {
  */
 export interface AcademyBooking {
   id: number;
+  referralCode?: string | null;
   heardFrom?:
     | ('facebook-instagram-ad' | 'google' | 'friend-family' | 'school' | 'rowville-eagles' | 'social-post' | 'other')
     | null;
@@ -470,6 +481,11 @@ export interface AcademyCoach {
  */
 export interface User {
   id: number;
+  /**
+   * The referral code this family arrived with
+   */
+  referralCode?: string | null;
+  referralCodeAt?: string | null;
   firstName?: string | null;
   lastName?: string | null;
   phone?: string | null;
@@ -678,6 +694,10 @@ export interface AcademyGroupInvite {
  */
 export interface Participant {
   id: number;
+  /**
+   * This player’s Refer a Friend code
+   */
+  referralCode?: string | null;
   fullName?: string | null;
   firstName: string;
   lastName: string;
@@ -1591,6 +1611,7 @@ export interface AcademyRegistration {
  */
 export interface Booking {
   id: number;
+  referralCode?: string | null;
   heardFrom?:
     | ('facebook-instagram-ad' | 'google' | 'friend-family' | 'school' | 'rowville-eagles' | 'social-post' | 'other')
     | null;
@@ -1675,6 +1696,7 @@ export interface Booking {
  */
 export interface SelectionEntry {
   id: number;
+  referralCode?: string | null;
   displayName?: string | null;
   /**
    * Created automatically when saved
@@ -2221,7 +2243,7 @@ export interface AcademyCredit {
    */
   expiresAt?: string | null;
   status: 'active' | 'pending' | 'void';
-  reason: 'cancellation' | 'coach_cancellation' | 'goodwill' | 'used' | 'adjustment';
+  reason: 'cancellation' | 'coach_cancellation' | 'goodwill' | 'referral' | 'used' | 'adjustment';
   /**
    * Booking it came from, or was used on
    */
@@ -2455,6 +2477,107 @@ export interface Refund {
   stripeRefundIds?: string | null;
   nonce?: string | null;
   by?: (number | null) | User;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Links parents created in Refer a Friend.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "referral-invites".
+ */
+export interface ReferralInvite {
+  id: number;
+  token: string;
+  referrer: number | Participant;
+  sentBy: number | User;
+  inviteeName?: string | null;
+  inviteeEmail?: string | null;
+  inviteePhone?: string | null;
+  featured: 'academy-term' | 'holiday-camp' | 'mini-ballers' | 'one-on-one' | 'eagles';
+  status: 'invited' | 'signed_up' | 'trial_registered' | 'paid' | 'expired';
+  account?: (number | null) | User;
+  expiresAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Use Management → Referrals.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "referrals".
+ */
+export interface Referral {
+  id: number;
+  referrer: number | Participant;
+  referrerAccount?: (number | null) | User;
+  referred: number | Participant;
+  referredAccount?: (number | null) | User;
+  invite?: (number | null) | ReferralInvite;
+  attribution: 'code' | 'invite_match' | 'manual';
+  program: 'academy-term' | 'holiday-camp' | 'mini-ballers' | 'one-on-one' | 'eagles';
+  sourceKind: 'booking' | 'academy';
+  sourceId: number;
+  reference?: string | null;
+  amount?: number | null;
+  paidAt: string;
+  confirmAfter: string;
+  status: 'pending' | 'confirmed' | 'voided';
+  confirmedAt?: string | null;
+  /**
+   * e.g. refunded after it was confirmed
+   */
+  reviewFlag?: string | null;
+  history?:
+    | {
+        at?: string | null;
+        action?: string | null;
+        by?: (number | null) | User;
+        note?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Each player unlocks each reward once, when they reach that many confirmed referrals.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "referral-milestones".
+ */
+export interface ReferralMilestone {
+  id: number;
+  threshold: number;
+  rewardName: string;
+  rewardType: 'physical_item' | 'one_on_one_credit' | 'academy_term_credit';
+  /**
+   * Physical items: sizes to choose from, separated by commas (leave empty for no size)
+   */
+  sizes?: string | null;
+  active?: boolean | null;
+  sortOrder?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Use Management → Referrals → Rewards.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "referral-rewards".
+ */
+export interface ReferralReward {
+  id: number;
+  participant: number | Participant;
+  account?: (number | null) | User;
+  milestone: number | ReferralMilestone;
+  status: 'unlocked' | 'claimed' | 'fulfilled' | 'redeemed' | 'held';
+  size?: string | null;
+  claimedAt?: string | null;
+  fulfilledAt?: string | null;
+  credit?: (number | null) | AcademyCredit;
+  promotion?: (number | null) | Promotion;
+  note?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -3025,6 +3148,22 @@ export interface PayloadLockedDocument {
         value: number | Refund;
       } | null)
     | ({
+        relationTo: 'referral-invites';
+        value: number | ReferralInvite;
+      } | null)
+    | ({
+        relationTo: 'referrals';
+        value: number | Referral;
+      } | null)
+    | ({
+        relationTo: 'referral-milestones';
+        value: number | ReferralMilestone;
+      } | null)
+    | ({
+        relationTo: 'referral-rewards';
+        value: number | ReferralReward;
+      } | null)
+    | ({
         relationTo: 'teams';
         value: number | Team;
       } | null)
@@ -3159,6 +3298,7 @@ export interface PayloadMigration {
  * via the `definition` "academy-bookings_select".
  */
 export interface AcademyBookingsSelect<T extends boolean = true> {
+  referralCode?: T;
   heardFrom?: T;
   reference?: T;
   status?: T;
@@ -4012,6 +4152,7 @@ export interface SquadsSelect<T extends boolean = true> {
  * via the `definition` "selection-entries_select".
  */
 export interface SelectionEntriesSelect<T extends boolean = true> {
+  referralCode?: T;
   displayName?: T;
   reference?: T;
   round?: T;
@@ -4166,6 +4307,7 @@ export interface ProgramsSelect<T extends boolean = true> {
  * via the `definition` "bookings_select".
  */
 export interface BookingsSelect<T extends boolean = true> {
+  referralCode?: T;
   heardFrom?: T;
   reference?: T;
   checkoutGroup?: T;
@@ -4394,6 +4536,89 @@ export interface RefundsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "referral-invites_select".
+ */
+export interface ReferralInvitesSelect<T extends boolean = true> {
+  token?: T;
+  referrer?: T;
+  sentBy?: T;
+  inviteeName?: T;
+  inviteeEmail?: T;
+  inviteePhone?: T;
+  featured?: T;
+  status?: T;
+  account?: T;
+  expiresAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "referrals_select".
+ */
+export interface ReferralsSelect<T extends boolean = true> {
+  referrer?: T;
+  referrerAccount?: T;
+  referred?: T;
+  referredAccount?: T;
+  invite?: T;
+  attribution?: T;
+  program?: T;
+  sourceKind?: T;
+  sourceId?: T;
+  reference?: T;
+  amount?: T;
+  paidAt?: T;
+  confirmAfter?: T;
+  status?: T;
+  confirmedAt?: T;
+  reviewFlag?: T;
+  history?:
+    | T
+    | {
+        at?: T;
+        action?: T;
+        by?: T;
+        note?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "referral-milestones_select".
+ */
+export interface ReferralMilestonesSelect<T extends boolean = true> {
+  threshold?: T;
+  rewardName?: T;
+  rewardType?: T;
+  sizes?: T;
+  active?: T;
+  sortOrder?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "referral-rewards_select".
+ */
+export interface ReferralRewardsSelect<T extends boolean = true> {
+  participant?: T;
+  account?: T;
+  milestone?: T;
+  status?: T;
+  size?: T;
+  claimedAt?: T;
+  fulfilledAt?: T;
+  credit?: T;
+  promotion?: T;
+  note?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "teams_select".
  */
 export interface TeamsSelect<T extends boolean = true> {
@@ -4536,6 +4761,7 @@ export interface SponsorsSelect<T extends boolean = true> {
  * via the `definition` "participants_select".
  */
 export interface ParticipantsSelect<T extends boolean = true> {
+  referralCode?: T;
   fullName?: T;
   firstName?: T;
   lastName?: T;
@@ -4593,6 +4819,8 @@ export interface ParticipantsSelect<T extends boolean = true> {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
+  referralCode?: T;
+  referralCodeAt?: T;
   firstName?: T;
   lastName?: T;
   phone?: T;
@@ -5319,6 +5547,30 @@ export interface PdrSetting {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "referral-settings".
+ */
+export interface ReferralSetting {
+  id: number;
+  enabled?: boolean | null;
+  /**
+   * 1-on-1s count once the player’s first session has gone ahead (after that the 1-on-1 refund policy no longer allows a refund).
+   */
+  windows?: {
+    eagles?: number | null;
+    academyTerm?: number | null;
+    holidayCamp?: number | null;
+    miniBallers?: number | null;
+  };
+  dailyInviteLimit?: number | null;
+  /**
+   * Only the invite’s status — a referral code already saved on a family’s account keeps working
+   */
+  inviteExpiryDays?: number | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "setup-progress".
  */
 export interface SetupProgress {
@@ -5616,6 +5868,26 @@ export interface PdrSettingsSelect<T extends boolean = true> {
   retentionMonths?: T;
   feedbackPerMonth?: T;
   minPlayersForRanking?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "referral-settings_select".
+ */
+export interface ReferralSettingsSelect<T extends boolean = true> {
+  enabled?: T;
+  windows?:
+    | T
+    | {
+        eagles?: T;
+        academyTerm?: T;
+        holidayCamp?: T;
+        miniBallers?: T;
+      };
+  dailyInviteLimit?: T;
+  inviteExpiryDays?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

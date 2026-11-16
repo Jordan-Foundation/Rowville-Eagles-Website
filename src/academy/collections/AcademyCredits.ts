@@ -32,6 +32,7 @@ export const AcademyCredits: CollectionConfig = {
         { label: 'Cancellation', value: 'cancellation' },
         { label: 'Coach cancellation', value: 'coach_cancellation' },
         { label: 'Goodwill', value: 'goodwill' },
+        { label: 'Refer a Friend reward', value: 'referral' },
         { label: 'Used at checkout', value: 'used' },
         { label: 'Adjustment', value: 'adjustment' },
       ],
