@@ -58,6 +58,7 @@ export const cronJobs: Record<string, Record<string, Job>> = {
     openAcademyPrograms: (payload) => openDuePrograms(payload),
     announcements: (payload) => runAnnouncements(payload),
     referrals: async (payload) => (await import('../referrals/service')).runReferralConfirmations(payload),
+    staffAlerts: async (payload) => (await import('../staff-feed/service')).runStaffAlerts(payload),
     reflectionReminders: async (payload) => (await import('../reflections/service')).sendReflectionReminders(payload),
     reflectionWelfare: async (payload) => (await import('../reflections/welfare')).retryWelfareChecks(payload),
     reflectionReports: async (payload) => (await import('../reflections/reports')).runWeeklyReports(payload),
