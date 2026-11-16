@@ -141,7 +141,7 @@ export default async function ReflectionsAdmin({ searchParams }: { searchParams:
         <form action={regenerateReport}><input type="hidden" name="from" value={r.periodFrom} /><input type="hidden" name="scopeType" value={r.scopeType} /><input type="hidden" name="scopeKey" value={r.scopeKey} /><button className={btn}>Regenerate this report</button></form></div> : <p>Report not found.</p>
     } else {
       const thisWeek = reportPeriod(localYmd(new Date())).from
-      const mondays = Array.from({ length: 10 }, (_, i) => { const d = new Date(`${weekKey(thisWeek)}T00:00:00Z`); d.setUTCDate(d.getUTCDate() - 7 * i); return d.toISOString().slice(0, 10) })
+      const mondays = Array.from({ length: 11 }, (_, i) => { const d = new Date(`${weekKey(thisWeek)}T00:00:00Z`); d.setUTCDate(d.getUTCDate() - 7 * (i - 1)); return d.toISOString().slice(0, 10) })
       const week = ymd(sp.week)
       const { docs } = await p.find({ collection: 'reflection-reports', where: week ? { periodFrom: { equals: week } } : {}, sort: '-periodFrom', limit: 100, depth: 0, pagination: false, overrideAccess: true })
       const order = { club: 0, age_group: 1, team: 2 } as const
@@ -149,7 +149,7 @@ export default async function ReflectionsAdmin({ searchParams }: { searchParams:
         <div className="space-y-6">
           {!aiConfigured() && <p className="rounded-xl border border-amber-400/60 bg-amber-400/10 px-4 py-3 text-sm">The AI summary needs <code>ANTHROPIC_API_KEY</code> set in Vercel. Until then reports contain the numbers only.</p>}
           <form action={regenerateReport} className="flex flex-wrap items-end gap-3 text-sm">
-            <label className="grid gap-1">Week starting<select name="from" defaultValue={week ?? mondays[0]} className={input}>{mondays.map((m) => <option key={m} value={m}>{formatDate(`${m}T02:00:00Z`, { weekday: 'short', day: 'numeric', month: 'short' })}</option>)}</select></label>
+            <label className="grid gap-1">Week starting<select name="from" defaultValue={week ?? mondays[1]} className={input}>{mondays.map((m) => <option key={m} value={m}>{formatDate(`${m}T02:00:00Z`, { weekday: 'short', day: 'numeric', month: 'short' })}</option>)}</select></label>
             <label className="flex items-center gap-2"><input type="checkbox" name="notify" /> Email coaches & Management</label>
             <button className={btn}>Build reports now</button>
           </form>

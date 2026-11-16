@@ -150,10 +150,11 @@ export async function runWeeklyReports(payload: Payload, now = new Date()) {
   return { due: true, reports: made.length, notified }
 }
 
-export async function notifyReports(payload: Payload, reports: ReflectionReport[]) {
+/** Emails each team's coaches their report and Management the club report (once each, unless `force` from a manual rebuild). */
+export async function notifyReports(payload: Payload, reports: ReflectionReport[], opts: { force?: boolean } = {}) {
   let sent = 0
   const label = (r: ReflectionReport) => `week of ${formatDate(localToUtc(r.periodFrom, '12:00').toISOString(), { day: 'numeric', month: 'short' })}`
-  for (const r of reports.filter((x) => x.scopeType === 'team' && x.status !== 'empty' && !x.notifiedAt)) {
+  for (const r of reports.filter((x) => x.scopeType === 'team' && x.status !== 'empty' && (opts.force || !x.notifiedAt))) {
     const team = await payload.findByID({ collection: 'teams', id: Number(r.scopeKey), depth: 1, overrideAccess: true }).catch(() => null)
     const summary = r.summary as ReportSummary | null
     for (const c of team?.coaches ?? []) {
@@ -168,7 +169,7 @@ export async function notifyReports(payload: Payload, reports: ReflectionReport[
     await payload.update({ collection: 'reflection-reports', id: r.id, data: { notifiedAt: new Date().toISOString() }, depth: 0, overrideAccess: true })
   }
   const club = reports.find((x) => x.scopeType === 'club')
-  if (club && !club.notifiedAt) {
+  if (club && (opts.force || !club.notifiedAt)) {
     const { docs: people } = await payload.find({ collection: 'users', where: { roles: { in: ['admin', 'committee'] } }, limit: 50, depth: 0, pagination: false, overrideAccess: true })
     const summary = club.summary as ReportSummary | null
     for (const u of people) {

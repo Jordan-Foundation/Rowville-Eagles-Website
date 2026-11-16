@@ -284,7 +284,7 @@ export async function sendReflectionReminders(payload: Payload, now = new Date()
       const w = fixtureWindow(team, f, s)
       if (windowState(w, now) !== 'open') continue
       // Only games whose window opened recently get the "it's open" email (nothing for old games when this is switched on)
-      const justOpened = s.remindOnOpen && now.getTime() - w.opensAt.getTime() < 12 * 3_600_000
+      const justOpened = s.remindOnOpen && now.getTime() - w.opensAt.getTime() < 24 * 3_600_000
       const closingSoon = s.closingReminderHours > 0 && w.closesAt.getTime() - now.getTime() <= s.closingReminderHours * 3_600_000
       if (!justOpened && !closingSoon) continue
       const members = await activeMembers(payload, team.id)

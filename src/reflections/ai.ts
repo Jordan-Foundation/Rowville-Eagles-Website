@@ -13,6 +13,12 @@ export const WELFARE_PROMPT_VERSION = 'welfare-v1'
 
 /** Local testing only: deterministic answers without calling the API. Never used on the live site. */
 const fake = () => process.env.REFLECTIONS_AI_FAKE === '1' && process.env.NODE_ENV !== 'production'
+/** Local testing only: keep a copy of exactly what would have been sent, so tests can check nothing identifying goes out. */
+async function recordFake(kind: string, body: unknown) {
+  const fs = await import('node:fs')
+  fs.mkdirSync('.outbox', { recursive: true })
+  fs.writeFileSync(`.outbox/ai-${kind}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}.json`, JSON.stringify(body, null, 1))
+}
 
 export const aiConfigured = () => fake() || Boolean(process.env.ANTHROPIC_API_KEY)
 
@@ -49,6 +55,7 @@ When unsure, flag with severity "low" — a person will review it. Never diagnos
 
 export async function classifyWelfare(text: string): Promise<WelfareResult> {
   if (fake()) {
+    await recordFake('welfare', { text })
     const t = text.toLowerCase()
     return /worried at home|nobody helps me|fake-concern/.test(t) ? { concern: true, severity: 'medium', reason: 'Mentions feeling unsupported (test).' } : { concern: false, severity: 'none', reason: '' }
   }
@@ -102,6 +109,7 @@ Rules:
 
 export async function summariseReport(input: ReportInput): Promise<ReportSummary> {
   if (fake()) {
+    await recordFake('report', input)
     return {
       headline: `${input.reflections.length} players reflected on the ${input.period} games (${input.scope}).`,
       strength_themes: [{ pillar: input.pillars[1] ?? 'Passing', theme: 'Accurate short passing', players: Math.min(2, input.reflections.length) }],

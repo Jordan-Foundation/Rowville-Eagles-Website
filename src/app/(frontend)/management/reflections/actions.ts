@@ -35,7 +35,7 @@ export async function regenerateReport(fd: FormData) {
   const scopeKey = String(fd.get('scopeKey') ?? '')
   const only = scopeType && scopeKey ? { type: scopeType as 'team' | 'age_group' | 'club', key: scopeKey } : undefined
   const made = await generateReports(p, period, { only })
-  if (fd.get('notify') === 'on') await notifyReports(p, made)
+  if (fd.get('notify') === 'on') await notifyReports(p, made, { force: true })
   revalidatePath('/management/reflections')
   const failed = made.filter((r) => r.status === 'failed').length
   if (!made.length) return back('reports', 'error', 'No games were played that week by teams using reflections.', `&week=${period.from}`)
