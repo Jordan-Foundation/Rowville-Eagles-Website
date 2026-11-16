@@ -2,14 +2,14 @@ import type { DashItem } from '@/components/dashboard/DashboardGrid'
 
 /** Management dashboard sections; keys match the badge counts in src/lib/attention.ts. */
 /** Shown to admins only. */
-export const ADMIN_ONLY = new Set(['refunds'])
+export const ADMIN_ONLY = new Set(['refunds', 'finance'])
 
 export const managementItems: DashItem[] = [
   { key: 'programs', href: '/management/programs', label: 'Programs Overview', icon: 'chart' },
   { key: 'yearly', href: '/management/yearly-setup', label: 'Yearly setup', icon: 'calendar', hint: 'Next year’s terms & holidays' },
   { key: 'dates', href: '/management/dates', label: 'Set dates', icon: 'calendar' },
   { key: 'prices', href: '/management/prices', label: 'Set prices', icon: 'dollar' },
-  { key: 'money', href: '/management/money', label: 'Money summary', icon: 'chart', hint: 'Month & term, by Stripe account' },
+  { key: 'finance', href: '/management/finance', label: 'Finance', icon: 'dollar', hint: 'Income, coach pay, expenses' },
   { key: 'invoices', href: '/management/invoices', label: 'Invoices', icon: 'dollar', hint: 'Charge after the fact' },
   { key: 'refunds', href: '/management/refunds', label: 'Refunds', icon: 'card', hint: 'Admins only' },
   { key: 'bookings', href: '/management/academy/bookings', label: 'Bookings & cancellations', icon: 'booking' },

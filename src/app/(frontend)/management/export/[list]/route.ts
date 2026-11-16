@@ -9,7 +9,10 @@ export const dynamic = 'force-dynamic'
 export async function GET(req: Request, { params }: { params: Promise<{ list: string }> }) {
   const user = await managementOrNull()
   if (!user) return new Response('Management only', { status: 403 })
-  const make = EXPORTS[(await params).list]
+  const list = (await params).list
+  // Money and pay exports are Finance (admins only)
+  if (['money', 'finance-pay'].includes(list) && !user.roles?.includes('admin')) return new Response('Admins only', { status: 403 })
+  const make = EXPORTS[list]
   if (!make) return new Response('Not found', { status: 404 })
   const out = await make(await payload(), new URL(req.url).searchParams)
   return new Response(toCsv(out.headers, out.rows), {

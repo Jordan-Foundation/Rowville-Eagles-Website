@@ -7,6 +7,7 @@ export const metadata: Metadata = { title: 'Not available', robots: { index: fal
 
 const AREAS: Record<string, { title: string; text: string }> = {
   management: { title: 'Management only', text: 'This page is for the club committee and Academy management. If you need something here, ask a committee member.' },
+  finance: { title: 'Admins only', text: 'Finance (pay, expenses and bank details) is only open to admin accounts.' },
   coach: { title: 'Coaches only', text: 'This page is for Foundation Academy and team coaches. If you’re a coach and can’t get in, ask Management to add the Coach role to your account.' },
 }
 
