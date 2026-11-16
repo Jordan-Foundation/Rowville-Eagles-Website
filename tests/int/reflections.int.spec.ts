@@ -126,3 +126,20 @@ describe('weekly report timing', () => {
     expect(reportDue({ weekday: 2, hour: 10 }, { day: 1, hour: 9 })).toBe(false)
   })
 })
+
+describe('AI summary tidy-up', async () => {
+  const { tidySummary } = await import('@/reflections/ai')
+  it('keeps only real quotes from anonymous players and trims lists', () => {
+    const input = { reflections: [{ player: 'Player A', feeling: 4, great: [{ pillar: 'Passing', comment: 'I played a great through ball to [name]' }], improve: [], focus: 'scan more' }] }
+    const out = tidySummary({
+      headline: 'x', strength_themes: Array.from({ length: 6 }, () => ({ pillar: 'Passing', theme: 't', players: 1 })), improvement_themes: [], focus_themes: [], coach_suggestions: [],
+      notable_examples: [
+        { player: 'Player A', quote: '“a great through ball”', why: 'ok' },
+        { player: 'Player A', quote: 'something invented', why: 'no' },
+        { player: 'Liam', quote: 'scan more', why: 'named' },
+      ],
+    }, input)
+    expect(out.strength_themes).toHaveLength(4)
+    expect(out.notable_examples.map((e) => e.why)).toEqual(['ok'])
+  })
+})

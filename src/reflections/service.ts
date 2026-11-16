@@ -325,3 +325,25 @@ export async function sendReflectionReminders(payload: Payload, now = new Date()
   }
   return counts
 }
+
+// ── Team overview (coach + Management) ─────────────────────────────────────────
+
+export type FixtureSummary = { fixture: Fixture; state: WindowState; window: ReflectionWindow; expected: number; submitted: number; drafts: number; unseen: number }
+
+/** Each recent game for a team with how many players have reflected (and how many this viewer hasn't marked Seen). */
+export async function teamFixtureSummaries(payload: Payload, team: Team, viewerId: number, s?: ReflectionSettingsT, weeks = 10): Promise<FixtureSummary[]> {
+  const settings = s ?? (await reflectionSettings(payload))
+  const since = Date.now() - weeks * 7 * 86_400_000
+  const fixtures = ((team.fixtures ?? []) as Fixture[]).filter((f) => Date.parse(f.startsAt) >= since && Date.parse(f.startsAt) <= Date.now())
+  if (!fixtures.length) return []
+  const members = (await activeMembers(payload, team.id)).length
+  const { docs } = await payload.find({ collection: 'match-reflections', where: { team: { equals: team.id }, fixtureId: { in: fixtures.map((f) => f.id) } }, depth: 0, limit: 2000, pagination: false, overrideAccess: true, select: { fixtureId: true, status: true, feedback: true } })
+  return fixtures
+    .map((f) => {
+      const window = fixtureWindow(team, f, settings)
+      const mine = docs.filter((d) => d.fixtureId === f.id)
+      const sub = mine.filter((d) => d.status === 'submitted')
+      return { fixture: f, window, state: windowState(window), expected: members, submitted: sub.length, drafts: mine.length - sub.length, unseen: sub.filter((d) => !(d.feedback ?? []).some((x) => relId(x.coach) === viewerId)).length }
+    })
+    .sort((a, b) => b.fixture.startsAt.localeCompare(a.fixture.startsAt))
+}

@@ -56,7 +56,7 @@ export async function coachTeams(p: Payload, user: User) {
   return docs
 }
 
-export type CoachCounts = Record<'messages' | 'sessions' | 'attendance' | 'availability' | 'groups' | 'teams' | 'reviews' | 'reports' | 'camps', number>
+export type CoachCounts = Record<'messages' | 'sessions' | 'attendance' | 'availability' | 'groups' | 'teams' | 'reviews' | 'reports' | 'camps' | 'reflections', number>
 
 export async function coachAttention(p: Payload, user: User, coach: AcademyCoach): Promise<CoachCounts> {
   const seen = await seenAt(p, user.id, ['sessions', 'groups'])
@@ -85,10 +85,17 @@ export async function coachAttention(p: Payload, user: User, coach: AcademyCoach
   const reports = await safe(() => outstandingFor(p, user.id))
   // Holiday camps this coach has been asked to and hasn't answered
   const camps = await safe(async () => (await p.count({ collection: 'camp-coaches', where: { coach: { equals: coach.id }, status: { equals: 'invited' } }, ...q })).totalDocs)
-  return { messages, sessions, attendance, availability, groups, teams, reviews, reports, camps }
+  // Submitted match reflections in the coach's teams (last 2 weeks) that this coach hasn't marked Seen
+  const reflections = await safe(async () => {
+    const mine = await coachTeams(p, user)
+    if (!mine.length) return 0
+    const { docs } = await p.find({ pagination: false, collection: 'match-reflections', where: { team: { in: mine.map((t) => t.id) }, status: { equals: 'submitted' }, submittedAt: { greater_than: new Date(Date.now() - 14 * 86_400_000).toISOString() } }, limit: 1000, depth: 0, ...q, select: { feedback: true } })
+    return docs.filter((r) => !(r.feedback ?? []).some((f) => (typeof f.coach === 'object' ? f.coach?.id : f.coach) === user.id)).length
+  })
+  return { messages, sessions, attendance, availability, groups, teams, reviews, reports, camps, reflections }
 }
 
-export type ManagementCounts = Record<'bookings' | 'payments' | 'cover' | 'availability' | 'terms' | 'selections' | 'messages' | 'store' | 'foundation' | 'consent' | 'reports' | 'dates' | 'promotions' | 'camps' | 'yearly' | 'announcements' | 'invoices' | 'referrals', number>
+export type ManagementCounts = Record<'bookings' | 'payments' | 'cover' | 'availability' | 'terms' | 'selections' | 'messages' | 'store' | 'foundation' | 'consent' | 'reports' | 'dates' | 'promotions' | 'camps' | 'yearly' | 'announcements' | 'invoices' | 'referrals' | 'reflections', number>
 
 export async function managementAttention(p: Payload, user: User): Promise<ManagementCounts> {
   const now = new Date().toISOString()
@@ -159,5 +166,7 @@ export async function managementAttention(p: Payload, user: User): Promise<Manag
   const announcements = await safe(async () => (await p.count({ collection: 'announcements', where: { status: { equals: 'needs-approval' } }, ...q })).totalDocs)
   const invoices = await safe(async () => (await import('../invoices/service')).overdueInvoices(p))
   const referrals = await safe(async () => (await p.count({ collection: 'referral-rewards', where: { status: { in: ['claimed', 'held'] } }, ...q })).totalDocs + (await p.count({ collection: 'referrals', where: { reviewFlag: { exists: true }, status: { equals: 'confirmed' } }, ...q })).totalDocs)
-  return { bookings, payments, cover, availability, terms, selections, messages, store, foundation, consent, reports, dates, promotions, camps, yearly, announcements, invoices, referrals }
+  // Open welfare flags from match reflections
+  const reflections = await safe(async () => (await p.count({ collection: 'welfare-flags', where: { status: { equals: 'open' } }, ...q })).totalDocs)
+  return { bookings, payments, cover, availability, terms, selections, messages, store, foundation, consent, reports, dates, promotions, camps, yearly, announcements, invoices, referrals, reflections }
 }
