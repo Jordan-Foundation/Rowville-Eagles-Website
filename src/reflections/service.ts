@@ -237,6 +237,7 @@ export async function addFeedback(payload: Payload, reflectionId: number, coach:
   const team = await payload.findByID({ collection: 'teams', id: relId(r.team) as number, depth: 0, overrideAccess: true })
   if (!canSeeTeam(coach, team)) throw new Error('Not your team')
   if (r.status !== 'submitted') throw new Error('This reflection hasn’t been submitted yet')
+  if (!isManagement(coach) && (await heldForWelfare(payload, [r.id])).has(r.id)) throw new Error('This reflection isn’t available yet')
   const text = comment.replace(/\s+/g, ' ').trim().slice(0, 500)
   const feedback = [...(r.feedback ?? []).filter((f) => !(relId(f.coach) === coach.id && !f.comment && !text)), { coach: coach.id, seenAt: new Date().toISOString(), comment: text || null }]
   await payload.update({ collection: 'match-reflections', id: r.id, data: { feedback: feedback.map((f) => ({ coach: relId(f.coach), seenAt: f.seenAt, comment: f.comment })) }, depth: 0, overrideAccess: true })
@@ -326,6 +327,13 @@ export async function sendReflectionReminders(payload: Payload, now = new Date()
 
 // ── Team overview (coach + Management) ─────────────────────────────────────────
 
+/** Reflections with a welfare flag not yet reviewed by Management — hidden from coaches (and the AI report) until then. */
+export async function heldForWelfare(payload: Payload, reflectionIds: number[]): Promise<Set<number>> {
+  if (!reflectionIds.length) return new Set()
+  const { docs } = await payload.find({ collection: 'welfare-flags', where: { and: [{ status: { equals: 'open' } }, { reflection: { in: reflectionIds } }] }, depth: 0, limit: 1000, pagination: false, overrideAccess: true, select: { reflection: true } })
+  return new Set(docs.map((d) => relId(d.reflection)).filter((x): x is number => Boolean(x)))
+}
+
 export type FixtureSummary = { fixture: Fixture; state: WindowState; window: ReflectionWindow; expected: number; submitted: number; drafts: number; unseen: number }
 
 /** Each recent game for a team with how many players have reflected (and how many this viewer hasn't marked Seen). */
@@ -336,12 +344,13 @@ export async function teamFixtureSummaries(payload: Payload, team: Team, viewerI
   if (!fixtures.length) return []
   const members = (await activeMembers(payload, team.id)).length
   const { docs } = await payload.find({ collection: 'match-reflections', where: { team: { equals: team.id }, fixtureId: { in: fixtures.map((f) => f.id) } }, depth: 0, limit: 2000, pagination: false, overrideAccess: true, select: { fixtureId: true, status: true, feedback: true } })
+  const held = await heldForWelfare(payload, docs.map((d) => d.id))
   return fixtures
     .map((f) => {
       const window = fixtureWindow(team, f, settings)
       const mine = docs.filter((d) => d.fixtureId === f.id)
       const sub = mine.filter((d) => d.status === 'submitted')
-      return { fixture: f, window, state: windowState(window), expected: members, submitted: sub.length, drafts: mine.length - sub.length, unseen: sub.filter((d) => !(d.feedback ?? []).some((x) => relId(x.coach) === viewerId)).length }
+      return { fixture: f, window, state: windowState(window), expected: members, submitted: sub.length, drafts: mine.length - sub.length, unseen: sub.filter((d) => !held.has(d.id) && !(d.feedback ?? []).some((x) => relId(x.coach) === viewerId)).length }
     })
     .sort((a, b) => b.fixture.startsAt.localeCompare(a.fixture.startsAt))
 }
