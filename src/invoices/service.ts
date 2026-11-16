@@ -105,7 +105,7 @@ function emailBlocks(inv: Invoice, kind: 'invoice' | 'reminder' | 'receipt', acc
   ]
   const first = inv.contactName.split(' ')[0]
   const intro = {
-    invoice: `Hi ${esc(first)} — here’s your invoice. You can pay it securely by card using the button below.`,
+    invoice: `Hi ${esc(first)} — here’s your invoice. Use the button below to log in (or create your account if you don’t have one yet), then pay securely by card.`,
     reminder: `Hi ${esc(first)} — a friendly reminder that this invoice ${inv.dueDate ? `was due ${esc(formatDate(inv.dueDate, { day: 'numeric', month: 'long' }))}` : 'is still unpaid'}. If you’ve already paid, please ignore this.`,
     receipt: `Thanks ${esc(first)} — we’ve received your payment of ${esc(formatAUD(inv.total ?? 0))}.`,
   }[kind]

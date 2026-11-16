@@ -5,6 +5,8 @@ import { paymentsMode, stripeAccounts, stripeFor } from '@/lib/stripe-accounts'
 import { invoiceForLink, markInvoicePaid } from '@/invoices/service'
 import { lineTotal } from '@/invoices/totals'
 import { PayButton } from './PayButton'
+import { AccountFirstForm } from './AccountFirstForm'
+import { currentUser } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Invoice', robots: { index: false } }
@@ -39,6 +41,11 @@ export default async function InvoicePayPage({ params, searchParams }: { params:
   }
   const academy = payee === 'academy'
   const owner = inv.account ? await p.findByID({ collection: 'users', id: typeof inv.account === 'object' ? inv.account.id : inv.account, depth: 0, overrideAccess: true, disableErrors: true }) : null
+  // Account first, then pay: logged in → pay; has an account → log in; otherwise create one here
+  const me = await currentUser()
+  const byEmail = !owner && inv.contactEmail ? (await p.find({ collection: 'users', where: { email: { equals: inv.contactEmail.toLowerCase() } }, limit: 1, depth: 0, overrideAccess: true })).docs[0] : null
+  const hasAccount = Boolean((owner ?? byEmail)?.activated)
+  const [first, ...rest] = (inv.contactName ?? '').split(' ')
   const here = `/invoice/${inv.reference}/${token}`
   const settings = await p.findGlobal({ slug: 'site-settings', depth: 0 }).catch(() => null)
   return (
@@ -71,12 +78,23 @@ export default async function InvoicePayPage({ params, searchParams }: { params:
           ) : inv.status === 'sent' ? (
             <div className="space-y-4">
               {inv.dueDate && <p>Due <strong>{formatDate(inv.dueDate, { weekday: 'long', day: 'numeric', month: 'long' })}</strong></p>}
-              <PayButton refCode={inv.reference} token={token} label={`Pay ${formatAUD(inv.total ?? 0)}`} academy={academy} />
-              {!owner?.activated && (
-                <p className="text-xs text-muted" data-account-note>
-                  {inv.contactEmail ? <>No account needed to pay. Afterwards we’ll save this to an account under {inv.contactEmail} and email you a link to set your password. </> : null}
-                  Already have an account? <a href={`/login?next=${encodeURIComponent(here)}`} className="underline">Log in</a> and it’s added automatically.
-                </p>
+              {me ? (
+                <>
+                  <p className="text-xs text-muted" data-account-note>Signed in as {me.email} — this invoice will be kept in your account.</p>
+                  <PayButton refCode={inv.reference} token={token} label={`Pay ${formatAUD(inv.total ?? 0)}`} academy={academy} />
+                </>
+              ) : hasAccount ? (
+                <div className="space-y-3" data-account-step="login">
+                  <p><strong>Step 1:</strong> log in to your account{inv.contactEmail ? <> ({inv.contactEmail})</> : null}, then you’ll come straight back here to pay.</p>
+                  <a href={`/login?next=${encodeURIComponent(here)}`} className={`block w-full bg-accent px-6 py-4 text-center font-semibold text-accent-ink hover:brightness-110 ${academy ? 'uppercase tracking-[0.18em]' : 'rounded-full'}`}>Log in to pay</a>
+                  <p className="text-xs text-muted">Forgotten your password? <a href="/account/forgot" className="underline">Reset it</a>.</p>
+                </div>
+              ) : (
+                <div className="space-y-3" data-account-step="create">
+                  <p><strong>Step 1:</strong> create your account — it keeps this invoice, your receipts and bookings in one place. <strong>Step 2:</strong> pay by card.</p>
+                  <AccountFirstForm refCode={inv.reference} token={token} email={inv.contactEmail} firstName={first} lastName={rest.join(' ')} mobile={inv.contactPhone} payLabel={`Pay ${formatAUD(inv.total ?? 0)}`} academy={academy} />
+                  <p className="text-xs text-muted">Already have an account under another email? <a href={`/login?next=${encodeURIComponent(here)}`} className="underline">Log in</a> instead.</p>
+                </div>
               )}
               <p className="text-xs text-muted">Secure card payment by Stripe. Questions? {settings?.email ? <>Email <a href={`mailto:${settings.email}`} className="underline">{settings.email}</a>.</> : 'Contact us.'}</p>
             </div>
