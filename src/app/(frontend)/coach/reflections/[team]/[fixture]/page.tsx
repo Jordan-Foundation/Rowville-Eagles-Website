@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 import { payload, formatDate } from '@/lib/payload'
 import { currentUser } from '@/lib/auth'
-import { activeMembers, canSeeTeam, fixtureWindow, reflectionSettings, relId, type Fixture } from '@/reflections/service'
+import { activeMembers, canSeeTeam, fixtureWindow, heldForWelfare, isManagement, reflectionSettings, relId, type Fixture } from '@/reflections/service'
 import { windowState } from '@/reflections/rules'
 import { Summary } from '@/reflections/Summary'
 import { FeedbackForm } from '../../FeedbackForm'
@@ -26,6 +26,8 @@ export default async function FixtureReflections({ params }: { params: Promise<{
   const members = (await activeMembers(p, team.id)).sort((a, b) => a.participant.firstName.localeCompare(b.participant.firstName))
   const { docs } = await p.find({ collection: 'match-reflections', where: { team: { equals: team.id }, fixtureId: { equals: fixture.id } }, depth: 1, limit: 500, pagination: false, overrideAccess: true })
   const by = new Map(docs.map((r) => [relId(r.participant), r]))
+  // A reflection with an unreviewed welfare flag stays with Management until it's been reviewed (staff still see it)
+  const held = isManagement(user) ? new Set<number>() : await heldForWelfare(p, docs.map((r) => r.id))
   const done = members.filter((m) => by.get(m.participant.id)?.status === 'submitted')
   const notYet = members.filter((m) => by.get(m.participant.id)?.status !== 'submitted')
   return (
@@ -48,8 +50,14 @@ export default async function FixtureReflections({ params }: { params: Promise<{
           return (
             <article key={r.id} className="rounded-2xl border border-line p-5" data-reflection={m.participant.firstName}>
               <h3 className="font-semibold">{m.participant.firstName} {m.participant.lastName} {seen && <span className="text-sm font-normal text-muted">· 👍 you’ve seen this</span>}</h3>
-              <div className="mt-3"><Summary r={r} /></div>
-              <FeedbackForm reflectionId={r.id} seen={seen} />
+              {held.has(r.id) ? (
+                <p className="mt-3 text-sm text-muted" data-held>Not available yet — the club is looking at this reflection. You’ll be able to read it once that’s done.</p>
+              ) : (
+                <>
+                  <div className="mt-3"><Summary r={r} /></div>
+                  <FeedbackForm reflectionId={r.id} seen={seen} />
+                </>
+              )}
             </article>
           )
         })}

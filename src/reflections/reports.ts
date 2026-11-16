@@ -7,7 +7,7 @@ import { siteUrl } from '../lib/payments'
 import { localToUtc, localYmd, TZ } from '../lib/time'
 import { AI_MODEL, REPORT_PROMPT_VERSION, aiConfigured, aiErrorMessage, summariseReport, type ReportInput, type ReportSummary } from './ai'
 import { anonLabel, computeStats, recentWeeks, redact, reportReady, type ReflectionStats } from './rules'
-import { activeMembers, ageGroupFor, fixtureWindow, pillars, reflectionSettings, reflectionTeams, relId, type Fixture } from './service'
+import { activeMembers, ageGroupFor, fixtureWindow, heldForWelfare, pillars, reflectionSettings, reflectionTeams, relId, type Fixture } from './service'
 
 /** Fewer submitted reflections than this and no AI summary is written (too few to stay anonymous / meaningful). */
 export const MIN_FOR_SUMMARY = 3
@@ -67,7 +67,10 @@ const numbersText = (st: ReportStats) => [
 
 /** Anonymised input: no names, IDs, teams or dates beyond the period label. */
 async function aiInput(payload: Payload, scope: Scope, period: { from: string; to: string }, st: ReportStats, reflections: MatchReflection[], pillarNames: string[]): Promise<ReportInput> {
-  const submitted = reflections.filter((r) => r.status === 'submitted' && scope.teamIds.includes(relId(r.team) as number))
+  const inScope = reflections.filter((r) => r.status === 'submitted' && scope.teamIds.includes(relId(r.team) as number))
+  // Comments under an unreviewed welfare flag are never quoted or summarised (the numbers still count them)
+  const held = await heldForWelfare(payload, inScope.map((r) => r.id))
+  const submitted = inScope.filter((r) => !held.has(r.id))
   // Every name we know in these teams (players, parents, coaches) is replaced with [name]
   const names = new Set<string>()
   for (const teamId of scope.teamIds) {

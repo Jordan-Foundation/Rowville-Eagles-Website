@@ -90,7 +90,8 @@ export async function coachAttention(p: Payload, user: User, coach: AcademyCoach
     const mine = await coachTeams(p, user)
     if (!mine.length) return 0
     const { docs } = await p.find({ pagination: false, collection: 'match-reflections', where: { team: { in: mine.map((t) => t.id) }, status: { equals: 'submitted' }, submittedAt: { greater_than: new Date(Date.now() - 14 * 86_400_000).toISOString() } }, limit: 1000, depth: 0, ...q, select: { feedback: true } })
-    return docs.filter((r) => !(r.feedback ?? []).some((f) => (typeof f.coach === 'object' ? f.coach?.id : f.coach) === user.id)).length
+    const held = await (await import('../reflections/service')).heldForWelfare(p, docs.map((r) => r.id))
+    return docs.filter((r) => !held.has(r.id) && !(r.feedback ?? []).some((f) => (typeof f.coach === 'object' ? f.coach?.id : f.coach) === user.id)).length
   })
   return { messages, sessions, attendance, availability, groups, teams, reviews, reports, camps, reflections }
 }
