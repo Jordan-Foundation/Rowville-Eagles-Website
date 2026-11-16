@@ -5739,6 +5739,23 @@ export interface DifferencePage {
      */
     image?: (number | null) | Media;
   };
+  reflections?: {
+    nav?: string | null;
+    headline?: string | null;
+    body?: string | null;
+    more?: string | null;
+    steps?:
+      | {
+          name: string;
+          line?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+    /**
+     * Optional: a player filling in a reflection, or with their coach — 1600×1200 (only children with photo consent). Otherwise a sample reflection is shown.
+     */
+    image?: (number | null) | Media;
+  };
   year?: {
     nav?: string | null;
     headline?: string | null;
@@ -6106,6 +6123,22 @@ export interface DifferencePageSelect<T extends boolean = true> {
         headline?: T;
         body?: T;
         more?: T;
+        image?: T;
+      };
+  reflections?:
+    | T
+    | {
+        nav?: T;
+        headline?: T;
+        body?: T;
+        more?: T;
+        steps?:
+          | T
+          | {
+              name?: T;
+              line?: T;
+              id?: T;
+            };
         image?: T;
       };
   year?:

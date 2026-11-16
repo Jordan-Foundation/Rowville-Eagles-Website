@@ -79,6 +79,7 @@ import * as migration_20261116_001436_prelaunch_batch from './20261116_001436_pr
 import * as migration_20261116_021644_referrals from './20261116_021644_referrals';
 import * as migration_20261116_035533_reflections from './20261116_035533_reflections';
 import * as migration_20261116_063545_staff_feed from './20261116_063545_staff_feed';
+import * as migration_20261116_105733_why_us_reflections from './20261116_105733_why_us_reflections';
 
 export const migrations = [
   {
@@ -484,6 +485,11 @@ export const migrations = [
   {
     up: migration_20261116_063545_staff_feed.up,
     down: migration_20261116_063545_staff_feed.down,
-    name: '20261116_063545_staff_feed'
+    name: '20261116_063545_staff_feed',
+  },
+  {
+    up: migration_20261116_105733_why_us_reflections.up,
+    down: migration_20261116_105733_why_us_reflections.down,
+    name: '20261116_105733_why_us_reflections'
   },
 ];

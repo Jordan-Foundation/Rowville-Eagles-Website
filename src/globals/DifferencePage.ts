@@ -47,6 +47,10 @@ export const DifferencePage: GlobalConfig = {
       { name: 'stages', type: 'array', minRows: 5, maxRows: 6, defaultValue: D.sessions.stages.map((x) => ({ ...x })), fields: [{ type: 'row', fields: [{ name: 'name', type: 'text', required: true }, { name: 'line', type: 'text' }] }] },
     ]),
     section('reports', 'd) Player reports', D.reports, [img('image', 'Optional: your own sample report image (otherwise a built-in sample with made-up data is shown)')]),
+    section('reflections', 'd2) Match Reflections', D.reflections, [
+      { name: 'steps', type: 'array', minRows: 3, maxRows: 3, defaultValue: D.reflections.steps.map((x) => ({ ...x })), fields: [{ type: 'row', fields: [{ name: 'name', type: 'text', required: true }, { name: 'line', type: 'text' }] }] },
+      img('image', 'Optional: a player filling in a reflection, or with their coach — 1600×1200 (only children with photo consent). Otherwise a sample reflection is shown.'),
+    ]),
     section('year', 'e) Year-round program', D.year, [
       text('sessionsPerYear', D.year.sessionsPerYear, 'Sessions per year'),
       { name: 'terms', type: 'array', minRows: 4, maxRows: 4, defaultValue: D.year.terms.map((x) => ({ ...x })), fields: [{ type: 'row', fields: [{ name: 'term', type: 'text' }, { name: 'months', type: 'text' }, { name: 'title', type: 'text' }] }, { name: 'detail', type: 'text' }] },

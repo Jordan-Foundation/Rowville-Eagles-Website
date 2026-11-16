@@ -8,6 +8,7 @@ import { differenceContent, type Difference } from '@/content/difference-load'
 import { FoundationPlusLogo } from '@/components/FoundationPlusLogo'
 import { SubNav } from './SubNav'
 import { SampleReport } from './SampleReport'
+import { SampleReflection } from './SampleReflection'
 import { CurriculumExplorer } from './CurriculumExplorer'
 import { PathwaysSection } from './PathwaysToggle'
 import { curriculum } from '@/academy/curriculum/load'
@@ -16,7 +17,7 @@ import { LEVELS, STRANDS } from '@/academy/curriculum/levels'
 export const revalidate = 3600
 export const metadata: Metadata = {
   title: 'What makes us different',
-  description: 'Paid, professionally developed coaches, a real football curriculum, a six-stage lesson sequence, player reports and a year-round program — plus a free Friday Community Night.',
+  description: 'Paid, professionally developed coaches, a real football curriculum, a six-stage lesson sequence, player reports, match reflections after every game and a year-round program — plus a free Friday Community Night.',
   alternates: { canonical: '/what-makes-us-different' },
   openGraph: { title: 'What makes Rowville different', description: 'Paid coaches, a real football curriculum and a year-round program for every player.', type: 'website' },
 }
@@ -26,6 +27,7 @@ const ICONS: Record<string, React.ReactNode> = {
   curriculum: <path d="M4 5h11a3 3 0 0 1 3 3v12H7a3 3 0 0 1-3-3V5Zm14 3h2v12M8 9h6M8 13h6" />,
   sessions: <path d="M4 12h3l2-6 4 12 2-6h5" />,
   reports: <path d="M6 3h9l4 4v14H6V3Zm9 0v4h4M9 13l2 2 4-4" />,
+  reflections: <path d="M12 3a9 9 0 1 0 9 9M12 7v5l3 2M17 3h4v4M21 3l-5 5" />,
   year: <path d="M4 6h16v14H4V6Zm0 4h16M8 3v4m8-4v4" />,
   pathways: <path d="M6 20V9a5 5 0 0 1 5-5h1m6 16V9a5 5 0 0 0-5-5h-1M12 2v4" />,
   community: <path d="M3 11l9-7 9 7v9H3v-9Zm6 9v-5h6v5" />,
@@ -85,7 +87,7 @@ export default async function DifferencePage() {
   const pillars = STRANDS.map((s) => ({ key: s.key, name: s.name, line: c.curriculum.strands.find((x) => x.name === s.name)?.line }))
   const nav = [
     ['coaches', c.coaches.nav], ['curriculum', c.curriculum.nav], ['sessions', c.sessions.nav], ['reports', c.reports.nav],
-    ['year-round', c.year.nav], ['pathways', c.pathways.nav], ['community-night', c.community.nav], ['foundation-plus', c.fplus.nav],
+    ['reflections', c.reflections.nav], ['year-round', c.year.nav], ['pathways', c.pathways.nav], ['community-night', c.community.nav], ['foundation-plus', c.fplus.nav],
   ].map(([id, label]) => ({ id, label }))
 
   return (
@@ -147,7 +149,31 @@ export default async function DifferencePage() {
         <div className="max-w-3xl">{c.reports.image ? <Image src={c.reports.image.url} alt={c.reports.image.alt} width={c.reports.image.width ?? 1600} height={c.reports.image.height ?? 1000} sizes="(min-width: 768px) 768px, 100vw" className="w-full rounded-2xl border border-line" /> : <SampleReport />}</div>
       </Section>
 
-      <Section id="year-round" icon="year" eyebrow="All year" headline={c.year.headline} body={c.year.body} more={c.year.more}>
+      <Section id="reflections" icon="reflections" eyebrow="After every game" headline={c.reflections.headline} body={c.reflections.body} more={c.reflections.more}>
+        <div className="grid gap-10 lg:grid-cols-[1fr_1.05fr] lg:items-start">
+          <div>
+            <ol className="space-y-3" aria-label="Every reflection, three steps">
+              {c.reflections.steps.map((st, i) => (
+                <li key={st.name} className="flex items-start gap-4 rounded-xl bg-[#0f2a55] p-5 text-white">
+                  <span aria-hidden className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent font-[family-name:var(--font-barlow)] text-xl font-extrabold text-accent-ink">{i + 1}</span>
+                  <span>
+                    <span className="block font-[family-name:var(--font-barlow)] text-2xl font-extrabold uppercase leading-tight">{st.name}</span>
+                    {st.line && <span className="mt-1 block text-sm text-white/80">{st.line}</span>}
+                  </span>
+                </li>
+              ))}
+            </ol>
+            <ul className="mt-6 grid gap-3 sm:grid-cols-2">
+              {['Two minutes, win or lose', 'Their coach reads and replies', 'Their focus shown before the next game', 'Private to your family and our coaches'].map((t) => (
+                <li key={t} className="rounded-xl border border-line bg-surface p-4 font-semibold">✓ {t}</li>
+              ))}
+            </ul>
+          </div>
+          {c.reflections.image ? <Photo image={c.reflections.image} icon="reflections" tall /> : <SampleReflection />}
+        </div>
+      </Section>
+
+      <Section id="year-round" icon="year" eyebrow="All year" headline={c.year.headline} body={c.year.body} more={c.year.more} alt>
         <ol className="relative grid gap-4 md:grid-cols-4" aria-label="The four terms">
           <span aria-hidden className="absolute left-4 top-0 h-full w-0.5 bg-line md:left-0 md:top-6 md:h-0.5 md:w-full" />
           {c.year.terms.map((t) => {
