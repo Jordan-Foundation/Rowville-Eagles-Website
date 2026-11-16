@@ -141,6 +141,17 @@ export interface Config {
     'invite-tokens': InviteToken;
     'activity-log': ActivityLog;
     'staff-feed': StaffFeed;
+    'coach-pay-rates': CoachPayRate;
+    'coach-pay-profiles': CoachPayProfile;
+    'coach-hour-adjustments': CoachHourAdjustment;
+    'pay-weeks': PayWeek;
+    'finance-reports': FinanceReport;
+    'expense-categories': ExpenseCategory;
+    'receipt-files': ReceiptFile;
+    expenses: Expense;
+    'bank-transactions': BankTransaction;
+    'projection-scenarios': ProjectionScenario;
+    'finance-audit-log': FinanceAuditLog;
     media: Media;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
@@ -223,6 +234,17 @@ export interface Config {
     'invite-tokens': InviteTokensSelect<false> | InviteTokensSelect<true>;
     'activity-log': ActivityLogSelect<false> | ActivityLogSelect<true>;
     'staff-feed': StaffFeedSelect<false> | StaffFeedSelect<true>;
+    'coach-pay-rates': CoachPayRatesSelect<false> | CoachPayRatesSelect<true>;
+    'coach-pay-profiles': CoachPayProfilesSelect<false> | CoachPayProfilesSelect<true>;
+    'coach-hour-adjustments': CoachHourAdjustmentsSelect<false> | CoachHourAdjustmentsSelect<true>;
+    'pay-weeks': PayWeeksSelect<false> | PayWeeksSelect<true>;
+    'finance-reports': FinanceReportsSelect<false> | FinanceReportsSelect<true>;
+    'expense-categories': ExpenseCategoriesSelect<false> | ExpenseCategoriesSelect<true>;
+    'receipt-files': ReceiptFilesSelect<false> | ReceiptFilesSelect<true>;
+    expenses: ExpensesSelect<false> | ExpensesSelect<true>;
+    'bank-transactions': BankTransactionsSelect<false> | BankTransactionsSelect<true>;
+    'projection-scenarios': ProjectionScenariosSelect<false> | ProjectionScenariosSelect<true>;
+    'finance-audit-log': FinanceAuditLogSelect<false> | FinanceAuditLogSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -242,6 +264,7 @@ export interface Config {
     'pdr-settings': PdrSetting;
     'referral-settings': ReferralSetting;
     'reflection-settings': ReflectionSetting;
+    'finance-settings': FinanceSetting;
     'setup-progress': SetupProgress;
   };
   globalsSelect: {
@@ -253,6 +276,7 @@ export interface Config {
     'pdr-settings': PdrSettingsSelect<false> | PdrSettingsSelect<true>;
     'referral-settings': ReferralSettingsSelect<false> | ReferralSettingsSelect<true>;
     'reflection-settings': ReflectionSettingsSelect<false> | ReflectionSettingsSelect<true>;
+    'finance-settings': FinanceSettingsSelect<false> | FinanceSettingsSelect<true>;
     'setup-progress': SetupProgressSelect<false> | SetupProgressSelect<true>;
   };
   locale: null;
@@ -3133,6 +3157,270 @@ export interface StaffFeed {
   createdAt: string;
 }
 /**
+ * Use Management → Finance → Coach hours & pay.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "coach-pay-rates".
+ */
+export interface CoachPayRate {
+  id: number;
+  coach: number | AcademyCoach;
+  hourlyRate: number;
+  /**
+   * YYYY-MM-DD
+   */
+  effectiveFrom: string;
+  note?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "coach-pay-profiles".
+ */
+export interface CoachPayProfile {
+  id: number;
+  coach: number | AcademyCoach;
+  superOn?: boolean | null;
+  eaglesPaid?: boolean | null;
+  payrollActive?: boolean | null;
+  superFund?: string | null;
+  xeroEmployee?: string | null;
+  notes?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "coach-hour-adjustments".
+ */
+export interface CoachHourAdjustment {
+  id: number;
+  coach: number | AcademyCoach;
+  /**
+   * YYYY-MM-DD
+   */
+  date: string;
+  kind: 'manual' | 'paid-cancellation';
+  /**
+   * HH:MM (optional)
+   */
+  startTime?: string | null;
+  minutes: number;
+  /**
+   * The session this is for (cancelled-but-paid)
+   */
+  sessionKey?: string | null;
+  reason: string;
+  createdBy?: (number | null) | User;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pay-weeks".
+ */
+export interface PayWeek {
+  id: number;
+  weekStart: string;
+  weekEnd: string;
+  generatedAt?: string | null;
+  /**
+   * Per-coach totals: hours, base, bonus, super, total
+   */
+  coaches?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Share-link bonuses counted this week (key → amount)
+   */
+  bonusKeys?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Earlier bonuses reversed this week
+   */
+  reversedKeys?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "finance-reports".
+ */
+export interface FinanceReport {
+  id: number;
+  periodStart: string;
+  periodEnd: string;
+  sentAt?: string | null;
+  data?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  sentTo?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "expense-categories".
+ */
+export interface ExpenseCategory {
+  id: number;
+  name: string;
+  active?: boolean | null;
+  sortOrder?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "receipt-files".
+ */
+export interface ReceiptFile {
+  id: number;
+  note?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * Use Management → Finance → Expenses.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "expenses".
+ */
+export interface Expense {
+  id: number;
+  /**
+   * YYYY-MM-DD
+   */
+  date: string;
+  supplier: string;
+  amount: number;
+  gst?: number | null;
+  description?: string | null;
+  category?: (number | null) | ExpenseCategory;
+  paymentMethod?: ('card' | 'bank transfer' | 'direct debit' | 'cash' | 'other') | null;
+  source: 'email' | 'photo' | 'bank' | 'manual';
+  status: 'needs_review' | 'approved';
+  recurring?: boolean | null;
+  receipt?: (number | null) | ReceiptFile;
+  bankTransaction?: (number | null) | BankTransaction;
+  /**
+   * Email message ID or upload ID (stops duplicates)
+   */
+  sourceRef?: string | null;
+  notes?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "bank-transactions".
+ */
+export interface BankTransaction {
+  id: number;
+  source: 'csv' | 'ofx' | 'xero' | 'open-banking';
+  account?: string | null;
+  date: string;
+  description?: string | null;
+  amount: number;
+  direction: 'debit' | 'credit';
+  status: 'unmatched' | 'matched' | 'ignored' | 'income_transfer';
+  externalId: string;
+  matchedExpense?: (number | null) | Expense;
+  note?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "projection-scenarios".
+ */
+export interface ProjectionScenario {
+  id: number;
+  name: string;
+  inputs?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  createdBy?: (number | null) | User;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "finance-audit-log".
+ */
+export interface FinanceAuditLog {
+  id: number;
+  area?: string | null;
+  action?: string | null;
+  collection?: string | null;
+  docId?: number | null;
+  by?: (number | null) | User;
+  reason?: string | null;
+  before?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  after?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -3451,6 +3739,50 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'staff-feed';
         value: number | StaffFeed;
+      } | null)
+    | ({
+        relationTo: 'coach-pay-rates';
+        value: number | CoachPayRate;
+      } | null)
+    | ({
+        relationTo: 'coach-pay-profiles';
+        value: number | CoachPayProfile;
+      } | null)
+    | ({
+        relationTo: 'coach-hour-adjustments';
+        value: number | CoachHourAdjustment;
+      } | null)
+    | ({
+        relationTo: 'pay-weeks';
+        value: number | PayWeek;
+      } | null)
+    | ({
+        relationTo: 'finance-reports';
+        value: number | FinanceReport;
+      } | null)
+    | ({
+        relationTo: 'expense-categories';
+        value: number | ExpenseCategory;
+      } | null)
+    | ({
+        relationTo: 'receipt-files';
+        value: number | ReceiptFile;
+      } | null)
+    | ({
+        relationTo: 'expenses';
+        value: number | Expense;
+      } | null)
+    | ({
+        relationTo: 'bank-transactions';
+        value: number | BankTransaction;
+      } | null)
+    | ({
+        relationTo: 'projection-scenarios';
+        value: number | ProjectionScenario;
+      } | null)
+    | ({
+        relationTo: 'finance-audit-log';
+        value: number | FinanceAuditLog;
       } | null)
     | ({
         relationTo: 'media';
@@ -5452,6 +5784,172 @@ export interface StaffFeedSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "coach-pay-rates_select".
+ */
+export interface CoachPayRatesSelect<T extends boolean = true> {
+  coach?: T;
+  hourlyRate?: T;
+  effectiveFrom?: T;
+  note?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "coach-pay-profiles_select".
+ */
+export interface CoachPayProfilesSelect<T extends boolean = true> {
+  coach?: T;
+  superOn?: T;
+  eaglesPaid?: T;
+  payrollActive?: T;
+  superFund?: T;
+  xeroEmployee?: T;
+  notes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "coach-hour-adjustments_select".
+ */
+export interface CoachHourAdjustmentsSelect<T extends boolean = true> {
+  coach?: T;
+  date?: T;
+  kind?: T;
+  startTime?: T;
+  minutes?: T;
+  sessionKey?: T;
+  reason?: T;
+  createdBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pay-weeks_select".
+ */
+export interface PayWeeksSelect<T extends boolean = true> {
+  weekStart?: T;
+  weekEnd?: T;
+  generatedAt?: T;
+  coaches?: T;
+  bonusKeys?: T;
+  reversedKeys?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "finance-reports_select".
+ */
+export interface FinanceReportsSelect<T extends boolean = true> {
+  periodStart?: T;
+  periodEnd?: T;
+  sentAt?: T;
+  data?: T;
+  sentTo?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "expense-categories_select".
+ */
+export interface ExpenseCategoriesSelect<T extends boolean = true> {
+  name?: T;
+  active?: T;
+  sortOrder?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "receipt-files_select".
+ */
+export interface ReceiptFilesSelect<T extends boolean = true> {
+  note?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "expenses_select".
+ */
+export interface ExpensesSelect<T extends boolean = true> {
+  date?: T;
+  supplier?: T;
+  amount?: T;
+  gst?: T;
+  description?: T;
+  category?: T;
+  paymentMethod?: T;
+  source?: T;
+  status?: T;
+  recurring?: T;
+  receipt?: T;
+  bankTransaction?: T;
+  sourceRef?: T;
+  notes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "bank-transactions_select".
+ */
+export interface BankTransactionsSelect<T extends boolean = true> {
+  source?: T;
+  account?: T;
+  date?: T;
+  description?: T;
+  amount?: T;
+  direction?: T;
+  status?: T;
+  externalId?: T;
+  matchedExpense?: T;
+  note?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "projection-scenarios_select".
+ */
+export interface ProjectionScenariosSelect<T extends boolean = true> {
+  name?: T;
+  inputs?: T;
+  createdBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "finance-audit-log_select".
+ */
+export interface FinanceAuditLogSelect<T extends boolean = true> {
+  area?: T;
+  action?: T;
+  collection?: T;
+  docId?: T;
+  by?: T;
+  reason?: T;
+  before?: T;
+  after?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media_select".
  */
 export interface MediaSelect<T extends boolean = true> {
@@ -5942,6 +6440,48 @@ export interface ReflectionSetting {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "finance-settings".
+ */
+export interface FinanceSetting {
+  id: number;
+  superRate?: number | null;
+  superOnBonus?: boolean | null;
+  bonusPct?: number | null;
+  setupMinutes?: number | null;
+  packupMinutes?: number | null;
+  blockGapMinutes?: number | null;
+  setupKinds?:
+    ('one-on-one' | 'small-group' | 'academy' | 'mini-ballers' | 'camp' | 'eagles-training' | 'eagles-game')[] | null;
+  eaglesSeasonStart?: string | null;
+  eaglesSeasonEnd?: string | null;
+  eaglesGameMinutes?: number | null;
+  reportRecipients?: string | null;
+  reportDay?: ('1' | '2' | '0') | null;
+  reportHour?: number | null;
+  /**
+   * Connected from Management → Finance → Settings
+   */
+  gmail?: {
+    email?: string | null;
+    connectedAt?: string | null;
+    lastCheckedAt?: string | null;
+    refreshToken?: string | null;
+    checkedIds?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+    lastError?: string | null;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "setup-progress".
  */
 export interface SetupProgress {
@@ -6298,6 +6838,38 @@ export interface ReflectionSettingsSelect<T extends boolean = true> {
   aiWelfareCheck?: T;
   safeguardingEmail?: T;
   keywords?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "finance-settings_select".
+ */
+export interface FinanceSettingsSelect<T extends boolean = true> {
+  superRate?: T;
+  superOnBonus?: T;
+  bonusPct?: T;
+  setupMinutes?: T;
+  packupMinutes?: T;
+  blockGapMinutes?: T;
+  setupKinds?: T;
+  eaglesSeasonStart?: T;
+  eaglesSeasonEnd?: T;
+  eaglesGameMinutes?: T;
+  reportRecipients?: T;
+  reportDay?: T;
+  reportHour?: T;
+  gmail?:
+    | T
+    | {
+        email?: T;
+        connectedAt?: T;
+        lastCheckedAt?: T;
+        refreshToken?: T;
+        checkedIds?: T;
+        lastError?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

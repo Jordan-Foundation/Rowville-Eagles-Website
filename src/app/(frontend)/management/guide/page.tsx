@@ -13,7 +13,7 @@ const STEPS: { when: string; title: string; body: string; links: [string, string
   { when: 'Optional', title: 'Tell families', body: 'A promotion for returning families (with consent to marketing), or an everyday notice to a group or team.', links: [['Promotions', '/management/promotions'], ['Email a group', '/management/broadcast']] },
   { when: 'Each week', title: 'During the term', body: 'Coaches take attendance on their Training day screen. Watch the dashboard for cover needed, overdue weekly payments, cancellations and messages.', links: [['Dashboard', '/management'], ['Bookings & cancellations', '/management/academy/bookings']] },
   { when: 'Week 6–8', title: 'Player reports', body: 'Start a report round with a due date. Coaches are reminded automatically. Review, return or approve, then release — families are emailed.', links: [['Player reports', '/management/reports']] },
-  { when: 'End of term', title: 'Wrap up', body: 'Check the term’s money against Stripe, download any lists you keep, and set up next term’s dates.', links: [['Money summary', '/management/money'], ['Activity log', '/management/activity']] },
+  { when: 'End of term', title: 'Wrap up', body: 'Check the term’s money against Stripe, download any lists you keep, and set up next term’s dates.', links: [['Finance → Income', '/management/finance/income'], ['Activity log', '/management/activity']] },
 ]
 
 /** A one-page checklist for running an Academy term from start to finish. */

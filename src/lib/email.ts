@@ -52,6 +52,8 @@ type SendOptions = {
   /** service (default) or marketing. Marketing must go through sendMarketing(). */
   kind?: 'service' | 'marketing'
   headers?: Record<string, string>
+  /** Files to attach (e.g. the weekly pay spreadsheet). */
+  attachments?: { filename: string; content: Buffer }[]
   userId?: number
   req?: PayloadRequest
 }
@@ -76,7 +78,7 @@ async function logEmail(payload: Payload, opts: SendOptions, status: 'sent' | 'f
 export async function sendEmail(payload: Payload, opts: SendOptions): Promise<boolean> {
   const text = htmlToText(opts.html)
   if (process.env.RESEND_API_KEY) {
-    const attempt = () => payload.sendEmail({ to: opts.to, from: from(opts.sender), subject: opts.subject, html: opts.html, text, replyTo: opts.replyTo, headers: opts.headers })
+    const attempt = () => payload.sendEmail({ to: opts.to, from: from(opts.sender), subject: opts.subject, html: opts.html, text, replyTo: opts.replyTo, headers: opts.headers, ...(opts.attachments?.length ? { attachments: opts.attachments } : {}) })
     try {
       try {
         await attempt()
@@ -103,6 +105,7 @@ export async function sendEmail(payload: Payload, opts: SendOptions): Promise<bo
     const head = [`to: ${opts.to}`, `from: ${from(opts.sender)}`, `kind: ${opts.kind ?? 'service'}`, ...Object.entries(opts.headers ?? {}).map(([k, v]) => `${k}: ${v}`)]
     await writeFile(path.join(dir, name), `<!-- ${head.join(' | ')} -->\n${opts.html}`)
     await writeFile(path.join(dir, name.replace(/\.html$/, '.txt')), text)
+    for (const a of opts.attachments ?? []) await writeFile(path.join(dir, `${name.replace(/\.html$/, '')}--${a.filename}`), a.content)
   }
   return true
 }

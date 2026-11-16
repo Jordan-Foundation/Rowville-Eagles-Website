@@ -39,7 +39,7 @@ export default async function ProgramsOverview({ searchParams }: { searchParams:
         <div>
           <p className="mt-4 text-xs font-semibold uppercase tracking-[0.3em] text-muted">Management</p>
           <h1 className="mt-2 font-display text-4xl font-semibold uppercase tracking-tight sm:text-5xl">Programs Overview</h1>
-          <p className="mt-2 text-sm"><Link href="/management/programs/setup" className="underline">Program setup</Link> · <Link href="/management/money" className="underline">Money summary</Link></p>
+          <p className="mt-2 text-sm"><Link href="/management/programs/setup" className="underline">Program setup</Link> · <Link href="/management/finance/income" className="underline">Finance → Income</Link></p>
         </div>
 
         {/* Switcher: real links, so the address can be bookmarked and Back works */}
