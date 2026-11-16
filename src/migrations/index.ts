@@ -77,6 +77,7 @@ import * as migration_20261115_123856_tracking_heard_from from './20261115_12385
 import * as migration_20261115_192742_refunds from './20261115_192742_refunds';
 import * as migration_20261116_001436_prelaunch_batch from './20261116_001436_prelaunch_batch';
 import * as migration_20261116_021644_referrals from './20261116_021644_referrals';
+import * as migration_20261116_035533_reflections from './20261116_035533_reflections';
 
 export const migrations = [
   {
@@ -472,6 +473,11 @@ export const migrations = [
   {
     up: migration_20261116_021644_referrals.up,
     down: migration_20261116_021644_referrals.down,
-    name: '20261116_021644_referrals'
+    name: '20261116_021644_referrals',
+  },
+  {
+    up: migration_20261116_035533_reflections.up,
+    down: migration_20261116_035533_reflections.down,
+    name: '20261116_035533_reflections'
   },
 ];

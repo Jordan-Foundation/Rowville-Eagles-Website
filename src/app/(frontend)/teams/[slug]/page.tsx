@@ -1,3 +1,5 @@
+import { familyLink, fixtureWindow, reflectionSettings, teamUsesReflections, type Fixture } from '@/reflections/service'
+import { windowState } from '@/reflections/rules'
 import { hasRole } from '@/access'
 import { ContactButtons, MedicalBadge } from '@/components/coach/ContactButtons'
 import { formatPhone } from '@/lib/phone'
@@ -63,6 +65,13 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
   const training = [...(team.training ?? [])].sort((a, b) => DAY_ORDER.indexOf(a.day) - DAY_ORDER.indexOf(b.day) || a.start.localeCompare(b.start))
   const fixtures = team.fixtures ?? []
   const now = Date.now()
+  // Match Reflections: the family's players on this team can reflect after each game; coaches see who has
+  const rs = await reflectionSettings(p)
+  const reflecting = !tournament && teamUsesReflections(team, rs)
+  const myKids = reflecting
+    ? (await p.find({ pagination: false, collection: 'team-members', where: { team: { equals: team.id }, account: { equals: user.id }, active: { equals: true } }, depth: 1, limit: 10, overrideAccess: true })).docs.map((m) => m.participant).filter((x): x is Participant => Boolean(x && typeof x === 'object'))
+    : []
+  const reflectState = (f: (typeof fixtures)[number]) => windowState(fixtureWindow(team, f as Fixture, rs))
   const info = team.info ?? {}
   const infoRows = ([['Dates', info.dates], ['Venue(s)', info.venues], ['Schedule', info.schedule], ['What to bring', info.whatToBring], ['Costs', info.costs], ['Contacts', info.contacts]] as const).filter(([, v]) => v)
 
@@ -132,6 +141,10 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
                       <span><strong>{stamp(f.startsAt)}</strong> · vs {f.opponent}{f.venue ? ` · ${f.venue}` : ''}</span>
                       <span className="flex items-center gap-3">
                         {f.result && <span className="rounded-full bg-brand px-3 py-1 text-xs font-semibold text-white">{f.result}</span>}
+                        {reflecting && reflectState(f) === 'open' && myKids.map((k) => (
+                          <Link key={k.id} href={familyLink(k.id, team.id, f.id!)} className="rounded-full bg-accent px-3 py-1 text-xs font-semibold text-accent-ink">Reflect{myKids.length > 1 ? `: ${k.firstName}` : ''}</Link>
+                        ))}
+                        {reflecting && access.manage && reflectState(f) !== 'upcoming' && <Link href={`/coach/reflections/${team.id}/${f.id}`} className="text-xs font-semibold underline">Reflections</Link>}
                         {access.manage && <FixtureTools slug={team.slug} id={f.id!} result={f.result} />}
                       </span>
                     </li>
