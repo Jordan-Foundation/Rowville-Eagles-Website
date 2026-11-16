@@ -81,6 +81,7 @@ import * as migration_20261116_035533_reflections from './20261116_035533_reflec
 import * as migration_20261116_063545_staff_feed from './20261116_063545_staff_feed';
 import * as migration_20261116_105733_why_us_reflections from './20261116_105733_why_us_reflections';
 import * as migration_20261116_211323_finance from './20261116_211323_finance';
+import * as migration_20261116_234112_coach_signup from './20261116_234112_coach_signup';
 
 export const migrations = [
   {
@@ -496,6 +497,11 @@ export const migrations = [
   {
     up: migration_20261116_211323_finance.up,
     down: migration_20261116_211323_finance.down,
-    name: '20261116_211323_finance'
+    name: '20261116_211323_finance',
+  },
+  {
+    up: migration_20261116_234112_coach_signup.up,
+    down: migration_20261116_234112_coach_signup.down,
+    name: '20261116_234112_coach_signup'
   },
 ];

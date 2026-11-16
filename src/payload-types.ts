@@ -139,6 +139,7 @@ export interface Config {
     conversations: Conversation;
     messages: Message;
     'invite-tokens': InviteToken;
+    'wwcc-files': WwccFile;
     'activity-log': ActivityLog;
     'staff-feed': StaffFeed;
     'coach-pay-rates': CoachPayRate;
@@ -232,6 +233,7 @@ export interface Config {
     conversations: ConversationsSelect<false> | ConversationsSelect<true>;
     messages: MessagesSelect<false> | MessagesSelect<true>;
     'invite-tokens': InviteTokensSelect<false> | InviteTokensSelect<true>;
+    'wwcc-files': WwccFilesSelect<false> | WwccFilesSelect<true>;
     'activity-log': ActivityLogSelect<false> | ActivityLogSelect<true>;
     'staff-feed': StaffFeedSelect<false> | StaffFeedSelect<true>;
     'coach-pay-rates': CoachPayRatesSelect<false> | CoachPayRatesSelect<true>;
@@ -555,10 +557,18 @@ export interface User {
    */
   accountReminderSentAt?: string | null;
   roles?: ('admin' | 'committee' | 'coach' | 'parent' | 'player')[] | null;
+  /**
+   * The coach enters these when they sign up (Management → Coaches checks them).
+   */
   wwcc?: {
     number?: string | null;
     expiry?: string | null;
+    photo?: (number | null) | WwccFile;
+    submittedAt?: string | null;
+    checkedAt?: string | null;
+    checkedBy?: (number | null) | User;
   };
+  coachInvitedAt?: string | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -578,6 +588,25 @@ export interface User {
     | null;
   password?: string | null;
   collection: 'users';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "wwcc-files".
+ */
+export interface WwccFile {
+  id: number;
+  note?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
 }
 /**
  * Photos and logos. JPG or WebP is best for photos; PNG for logos. Large photos are fine — they upload directly to storage.
@@ -3100,7 +3129,7 @@ export interface Message {
  */
 export interface InviteToken {
   id: number;
-  purpose: 'create-account' | 'confirm-consent' | 'fplus-trial' | 'fplus-join';
+  purpose: 'create-account' | 'confirm-consent' | 'fplus-trial' | 'fplus-join' | 'coach-invite';
   user: number | User;
   email: string;
   tokenHash: string;
@@ -3731,6 +3760,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'invite-tokens';
         value: number | InviteToken;
+      } | null)
+    | ({
+        relationTo: 'wwcc-files';
+        value: number | WwccFile;
       } | null)
     | ({
         relationTo: 'activity-log';
@@ -5484,7 +5517,12 @@ export interface UsersSelect<T extends boolean = true> {
     | {
         number?: T;
         expiry?: T;
+        photo?: T;
+        submittedAt?: T;
+        checkedAt?: T;
+        checkedBy?: T;
       };
+  coachInvitedAt?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -5749,6 +5787,24 @@ export interface InviteTokensSelect<T extends boolean = true> {
   usedAt?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "wwcc-files_select".
+ */
+export interface WwccFilesSelect<T extends boolean = true> {
+  note?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

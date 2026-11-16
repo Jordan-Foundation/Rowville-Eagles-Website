@@ -4,15 +4,22 @@ import { ProfileForm } from './ProfileForm'
 import { AlertSettings, CalendarLink } from './CoachSettings'
 import { payload } from '@/lib/payload'
 import { siteBase } from '@/lib/seo'
+import { coachStatus, STATUS_LABEL } from '@/lib/coach-signup'
+import { localYmd } from '@/lib/time'
+import { WwccForm } from './WwccForm'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'My profile' }
 
-export default async function CoachProfilePage() {
+export default async function CoachProfilePage({ searchParams }: { searchParams: Promise<{ welcome?: string }> }) {
+  const { welcome } = await searchParams
   const { coach, user } = await requireCoach('/coach/profile')
   const full = await (await payload()).findByID({ collection: 'academy-coaches', id: coach.id, depth: 0, overrideAccess: true, showHiddenFields: true })
   const a = full.alerts ?? {}
   const token = (full as { calendarToken?: string | null }).calendarToken
+  const me = await (await payload()).findByID({ collection: 'users', id: user.id, depth: 0, overrideAccess: true })
+  const status = coachStatus(me, localYmd(new Date()))
+  const w = me.wwcc ?? {}
   const photo = typeof coach.photo === 'object' ? (coach.photo as Media | null) : null
   return (
     <div className="space-y-8">
@@ -20,6 +27,14 @@ export default async function CoachProfilePage() {
         <h1 className="font-display text-4xl font-semibold uppercase tracking-tight">My profile</h1>
         <p className="mt-3 text-muted">Families swipe through coach profiles when they pick a time — make yours count.</p>
       </div>
+      {welcome && <p role="status" className="border border-line bg-white/5 p-4 text-sm" data-welcome><strong>Welcome to the team!</strong> Your account is set up and your WWCC has gone to Management to check. Add a photo and a short bio below — families see your profile once you’re approved.</p>}
+      <section id="wwcc" className="panel scroll-mt-24 border border-line p-6">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="font-display text-2xl font-semibold uppercase">Working With Children Check</h2>
+          <span className="text-sm text-muted" data-wwcc-status>{status === 'to-check' ? 'Sent — Management is checking it' : status === 'ready' ? `Checked ✓ · expires ${w.expiry ? localYmd(new Date(w.expiry)) : ''}` : STATUS_LABEL[status]}</span>
+        </div>
+        <div className="mt-4"><WwccForm number={w.number} expiry={w.expiry ? localYmd(new Date(w.expiry)) : null} hasPhoto={Boolean(w.photo)} /></div>
+      </section>
       <ProfileForm
         displayName={coach.displayName}
         bio={coach.bio ?? ''}

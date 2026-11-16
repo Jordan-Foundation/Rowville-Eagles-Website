@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { payload, formatDate } from '@/lib/payload'
 import { requireCoach } from '@/academy/portal'
+import { coachStatus } from '@/lib/coach-signup'
 import { coachSessions, collapseGroups, groupSessionHref } from '@/academy/coach-sessions'
 import { coachGroups, nextSession } from '@/academy/terms/coach-groups'
 import { RoleSwitch, myChildren } from '@/components/dashboard/RoleSwitch'
@@ -48,10 +49,16 @@ export default async function CoachHome() {
     upNext.medical = members.filter((m) => typeof m.participant === 'object' && m.participant?.medical?.conditions?.trim()).length
   }
   const byTerm = new Map(mine.map((a) => [typeof a.term === 'object' ? a.term.id : a.term, a]))
+  const wwcc = coachStatus(await p.findByID({ collection: 'users', id: user.id, depth: 0, overrideAccess: true }), localYmd(now))
   const profileGaps = [!coach.photo && 'a photo', !coach.bio && 'a short bio', !(coach.specialties?.length) && 'your specialties'].filter(Boolean) as string[]
 
   return (
     <div className="space-y-12">
+      {['wwcc-needed', 'expired', 'expiring'].includes(wwcc) && (
+        <Link href="/coach/profile#wwcc" className="block border border-amber-400/60 bg-amber-400/10 p-4 text-sm" data-wwcc-banner>
+          <strong>{wwcc === 'wwcc-needed' ? 'Add your Working With Children Check' : wwcc === 'expired' ? 'Your Working With Children Check has expired' : 'Your Working With Children Check expires soon'}</strong> — add your card number, expiry and a photo of the card on your profile. →
+        </Link>
+      )}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-4xl font-semibold uppercase tracking-tight sm:text-5xl">Hi {coach.displayName}</h1>
