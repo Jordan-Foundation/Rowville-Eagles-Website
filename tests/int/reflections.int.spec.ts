@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  anonLabel, computeStats, keywordHits, nextFixtureAfter, normaliseDraft, parseKeywords, redact, reflectionWindow, reportDue, reportPeriod,
+  anonLabel, computeStats, keywordHits, nextFixtureAfter, normaliseDraft, parseKeywords, redact, reflectionWindow, recentWeeks, reportPeriod, reportReady,
   streak, validateReflection, weekKey, windowState, DEFAULT_WELFARE_KEYWORDS, type MomentInput,
 } from '@/reflections/rules'
 
@@ -120,10 +120,15 @@ describe('weekly report timing', () => {
   it('covers the 7 days before the run day', () => {
     expect(reportPeriod('2026-11-16')).toEqual({ from: '2026-11-09', to: '2026-11-16' })
   })
-  it('is due on the set day from the set hour', () => {
-    expect(reportDue({ weekday: 1, hour: 9 }, { day: 1, hour: 9 })).toBe(true)
-    expect(reportDue({ weekday: 1, hour: 8 }, { day: 1, hour: 9 })).toBe(false)
-    expect(reportDue({ weekday: 2, hour: 10 }, { day: 1, hour: 9 })).toBe(false)
+  it('lists the last finished Monday-to-Monday weeks', () => {
+    expect(recentWeeks('2026-11-19', 2)).toEqual([{ from: '2026-11-09', to: '2026-11-16' }, { from: '2026-11-02', to: '2026-11-09' }])
+  })
+  it('is ready once the week is over and every game has closed for reflections', () => {
+    const end = new Date('2026-11-15T13:00:00Z')
+    const closes = [new Date('2026-11-18T00:00:00Z'), new Date('2026-11-19T02:00:00Z')]
+    expect(reportReady(new Date('2026-11-18T12:00:00Z'), end, closes)).toBe(false)
+    expect(reportReady(new Date('2026-11-19T02:00:00Z'), end, closes)).toBe(true)
+    expect(reportReady(new Date('2026-11-14T00:00:00Z'), end, [])).toBe(false)
   })
 })
 

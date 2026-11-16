@@ -167,9 +167,9 @@ export const ReflectionSettings: GlobalConfig = {
     { name: 'teams', label: 'Only these teams (leave empty for every Rowville club team)', type: 'relationship', relationTo: 'teams', hasMany: true },
     { name: 'showStreak', label: 'Show reflection streaks to players', type: 'checkbox', defaultValue: true },
     { type: 'row', fields: [
-      { name: 'aiReports', label: 'Weekend AI report is on', type: 'checkbox', defaultValue: true },
-      { name: 'reportDay', label: 'Report day', type: 'select', defaultValue: '1', options: [{ label: 'Sunday', value: '0' }, { label: 'Monday', value: '1' }, { label: 'Tuesday', value: '2' }, { label: 'Wednesday', value: '3' }, { label: 'Thursday', value: '4' }, { label: 'Friday', value: '5' }, { label: 'Saturday', value: '6' }] },
-      { name: 'reportHour', label: 'Report hour (0–23)', type: 'number', defaultValue: 9, min: 0, max: 23 },
+      { name: 'aiReports', label: 'Weekend AI report is on (sent once the last reflection for the week’s games closes)', type: 'checkbox', defaultValue: true },
+      { name: 'reportDay', label: 'Report day (no longer used)', type: 'select', defaultValue: '1', admin: { hidden: true }, options: [{ label: 'Sunday', value: '0' }, { label: 'Monday', value: '1' }, { label: 'Tuesday', value: '2' }, { label: 'Wednesday', value: '3' }, { label: 'Thursday', value: '4' }, { label: 'Friday', value: '5' }, { label: 'Saturday', value: '6' }] },
+      { name: 'reportHour', label: 'Report hour (no longer used)', type: 'number', defaultValue: 9, min: 0, max: 23, admin: { hidden: true } },
     ] },
     { name: 'aiWelfareCheck', label: 'AI safeguarding check on every reflection (as well as keywords)', type: 'checkbox', defaultValue: true },
     { name: 'safeguardingEmail', label: 'Safeguarding contact email', type: 'email', admin: { description: 'Gets every welfare flag straight away. Falls back to the club’s contact email.' } },

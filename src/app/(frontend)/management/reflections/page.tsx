@@ -160,7 +160,7 @@ export default async function ReflectionsAdmin({ searchParams }: { searchParams:
                 <span className="text-muted">{({ ok: 'Ready', failed: 'Numbers only — AI failed', stats_only: 'Numbers only', empty: 'Too few reflections' } as Record<string, string>)[r.status]}</span>
               </Link></li>
             ))}
-            {!docs.length && <li className="p-4 text-sm text-muted">No reports yet. They’re built automatically each week, or use “Build reports now”.</li>}
+            {!docs.length && <li className="p-4 text-sm text-muted">No reports yet. They’re built automatically once each week’s reflection deadline has passed, or use “Build reports now”.</li>}
           </ul>
         </div>
       )
@@ -202,10 +202,7 @@ export default async function ReflectionsAdmin({ searchParams }: { searchParams:
         <fieldset className="space-y-3">
           <legend className="font-semibold">Weekend AI report</legend>
           <label className="flex items-center gap-2"><input type="checkbox" name="aiReports" defaultChecked={s.aiReports} /> Build an AI summary each week (numbers are always counted)</label>
-          <div className="flex flex-wrap gap-4">
-            <label className="grid gap-1">Day<select name="reportDay" defaultValue={s.reportDay} className={input}>{['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((d, i) => <option key={d} value={i}>{d}</option>)}</select></label>
-            <label className="grid gap-1">Hour (0–23)<input type="number" name="reportHour" min={0} max={23} defaultValue={s.reportHour} className={input} /></label>
-          </div>
+          <p className="text-muted">Each report is built and emailed automatically once the reflection deadline has passed for every game that week — a team’s report when its games close, the age-group and club reports when all their teams’ games have closed.</p>
         </fieldset>
         <fieldset className="space-y-3">
           <legend className="font-semibold">Safeguarding</legend>

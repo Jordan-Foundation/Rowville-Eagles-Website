@@ -61,8 +61,6 @@ export async function saveSettings(fd: FormData) {
       teams: fd.getAll('teams').map(Number).filter(Boolean),
       showStreak: fd.get('showStreak') === 'on',
       aiReports: fd.get('aiReports') === 'on',
-      reportDay: String(num('reportDay', 1, 0, 6)) as '1',
-      reportHour: num('reportHour', 9, 0, 23),
       aiWelfareCheck: fd.get('aiWelfareCheck') === 'on',
       safeguardingEmail: email || null,
       keywords: String(fd.get('keywords') ?? '').slice(0, 5000),

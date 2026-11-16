@@ -23,8 +23,6 @@ export async function reflectionSettings(payload: Payload) {
     teams: (s.teams ?? []).map(relId).filter((x): x is number => Boolean(x)),
     showStreak: s.showStreak !== false,
     aiReports: s.aiReports !== false,
-    reportDay: Number(s.reportDay ?? 1),
-    reportHour: s.reportHour ?? 9,
     aiWelfareCheck: s.aiWelfareCheck !== false,
     safeguardingEmail: s.safeguardingEmail ?? null,
     keywords: s.keywords ?? '',

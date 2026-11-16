@@ -6,8 +6,8 @@ import { formatDate } from '../lib/format'
 import { siteUrl } from '../lib/payments'
 import { localToUtc, localYmd, TZ } from '../lib/time'
 import { AI_MODEL, REPORT_PROMPT_VERSION, aiConfigured, aiErrorMessage, summariseReport, type ReportInput, type ReportSummary } from './ai'
-import { anonLabel, computeStats, redact, reportDue, reportPeriod, type ReflectionStats } from './rules'
-import { activeMembers, ageGroupFor, pillars, reflectionSettings, reflectionTeams, relId, type Fixture } from './service'
+import { anonLabel, computeStats, recentWeeks, redact, reportReady, type ReflectionStats } from './rules'
+import { activeMembers, ageGroupFor, fixtureWindow, pillars, reflectionSettings, reflectionTeams, relId, type Fixture } from './service'
 
 /** Fewer submitted reflections than this and no AI summary is written (too few to stay anonymous / meaningful). */
 export const MIN_FOR_SUMMARY = 3
@@ -100,12 +100,12 @@ async function saveReport(payload: Payload, scope: Scope, period: { from: string
 }
 
 /** Builds (or rebuilds) every report for a period. Numbers always; an AI summary when on, configured and there are enough reflections. */
-export async function generateReports(payload: Payload, period: { from: string; to: string }, opts: { only?: { type: Scope['type']; key: string }; deadline?: number } = {}) {
+export async function generateReports(payload: Payload, period: { from: string; to: string }, opts: { only?: { type: Scope['type']; key: string }; keys?: Set<string>; deadline?: number } = {}) {
   const s = await reflectionSettings(payload)
   const { played, reflections } = await periodData(payload, period)
   const pillarList = await pillars(payload, true)
   const pillarNames = pillarList.filter((p) => p.active !== false).map((p) => p.name)
-  const scopes = scopesFor(played).filter((sc) => !opts.only || (sc.type === opts.only.type && sc.key === opts.only.key))
+  const scopes = scopesFor(played).filter((sc) => (!opts.only || (sc.type === opts.only.type && sc.key === opts.only.key)) && (!opts.keys || opts.keys.has(`${sc.type}:${sc.key}`)))
   const made: ReflectionReport[] = []
   for (const scope of scopes) {
     if (opts.deadline && Date.now() > opts.deadline) break
@@ -132,22 +132,31 @@ export async function generateReports(payload: Payload, period: { from: string; 
   return made
 }
 
-function localNow(now: Date) {
-  const parts = new Intl.DateTimeFormat('en-AU', { timeZone: TZ, weekday: 'short', hour: '2-digit', hourCycle: 'h23' }).formatToParts(now)
-  const wd = parts.find((p) => p.type === 'weekday')?.value ?? 'Mon'
-  return { weekday: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(wd), hour: Number(parts.find((p) => p.type === 'hour')?.value ?? 0) }
-}
-
-/** Hourly: on the set day/hour, build last week's reports once and tell coaches and Management. */
+/**
+ * Hourly: each report is built and sent once its deadline has passed — the week is over and the last reflection
+ * for that scope's games has closed (team by team; age group and club once all their teams' games have closed).
+ */
 export async function runWeeklyReports(payload: Payload, now = new Date()) {
   const s = await reflectionSettings(payload)
-  if (!s.enabled || !reportDue(localNow(now), { day: s.reportDay, hour: s.reportHour })) return { due: false }
-  const period = reportPeriod(localYmd(now))
-  const { totalDocs } = await payload.count({ collection: 'reflection-reports', where: { scopeType: { equals: 'club' }, periodFrom: { equals: period.from } }, overrideAccess: true })
-  if (totalDocs) return { due: true, already: true }
-  const made = await generateReports(payload, period, { deadline: Date.now() + 240_000 })
-  const notified = await notifyReports(payload, made)
-  return { due: true, reports: made.length, notified }
+  if (!s.enabled) return { sent: 0 }
+  let built = 0
+  let notified = 0
+  for (const period of recentWeeks(localYmd(now))) {
+    const { played, to } = await periodData(payload, period)
+    if (!played.length) continue
+    const { docs: existing } = await payload.find({ collection: 'reflection-reports', where: { periodFrom: { equals: period.from } }, limit: 500, depth: 0, pagination: false, overrideAccess: true })
+    const done = new Set(existing.filter((r) => r.notifiedAt || r.status === 'empty').map((r) => `${r.scopeType}:${r.scopeKey}`))
+    const ready = scopesFor(played).filter((sc) => {
+      if (done.has(`${sc.type}:${sc.key}`)) return false
+      const closes = played.filter((p) => sc.teamIds.includes(p.team.id)).flatMap((p) => p.fixtures.map((f) => fixtureWindow(p.team, f, s).closesAt))
+      return reportReady(now, to, closes)
+    })
+    if (!ready.length) continue
+    const made = await generateReports(payload, period, { keys: new Set(ready.map((sc) => `${sc.type}:${sc.key}`)), deadline: Date.now() + 240_000 })
+    built += made.length
+    notified += await notifyReports(payload, made)
+  }
+  return { built, notified }
 }
 
 /** Emails each team's coaches their report and Management the club report (once each, unless `force` from a manual rebuild). */
@@ -169,7 +178,7 @@ export async function notifyReports(payload: Payload, reports: ReflectionReport[
     await payload.update({ collection: 'reflection-reports', id: r.id, data: { notifiedAt: new Date().toISOString() }, depth: 0, overrideAccess: true })
   }
   const club = reports.find((x) => x.scopeType === 'club')
-  if (club && (opts.force || !club.notifiedAt)) {
+  if (club && club.status !== 'empty' && (opts.force || !club.notifiedAt)) {
     const { docs: people } = await payload.find({ collection: 'users', where: { roles: { in: ['admin', 'committee'] } }, limit: 50, depth: 0, pagination: false, overrideAccess: true })
     const summary = club.summary as ReportSummary | null
     for (const u of people) {

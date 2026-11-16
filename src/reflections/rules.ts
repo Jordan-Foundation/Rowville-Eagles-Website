@@ -227,7 +227,19 @@ export function reportPeriod(runLocalYmd: string): { from: string; to: string } 
   return { from: from.toISOString().slice(0, 10), to: to.toISOString().slice(0, 10) }
 }
 
-/** Is it time for this week's report? day 0=Sun..6=Sat, hour 0–23 local. */
-export function reportDue(local: { weekday: number; hour: number }, setting: { day: number; hour: number }): boolean {
-  return local.weekday === setting.day && local.hour >= setting.hour
+/** The last few finished Monday-to-Monday weeks (local), most recent first — the ones that may still be waiting for a report. */
+export function recentWeeks(todayYmd: string, n = 3): { from: string; to: string }[] {
+  const mon = new Date(`${weekKey(todayYmd)}T00:00:00Z`)
+  return Array.from({ length: n }, (_, i) => {
+    const to = new Date(mon)
+    to.setUTCDate(to.getUTCDate() - 7 * i)
+    const from = new Date(to)
+    from.setUTCDate(from.getUTCDate() - 7)
+    return { from: from.toISOString().slice(0, 10), to: to.toISOString().slice(0, 10) }
+  })
+}
+
+/** A week's report goes once the week is over and every game in it has closed for reflections. */
+export function reportReady(now: Date, weekEnd: Date, closes: Date[]): boolean {
+  return now.getTime() >= weekEnd.getTime() && closes.every((c) => now.getTime() >= c.getTime())
 }
