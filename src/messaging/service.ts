@@ -153,7 +153,21 @@ export async function receiveSms(p: Payload, o: { from: string; body: string; si
   const body = (o.body || '(no text)') + (o.media ? ` [+${o.media} photo/file — view it in the Twilio console]` : '')
   await addMessage(p, conv, { direction: 'in', channel: 'sms', authorRole: 'family', author: o.users[0]?.id, authorName: o.users[0] ? nameOf(o.users[0]) : localNumber(o.from), body, delivery: 'received', twilioSid: o.sid })
   await alertStaff(p, await p.findByID({ collection: 'conversations', id: conv.id, depth: 0, ...q }), body, 'by text')
+  await textAlert(p, { from: o.from, who: o.users[0] ? nameOf(o.users[0]) : localNumber(o.from), body, convId: conv.id }).catch((e) => p.logger.error({ err: e, msg: 'SMS alert failed' }))
   return conv
+}
+
+/** Text the people listed in Admin → Site settings → "Text alerts for new messages" (never back to the sender). */
+export async function textAlert(p: Payload, o: { from: string; who: string; body: string; convId: number }) {
+  const s = await p.findGlobal({ slug: 'site-settings', depth: 0, overrideAccess: true }).catch(() => null)
+  const numbers = [...new Set(String(s?.smsAlertNumbers ?? '').split(',').map((x) => toE164(x)).filter(Boolean) as string[])]
+  const from = toE164(o.from)
+  const snippet = o.body.length > 120 ? `${o.body.slice(0, 117)}…` : o.body
+  for (const to of numbers) {
+    if (to === from) continue
+    await sendSms(p, { to, kind: 'coach_alert', body: `New text from ${o.who}: “${snippet}” Reply: ${siteUrl()}/management/messages/${o.convId}` })
+  }
+  return numbers.length
 }
 
 export async function systemNote(p: Payload, o: { users: User[]; phone: string; body: string }) {

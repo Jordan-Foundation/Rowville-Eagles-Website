@@ -49,6 +49,7 @@ import { CampPlacements } from './camps/CampPlacements'
 import { YearSetups } from './academy/collections/YearSetups'
 import { Announcements } from './academy/collections/Announcements'
 import { Invoices } from './invoices/Invoices'
+import { Refunds } from './refunds/Refunds'
 import { CampCoaches } from './camps/CampCoaches'
 import { CoachBlocks } from './camps/CoachBlocks'
 import { ActivityLog } from './collections/ActivityLog'
@@ -116,7 +117,7 @@ export default buildConfig({
       },
     },
   },
-  collections: [AcademyBookings, AcademyShareLinks, AcademySessions, AcademyGroups, AcademyGroupInvites, TrainingAttendance, AcademyTerms, YearSetups, Announcements, AcademyTermSlots, AcademyRegistrations, PdrAreas, PdrLevels, PdrStages, PdrVideos, PdrBadges, PdrProgress, PdrChallenges, PdrSubmissions, PdrAudit, PdrAwards, FplusWaitlist, FplusEvents, FplusTrialCards, FormThrottle, AcademyCoaches, AcademyAvailability, AcademyReminderLog, AcademyCredits, Posts, SelectionRounds, Squads, SelectionEntries, TrialSessions, Programs, Bookings, CampPlacements, CampCoaches, CoachBlocks, Products, Orders, Invoices, Teams, TeamMembers, TeamPosts, ForumThreads, ForumReplies, Sponsors, Participants, Users, ConsentRecords, MessageLog, CurriculumStandards, ReportCycles, PlayerReports, ReportReminderLog, Promotions, PromotionUses, SeenMarkers, Conversations, Messages, InviteTokens, ActivityLog, Media].map((c) => withActivity(withMoneyCells(c))),
+  collections: [AcademyBookings, AcademyShareLinks, AcademySessions, AcademyGroups, AcademyGroupInvites, TrainingAttendance, AcademyTerms, YearSetups, Announcements, AcademyTermSlots, AcademyRegistrations, PdrAreas, PdrLevels, PdrStages, PdrVideos, PdrBadges, PdrProgress, PdrChallenges, PdrSubmissions, PdrAudit, PdrAwards, FplusWaitlist, FplusEvents, FplusTrialCards, FormThrottle, AcademyCoaches, AcademyAvailability, AcademyReminderLog, AcademyCredits, Posts, SelectionRounds, Squads, SelectionEntries, TrialSessions, Programs, Bookings, CampPlacements, CampCoaches, CoachBlocks, Products, Orders, Invoices, Refunds, Teams, TeamMembers, TeamPosts, ForumThreads, ForumReplies, Sponsors, Participants, Users, ConsentRecords, MessageLog, CurriculumStandards, ReportCycles, PlayerReports, ReportReminderLog, Promotions, PromotionUses, SeenMarkers, Conversations, Messages, InviteTokens, ActivityLog, Media].map((c) => withActivity(withMoneyCells(c))),
   globals: [SiteSettings, About, Policies, DifferencePage, AcademySettings, PdrSettings, SetupProgress].map((g) => withGlobalActivity(g)),
   editor: lexicalEditor(),
   ...(process.env.RESEND_API_KEY

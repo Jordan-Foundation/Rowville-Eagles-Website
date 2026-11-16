@@ -11,7 +11,7 @@ export const ForumThreads: CollectionConfig = {
   fields: [
     { name: 'team', type: 'relationship', relationTo: 'teams', required: true, index: true },
     { name: 'title', type: 'text', required: true },
-    { name: 'body', type: 'textarea', required: true },
+    { name: 'body', label: 'More details', type: 'textarea' },
     { name: 'author', type: 'relationship', relationTo: 'users', required: true },
     { type: 'row', fields: [
       { name: 'pinned', type: 'checkbox', defaultValue: false },

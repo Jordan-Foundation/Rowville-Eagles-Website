@@ -142,7 +142,7 @@ export function ThreadForm({ slug }: { slug: string }) {
     <form action={action} className="space-y-3">
       <input type="hidden" name="slug" value={slug} />
       <input name="title" aria-label="Question" required placeholder="Your question, e.g. Do we need shin pads at training?" className={inputCls} />
-      <textarea name="body" aria-label="Details" required rows={3} placeholder="More detail (optional for others to help)" className={inputCls} />
+      <textarea name="body" aria-label="More details (optional)" rows={3} placeholder="More details (optional)" className={inputCls} />
       <button disabled={pending} className={btn}>{pending ? 'Posting…' : 'Ask the team'}</button>
       <Msg s={state} />
     </form>

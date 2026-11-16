@@ -17,6 +17,12 @@ export function JoinForm({ rules, trials, kids = [], prefill }: { rules: AgeRule
   const [state, action] = useActionState<JoinState, FormData>(joinUs, {})
   const v = state.values ?? {}
   const [dob, setDob] = useState(v.playerDob ?? '')
+  // At most two trial nights: untick the one just ticked if two are already chosen
+  const limitTwo = (e: React.FormEvent<HTMLDivElement>) => {
+    const t = e.target as HTMLInputElement
+    if (t.name !== 'trialSession' || !t.checked) return
+    if (e.currentTarget.querySelectorAll('input[name=trialSession]:checked').length > 2) t.checked = false
+  }
   const group = useMemo(() => (dob ? groupFor(dob, rules) : null), [dob, rules])
   const ageGroup = group ? fullLabel(group) : null
   const key = group ? String(group.birthYear) : ''
@@ -64,9 +70,11 @@ export function JoinForm({ rules, trials, kids = [], prefill }: { rules: AgeRule
 
       {ageGroup && (
         <fieldset className="panel rounded-2xl border border-line bg-surface-2 p-6">
-          <legend className="px-2 font-display text-lg font-semibold uppercase tracking-wide">Trial night</legend>
+          <legend className="px-2 font-display text-lg font-semibold uppercase tracking-wide">Trial nights</legend>
           {open.length > 0 ? (
-            <div className="grid gap-2 sm:grid-cols-2">
+            <>
+            <p className="mb-3 text-sm text-muted">Choose one or two nights — coming to both gives your player the best chance to show what they can do.</p>
+            <div className="grid gap-2 sm:grid-cols-2" onChange={limitTwo}>
               {options.map((t) => {
                 const left = t.remaining[key] ?? 0
                 return (
@@ -75,7 +83,7 @@ export function JoinForm({ rules, trials, kids = [], prefill }: { rules: AgeRule
                     className={`flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-line bg-surface px-4 py-3 text-sm transition has-[:checked]:border-brand has-[:checked]:ring-1 has-[:checked]:ring-brand ${left === 0 ? 'pointer-events-none opacity-40' : ''}`}
                   >
                     <span className="flex items-center gap-3">
-                      <input type="radio" name="trialSession" value={t.id} required disabled={left === 0} defaultChecked={v.trialSession === String(t.id)} />
+                      <input type="checkbox" name="trialSession" value={t.id} disabled={left === 0} defaultChecked={v.trialSession === String(t.id)} />
                       {t.label}
                     </span>
                     <span className="text-xs text-muted">{left === 0 ? 'Full' : `${left} places`}</span>
@@ -83,6 +91,7 @@ export function JoinForm({ rules, trials, kids = [], prefill }: { rules: AgeRule
                 )
               })}
             </div>
+            </>
           ) : (
             <p className="text-sm text-muted">
               Trial dates for <strong className="text-ink">{ageGroup}</strong> haven’t been set yet. Submit this form to register your interest — we’ll email

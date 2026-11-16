@@ -50,12 +50,13 @@ export async function joinUs(_prev: JoinState, fd: FormData): Promise<JoinState>
   // Trial choice (required when trials are open for this age group)
   const sessions = await openTrialSessions(p, birthYear)
   const available = sessions.filter((x) => x.remaining > 0)
-  let trialSessionId: number | undefined
-  if (available.length) {
-    const chosen = available.find((x) => String(x.session.id) === s('trialSession'))
-    if (!chosen) return fail('Please choose a trial night.')
-    trialSessionId = chosen.session.id
-  }
+  // One or two trial nights
+  const picked = [...new Set(fd.getAll('trialSession').map(String))]
+  if (picked.length > 2) return fail('Choose up to two trial nights.')
+  const chosenNights = picked.map((id) => available.find((x) => String(x.session.id) === id)).filter((x): x is (typeof available)[number] => !!x)
+  if (available.length && (!chosenNights.length || chosenNights.length !== picked.length)) return fail(picked.length ? 'One of those trial nights has just filled up — please choose again.' : 'Please choose a trial night.')
+  const trialSessionId: number | undefined = chosenNights[0]?.session.id
+  const trialSession2Id: number | undefined = chosenNights[1]?.session.id
 
   // One registration per player per season (Rowville trials round)
   const round = await rowvilleRound(p, season)
@@ -71,7 +72,7 @@ export async function joinUs(_prev: JoinState, fd: FormData): Promise<JoinState>
     if (prev.status !== 'interested' || !trialSessionId) {
       return fail(`${player.firstName} is already registered for ${season} (reference ${prev.reference}). Check your email, or contact the club to make changes.`)
     }
-    reg = await p.update({ collection: 'selection-entries', id: prev.id, data: { status: 'trial-booked', trialSession: trialSessionId }, overrideAccess: true, context: { skipOffer: true } })
+    reg = await p.update({ collection: 'selection-entries', id: prev.id, data: { status: 'trial-booked', trialSession: trialSessionId, trialSession2: trialSession2Id ?? null }, overrideAccess: true, context: { skipOffer: true } })
   } else {
     reg = await p.create({
       collection: 'selection-entries',
@@ -85,6 +86,7 @@ export async function joinUs(_prev: JoinState, fd: FormData): Promise<JoinState>
         season,
         birthYear,
         trialSession: trialSessionId,
+        trialSession2: trialSession2Id,
         contact,
         player,
         token: newToken(),
@@ -99,8 +101,7 @@ export async function joinUs(_prev: JoinState, fd: FormData): Promise<JoinState>
   }
   try {
     if (trialSessionId) {
-      const session = sessions.find((x) => x.session.id === trialSessionId)!.session
-      await emailTrialConfirmation(p, reg, session)
+      await emailTrialConfirmation(p, reg, chosenNights.map((x) => x.session))
     } else {
       await emailInterestConfirmation(p, reg)
     }
@@ -122,15 +123,17 @@ export async function chooseTrial(_prev: JoinState, fd: FormData): Promise<JoinS
   if (!reg || !token || reg.token !== token) return { error: 'This link is no longer valid. Please contact the club.' }
   if (reg.status !== 'interested') return { error: 'A trial is already booked for this player — check your email for the details.' }
   const sessions = reg.birthYear ? await openTrialSessions(p, reg.birthYear) : []
-  const chosen = sessions.find((x) => String(x.session.id) === String(fd.get('trialSession')) && x.remaining > 0)
-  if (!chosen) return { error: 'Please choose a trial night with places available.' }
+  const picked = [...new Set(fd.getAll('trialSession').map(String))]
+  if (picked.length > 2) return { error: 'Choose up to two trial nights.' }
+  const chosen = picked.map((id) => sessions.find((x) => String(x.session.id) === id && x.remaining > 0)).filter((x): x is (typeof sessions)[number] => !!x)
+  if (!chosen.length || chosen.length !== picked.length) return { error: 'Please choose one or two trial nights with places available.' }
   const updated = await p.update({
     collection: 'selection-entries',
     id: reg.id,
-    data: { status: 'trial-booked', trialSession: chosen.session.id },
+    data: { status: 'trial-booked', trialSession: chosen[0].session.id, trialSession2: chosen[1]?.session.id ?? null },
     overrideAccess: true,
     context: { skipOffer: true },
   })
-  await emailTrialConfirmation(p, updated, chosen.session)
+  await emailTrialConfirmation(p, updated, chosen.map((x) => x.session))
   redirect(`/join/thanks?ref=${reg.reference}`)
 }

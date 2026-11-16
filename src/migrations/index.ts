@@ -74,6 +74,8 @@ import * as migration_20261110_115455_announcements from './20261110_115455_anno
 import * as migration_20261115_011700_media_object_key from './20261115_011700_media_object_key';
 import * as migration_20261115_090940_invoices from './20261115_090940_invoices';
 import * as migration_20261115_123856_tracking_heard_from from './20261115_123856_tracking_heard_from';
+import * as migration_20261115_192742_refunds from './20261115_192742_refunds';
+import * as migration_20261116_001436_prelaunch_batch from './20261116_001436_prelaunch_batch';
 
 export const migrations = [
   {
@@ -454,6 +456,16 @@ export const migrations = [
   {
     up: migration_20261115_123856_tracking_heard_from.up,
     down: migration_20261115_123856_tracking_heard_from.down,
-    name: '20261115_123856_tracking_heard_from'
+    name: '20261115_123856_tracking_heard_from',
+  },
+  {
+    up: migration_20261115_192742_refunds.up,
+    down: migration_20261115_192742_refunds.down,
+    name: '20261115_192742_refunds',
+  },
+  {
+    up: migration_20261116_001436_prelaunch_batch.up,
+    down: migration_20261116_001436_prelaunch_batch.down,
+    name: '20261116_001436_prelaunch_batch'
   },
 ];

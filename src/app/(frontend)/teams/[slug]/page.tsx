@@ -177,7 +177,7 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
                     return (
                       <li key={t.id} className={`rounded-xl border p-5 ${t.pinned ? 'border-accent' : 'border-line'}`}>
                         <p className="font-semibold">{t.pinned && <span className="mr-2 rounded-full bg-accent px-2 py-0.5 text-xs text-accent-ink">Pinned</span>}{t.locked && <span className="mr-2 rounded-full bg-surface-2 px-2 py-0.5 text-xs">Locked</span>}{t.title}</p>
-                        <p className="mt-1 whitespace-pre-line text-sm">{t.body}</p>
+                        {t.body && <p className="mt-1 whitespace-pre-line text-sm">{t.body}</p>}
                         <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted">{who(t.author)} · {stamp(t.createdAt)} {access.manage && <ModTools slug={team.slug} id={t.id} kind="thread" pinned={Boolean(t.pinned)} locked={Boolean(t.locked)} />}</div>
                         {rs.length > 0 && (
                           <ul className="mt-3 space-y-2 border-l-2 border-line pl-4">

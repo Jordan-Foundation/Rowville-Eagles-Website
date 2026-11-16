@@ -7,6 +7,7 @@ import { sendMarketingEmail, sendMarketingSms } from '../lib/marketing'
 import { siteUrl } from '../lib/payments'
 import { audienceIds, smsBody, type Audience, type Family } from './audience'
 import { PROGRAM_GROUPS, discountLabel } from './rules'
+import { PURCHASE_TYPES, academyPurchaseType, bookingPurchaseType } from './purchase-types'
 
 const q = { depth: 0, overrideAccess: true } as const
 const idOf = (v: unknown): number | null => (v && typeof v === 'object' ? (v as { id: number }).id : typeof v === 'number' ? v : null)
@@ -14,21 +15,31 @@ const BIG = 20000
 
 /** Every family account with what we know about them (memberships, what they've bought, players' birth years, teams). */
 export async function loadFamilies(p: Payload): Promise<Family[]> {
-  const [users, kids, bookings, regs, oneOnOnes, orders, members] = await Promise.all([
+  const [users, kids, bookings, regs, oneOnOnes, orders, members, programs, invoices, trials] = await Promise.all([
     p.find({ pagination: false, collection: 'users', where: { roles: { contains: 'parent' } }, limit: BIG, ...q, select: { email: true } }),
     p.find({ pagination: false, collection: 'participants', limit: BIG, ...q, select: { account: true, memberships: true, dateOfBirth: true } }),
-    p.find({ pagination: false, collection: 'bookings', where: { status: { equals: 'paid' } }, limit: BIG, ...q, select: { account: true, program: true } }),
+    p.find({ pagination: false, collection: 'bookings', where: { status: { in: ['paid', 'refunded'] } }, limit: BIG, ...q, select: { account: true, program: true, bookingType: true } }),
     p.find({ pagination: false, collection: 'academy-registrations', where: { status: { equals: 'paid' } }, limit: BIG, ...q, select: { account: true, program: true } }),
-    p.find({ pagination: false, collection: 'academy-bookings', where: { status: { in: ['confirmed', 'completed'] } }, limit: BIG, ...q, select: { account: true } }),
+    p.find({ pagination: false, collection: 'academy-bookings', where: { status: { in: ['confirmed', 'completed', 'payment_failed', 'refunded'] } }, limit: BIG, ...q, select: { account: true, kind: true, packSize: true } }),
     p.find({ pagination: false, collection: 'orders', where: { status: { in: ['paid', 'ready', 'completed'] } }, limit: BIG, ...q, select: { account: true } }),
     p.find({ pagination: false, collection: 'team-members', where: { active: { equals: true } }, limit: BIG, ...q, select: { account: true, team: true } }),
+    p.find({ pagination: false, collection: 'programs', limit: BIG, ...q, select: { type: true } }),
+    p.find({ pagination: false, collection: 'invoices', where: { status: { equals: 'paid' } }, limit: BIG, ...q, select: { account: true } }),
+    p.find({ pagination: false, collection: 'selection-entries', where: { kind: { equals: 'rowville' }, status: { in: ['trial-booked', 'attended', 'offered', 'registered'] } }, limit: BIG, ...q, select: { account: true } }),
   ])
+  const typeOf = new Map(programs.docs.map((x) => [x.id, x.type]))
   const fams = new Map<number, Family>(users.docs.map((u) => [u.id, { userId: u.id, email: u.email, memberships: new Set(), history: new Set(), birthYears: new Set(), teams: new Set() }]))
   const get = (v: unknown) => { const id = idOf(v); return id ? fams.get(id) : undefined }
   for (const k of kids.docs) { const f = get(k.account); if (!f) continue; (k.memberships ?? []).forEach((m) => f.memberships.add(m)); const y = birthYearOf(k.dateOfBirth); if (y) f.birthYears.add(y) }
-  for (const b of [...bookings.docs, ...regs.docs]) { const f = get(b.account); const pid = idOf(b.program); if (f && pid) f.history.add(`program:${pid}`) }
-  for (const b of oneOnOnes.docs) get(b.account)?.history.add('1on1')
-  for (const o of orders.docs) get(o.account)?.history.add('shop')
+  for (const b of [...bookings.docs, ...regs.docs]) {
+    const f = get(b.account); const pid = idOf(b.program); if (!f || !pid) continue
+    f.history.add(`program:${pid}`)
+    const t = bookingPurchaseType(b as { bookingType?: string | null }, typeOf.get(pid)); if (t) f.history.add(t)
+  }
+  for (const b of oneOnOnes.docs) { const f = get(b.account); if (!f) continue; f.history.add('1on1'); f.history.add(academyPurchaseType(b)) }
+  for (const o of orders.docs) { const f = get(o.account); if (!f) continue; f.history.add('shop'); f.history.add('type:shop') }
+  for (const i of invoices.docs) get(i.account)?.history.add('type:invoice')
+  for (const e of trials.docs) get(e.account)?.history.add('type:club-trial')
   for (const m of members.docs) { const f = get(m.account); const t = idOf(m.team); if (f && t) f.teams.add(t) }
   return [...fams.values()]
 }
@@ -42,7 +53,7 @@ export async function audienceOptions(p: Payload) {
   ])
   const years = [...new Set(kids.docs.map((k) => birthYearOf(k.dateOfBirth)).filter((y): y is number => !!y))].sort((a, b) => b - a)
   return {
-    history: [{ key: '1on1', label: '1-on-1 sessions' }, { key: 'shop', label: 'Shop orders' }, ...programs.docs.map((x) => ({ key: `program:${x.id}`, label: x.title }))],
+    history: [...PURCHASE_TYPES.map((t) => ({ key: t.key as string, label: `Any ${t.label.charAt(0).toLowerCase()}${t.label.slice(1)}` })), ...programs.docs.map((x) => ({ key: `program:${x.id}`, label: x.title }))],
     teams: teams.docs.map((t) => ({ id: t.id, label: t.type === 'tournament' && t.event ? `${t.event} – ${t.name}` : t.name })),
     years,
   }

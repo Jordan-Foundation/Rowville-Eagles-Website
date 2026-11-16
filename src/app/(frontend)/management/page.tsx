@@ -4,7 +4,7 @@ import { requireManagement } from '@/lib/management'
 import { LiveDashboard } from '@/components/dashboard/LiveDashboard'
 import { managementAttention } from '@/lib/attention'
 import { RoleSwitch, myChildren } from '@/components/dashboard/RoleSwitch'
-import { managementItems } from './items'
+import { ADMIN_ONLY, managementItems } from './items'
 import Link from 'next/link'
 import { managementThisWeek } from '@/lib/this-week'
 import { EmailMeSummary } from '@/components/management/EmailMeSummary'
@@ -47,7 +47,7 @@ export default async function ManagementHome() {
           </dl>
         </section>
         <div className="mt-10">
-          <LiveDashboard items={managementItems} initial={counts} role="management" />
+          <LiveDashboard items={managementItems.filter((i) => !ADMIN_ONLY.has(i.key) || user.roles?.includes('admin'))} initial={counts} role="management" />
         </div>
       </div>
     </div>

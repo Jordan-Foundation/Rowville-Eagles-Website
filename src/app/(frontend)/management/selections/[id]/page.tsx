@@ -1,4 +1,5 @@
 import { DownloadCsv } from '@/components/management/DownloadCsv'
+import { trialNightsOf } from '@/lib/trials'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
@@ -47,7 +48,7 @@ export default async function RoundPage({ params, searchParams }: { params: Prom
         status: entryStatusLabel(e).label,
         queued: e.outcomeQueued ? outcomeName[e.outcomeQueued] : null,
         squad: e.squad && typeof e.squad === 'object' ? (e.squad as Squad).name : null,
-        trial: e.trialSession && typeof e.trialSession === 'object' ? `Trial ${formatDate((e.trialSession as TrialSession).start, { weekday: 'short', day: 'numeric', month: 'short' })}` : null,
+        trial: trialNightsOf(e).length ? `Trial ${trialNightsOf(e).map((t) => formatDate(t.start, { weekday: 'short', day: 'numeric', month: 'short' })).join(' + ')}` : null,
         flags: (e.flags ?? []) as string[],
         contact: `${e.contact.firstName} ${e.contact.lastName} · ${e.contact.phone}`,
         notes: e.player.notes ?? null,

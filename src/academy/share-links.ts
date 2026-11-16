@@ -1,5 +1,5 @@
 import { allowsWeekly } from './timeframes'
-import type { Payload } from 'payload'
+import type { Payload, Where } from 'payload'
 import type { AcademyCoach, AcademyShareLink, AcademyTerm, User } from '@/payload-types'
 import { emailLayout, esc } from '../lib/email-templates'
 import { sendEmail } from '../lib/email'
@@ -15,6 +15,19 @@ import { hashShareToken, holdUntil, linkExpiry, newShareToken, validShareToken }
 const rel = (v: unknown) => (v && typeof v === 'object' ? (v as { id: number }).id : (v as number | null | undefined) ?? null)
 const q = { overrideAccess: true } as const
 export class ShareLinkError extends Error {}
+
+/** Has this family (email or account) ever had a 1-on-1 or small group? Coach share links are for new families only. */
+export async function isExistingClient(p: Payload, o: { email?: string | null; accountId?: number | null }) {
+  const or: Where[] = [
+    ...(o.email ? [{ 'contact.email': { equals: o.email.trim().toLowerCase() } }] : []),
+    ...(o.accountId ? [{ account: { equals: o.accountId } }] : []),
+  ]
+  if (!or.length) return false
+  const { totalDocs } = await p.count({ collection: 'academy-bookings', where: { or, status: { in: ['confirmed', 'completed', 'payment_failed', 'cancelled', 'refunded'] } }, overrideAccess: true })
+  return totalDocs > 0
+}
+
+export const NEW_FAMILIES_ONLY = 'Coach share links are for families new to the Foundation Academy. This family has booked 1-on-1s or small groups before — they can book any open time on the website as usual.'
 
 export const shareUrl = (token: string) => `${siteUrl()}/academy/book/l/${token}`
 const when = (iso: string) => formatDate(iso, { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' })
@@ -64,6 +77,8 @@ export type NewLink = {
   client: { firstName: string; lastName: string; email: string; mobile?: string; playerFirstName?: string }
   message?: string
   holdHours: number
+  /** Internal links (e.g. a 1-on-1 offered when a small group is cancelled) may go to existing families */
+  allowExisting?: boolean
   viaEmail: boolean
   viaSms: boolean
 }
@@ -71,6 +86,7 @@ export type NewLink = {
 /** Create a link, reserve the time if asked, and send it to the family. */
 export async function createShareLink(p: Payload, o: NewLink) {
   await releaseExpiredHolds(p)
+  if (!o.allowExisting && (await isExistingClient(p, { email: o.client.email }))) throw new ShareLinkError(NEW_FAMILIES_ONLY)
   const term = (await openTerms(p))[0]
   if (!term) throw new ShareLinkError('There’s no open term to book into.')
   if (o.mode === 'term' && !allowsWeekly(term)) throw new ShareLinkError('Weekly bookings aren’t available in the school holidays — send a casual time instead.')
@@ -114,6 +130,7 @@ export async function createShareLink(p: Payload, o: NewLink) {
     data: {
       label,
       status: 'active',
+      allowExisting: Boolean(o.allowExisting),
       tokenHash: hashShareToken(token),
       coach: o.coach.id,
       term: term.id,

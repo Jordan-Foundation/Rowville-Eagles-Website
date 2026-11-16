@@ -1,5 +1,6 @@
 'use server'
 
+import { redirect } from 'next/navigation'
 import { managementOrNull } from '@/lib/management'
 import { payload } from '@/lib/payload'
 import { sendBroadcast } from '@/messaging/broadcast'
@@ -12,8 +13,15 @@ export async function managementBroadcastAction(_prev: BroadcastState, fd: FormD
   if (fd.get('confirm') !== 'on') return { error: 'Tick the box to confirm who gets it.' }
   try {
     const r = await sendBroadcast(await payload(), user, null, String(fd.get('to') ?? ''), String(fd.get('body') ?? '').slice(0, 1200))
-    return { done: `Sent to ${r.total} famil${r.total === 1 ? 'y' : 'ies'}: ${r.texted} texted, ${r.emailed} emailed${r.failed ? `, ${r.failed} not delivered` : ''}. Replies come to Management → Messages.` }
+    return { done: `Sent to ${r.total} ${String(fd.get('to') ?? '').match(/^(everyone|coaches):/) ? (r.total === 1 ? 'person' : 'people') : r.total === 1 ? 'family' : 'families'}: ${r.texted} texted, ${r.emailed} emailed${r.failed ? `, ${r.failed} not delivered` : ''}. Replies come to Management → Messages.` }
   } catch (e) {
     return { error: e instanceof Error ? e.message : 'Couldn’t send — try again.' }
   }
+}
+
+/** "Message the ticked coaches" → the message page for just those coaches. */
+export async function pickCoaches(fd: FormData) {
+  if (!(await managementOrNull())) redirect('/login')
+  const ids = fd.getAll('coach').map(Number).filter((n) => Number.isInteger(n) && n > 0)
+  redirect(ids.length ? `/management/broadcast?to=coaches:pick:${ids.join('-')}` : '/management/broadcast')
 }

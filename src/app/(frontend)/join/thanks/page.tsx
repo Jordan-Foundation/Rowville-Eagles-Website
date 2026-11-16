@@ -1,4 +1,5 @@
 import { groupLabel } from '@/lib/age-groups'
+import { trialNightsOf } from '@/lib/trials'
 import { TrackConversion } from '@/tracking/TrackConversion'
 import { conversionFor } from '@/tracking/config'
 import Link from 'next/link'
@@ -16,8 +17,8 @@ export default async function ThanksPage({ searchParams }: { searchParams: Promi
   const reg = ref
     ? (await p.find({ pagination: false, collection: 'selection-entries', where: { reference: { equals: ref } }, limit: 1, depth: 1, overrideAccess: true })).docs[0]
     : undefined
-  const session = reg?.trialSession as TrialSession | undefined
-  const booked = reg?.status === 'trial-booked' && session
+  const nights = reg ? trialNightsOf(reg) : []
+  const booked = reg?.status === 'trial-booked' && nights.length > 0
 
   return (
     <div className="container-x max-w-3xl py-16">
@@ -28,7 +29,7 @@ export default async function ThanksPage({ searchParams }: { searchParams: Promi
         {reg && (
           <p className="mx-auto mt-4 max-w-xl text-lg text-muted">
             {booked
-              ? `${reg.player.firstName} is booked in for ${formatDate(session.start, { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' })}. We’ve emailed you the details.`
+              ? `${reg.player.firstName} is booked in for ${nights.map((n) => formatDate(n.start, { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' })).join(' and ')}. We’ve emailed you the details.`
               : `We’ve registered ${reg.player.firstName}’s interest for the ${reg.birthYear ? groupLabel(reg.birthYear) : 'their age group'}. We’ll email ${reg.contact.email} as soon as trial dates are set.`}
           </p>
         )}

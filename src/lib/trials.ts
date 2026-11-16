@@ -18,7 +18,7 @@ const when = (iso: string) => formatDate(iso, { weekday: 'long', day: 'numeric',
 export async function trialPlacesTaken(payload: Payload, sessionId: number, birthYear: number) {
   const { totalDocs } = await payload.count({
     collection: 'selection-entries',
-    where: { trialSession: { equals: sessionId }, birthYear: { equals: birthYear }, status: { in: ['trial-booked', 'attended', 'offered', 'registered'] } },
+    where: { or: [{ trialSession: { equals: sessionId } }, { trialSession2: { equals: sessionId } }], birthYear: { equals: birthYear }, status: { in: ['trial-booked', 'attended', 'offered', 'registered'] } },
     overrideAccess: true,
   })
   return totalDocs
@@ -36,22 +36,29 @@ export async function openTrialSessions(payload: Payload, birthYear: number) {
   return Promise.all(docs.map(async (s) => ({ session: s, remaining: Math.max(0, (s.capacityPerAgeGroup ?? 20) - (await trialPlacesTaken(payload, s.id, birthYear))) })))
 }
 
-export async function emailTrialConfirmation(payload: Payload, reg: SelectionEntry, session: TrialSession) {
+/** A registration's booked trial nights (one or two), earliest first. */
+export const trialNightsOf = (e: Pick<SelectionEntry, 'trialSession' | 'trialSession2'>) =>
+  [e.trialSession, e.trialSession2].filter((x): x is TrialSession => !!x && typeof x === 'object').sort((a, b) => a.start.localeCompare(b.start))
+
+export async function emailTrialConfirmation(payload: Payload, reg: SelectionEntry, sessionOrNights: TrialSession | TrialSession[]) {
+  const nights = (Array.isArray(sessionOrNights) ? sessionOrNights : [sessionOrNights]).sort((a, b) => a.start.localeCompare(b.start))
+  const session = nights[0]
+  const bring = [...new Set(nights.map((n) => n.whatToBring).filter(Boolean))].join(' ')
   const html = emailLayout('club', [
     {
       heading: `${reg.player.firstName} is booked in for trials`,
       intro: `Thanks ${esc(reg.contact.firstName)} — we can’t wait to meet ${esc(reg.player.firstName)} at the Rowville Eagles ${reg.season} trials.`,
       rows: [
-        ['When', when(session.start)],
-        ['Where', session.location || '208 Dandelion Drive, Rowville'],
+        ...nights.map((n, i) => [nights.length > 1 ? `Trial night ${i + 1}` : 'When', when(n.start)] as [string, string]),
+        ['Where', [...new Set(nights.map((n) => n.location || '208 Dandelion Drive, Rowville'))].join(' / ')],
         ['Age group', grp(reg.birthYear)],
         ['Reference', reg.reference ?? ''],
       ],
-      after: session.whatToBring ? `<strong>What to bring:</strong> ${esc(session.whatToBring)}` : undefined,
+      after: bring ? `<strong>What to bring:</strong> ${esc(bring)}` : undefined,
     },
     rfaPromoBlock(),
   ])
-  await sendEmail(payload, { to: reg.contact.email, subject: `Trial booked: ${session.title}`, html, sender: 'club', replyTo: await replyTo(payload) })
+  await sendEmail(payload, { to: reg.contact.email, subject: nights.length > 1 ? `Trials booked: ${session.title} + 1 more night` : `Trial booked: ${session.title}`, html, sender: 'club', replyTo: await replyTo(payload) })
 }
 
 export async function emailInterestConfirmation(payload: Payload, reg: SelectionEntry) {

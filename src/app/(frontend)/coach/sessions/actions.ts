@@ -89,6 +89,8 @@ export async function needCover(_prev: CoachSessionState, fd: FormData): Promise
     html: emailLayout('academy', [{ heading: 'A coach needs cover', intro: `${esc(me.coach.displayName)} can’t take this 1-on-1.${reason ? `<br><br>Reason: ${esc(reason)}` : ''}`, rows: [['When', formatDate(s.startsAt, { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' })]], cta: { label: 'Find a cover coach', href: `${siteUrl()}/management/academy` } }]),
     sender: 'academy',
   })
+  // Ask the other coaches whether anyone can pick it up
+  await (await import('@/academy/cover-requests')).askCoachesToCover(p, [s.id], { exclude: [me.coach.id] }).catch((e) => p.logger.error({ err: e, msg: 'Cover pick-up emails failed' }))
   revalidatePath(`/coach/sessions/${s.id}`)
-  return { saved: 'Management has been asked to find cover. You’ll see it here once someone is assigned.' }
+  return { saved: 'Management and the other coaches have been asked to find cover. You’ll see it here once someone is assigned.' }
 }

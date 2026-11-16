@@ -17,7 +17,7 @@ import { creditBalance, creditStateFor, reserveCredit } from '@/academy/credits'
 import { toYmd } from '@/academy/term-dates'
 import { weeklyPlan, type WeeklyPlan } from '@/academy/weekly'
 import { casualPrice, isTermMember } from '@/academy/pricing'
-import { activeHold, findShareLink, linkMatches, releaseShareHold } from '@/academy/share-links'
+import { activeHold, findShareLink, isExistingClient, linkMatches, releaseShareHold } from '@/academy/share-links'
 import { formatDate } from '@/lib/format'
 import type { Weekday } from '@/academy/constants'
 
@@ -97,6 +97,8 @@ export async function bookSession(_prev: BookState, fd: FormData): Promise<BookS
   if (!contact.firstName || !contact.lastName) return fail('Please enter the parent or guardian’s name.')
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email)) return fail('Please enter a valid email address.')
   if (!MOBILE.test(contact.mobile)) return fail('Please enter an Australian mobile number, e.g. 0412 345 678.')
+  // Coach share links are for new families (a link the Academy sent after a cancelled small group is fine)
+  if (share && !share.allowExisting && (await isExistingClient(p, { email: contact.email, accountId: user?.id }))) return fail('This link is for families new to the Foundation Academy. As you’ve booked with us before, please choose any open time on the 1-on-1 page instead.')
 
   // Player — an existing player on the account, or new details
   let participantId: number | undefined

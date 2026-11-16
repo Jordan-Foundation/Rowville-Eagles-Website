@@ -15,6 +15,7 @@ export const AcademyShareLinks: CollectionConfig = {
   defaultSort: '-createdAt',
   fields: [
     { name: 'label', type: 'text', admin: { readOnly: true } },
+    { name: 'allowExisting', label: 'Sent by the Academy (existing families may use it)', type: 'checkbox', defaultValue: false, admin: { readOnly: true, position: 'sidebar', description: 'Coach links are for new families only' } },
     { name: 'tokenHash', type: 'text', required: true, unique: true, index: true, admin: { hidden: true } },
     { type: 'row', fields: [
       { name: 'coach', type: 'relationship', relationTo: 'academy-coaches', required: true, index: true },

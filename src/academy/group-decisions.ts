@@ -255,6 +255,7 @@ export async function offerOneOnOne(p: Payload, coach: AcademyCoach, user: User,
   const i = keep.invitee
   try {
     const r = await createShareLink(p, {
+      allowExisting: true,
       coach,
       user,
       mode: g.type,

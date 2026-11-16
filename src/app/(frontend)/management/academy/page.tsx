@@ -1,4 +1,5 @@
 import { PersonLink } from '@/components/management/PersonLink'
+import { askCoverAction } from './actions'
 import { requireManagement } from '@/lib/management'
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
@@ -75,8 +76,21 @@ export default async function StaffAcademyPage() {
                         <td className="py-3 pr-4 font-medium">{formatDate(s.startsAt, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}</td>
                         <td className="pr-4">{c?.displayName}</td>
                         <td className="pr-4">{s.kind === 'group-slot' ? 'Small group' : b ? `${b.player.firstName} ${b.player.lastName}` : '—'}</td>
-                        <td className="pr-4">{cc ? cc.displayName : <span className="text-red-300">Not assigned</span>}</td>
-                        <td><a href={s.kind === 'group-slot' && s.group ? `/management/academy/groups/${typeof s.group === 'object' ? s.group.id : s.group}` : `/admin/collections/academy-sessions/${s.id}`} className="underline">Assign →</a></td>
+                        <td className="pr-4">{cc ? <>{cc.displayName}<span className={`block text-xs ${s.coverStatus === 'confirmed' ? 'text-emerald-300' : 'text-amber-300'}`}>{s.coverStatus === 'confirmed' ? 'Confirmed' : 'Asked — waiting for them'}</span></> : <span className="text-red-300">Not assigned{s.coverStatus === 'declined' ? ' (last coach declined)' : ''}</span>}</td>
+                        <td>
+                          {s.kind === 'group-slot' && s.group ? (
+                            <a href={`/management/academy/groups/${typeof s.group === 'object' ? s.group.id : s.group}`} className="underline">Assign →</a>
+                          ) : (
+                            <form action={askCoverAction} className="flex flex-wrap items-center gap-2">
+                              <input type="hidden" name="session" value={s.id} />
+                              <select name="coach" aria-label="Cover coach" defaultValue={cc?.id ?? ''} className="min-h-9 border border-line bg-surface px-2 text-sm">
+                                <option value="">Choose a coach…</option>
+                                {coaches.filter((x) => x.active !== false && x.id !== c?.id).map((x) => <option key={x.id} value={x.id}>{x.displayName}</option>)}
+                              </select>
+                              <button className="min-h-9 border border-line px-3 text-xs font-semibold uppercase tracking-[0.1em]">Ask to cover</button>
+                            </form>
+                          )}
+                        </td>
                       </tr>
                     )
                   })}
