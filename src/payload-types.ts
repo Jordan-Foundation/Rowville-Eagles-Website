@@ -5573,7 +5573,7 @@ export interface SiteSetting {
      */
     metaPixelId?: string | null;
     /**
-     * e.g. AW-123456789 (Google Ads) — add a Google Analytics ID too with a comma: AW-123456789, G-ABC123
+     * Every ID here is loaded on every public page, e.g. G-ABC123 (Google Analytics), AW-123456789 (Google Ads) — separate them with commas. The conversion labels below are sent to the AW- ID.
      */
     googleTagIds?: string | null;
     /**
