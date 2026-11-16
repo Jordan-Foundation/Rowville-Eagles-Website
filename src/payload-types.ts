@@ -6466,6 +6466,15 @@ export interface FinanceSetting {
     connectedAt?: string | null;
     lastCheckedAt?: string | null;
     refreshToken?: string | null;
+    checkedIds?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
     lastError?: string | null;
   };
   updatedAt?: string | null;
@@ -6858,6 +6867,7 @@ export interface FinanceSettingsSelect<T extends boolean = true> {
         connectedAt?: T;
         lastCheckedAt?: T;
         refreshToken?: T;
+        checkedIds?: T;
         lastError?: T;
       };
   updatedAt?: T;

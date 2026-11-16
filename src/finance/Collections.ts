@@ -247,6 +247,7 @@ export const FinanceSettings: GlobalConfig = {
     { name: 'gmail', type: 'group', admin: { description: 'Connected from Management → Finance → Settings' }, fields: [
       { type: 'row', fields: [{ name: 'email', type: 'text', admin: readOnly }, { name: 'connectedAt', type: 'date', admin: readOnly }, { name: 'lastCheckedAt', type: 'date', admin: readOnly }] },
       { name: 'refreshToken', type: 'text', admin: { hidden: true }, access: { read: () => false } },
+      { name: 'checkedIds', type: 'json', admin: { hidden: true }, access: { read: () => false } },
       { name: 'lastError', type: 'text', admin: readOnly },
     ] },
   ],

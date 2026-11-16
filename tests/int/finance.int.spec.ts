@@ -72,3 +72,37 @@ describe('weeks and the Monday report', () => {
     expect(pctOf(5, 0)).toBeNull()
   })
 })
+
+describe('bank import and matching', async () => {
+  const { bankDate, bestMatch, detectSource, isIncomeTransfer, parseCsv, parseOfx } = await import('@/finance/bank')
+  const westpac = `Bank Account,Date,Narrative,Debit Amount,Credit Amount,Balance,Categories,Serial
+032000123456,16/11/2026,"DEBIT CARD PURCHASE REBEL SPORT KNOX AUS",120.00,,5880.00,OTHER,
+032000123456,16/11/2026,"DEPOSIT STRIPE PAYMENTS AUSTRALIA",,1500.00,7380.00,DEP,
+032000123456,17/11/2026,"DEBIT CARD PURCHASE BUNNINGS 123",45.50,,7334.50,OTHER,
+032000123456,17/11/2026,"DEBIT CARD PURCHASE BUNNINGS 123",45.50,,7334.50,OTHER,`
+  it('reads Westpac CSV (debits, credits, day-first dates) and keeps identical rows distinct', () => {
+    const rows = parseCsv(westpac)
+    expect(rows).toHaveLength(4)
+    expect(rows[0]).toMatchObject({ date: '2026-11-16', amount: 120, direction: 'debit', account: '032000123456' })
+    expect(rows[1]).toMatchObject({ amount: 1500, direction: 'credit' })
+    expect(rows[2].externalId).not.toBe(rows[3].externalId)
+    expect(parseCsv(westpac).map((r) => r.externalId)).toEqual(rows.map((r) => r.externalId)) // re-import = same IDs
+    expect(isIncomeTransfer(rows[1])).toBe(true)
+  })
+  it('reads a Date/Description/Amount CSV and OFX', () => {
+    expect(parseCsv('Date,Description,Amount\n2026-11-18,Canva,-17.99\n2026-11-18,Refund in,5.00')).toMatchObject([{ amount: 17.99, direction: 'debit' }, { amount: 5, direction: 'credit' }])
+    const ofx = '<OFX><ACCTID>032000123456<STMTTRN><TRNTYPE>DEBIT<DTPOSTED>20261119<TRNAMT>-89.00<FITID>ABC123<NAME>OFFICEWORKS<MEMO>Card</STMTTRN></OFX>'
+    expect(parseOfx(ofx)).toEqual([{ date: '2026-11-19', description: 'OFFICEWORKS Card', amount: 89, direction: 'debit', externalId: 'ofx:032000123456:ABC123', account: '032000123456' }])
+    expect(detectSource('statement.ofx', ofx).name).toBe('ofx')
+    expect(detectSource('statement.csv', westpac).name).toBe('csv')
+    expect(bankDate('5/3/26')).toBe('2026-03-05')
+    expect(() => parseCsv('Foo,Bar\n1,2')).toThrow(/doesn’t look like/)
+  })
+  it('matches by amount and date (±4 days), supplier words break ties', () => {
+    const exps = [{ id: 1, date: '2026-11-15', amount: 120, supplier: 'Rebel Sport', linked: false }, { id: 2, date: '2026-11-16', amount: 120, supplier: 'Kmart', linked: false }, { id: 3, date: '2026-11-01', amount: 45.5, supplier: 'Bunnings', linked: false }]
+    expect(bestMatch({ date: '2026-11-16', amount: 120, description: 'DEBIT CARD PURCHASE REBEL SPORT KNOX', direction: 'debit' }, exps)?.id).toBe(1)
+    expect(bestMatch({ date: '2026-11-17', amount: 45.5, description: 'BUNNINGS', direction: 'debit' }, exps)).toBeNull() // 16 days apart
+    expect(bestMatch({ date: '2026-11-16', amount: 99, description: 'x', direction: 'debit' }, exps)).toBeNull()
+    expect(bestMatch({ date: '2026-11-16', amount: 120, description: 'x', direction: 'credit' }, exps)).toBeNull()
+  })
+})

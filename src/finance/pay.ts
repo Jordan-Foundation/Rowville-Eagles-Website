@@ -50,9 +50,11 @@ async function reversalsDue(p: Payload, weekStart: string) {
 }
 
 /** One week of pay (Monday `weekStart` to Sunday), every coach with time that week. */
-export async function weekPay(p: Payload, weekStart: string): Promise<WeekPay> {
-  const weekEnd = addDays(weekStart, 6)
-  const [s, coaches, rates, profiles, lines, reversals] = await Promise.all([financeSettings(p), coachList(p), ratesByCoach(p), profilesByCoach(p), hourLines(p, weekStart, weekEnd), reversalsDue(p, weekStart)])
+export const weekPay = (p: Payload, weekStart: string) => periodPay(p, weekStart, addDays(weekStart, 6), { reversals: true })
+
+/** Pay for any range of local dates (a week, a month…). Reversals of earlier bonuses only apply to pay weeks. */
+export async function periodPay(p: Payload, weekStart: string, weekEnd: string, o: { reversals?: boolean } = {}): Promise<WeekPay> {
+  const [s, coaches, rates, profiles, lines, reversals] = await Promise.all([financeSettings(p), coachList(p), ratesByCoach(p), profilesByCoach(p), hourLines(p, weekStart, weekEnd), o.reversals ? reversalsDue(p, weekStart) : Promise.resolve(new Map<string, { coachId: number; amount: number }>())])
   const pay = { superRate: s.superRate, superOnBonus: s.superOnBonus, bonusPct: s.bonusPct }
   const out: CoachWeek[] = []
   for (const coach of coaches) {
