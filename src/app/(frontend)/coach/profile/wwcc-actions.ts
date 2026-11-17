@@ -16,7 +16,8 @@ export async function saveMyWwcc(_prev: WwccState, fd: FormData): Promise<WwccSt
   if ('error' in w) return { error: w.error }
   try {
     await saveWwcc(await payload(), me.user, w)
-  } catch {
+  } catch (e) {
+    console.error('[coach] WWCC card not saved:', e)
     return { error: 'We couldn’t read that card photo — please try a clearer photo (JPG or PNG) or a PDF.' }
   }
   revalidatePath('/coach', 'layout')

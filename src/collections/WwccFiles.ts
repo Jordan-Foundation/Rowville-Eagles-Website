@@ -8,5 +8,6 @@ export const WwccFiles: CollectionConfig = {
   admin: { group: 'People', hidden: true },
   access: { read: isStaff, create: isStaff, update: isStaff, delete: isStaff },
   upload: { mimeTypes: ['image/*', 'application/pdf'] },
-  fields: [{ name: 'note', type: 'text' }],
+  // Vercel Blob storage key — declared here (as on Media) so the database is the same with or without a Blob token.
+  fields: [{ name: 'note', type: 'text' }, { name: '_objectKey', type: 'text', admin: { hidden: true, readOnly: true, disableBulkEdit: true, disableListColumn: true, disableListFilter: true, disableGroupBy: true } }],
 }

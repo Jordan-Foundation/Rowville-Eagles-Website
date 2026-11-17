@@ -38,7 +38,8 @@ export async function completeCoachSetup(_prev: CoachSetupState, fd: FormData): 
   }
   try {
     await saveWwcc(p, fresh, w)
-  } catch {
+  } catch (e) {
+    console.error('[coach] WWCC card not saved:', e)
     return { error: 'We couldn’t read that card photo — please try a clearer photo (JPG or PNG) or a PDF.' }
   }
   await consumeInvite(p, check.invite.id)

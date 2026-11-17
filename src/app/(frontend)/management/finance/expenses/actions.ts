@@ -25,7 +25,8 @@ export async function readReceiptAction(_prev: ReadState, fd: FormData): Promise
   let receiptId: number
   try {
     receiptId = await saveReceiptFile(p, { data, mimetype: file.type, name: file.name || `receipt-${Date.now()}.jpg`, size: data.length }, user)
-  } catch {
+  } catch (e) {
+    console.error('[finance] receipt file not saved:', e)
     return { error: 'That file couldn’t be opened as a photo or PDF — try taking the photo again.' }
   }
   if (!receiptAiConfigured()) return { receiptId, fields: {}, error: 'Receipt reading needs ANTHROPIC_API_KEY — fill the details in by hand.' }
