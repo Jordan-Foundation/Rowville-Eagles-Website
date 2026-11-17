@@ -6127,7 +6127,7 @@ export interface SiteSetting {
    */
   tracking?: {
     /**
-     * Numbers only, e.g. 472931888098255 (Meta Events Manager → Data sources)
+     * The pixel’s ID (Meta Events Manager → Data sources → your pixel), numbers only — not the ad account number.
      */
     metaPixelId?: string | null;
     /**

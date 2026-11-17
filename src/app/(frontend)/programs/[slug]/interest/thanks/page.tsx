@@ -3,6 +3,8 @@ import type { Metadata } from 'next'
 import { payload } from '@/lib/payload'
 import { getAgeRules } from '@/lib/age-rules'
 import { fullLabel, groupInfo } from '@/lib/age-groups'
+import { TrackConversion } from '@/tracking/TrackConversion'
+import { conversionFor } from '@/tracking/config'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Interest received', robots: { index: false } }
@@ -16,6 +18,7 @@ export default async function InterestThanks({ params, searchParams }: { params:
 
   return (
     <div className="container-x max-w-2xl py-16 text-center">
+      {entry?.reference && <TrackConversion c={conversionFor({ category: 'tournament-interest', amount: 0, ref: entry.reference, lead: true })} />}
       <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-accent text-2xl text-accent-ink">✓</div>
       <h1 className="mt-6 font-[family-name:var(--font-barlow)] text-5xl font-extrabold uppercase">Interest received</h1>
       {entry && (

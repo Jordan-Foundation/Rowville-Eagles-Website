@@ -2,15 +2,19 @@
 
 import { useActionState } from 'react'
 import { joinWaitlist, type WaitlistState } from '../waitlist-actions'
+import { TrackConversion } from '@/tracking/TrackConversion'
 
 /** Email-only form. The hidden "website" field is a honeypot for bots; the stamp proves the page was really loaded. */
 export function WaitlistForm({ stamp, live, source = 'foundation-plus', mode = 'trial' }: { stamp: string; live: boolean; source?: string; mode?: 'trial' | 'join' }) {
   const [state, action, pending] = useActionState<WaitlistState, FormData>(joinWaitlist, {})
   if (state.done) {
     return (
+      <>
+      {state.lead && <TrackConversion c={{ kind: 'lead', category: 'foundation-plus', value: 0, ref: state.lead }} />}
       <p role="status" className="border border-white/30 p-5 text-lg">
         ✓ {live ? 'Check your email — we’ve sent you a secure link to get started.' : 'You’re on the list! We’ll email you when Foundation+ launches, with a link to claim your free month.'}
       </p>
+      </>
     )
   }
   return (
