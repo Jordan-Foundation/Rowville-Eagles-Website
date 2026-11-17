@@ -26,6 +26,7 @@ import { TeamPosts } from './teams/collections/TeamPosts'
 import { ForumReplies, ForumThreads } from './teams/collections/Forum'
 import { resendAdapter } from '@payloadcms/email-resend'
 import { InviteTokens } from './collections/InviteTokens'
+import { WwccFiles } from './collections/WwccFiles'
 import { ConsentRecords } from './collections/ConsentRecords'
 import { MessageLog } from './collections/MessageLog'
 import { CurriculumStandards } from './academy/curriculum/collections/CurriculumStandards'
@@ -122,7 +123,7 @@ export default buildConfig({
       },
     },
   },
-  collections: [AcademyBookings, AcademyShareLinks, AcademySessions, AcademyGroups, AcademyGroupInvites, TrainingAttendance, AcademyTerms, YearSetups, Announcements, AcademyTermSlots, AcademyRegistrations, PdrAreas, PdrLevels, PdrStages, PdrVideos, PdrBadges, PdrProgress, PdrChallenges, PdrSubmissions, PdrAudit, PdrAwards, FplusWaitlist, FplusEvents, FplusTrialCards, FormThrottle, AcademyCoaches, AcademyAvailability, AcademyReminderLog, AcademyCredits, Posts, SelectionRounds, Squads, SelectionEntries, TrialSessions, Programs, Bookings, CampPlacements, CampCoaches, CoachBlocks, Products, Orders, Invoices, Refunds, ReferralInvites, Referrals, ReferralMilestones, ReferralRewards, ReflectionPillars, MatchReflections, WelfareFlags, ReflectionReports, ReflectionReminders, Teams, TeamMembers, TeamPosts, ForumThreads, ForumReplies, Sponsors, Participants, Users, ConsentRecords, MessageLog, CurriculumStandards, ReportCycles, PlayerReports, ReportReminderLog, Promotions, PromotionUses, SeenMarkers, Conversations, Messages, InviteTokens, ActivityLog, StaffFeed, CoachPayRates, CoachPayProfiles, CoachHourAdjustments, PayWeeks, FinanceReports, ExpenseCategories, ReceiptFiles, Expenses, BankTransactions, ProjectionScenarios, FinanceAuditLog, Media].map((c) => withStaffFeed(withActivity(withMoneyCells(c)))),
+  collections: [AcademyBookings, AcademyShareLinks, AcademySessions, AcademyGroups, AcademyGroupInvites, TrainingAttendance, AcademyTerms, YearSetups, Announcements, AcademyTermSlots, AcademyRegistrations, PdrAreas, PdrLevels, PdrStages, PdrVideos, PdrBadges, PdrProgress, PdrChallenges, PdrSubmissions, PdrAudit, PdrAwards, FplusWaitlist, FplusEvents, FplusTrialCards, FormThrottle, AcademyCoaches, AcademyAvailability, AcademyReminderLog, AcademyCredits, Posts, SelectionRounds, Squads, SelectionEntries, TrialSessions, Programs, Bookings, CampPlacements, CampCoaches, CoachBlocks, Products, Orders, Invoices, Refunds, ReferralInvites, Referrals, ReferralMilestones, ReferralRewards, ReflectionPillars, MatchReflections, WelfareFlags, ReflectionReports, ReflectionReminders, Teams, TeamMembers, TeamPosts, ForumThreads, ForumReplies, Sponsors, Participants, Users, ConsentRecords, MessageLog, CurriculumStandards, ReportCycles, PlayerReports, ReportReminderLog, Promotions, PromotionUses, SeenMarkers, Conversations, Messages, InviteTokens, WwccFiles, ActivityLog, StaffFeed, CoachPayRates, CoachPayProfiles, CoachHourAdjustments, PayWeeks, FinanceReports, ExpenseCategories, ReceiptFiles, Expenses, BankTransactions, ProjectionScenarios, FinanceAuditLog, Media].map((c) => withStaffFeed(withActivity(withMoneyCells(c)))),
   globals: [SiteSettings, About, Policies, DifferencePage, AcademySettings, PdrSettings, ReferralSettings, ReflectionSettings, FinanceSettings, SetupProgress].map((g) => withGlobalActivity(g)),
   editor: lexicalEditor(),
   ...(process.env.RESEND_API_KEY
@@ -152,7 +153,7 @@ export default buildConfig({
     // Uploaded images go to Vercel Blob when configured (Vercel's filesystem is not persistent).
     vercelBlobStorage({
       enabled: Boolean(process.env.BLOB_READ_WRITE_TOKEN),
-      collections: { media: true, 'receipt-files': true },
+      collections: { media: true, 'receipt-files': true, 'wwcc-files': true },
       token: process.env.BLOB_READ_WRITE_TOKEN || '',
       // Upload straight from the browser to Blob — avoids Vercel's 4.5 MB request limit for large photos.
       // BLOB_CLIENT_UPLOADS=false sends uploads through the server instead (photos then need to be under 4.5 MB).

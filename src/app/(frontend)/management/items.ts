@@ -15,6 +15,7 @@ export const managementItems: DashItem[] = [
   { key: 'bookings', href: '/management/academy/bookings', label: 'Bookings & cancellations', icon: 'booking' },
   { key: 'payments', href: '/management/academy#payments', label: 'Weekly payments', icon: 'card' },
   { key: 'cover', href: '/management/academy#cover', label: 'Cover', icon: 'swap' },
+  { key: 'coaches', href: '/management/coaches', label: 'Coaches', icon: 'users', hint: 'Add coaches, check WWCC' },
   { key: 'availability', href: '/management/academy', label: 'Coach availability', icon: 'clock' },
   { key: 'terms', href: '/management/academy/terms', label: 'Academy terms', icon: 'grid' },
   { key: 'camps', href: '/management/camps', label: 'Holiday camps', icon: 'users', hint: 'Groups & coaches' },

@@ -96,7 +96,7 @@ export async function coachAttention(p: Payload, user: User, coach: AcademyCoach
   return { messages, sessions, attendance, availability, groups, teams, reviews, reports, camps, reflections }
 }
 
-export type ManagementCounts = Record<'bookings' | 'payments' | 'cover' | 'availability' | 'terms' | 'selections' | 'messages' | 'store' | 'foundation' | 'consent' | 'reports' | 'dates' | 'promotions' | 'camps' | 'yearly' | 'announcements' | 'invoices' | 'referrals' | 'reflections', number>
+export type ManagementCounts = Record<'bookings' | 'payments' | 'cover' | 'availability' | 'terms' | 'selections' | 'messages' | 'store' | 'foundation' | 'consent' | 'reports' | 'dates' | 'promotions' | 'camps' | 'yearly' | 'announcements' | 'invoices' | 'referrals' | 'reflections' | 'coaches', number>
 
 export async function managementAttention(p: Payload, user: User): Promise<ManagementCounts> {
   const now = new Date().toISOString()
@@ -169,5 +169,7 @@ export async function managementAttention(p: Payload, user: User): Promise<Manag
   const referrals = await safe(async () => (await p.count({ collection: 'referral-rewards', where: { status: { in: ['claimed', 'held'] } }, ...q })).totalDocs + (await p.count({ collection: 'referrals', where: { reviewFlag: { exists: true }, status: { equals: 'confirmed' } }, ...q })).totalDocs)
   // Open welfare flags from match reflections
   const reflections = await safe(async () => (await p.count({ collection: 'welfare-flags', where: { status: { equals: 'open' } }, ...q })).totalDocs)
-  return { bookings, payments, cover, availability, terms, selections, messages, store, foundation, consent, reports, dates, promotions, camps, yearly, announcements, invoices, referrals, reflections }
+  // Coaches whose WWCC is waiting to be checked
+  const coaches = await safe(async () => (await p.count({ collection: 'users', where: { roles: { contains: 'coach' }, 'wwcc.submittedAt': { exists: true }, 'wwcc.checkedAt': { exists: false } }, ...q })).totalDocs)
+  return { bookings, payments, cover, availability, terms, selections, messages, store, foundation, consent, reports, dates, promotions, camps, yearly, announcements, invoices, referrals, reflections, coaches }
 }

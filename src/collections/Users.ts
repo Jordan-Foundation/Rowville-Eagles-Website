@@ -1,6 +1,9 @@
 import type { CollectionConfig } from 'payload'
 import { APIError } from 'payload'
-import { hasRole, isAdminField } from '../access'
+import { hasRole, isAdminField, type WithRoles } from '../access'
+import type { FieldAccess } from 'payload'
+
+const isStaffField: FieldAccess = ({ req: { user } }) => hasRole(user as WithRoles, 'admin', 'committee')
 import { toE164 } from '../lib/sms'
 
 /**
@@ -162,12 +165,19 @@ export const Users: CollectionConfig = {
       name: 'wwcc',
       label: 'Working With Children Check',
       type: 'group',
-      admin: { condition: (data) => data?.roles?.includes('coach') },
-      access: { read: isAdminField, update: isAdminField },
+      admin: { condition: (data) => data?.roles?.includes('coach'), description: 'The coach enters these when they sign up (Management → Coaches checks them).' },
+      access: { read: isStaffField, update: isStaffField },
       fields: [
         { name: 'number', type: 'text' },
         { name: 'expiry', type: 'date' },
+        { name: 'photo', label: 'Photo of the card', type: 'upload', relationTo: 'wwcc-files' },
+        { type: 'row', fields: [
+          { name: 'submittedAt', label: 'Sent by the coach', type: 'date', admin: { readOnly: true } },
+          { name: 'checkedAt', label: 'Checked by Management', type: 'date', admin: { readOnly: true } },
+          { name: 'checkedBy', type: 'relationship', relationTo: 'users', admin: { readOnly: true } },
+        ] },
       ],
     },
+    { name: 'coachInvitedAt', label: 'Coach sign-up link sent', type: 'date', admin: { readOnly: true, position: 'sidebar', condition: (data) => data?.roles?.includes('coach') } },
   ],
 }
