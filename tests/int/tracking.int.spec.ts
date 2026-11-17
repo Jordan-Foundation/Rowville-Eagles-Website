@@ -4,7 +4,8 @@ import { bookingCategory, conversionFor, isTrackable, parseGoogleIds, trackingAl
 describe('ad tracking', () => {
   it('reads the settings', () => {
     expect(trackingConfig(null)).toBeNull()
-    expect(trackingConfig({ metaPixelId: ' 472931888098255 ' })).toEqual({ meta: '472931888098255', google: [], ads: null, adsLead: null, adsPurchase: null })
+    expect(trackingConfig({ metaPixelId: '472931888098255' })).toBeNull() // the ad account number, not a pixel
+    expect(trackingConfig({ metaPixelId: ' 1644331010522223 ' })).toEqual({ meta: '1644331010522223', google: [], ads: null, adsLead: null, adsPurchase: null })
     const c = trackingConfig({ googleTagIds: 'aw-123456789, G-ABC123, nonsense', adsLeadLabel: 'AbC' })!
     expect(c.google).toEqual(['AW-123456789', 'G-ABC123'])
     expect(c.ads).toBe('AW-123456789')
