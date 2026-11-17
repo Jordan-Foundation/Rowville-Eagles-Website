@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { managementSections } from '@/app/(frontend)/management/items'
 
 export type NavGroup = { title: string; items: { href: string; label: string; key?: string }[] }
 
@@ -19,8 +20,8 @@ export function Breadcrumbs() {
   const parts = path.split('/').filter(Boolean)
   if (parts.length <= 1) return null
   // Some levels have no page of their own: send them somewhere useful
-  const HREF: Record<string, string> = { '/management/families': '/management/search', '/management/players': '/management/search', '/management/reports/r': '/management/reports', '/management/foundation-plus/challenges': '/management/foundation-plus' }
-  const trail = parts.map((p, i) => ({ href: HREF['/' + parts.slice(0, i + 1).join('/')] ?? '/' + parts.slice(0, i + 1).join('/'), label: (p === 'coaches' && parts[i - 1] === 'management' ? 'Coaches' : CRUMBS[p]) ?? (/^\d+$/.test(p) ? 'Details' : p.replace(/-/g, ' ')) }))
+  const HREF: Record<string, string> = { '/management/area': '/management', '/management/families': '/management/search', '/management/players': '/management/search', '/management/reports/r': '/management/reports', '/management/foundation-plus/challenges': '/management/foundation-plus' }
+  const trail = parts.map((p, i) => ({ href: HREF['/' + parts.slice(0, i + 1).join('/')] ?? '/' + parts.slice(0, i + 1).join('/'), label: (parts[i - 1] === 'area' ? managementSections.find((x) => x.key === p)?.label : p === 'coaches' && parts[i - 1] === 'management' ? 'Coaches' : p === 'area' ? 'Dashboard' : CRUMBS[p]) ?? (/^\d+$/.test(p) ? 'Details' : p.replace(/-/g, ' ')) }))
   const back = trail[trail.length - 2]
   return (
     <nav aria-label="Breadcrumb" className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted">

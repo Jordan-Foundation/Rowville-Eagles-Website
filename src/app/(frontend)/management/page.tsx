@@ -1,10 +1,10 @@
 import type { Metadata } from 'next'
 import { payload } from '@/lib/payload'
 import { requireManagement } from '@/lib/management'
-import { LiveDashboard } from '@/components/dashboard/LiveDashboard'
+import { SectionDashboard } from '@/components/management/SectionDashboard'
 import { managementAttention } from '@/lib/attention'
 import { RoleSwitch, myChildren } from '@/components/dashboard/RoleSwitch'
-import { ADMIN_ONLY, managementItems } from './items'
+import { sectionsFor } from './items'
 import Link from 'next/link'
 import { managementThisWeek } from '@/lib/this-week'
 import { EmailMeSummary } from '@/components/management/EmailMeSummary'
@@ -47,7 +47,7 @@ export default async function ManagementHome() {
           </dl>
         </section>
         <div className="mt-10">
-          <LiveDashboard items={managementItems.filter((i) => !ADMIN_ONLY.has(i.key) || user.roles?.includes('admin'))} initial={counts} role="management" />
+          <SectionDashboard sections={sectionsFor(Boolean(user.roles?.includes('admin')))} initial={counts} />
         </div>
       </div>
     </div>

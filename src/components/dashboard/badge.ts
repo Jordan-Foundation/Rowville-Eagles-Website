@@ -13,4 +13,4 @@ export const BADGE_UNITS: Record<string, string> = {
 }
 /** "3 to fulfil" — or null at 0. Coach reports read "to write". */
 export const badgeMeaning = (key: string, n: number | null | undefined, role?: 'coach' | 'management') =>
-  !n || n <= 0 ? null : `${n > 99 ? '99+' : n} ${role === 'coach' && key === 'reports' ? 'to write' : role === 'coach' && key === 'availability' ? 'due' : role === 'coach' && key === 'camps' ? 'to answer' : role === 'coach' && key === 'reflections' ? 'to read' : BADGE_UNITS[key] ?? 'need attention'}`
+  !n || n <= 0 ? null : `${n > 99 ? '99+' : n} ${role === 'coach' && key === 'reports' ? 'to write' : role === 'coach' && key === 'availability' ? 'due' : role === 'coach' && key === 'camps' ? 'to answer' : role === 'coach' && key === 'reflections' ? 'to read' : BADGE_UNITS[key] ?? (n === 1 ? 'needs attention' : 'need attention')}`

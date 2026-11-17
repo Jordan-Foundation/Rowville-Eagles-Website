@@ -35,3 +35,19 @@ export const managementItems: DashItem[] = [
   { key: 'consent', href: '/management/consent', label: 'Consent review', icon: 'shield' },
   { key: 'settings', href: '/admin', label: 'Settings', icon: 'gear', hint: 'Admin, setup checklist' },
 ]
+
+const by = (keys: string[]) => keys.map((k) => managementItems.find((i) => i.key === k)!)
+
+/** The dashboard shows these 6 categories (plus a "Needs attention" list); each opens a page with its buttons. */
+export type ManagementSection = { key: string; label: string; hint: string; icon: string; items: DashItem[]; href?: string }
+export const managementSections: ManagementSection[] = [
+  { key: 'academy', label: 'Academy & coaches', hint: 'Coaches, terms, cover, bookings', icon: 'grid', items: by(['coaches', 'availability', 'terms', 'cover', 'bookings', 'payments', 'reports', 'curriculum']) },
+  { key: 'programs', label: 'Programs & camps', hint: 'Camps, dates, prices, setup', icon: 'calendar', items: by(['programs', 'camps', 'dates', 'prices', 'yearly']) },
+  { key: 'families', label: 'Families & messages', hint: 'Messages, emails, reflections', icon: 'chat', items: by(['messages', 'notifications', 'broadcast', 'announcements', 'promotions', 'referrals', 'reflections', 'consent']) },
+  { key: 'money', label: 'Money & shop', hint: 'Finance, invoices, store', icon: 'dollar', items: by(['finance', 'invoices', 'refunds', 'store', 'foundation']) },
+  { key: 'club', label: 'Club teams', hint: 'Selections & teams', icon: 'flag', items: by(['selections', 'teams']) },
+  { key: 'settings', label: 'Settings', hint: 'Admin & checklist', icon: 'gear', items: by(['settings']), href: '/admin' },
+]
+
+/** Sections and their buttons for this person (Finance and Refunds are admins only). */
+export const sectionsFor = (admin: boolean) => managementSections.map((s) => ({ ...s, items: s.items.filter((i) => admin || !ADMIN_ONLY.has(i.key)) }))
