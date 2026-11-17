@@ -17,9 +17,10 @@ export const managementItems: DashItem[] = [
   { key: 'cover', href: '/management/academy#cover', label: 'Cover', icon: 'swap' },
   { key: 'coaches', href: '/management/coaches', label: 'Coaches', icon: 'users', hint: 'Add coaches, check WWCC' },
   { key: 'availability', href: '/management/academy', label: 'Coach availability', icon: 'clock' },
-  { key: 'terms', href: '/management/academy/terms', label: 'Academy terms', icon: 'grid' },
+  { key: 'terms', href: '/management/academy/terms', label: 'Academy setup', icon: 'grid', hint: 'Terms, training times, groups' },
   { key: 'camps', href: '/management/camps', label: 'Holiday camps', icon: 'users', hint: 'Groups & coaches' },
-  { key: 'selections', href: '/management/selections', label: 'Selections', icon: 'flag' },
+  { key: 'selections', href: '/management/selections?kind=rowville', label: 'Eagles selections', icon: 'flag', hint: 'Rowville Eagles trials' },
+  { key: 'tournaments', href: '/management/selections?kind=tournament', label: 'Tournament teams', icon: 'flag', hint: 'Tournament team selections' },
   { key: 'teams', href: '/management/teams', label: 'Teams', icon: 'users' },
   { key: 'messages', href: '/management/messages', label: 'Messages', icon: 'chat' },
   { key: 'notifications', href: '/management/notifications', label: 'Notifications', icon: 'bell', hint: 'Bookings, payments, trials' },
@@ -33,5 +34,26 @@ export const managementItems: DashItem[] = [
   { key: 'reports', href: '/management/reports', label: 'Reports', icon: 'report', hint: 'Player reports' },
   { key: 'curriculum', href: '/management/curriculum', label: 'Curriculum', icon: 'board' },
   { key: 'consent', href: '/management/consent', label: 'Consent review', icon: 'shield' },
-  { key: 'settings', href: '/admin', label: 'Settings', icon: 'gear', hint: 'Admin, setup checklist' },
+  { key: 'settings', href: '/admin', label: 'Admin', icon: 'gear', hint: 'All site settings, setup checklist' },
 ]
+
+const by = (keys: string[]) => keys.map((k) => managementItems.find((i) => i.key === k)!)
+
+/** The dashboard shows these categories (plus a "Needs attention" list); each opens a page with its buttons.
+ * A section with `href` is a single button that goes straight to its page. */
+export type ManagementSection = { key: string; label: string; hint: string; icon: string; items: DashItem[]; href?: string }
+const solo = (key: string): ManagementSection => { const i = by([key])[0]; return { key, label: i.label, hint: i.hint ?? '', icon: i.icon, items: [i], href: i.href } }
+export const managementSections: ManagementSection[] = [
+  { key: 'refc', label: 'REFC', hint: 'Eagles selections, teams, reflections, reports', icon: 'flag', items: by(['selections', 'teams', 'reflections', 'reports']) },
+  { key: 'coaches', label: 'Coaches', hint: 'Add coaches, availability, cover', icon: 'users', items: by(['coaches', 'availability', 'cover']) },
+  { key: 'finances', label: 'Finances', hint: 'Finance, invoices, refunds, payments', icon: 'dollar', items: by(['finance', 'invoices', 'refunds', 'payments']) },
+  { key: 'academy', label: 'Foundation Academy', hint: 'Bookings, academy setup, tournaments, Foundation+', icon: 'grid', items: by(['bookings', 'terms', 'tournaments', 'foundation']) },
+  { key: 'communication', label: 'Communication', hint: 'Messages, notifications, emails, offers', icon: 'chat', items: by(['messages', 'notifications', 'broadcast', 'announcements', 'promotions', 'referrals']) },
+  { key: 'settings', label: 'Settings', hint: 'Dates, prices, yearly setup, curriculum', icon: 'gear', items: by(['yearly', 'dates', 'prices', 'curriculum', 'consent', 'settings']) },
+  solo('programs'),
+  solo('camps'),
+  solo('store'),
+]
+
+/** Sections and their buttons for this person (Finance and Refunds are admins only). */
+export const sectionsFor = (admin: boolean) => managementSections.map((s) => ({ ...s, items: s.items.filter((i) => admin || !ADMIN_ONLY.has(i.key)) })).filter((s) => s.items.length)

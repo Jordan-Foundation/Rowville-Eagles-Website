@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { DashIcon } from './icons'
 import { badgeLabel, badgeMeaning, badgeText } from './badge'
 
-export type DashItem = { key: string; href: string; label: string; icon: string; hint?: string; count?: number }
+export type DashItem = { key: string; href: string; label: string; icon: string; hint?: string; count?: number; quiet?: boolean }
 
 /** Big, high-contrast section buttons with an attention badge in the top-right corner. Wraps into a grid on phones. */
 export function DashboardGrid({ items, counts, role }: { items: DashItem[]; counts?: Record<string, number>; role?: 'coach' | 'management' }) {
@@ -11,7 +11,7 @@ export function DashboardGrid({ items, counts, role }: { items: DashItem[]; coun
       {items.map((i) => {
         const n = counts?.[i.key] ?? i.count
         const b = badgeText(n)
-        const meaning = badgeMeaning(i.key, n, role)
+        const meaning = i.quiet ? null : badgeMeaning(i.key, n, role)
         return (
           <li key={i.key}>
             <Link

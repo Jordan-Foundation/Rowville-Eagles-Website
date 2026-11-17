@@ -4,10 +4,10 @@ import { useEffect, useState } from 'react'
 import { DashboardGrid, type DashItem } from './DashboardGrid'
 
 /**
- * The dashboard grid with its badge counts refreshed every few minutes while the tab is open and in view, and when
- * you come back to the tab (at most once a minute) — enough to stay current without keeping the database busy.
+ * Badge counts refreshed every few minutes while the tab is open and in view, and when you come back to the tab
+ * (at most once a minute) — enough to stay current without keeping the database busy.
  */
-export function LiveDashboard({ items, initial, role }: { items: DashItem[]; initial: Record<string, number>; role: 'management' | 'coach' }) {
+export function useLiveCounts(initial: Record<string, number>, role: 'management' | 'coach') {
   const [counts, setCounts] = useState(initial)
   useEffect(() => {
     let stop = false
@@ -30,5 +30,11 @@ export function LiveDashboard({ items, initial, role }: { items: DashItem[]; ini
       document.removeEventListener('visibilitychange', load)
     }
   }, [role])
+  return counts
+}
+
+/** The dashboard grid with live badge counts. */
+export function LiveDashboard({ items, initial, role }: { items: DashItem[]; initial: Record<string, number>; role: 'management' | 'coach' }) {
+  const counts = useLiveCounts(initial, role)
   return <DashboardGrid items={items} counts={counts} role={role} />
 }

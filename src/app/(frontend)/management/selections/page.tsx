@@ -6,18 +6,27 @@ import { requireSelector } from './access'
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Selections', robots: { index: false } }
 
-export default async function SelectionsPage() {
-  await requireSelector('/management/selections')
+const KINDS = {
+  rowville: { title: 'Eagles selections', intro: 'Rowville Eagles trial interest, grouped by year of birth. Rounds are created automatically when the first family registers interest.', other: { kind: 'tournament', label: 'Tournament teams' } },
+  tournament: { title: 'Tournament teams', intro: 'Foundation Academy tournament team interest and selections, grouped by year of birth. Rounds are created automatically when the first family registers interest.', other: { kind: 'rowville', label: 'Eagles selections' } },
+} as const
+
+export default async function SelectionsPage({ searchParams }: { searchParams: Promise<{ kind?: string }> }) {
+  const { kind: k } = await searchParams
+  const kind = k === 'tournament' ? 'tournament' : k === 'rowville' ? 'rowville' : null
+  await requireSelector(`/management/selections${kind ? `?kind=${kind}` : ''}`)
+  const view = kind ? KINDS[kind] : null
   const p = await payload()
-  const { docs: rounds } = await p.find({ pagination: false, collection: 'selection-rounds', sort: '-createdAt', limit: 100, depth: 1, overrideAccess: true })
+  const { docs: rounds } = await p.find({ pagination: false, collection: 'selection-rounds', ...(kind ? { where: { kind: { equals: kind } } } : {}), sort: '-createdAt', limit: 100, depth: 1, overrideAccess: true })
   const { docs: entries } = await p.find({ pagination: false, collection: 'selection-entries', where: { round: { in: rounds.map((r) => r.id) } }, limit: 20000, depth: 0, overrideAccess: true, select: { round: true, status: true, outcomeQueued: true } })
   const count = (id: number, f: (e: (typeof entries)[number]) => boolean) => entries.filter((e) => (typeof e.round === 'object' ? e.round.id : e.round) === id && f(e)).length
 
   return (
     <div className="container-x py-14">
       <p className="eyebrow !text-brand">Management</p>
-      <h1 className="mt-2 font-[family-name:var(--font-barlow)] text-5xl font-extrabold uppercase">Selections</h1>
-      <p className="mt-3 max-w-2xl text-muted">Tournament and Rowville trial interest, grouped by year of birth. Rounds are created automatically when the first family registers interest.</p>
+      <h1 className="mt-2 font-[family-name:var(--font-barlow)] text-5xl font-extrabold uppercase">{view?.title ?? 'Selections'}</h1>
+      <p className="mt-3 max-w-2xl text-muted">{view?.intro ?? 'Tournament and Rowville trial interest, grouped by year of birth. Rounds are created automatically when the first family registers interest.'}</p>
+      {view && <p className="mt-2 text-sm"><Link href={`/management/selections?kind=${view.other.kind}`} className="underline">{view.other.label} →</Link></p>}
       <ul className="mt-8 grid gap-4 md:grid-cols-2">
         {rounds.map((r) => (
           <li key={r.id}>
