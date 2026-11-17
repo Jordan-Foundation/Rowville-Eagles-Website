@@ -133,7 +133,8 @@ export const ReceiptFiles: CollectionConfig = {
   admin: { group, hidden: true },
   access: admin,
   upload: { mimeTypes: ['image/*', 'application/pdf'], disableLocalStorage: false },
-  fields: [{ name: 'note', type: 'text' }],
+  // Vercel Blob storage key — declared here (as on Media) so the database is the same with or without a Blob token.
+  fields: [{ name: 'note', type: 'text' }, { name: '_objectKey', type: 'text', admin: { hidden: true, readOnly: true, disableBulkEdit: true, disableListColumn: true, disableListFilter: true, disableGroupBy: true } }],
 }
 
 export const Expenses: CollectionConfig = {

@@ -596,6 +596,7 @@ export interface User {
 export interface WwccFile {
   id: number;
   note?: string | null;
+  _objectKey?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -3334,6 +3335,7 @@ export interface ExpenseCategory {
 export interface ReceiptFile {
   id: number;
   note?: string | null;
+  _objectKey?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -5794,6 +5796,7 @@ export interface InviteTokensSelect<T extends boolean = true> {
  */
 export interface WwccFilesSelect<T extends boolean = true> {
   note?: T;
+  _objectKey?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;
@@ -5925,6 +5928,7 @@ export interface ExpenseCategoriesSelect<T extends boolean = true> {
  */
 export interface ReceiptFilesSelect<T extends boolean = true> {
   note?: T;
+  _objectKey?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;
