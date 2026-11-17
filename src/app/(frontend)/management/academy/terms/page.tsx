@@ -17,7 +17,7 @@ import { Board } from './Board'
 import { AddGroup, CoachPicker, RemoveGroup } from './SlotPanel'
 
 export const dynamic = 'force-dynamic'
-export const metadata: Metadata = { title: 'Academy terms', robots: { index: false } }
+export const metadata: Metadata = { title: 'Academy setup', robots: { index: false } }
 
 const rel = (v: number | { id: number } | null | undefined) => (v && typeof v === 'object' ? v.id : (v ?? null))
 const ids = (v: (number | AcademyCoach)[] | null | undefined) => (v ?? []).map((c) => (typeof c === 'object' ? c.id : c))
@@ -52,7 +52,7 @@ export default async function StaffTermsPage({ searchParams }: { searchParams: P
   return (
     <div className="container-x py-14">
       <Link href="/management/academy" className="text-sm text-muted hover:text-ink">← Academy</Link>
-      <h1 className="mt-4 font-[family-name:var(--font-barlow)] text-5xl font-extrabold uppercase">Academy terms</h1>
+      <h1 className="mt-4 font-[family-name:var(--font-barlow)] text-5xl font-extrabold uppercase">Academy setup</h1>
       <div className="mt-3"><DownloadCsv list="registrations" params={{ program: program.id }} label="Download this program (CSV)" /></div>
       <nav className="mt-4 flex flex-wrap gap-2">
         {programs.map((x) => (

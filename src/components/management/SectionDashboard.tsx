@@ -13,7 +13,7 @@ import type { ManagementSection } from '@/app/(frontend)/management/items'
 export function SectionDashboard({ sections, initial }: { sections: ManagementSection[]; initial: Record<string, number> }) {
   const counts = useLiveCounts(initial, 'management')
   const todo = sections.flatMap((s) => s.items.map((i) => ({ i, s, n: counts[i.key] ?? 0 }))).filter((x) => x.n > 0)
-  const tiles = sections.map((s) => ({ key: `area-${s.key}`, href: s.href ?? `/management/area/${s.key}`, label: s.label, hint: s.hint, icon: s.icon, count: s.items.reduce((n, i) => n + (counts[i.key] ?? 0), 0), quiet: true }))
+  const tiles = sections.map((s) => ({ key: `area-${s.key}`, href: s.href ?? `/management/area/${s.key}`, label: s.label, hint: s.hint, icon: s.icon, count: s.items.reduce((n, i) => n + (counts[i.key] ?? 0), 0), quiet: !s.href }))
   return (
     <div className="space-y-10">
       <section aria-label="Needs attention" className="panel border border-line">
@@ -25,7 +25,7 @@ export function SectionDashboard({ sections, initial }: { sections: ManagementSe
                 <Link href={i.href} data-attn={i.key} className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-white/5">
                   <span>
                     <span className="font-semibold">{i.label}</span>
-                    <span className="block text-xs text-muted">{s.label}</span>
+                    {!s.href && <span className="block text-xs text-muted">{s.label}</span>}
                   </span>
                   <span className="flex items-center gap-3 text-right text-sm font-semibold text-red-400">
                     {badgeMeaning(i.key, n, 'management')}

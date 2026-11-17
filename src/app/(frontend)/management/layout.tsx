@@ -3,14 +3,21 @@ import { managementOrNull } from '@/lib/management'
 import { payload } from '@/lib/payload'
 import { managementAttention } from '@/lib/attention'
 import { Breadcrumbs, ManagementNav, type NavGroup } from '@/components/management/ManagementChrome'
+import { sectionsFor } from './items'
 
-const GROUPS: NavGroup[] = [
-  { title: 'Overview', items: [{ href: '/management', label: 'Dashboard' }, { href: '/management/programs', label: 'Programs Overview' }, { href: '/management/programs/setup', label: 'Program setup' }, { href: '/management/camps', label: 'Holiday camps', key: 'camps' }, { href: '/management/search', label: 'Find a family or player' }, { href: '/management/guide', label: 'How to run a term' }] },
-  { title: 'Families', items: [{ href: '/management/notifications', label: 'Notifications' }, { href: '/management/messages', label: 'Messages', key: 'messages' }, { href: '/management/broadcast', label: 'Email a group' }, { href: '/management/announcements', label: 'Announcements', key: 'announcements' }, { href: '/management/referrals', label: 'Referrals', key: 'referrals' }, { href: '/management/reflections', label: 'Match reflections', key: 'reflections' }, { href: '/management/academy/bookings', label: 'Bookings & cancellations', key: 'bookings' }, { href: '/management/consent', label: 'Consent review', key: 'consent' }] },
-  { title: 'Academy', items: [{ href: '/management/coaches', label: 'Coaches', key: 'coaches' }, { href: '/management/academy', label: 'Payments, cover & availability', key: 'cover' }, { href: '/management/academy/terms', label: 'Academy terms', key: 'terms' }, { href: '/management/reports', label: 'Player reports', key: 'reports' }, { href: '/management/curriculum', label: 'Curriculum' }] },
-  { title: 'Club', items: [{ href: '/management/selections', label: 'Selections', key: 'selections' }, { href: '/management/teams', label: 'Teams' }] },
-  { title: 'Money & setup', items: [{ href: '/management/invoices', label: 'Invoices', key: 'invoices' }, { href: '/management/yearly-setup', label: 'Yearly setup', key: 'yearly' }, { href: '/management/dates', label: 'Set dates', key: 'dates' }, { href: '/management/prices', label: 'Set prices' }, { href: '/management/promotions', label: 'Promotions', key: 'promotions' }, { href: '/management/foundation-plus', label: 'Foundation+', key: 'foundation' }, { href: '/management/store', label: 'Store', key: 'store' }, { href: '/management/activity', label: 'Activity log' }, { href: '/admin', label: 'Admin & settings', key: 'settings' }] },
-]
+/** The menu follows the dashboard categories (items.ts), with a few extra pages that have no dashboard button. */
+const navGroups = (admin: boolean): NavGroup[] => {
+  const sections = sectionsFor(admin)
+  const extras: Record<string, { href: string; label: string }[]> = {
+    academy: [{ href: '/management/programs/setup', label: 'Program setup' }],
+    settings: [{ href: '/management/activity', label: 'Activity log' }],
+  }
+  const solo = sections.filter((s) => s.href).map((s) => ({ href: s.items[0].href, label: s.items[0].label, key: s.items[0].key }))
+  return [
+    { title: 'Overview', items: [{ href: '/management', label: 'Dashboard' }, ...solo, { href: '/management/search', label: 'Find a family or player' }, { href: '/management/guide', label: 'How to run a term' }] },
+    ...sections.filter((s) => !s.href).map((s) => ({ title: s.label, items: [...s.items.map((i) => ({ href: i.href, label: i.label, key: i.key })), ...(extras[s.key] ?? [])] })),
+  ]
+}
 
 /**
  * Management area: its own menu (sidebar / phone menu), breadcrumbs and search, in one colour scheme,
@@ -22,7 +29,7 @@ export default async function ManagementLayout({ children }: { children: React.R
   const counts = (await managementAttention(await payload(), user).catch(() => ({}))) as Record<string, number>
   return (
     <div data-brand="academy" data-page-brand="academy" data-portal="management" className="min-h-screen bg-surface text-ink lg:flex">
-      <ManagementNav groups={user.roles?.includes('admin') ? GROUPS.map((g) => (g.title === 'Money & setup' ? { ...g, items: [{ href: '/management/finance', label: 'Finance' }, g.items[0], { href: '/management/refunds', label: 'Refunds' }, ...g.items.slice(1)] } : g)) : GROUPS} counts={counts} />
+      <ManagementNav groups={navGroups(Boolean(user.roles?.includes('admin')))} counts={counts} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-4 border-b border-line px-4 py-2 text-xs text-muted sm:px-8">
           <span>Signed in as {user.firstName || user.email}</span>

@@ -96,7 +96,14 @@ export async function coachAttention(p: Payload, user: User, coach: AcademyCoach
   return { messages, sessions, attendance, availability, groups, teams, reviews, reports, camps, reflections }
 }
 
-export type ManagementCounts = Record<'bookings' | 'payments' | 'cover' | 'availability' | 'terms' | 'selections' | 'messages' | 'store' | 'foundation' | 'consent' | 'reports' | 'dates' | 'promotions' | 'camps' | 'yearly' | 'announcements' | 'invoices' | 'referrals' | 'reflections' | 'coaches', number>
+export type ManagementCounts = Record<'bookings' | 'payments' | 'cover' | 'availability' | 'terms' | 'selections' | 'messages' | 'store' | 'foundation' | 'consent' | 'reports' | 'dates' | 'promotions' | 'camps' | 'yearly' | 'announcements' | 'invoices' | 'referrals' | 'reflections' | 'coaches' | 'tournaments', number>
+
+/** Selection interest still waiting for a decision, for one kind of round (Rowville Eagles trials or tournament teams). */
+async function undecided(p: Payload, kind: 'rowville' | 'tournament') {
+  const { docs: rounds } = await p.find({ pagination: false, collection: 'selection-rounds', where: { status: { in: ['open', 'selecting'] }, kind: { equals: kind } }, limit: 50, depth: 0, ...q, select: { title: true } })
+  if (!rounds.length) return 0
+  return (await p.count({ collection: 'selection-entries', where: { round: { in: rounds.map((r) => r.id) }, status: { in: ['interested', 'trial-booked', 'attended'] } }, ...q })).totalDocs
+}
 
 export async function managementAttention(p: Payload, user: User): Promise<ManagementCounts> {
   const now = new Date().toISOString()
@@ -138,12 +145,8 @@ export async function managementAttention(p: Payload, user: User): Promise<Manag
       }, 0)
       return waiting.totalDocs + noCoach
     }),
-    // Expressions of interest still waiting for a decision (tournaments + Rowville)
-    safe(async () => {
-      const { docs: rounds } = await p.find({ pagination: false, collection: 'selection-rounds', where: { status: { in: ['open', 'selecting'] } }, limit: 50, depth: 0, ...q, select: { title: true } })
-      if (!rounds.length) return 0
-      return (await p.count({ collection: 'selection-entries', where: { round: { in: rounds.map((r) => r.id) }, status: { in: ['interested', 'trial-booked', 'attended'] } }, ...q })).totalDocs
-    }),
+    // Expressions of interest still waiting for a decision: Rowville Eagles trials (tournaments are counted below)
+    safe(() => undecided(p, 'rowville')),
     safe(() => unreadCount(p, { user, side: 'management' })),
     safe(async () => (await p.count({ collection: 'orders', where: { status: { equals: 'paid' } }, ...q })).totalDocs),
     // Foundation+: videos waiting, past-due players, next month's challenge not ready
@@ -171,5 +174,6 @@ export async function managementAttention(p: Payload, user: User): Promise<Manag
   const reflections = await safe(async () => (await p.count({ collection: 'welfare-flags', where: { status: { equals: 'open' } }, ...q })).totalDocs)
   // Coaches whose WWCC is waiting to be checked
   const coaches = await safe(async () => (await p.count({ collection: 'users', where: { roles: { contains: 'coach' }, 'wwcc.submittedAt': { exists: true }, 'wwcc.checkedAt': { exists: false } }, ...q })).totalDocs)
-  return { bookings, payments, cover, availability, terms, selections, messages, store, foundation, consent, reports, dates, promotions, camps, yearly, announcements, invoices, referrals, reflections, coaches }
+  const tournaments = await safe(() => undecided(p, 'tournament'))
+  return { bookings, payments, cover, availability, terms, selections, messages, store, foundation, consent, reports, dates, promotions, camps, yearly, announcements, invoices, referrals, reflections, coaches, tournaments }
 }
