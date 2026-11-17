@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { DashboardGrid } from '@/components/dashboard/DashboardGrid'
 import { useLiveCounts } from '@/components/dashboard/LiveDashboard'
-import { badgeMeaning } from '@/components/dashboard/badge'
+import { badgeLabel, badgeMeaning } from '@/components/dashboard/badge'
 import type { ManagementSection } from '@/app/(frontend)/management/items'
 
 /**
@@ -22,7 +22,7 @@ export function SectionDashboard({ sections, initial }: { sections: ManagementSe
           <ul className="divide-y divide-line">
             {todo.map(({ i, s, n }) => (
               <li key={i.key}>
-                <Link href={i.href} data-attn={i.key} className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-white/5">
+                <Link href={i.href} data-attn={i.key} aria-label={badgeLabel(i.label, n, badgeMeaning(i.key, n, 'management'))} className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-white/5">
                   <span>
                     <span className="font-semibold">{i.label}</span>
                     {!s.href && <span className="block text-xs text-muted">{s.label}</span>}
