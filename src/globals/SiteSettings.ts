@@ -3,6 +3,9 @@ import { refreshGlobal } from '../lib/revalidate'
 import { parseGoogleIds, unrecognisedGoogleParts } from '../tracking/config'
 import { isStaff } from '../access'
 
+
+/** The club's Meta ad account number — it was once entered here by mistake; a pixel ID is a different number. */
+const AD_ACCOUNT = '472931888098255'
 export const SiteSettings: GlobalConfig = {
   slug: 'site-settings',
   admin: { group: 'Club' },
@@ -77,7 +80,7 @@ export const SiteSettings: GlobalConfig = {
       type: 'group',
       admin: { description: 'Lets Meta and Google Ads see which ads bring bookings. Only runs on the live website, never on Management, coach or private-link pages, and never sends names, emails or children’s details. Leave a box empty to switch that one off. Changes apply straight away.' },
       fields: [
-        { name: 'metaPixelId', label: 'Meta Pixel ID', type: 'text', admin: { description: 'Numbers only, e.g. 472931888098255 (Meta Events Manager → Data sources)' }, validate: (v: unknown) => (!v || /^\d{8,20}$/.test(String(v).trim()) ? true : 'A Meta Pixel ID is 8–20 digits.') },
+        { name: 'metaPixelId', label: 'Meta Pixel ID', type: 'text', admin: { description: 'The pixel’s ID (Meta Events Manager → Data sources → your pixel), numbers only — not the ad account number.' }, validate: (v: unknown) => (!v ? true : String(v).trim() === AD_ACCOUNT ? 'That’s the club’s Meta ad account number, not a pixel. Use the pixel ID from Events Manager → Data sources.' : /^\d{8,20}$/.test(String(v).trim()) ? true : 'A Meta Pixel ID is 8–20 digits.') },
         {
           name: 'googleTagIds',
           label: 'Google tag ID(s)',

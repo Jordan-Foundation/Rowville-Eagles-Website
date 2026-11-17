@@ -7,7 +7,9 @@ import { sendEmail } from '@/lib/email'
 import { emailLayout } from '@/lib/email-templates'
 import { siteUrl } from '@/lib/payments'
 
-export type WaitlistState = { done?: boolean; error?: string }
+/** `lead` is a random reference for the ad Lead event — only set for real sign-ups (not bots). */
+export type WaitlistState = { done?: boolean; error?: string; lead?: string }
+const lead = () => `FPW-${crypto.randomUUID().slice(0, 8).toUpperCase()}`
 const WAITLIST_WORDING = 'Email me when Foundation+ launches, with a link to claim a free month of Premium.'
 
 /**
@@ -35,7 +37,7 @@ export async function joinWaitlist(_prev: WaitlistState, fd: FormData): Promise<
     } catch {
       return { error: 'We couldn’t send the email just now — please try again in a minute.' }
     }
-    return { done: true }
+    return { done: true, lead: lead() }
   }
   const { totalDocs } = await p.count({ collection: 'fplus-waitlist', where: { email: { equals: email } }, overrideAccess: true })
   if (!totalDocs) {
@@ -50,5 +52,5 @@ export async function joinWaitlist(_prev: WaitlistState, fd: FormData): Promise<
     ])
     await sendEmail(p, { to: email, subject: 'You’re on the Foundation+ waitlist', html, sender: 'academy' })
   }
-  return { done: true }
+  return { done: true, lead: lead() }
 }

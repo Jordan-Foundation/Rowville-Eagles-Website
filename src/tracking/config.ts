@@ -19,7 +19,8 @@ export function unrecognisedGoogleParts(raw: string | null | undefined): string[
 }
 
 export function trackingConfig(t: Stored): TrackingConfig | null {
-  const meta = t?.metaPixelId?.trim() && /^\d{8,20}$/.test(t.metaPixelId.trim()) ? t.metaPixelId.trim() : null
+  // 472931888098255 is the club's Meta ad account number (entered here once by mistake) — never load it as a pixel
+  const meta = t?.metaPixelId?.trim() && /^\d{8,20}$/.test(t.metaPixelId.trim()) && t.metaPixelId.trim() !== '472931888098255' ? t.metaPixelId.trim() : null
   const google = parseGoogleIds(t?.googleTagIds)
   if (!meta && !google.length) return null
   // A label pasted as the whole send_to ("AW-123/AbC") keeps only the part after the "/"
