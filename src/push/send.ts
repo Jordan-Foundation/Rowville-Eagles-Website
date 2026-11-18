@@ -51,3 +51,14 @@ export async function pushTo(p: Payload, userId: number, msg: { title: string; b
   }
   return reached
 }
+
+/** Everyone in Management (admins and committee) who turned notifications on, on any of their devices. */
+export async function pushStaff(p: Payload, msg: { title: string; body: string; url: string; tag?: string }) {
+  const { docs: subs } = await p.find({ collection: 'push-subscriptions', limit: 500, depth: 0, overrideAccess: true, pagination: false, select: { user: true } })
+  const userIds = [...new Set(subs.map((s) => (typeof s.user === 'object' ? s.user.id : s.user)))]
+  if (!userIds.length) return 0
+  const { docs: staff } = await p.find({ collection: 'users', where: { id: { in: userIds }, roles: { in: ['admin', 'committee'] } }, limit: 100, depth: 0, overrideAccess: true, pagination: false, select: { email: true } })
+  let reached = 0
+  for (const u of staff) reached += await pushTo(p, u.id, msg)
+  return reached
+}

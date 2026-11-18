@@ -21,10 +21,9 @@ const safe = async (f: () => Promise<number>) => {
   }
 }
 
-/** Terms where availability is due and still open. */
-async function termsAwaitingAvailability(p: Payload) {
-  const now = new Date().toISOString()
-  const { docs } = await p.find({ pagination: false, collection: 'academy-terms', where: { status: { in: ['availability', 'open'] }, availabilityDeadline: { greater_than: now } }, limit: 10, depth: 0, ...q })
+/** Terms collecting availability whose deadline is in the next 2 weeks — only then does missing availability count as outstanding. */
+async function termsAwaitingAvailability(p: Payload, now = new Date()) {
+  const { docs } = await p.find({ pagination: false, collection: 'academy-terms', where: { status: { in: ['availability', 'open'] }, availabilityDeadline: { greater_than: now.toISOString(), less_than_equal: new Date(now.getTime() + 14 * 86_400_000).toISOString() } }, limit: 10, depth: 0, ...q })
   return docs
 }
 
@@ -125,8 +124,9 @@ export async function managementAttention(p: Payload, user: User): Promise<Manag
     safe(async () => {
       const termsDue = await termsAwaitingAvailability(p)
       if (!termsDue.length) return 0
+      // Active coach profiles (not every account with the coach role)
       const [coaches, submitted] = await Promise.all([
-        p.count({ collection: 'users', where: { roles: { contains: 'coach' } }, ...q }),
+        p.count({ collection: 'academy-coaches', where: { active: { not_equals: false } }, ...q }),
         p.count({ collection: 'academy-availability', where: { term: { in: termsDue.map((t) => t.id) }, submittedAt: { exists: true } }, ...q }),
       ])
       return Math.max(0, coaches.totalDocs * termsDue.length - submitted.totalDocs)

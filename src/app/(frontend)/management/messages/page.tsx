@@ -35,8 +35,8 @@ export default async function StaffMessages({ searchParams }: { searchParams: Pr
       </div>
       <div className="mt-6"><InboxList items={items} base="/management/messages" empty="No messages yet." /></div>
       <details className="mt-10 border border-line p-5" open={problems.length > 0} data-sms-alerts>
-        <summary className="cursor-pointer font-semibold">Text alerts {alertNumbers.length ? `(${alertNumbers.map((n) => n.replace(/^\+61/, '0')).join(', ')})` : '— no numbers set'}</summary>
-        <p className="mt-2 text-sm text-muted">These mobiles get a text whenever someone texts the club’s number (not the person who sent it). Change them in Admin → Site settings → “Text alerts for new messages”.</p>
+        <summary className="cursor-pointer font-semibold">Urgent text alerts {alertNumbers.length ? `(${alertNumbers.map((n) => n.replace(/^\+61/, '0')).join(', ')})` : '— no numbers set'}</summary>
+        <p className="mt-2 text-sm text-muted">New messages now come as free notifications on Management phones (turn them on in Management → Notifications). These mobiles only get texts for urgent events — a session in the next 48 hours cancelled or moved, and cover needed. Change them in Admin → Site settings → “Urgent text alerts”.</p>
         <div className="mt-3"><SmsTest /></div>
         {problems.length > 0 && (
           <div className="mt-5">

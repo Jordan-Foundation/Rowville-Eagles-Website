@@ -10,7 +10,7 @@ const toKey = (b64: string) => {
 }
 
 /** "Turn on notifications" for this phone (session-summary reminders and other coach alerts). */
-export function PushToggle({ publicKey, compact = false }: { publicKey: string; compact?: boolean }) {
+export function PushToggle({ publicKey, compact = false, label = 'Get a notification when session summaries are due.' }: { publicKey: string; compact?: boolean; label?: string }) {
   const [state, setState] = useState<'checking' | 'unsupported' | 'ios-install' | 'off' | 'on' | 'blocked' | 'busy'>('checking')
   const [msg, setMsg] = useState<string | null>(null)
   useEffect(() => {
@@ -51,7 +51,7 @@ export function PushToggle({ publicKey, compact = false }: { publicKey: string; 
   return (
     <div className={box} data-push={state}>
       {state === 'on' && <p>🔔 Notifications are on for this phone. <button type="button" onClick={turnOff} className="underline">Turn off</button></p>}
-      {(state === 'off' || state === 'busy') && <p className="flex flex-wrap items-center gap-3"><span>Get a notification when session summaries are due.</span><button type="button" onClick={turnOn} disabled={state === 'busy'} className="min-h-10 bg-white px-4 text-xs font-semibold uppercase tracking-[0.12em] text-black disabled:opacity-60">Turn on notifications</button></p>}
+      {(state === 'off' || state === 'busy') && <p className="flex flex-wrap items-center gap-3"><span>{label}</span><button type="button" onClick={turnOn} disabled={state === 'busy'} className="min-h-10 bg-white px-4 text-xs font-semibold uppercase tracking-[0.12em] text-black disabled:opacity-60">Turn on notifications</button></p>}
       {state === 'ios-install' && <p>To get notifications on iPhone: open this site in Safari → Share → <strong>Add to Home Screen</strong>, open the portal from your home screen, then come back here and turn them on.</p>}
       {state === 'blocked' && <p>Notifications are blocked for this site — allow them in your phone’s settings for this browser, then reload.</p>}
       {state === 'unsupported' && !compact && <p>This browser can’t show notifications — you’ll still get the email.</p>}

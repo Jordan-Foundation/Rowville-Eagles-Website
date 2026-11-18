@@ -5,6 +5,8 @@ import { payload } from '@/lib/payload'
 import { TZ } from '@/lib/time'
 import { SECTION, ORDER, type FeedKind } from '@/staff-feed/rules'
 import { alertNumbers, digestRecipients } from '@/staff-feed/service'
+import { PushToggle } from '@/components/coach/PushToggle'
+import { pushKeys } from '@/push/send'
 import { sendSummaryNow } from './actions'
 
 export const dynamic = 'force-dynamic'
@@ -27,13 +29,14 @@ export default async function Notifications({ searchParams }: { searchParams: Pr
     <div className="container-x py-14">
       <p className="eyebrow !text-brand">Management</p>
       <h1 className="mt-2 font-[family-name:var(--font-barlow)] text-5xl font-extrabold uppercase">Notifications</h1>
-      <p className="mt-2 max-w-3xl text-muted">Every booking, payment, trial sign-up and problem on the website. Urgent ones (a session in the next 48 hours booked, cancelled or moved; cover needed; a trial sign-up) are texted straight away — between 9pm and 7am they’re held and sent together at 7am. Everything goes in the 8pm summary email (skipped when nothing happened).</p>
+      <p className="mt-2 max-w-3xl text-muted">Every booking, payment, expression of interest, trial sign-up, message and problem on the website. Each one is a free notification on the phones of Management people who turn them on below (overnight ones, 9pm–7am, arrive together at 7am). Only urgent ones are also texted: a session in the next 48 hours cancelled or moved, and cover needed. The 8pm email sums up the day.</p>
+      <div className="mt-6"><PushToggle publicKey={(await pushKeys(p)).publicKey} label="Get a notification on this phone for everything coming into the business." /></div>
       {sp.done && <p role="status" className="mt-6 border border-emerald-500/50 bg-emerald-500/10 px-4 py-3 text-sm">{sp.done}</p>}
       {sp.error && <p role="alert" className="mt-6 border border-red-500/50 bg-red-500/10 px-4 py-3 text-sm">{sp.error}</p>}
       <div className="mt-6 grid gap-4 border border-line p-5 text-sm sm:grid-cols-2" data-recipients>
-        <div><p className="font-semibold">Texts go to</p><p className="text-muted">{numbers.length ? numbers.map((n) => n.replace(/^\+61/, '0')).join(', ') : 'No numbers set'}</p></div>
+        <div><p className="font-semibold">Urgent texts go to</p><p className="text-muted">{numbers.length ? numbers.map((n) => n.replace(/^\+61/, '0')).join(', ') : 'No numbers set'}</p></div>
         <div><p className="font-semibold">8pm summary goes to</p><p className="text-muted">{emails.length ? emails.join(', ') : 'No one yet'}</p></div>
-        <p className="text-xs text-muted sm:col-span-2">Change these in Admin → Site settings (“Text alerts for new messages” and “Daily summary emails”). Test the texts from <Link href="/management/messages" className="underline">Messages</Link>.</p>
+        <p className="text-xs text-muted sm:col-span-2">Change these in Admin → Site settings (“Urgent text alerts” and “Daily summary emails”). Test the texts from <Link href="/management/messages" className="underline">Messages</Link>.</p>
       </div>
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
         <nav className="flex flex-wrap gap-2" aria-label="Filter">

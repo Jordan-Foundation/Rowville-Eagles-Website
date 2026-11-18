@@ -3259,6 +3259,7 @@ export interface StaffFeed {
   id: number;
   kind: 'problem' | 'trial' | 'enquiry' | 'booking' | 'payment';
   urgent?: boolean | null;
+  pushStatus?: ('none' | 'sent' | 'held') | null;
   textStatus?: ('none' | 'sent' | 'held' | 'failed') | null;
   title: string;
   detail?: string | null;
@@ -5977,6 +5978,7 @@ export interface ActivityLogSelect<T extends boolean = true> {
 export interface StaffFeedSelect<T extends boolean = true> {
   kind?: T;
   urgent?: T;
+  pushStatus?: T;
   textStatus?: T;
   title?: T;
   detail?: T;

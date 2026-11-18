@@ -29,7 +29,7 @@ const RULES: Record<string, (a: { doc: Doc; prev: Doc | null; op: string; p: Pay
     const who = name(doc.player) || name(doc.contact)
     const href = `/admin/collections/bookings/${doc.id}`
     if (became(prev, doc, 'paid')) {
-      if (doc.bookingType === 'trial') await record(p, `bookings:${doc.id}:trial`, { kind: 'trial', urgent: true, title: `RFA trial booked: ${who}`, detail: [prog, when(doc.sessionStart), doc.contact?.phone].filter(Boolean).join(' · '), href }, req)
+      if (doc.bookingType === 'trial') await record(p, `bookings:${doc.id}:trial`, { kind: 'trial', title: `RFA trial booked: ${who}`, detail: [prog, when(doc.sessionStart), doc.contact?.phone].filter(Boolean).join(' · '), href }, req)
       else await record(p, `bookings:${doc.id}:paid`, { kind: 'payment', title: `${prog || 'Booking'} paid: ${who}`, detail: [money(doc.amount), doc.reference].filter(Boolean).join(' · '), href }, req)
     }
     if (became(prev, doc, ['cancelled', 'refunded']) && prev?.status === 'paid') await record(p, `bookings:${doc.id}:${doc.status}`, { kind: 'problem', title: `${prog || 'Booking'} ${doc.status}: ${who}`, detail: doc.reference, href }, req)
@@ -41,7 +41,7 @@ const RULES: Record<string, (a: { doc: Doc; prev: Doc | null; op: string; p: Pay
     const who = name(doc.player)
     const href = `/management/academy/bookings/${doc.id}`
     if (became(prev, doc, 'confirmed') && (!prev || prev.status === 'held' || !prev.status)) {
-      await record(p, `academy-bookings:${doc.id}:confirmed`, { kind: 'booking', urgent: isSoon(doc.firstSessionAt), title: `${what} booked: ${who}`, detail: [coach && `with ${coach}`, doc.firstSessionAt && `first ${when(doc.firstSessionAt)}`, money(doc.amount)].filter(Boolean).join(' · '), href }, req)
+      await record(p, `academy-bookings:${doc.id}:confirmed`, { kind: 'booking', title: `${what} booked: ${who}`, detail: [coach && `with ${coach}`, doc.firstSessionAt && `first ${when(doc.firstSessionAt)}`, money(doc.amount)].filter(Boolean).join(' · '), href }, req)
     }
     if (became(prev, doc, 'payment_failed')) await record(p, `academy-bookings:${doc.id}:failed:${new Date().toISOString().slice(0, 10)}`, { kind: 'problem', title: `Payment failed: ${who}`, detail: [what, coach && `with ${coach}`, doc.reference].filter(Boolean).join(' · '), href }, req)
     if (became(prev, doc, 'cancelled')) await record(p, `academy-bookings:${doc.id}:cancelled`, { kind: 'problem', title: `${what} cancelled: ${who}`, detail: [coach && `with ${coach}`, doc.reference].filter(Boolean).join(' · '), href }, req)
@@ -63,7 +63,11 @@ const RULES: Record<string, (a: { doc: Doc; prev: Doc | null; op: string; p: Pay
     }
   },
   // Academy term / full-year registrations
-  'academy-registrations': async ({ doc, prev, p, req }) => {
+  'academy-registrations': async ({ doc, prev, op, p, req }) => {
+    if (op === 'create' && doc.status === 'interest') {
+      const prog = await title(p, 'programs', doc.program, req)
+      await record(p, `academy-registrations:${doc.id}:interest`, { kind: 'enquiry', title: `Academy interest: ${name(doc.player)}`, detail: [prog, name(doc.contact), doc.contact?.phone].filter(Boolean).join(' · '), href: '/management/academy/terms' }, req)
+    }
     if (!became(prev, doc, 'paid')) return
     const prog = await title(p, 'programs', doc.program, req)
     await record(p, `academy-registrations:${doc.id}:paid`, { kind: 'payment', title: `Academy registration paid: ${doc.displayName ?? ''}`.trim(), detail: [prog, doc.reference].filter(Boolean).join(' · '), href: `/admin/collections/academy-registrations/${doc.id}` }, req)
@@ -80,7 +84,7 @@ const RULES: Record<string, (a: { doc: Doc; prev: Doc | null; op: string; p: Pay
   'selection-entries': async ({ doc, op, p, req }) => {
     if (op !== 'create') return
     const club = doc.kind !== 'tournament'
-    await record(p, `selection-entries:${doc.id}:new`, { kind: 'trial', urgent: club, title: `${club ? 'Club trial sign-up' : 'Tournament interest'}: ${name(doc.player)}`, detail: [doc.birthYear && `born ${doc.birthYear}`, name(doc.contact), doc.contact?.phone].filter(Boolean).join(' · '), href: `/admin/collections/selection-entries/${doc.id}` }, req)
+    await record(p, `selection-entries:${doc.id}:new`, { kind: 'trial', title: `${club ? 'Club trial sign-up' : 'Tournament interest'}: ${name(doc.player)}`, detail: [doc.birthYear && `born ${doc.birthYear}`, name(doc.contact), doc.contact?.phone].filter(Boolean).join(' · '), href: `/admin/collections/selection-entries/${doc.id}` }, req)
   },
   'fplus-waitlist': async ({ doc, op, p, req }) => {
     if (op !== 'create') return
