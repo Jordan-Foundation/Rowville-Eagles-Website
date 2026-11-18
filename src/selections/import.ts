@@ -23,6 +23,9 @@ export type ImportRow = {
   answeredAt?: string // ISO
   problem?: string
   duplicate?: string
+  /** The EOI already on the site for this player (same email + first name) */
+  existingId?: number
+  existingStatus?: string
 }
 
 const FIELDS = {
@@ -124,16 +127,21 @@ export function parseEoiSheet(rows: unknown[][], marketingWording?: string) {
 export async function markExisting(p: Payload, rows: ImportRow[], season: number) {
   const emails = [...new Set(rows.map((r) => r.email).filter(Boolean))]
   if (!emails.length) return rows
-  const { docs } = await p.find({ collection: 'selection-entries', where: { kind: { equals: 'rowville' }, season: { equals: season }, 'contact.email': { in: emails } }, limit: 5000, pagination: false, depth: 0, overrideAccess: true, select: { contact: true, player: true, reference: true } })
+  const { docs } = await p.find({ collection: 'selection-entries', where: { kind: { equals: 'rowville' }, season: { equals: season }, 'contact.email': { in: emails } }, limit: 5000, pagination: false, depth: 0, overrideAccess: true, select: { contact: true, player: true, reference: true, status: true } })
   for (const r of rows) {
     const hit = docs.find((d) => d.contact?.email?.toLowerCase() === r.email && d.player?.firstName?.toLowerCase() === r.playerFirst.toLowerCase())
-    if (hit && !r.problem && !r.duplicate) r.duplicate = `Already on the site (${hit.reference})`
+    if (hit && !r.problem && !r.duplicate) Object.assign(r, { duplicate: `Already on the site (${hit.reference})`, existingId: hit.id, existingStatus: hit.status })
   }
   return rows
 }
 
-/** Create the EOIs (rows without problems or duplicates). Nobody is messaged. */
-export async function importEois(p: Payload, rows: ImportRow[], marketingWording?: string) {
+/**
+ * Create the EOIs (rows without problems or duplicates). Nobody is messaged.
+ * `trialled`: the players have already trialled (e.g. a list from an earlier trial night). They're saved as
+ * "Attended trial" so they never get trial-date messages and sit on the selection board ready for a decision;
+ * a matching EOI already on the site that's still waiting for a trial is moved to "Attended trial" too.
+ */
+export async function importEois(p: Payload, rows: ImportRow[], marketingWording?: string, o: { trialled?: boolean } = {}) {
   const { getAgeRules } = await import('../lib/age-rules')
   const { rowvilleRound } = await import('./rounds')
   const { entryFlags } = await import('./entries')
@@ -144,7 +152,13 @@ export async function importEois(p: Payload, rows: ImportRow[], marketingWording
   await markExisting(p, rows, season)
   const round = await rowvilleRound(p, season)
   let created = 0
+  let updated = 0
   for (const r of rows) {
+    if (o.trialled && r.existingId && ['interested', 'trial-booked'].includes(r.existingStatus ?? '')) {
+      await p.update({ collection: 'selection-entries', id: r.existingId, data: { status: 'attended' }, overrideAccess: true, context: { skipOffer: true } })
+      updated++
+      continue
+    }
     if (r.problem || r.duplicate) continue
     const birthYear = birthYearOf(r.dob)
     if (!birthYear) continue
@@ -157,17 +171,17 @@ export async function importEois(p: Payload, rows: ImportRow[], marketingWording
         round: round.id,
         kind: 'rowville',
         flags: [...entryFlags(birthYear, rules, 'rowville')],
-        status: 'interested',
+        status: o.trialled ? 'attended' : 'interested',
         season,
         birthYear,
         source: 'import',
         token: newToken(),
         contact: { firstName: r.parentFirst, lastName: r.parentLast || '-', email: r.email, phone: r.phone },
-        player: { firstName: r.playerFirst, lastName: r.playerLast || '-', dateOfBirth: r.dob, gender: r.gender, previousClub: r.previousClub, notes: r.notes },
+        player: { firstName: r.playerFirst, lastName: r.playerLast || '-', dateOfBirth: r.dob, gender: r.gender, previousClub: r.previousClub, notes: o.trialled ? (r.notes ?? '').replace('Brought across from the old Google form', 'Already trialled (imported trial list)') : r.notes },
         ...(r.marketing ? { marketingOptIn: true, marketingOptInAt: r.answeredAt ?? new Date().toISOString(), marketingWording: (marketingWording ?? '').slice(0, 300) || 'Old form: news, program updates and special offers by email or SMS' } : {}),
       },
     })
     created++
   }
-  return { created, skipped: rows.length - created }
+  return { created, updated, skipped: rows.length - created - updated }
 }

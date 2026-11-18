@@ -8,7 +8,7 @@ import { getAgeRules } from '@/lib/age-rules'
 import { readSheet } from '@/selections/read-sheet'
 import { importEois, markExisting, parseEoiSheet, type ImportRow } from '@/selections/import'
 
-export type ImportState = { error?: string; rows?: ImportRow[]; wording?: string; fileName?: string; done?: { created: number; skipped: number } }
+export type ImportState = { error?: string; rows?: ImportRow[]; wording?: string; fileName?: string; done?: { created: number; updated: number; skipped: number; trialled: boolean } }
 
 const admin = async () => {
   const u = await currentUser()
@@ -56,7 +56,8 @@ export async function runImport(_prev: ImportState, fd: FormData): Promise<Impor
   }
   const parsed = parseEoiSheet(sheet)
   parsed.rows.forEach((row, i) => { row.notes = notes[i] || row.notes })
-  const result = await importEois(await payload(), parsed.rows, str(fd.get('wording'), 300))
+  const trialled = fd.get('trialled') === 'yes'
+  const result = await importEois(await payload(), parsed.rows, str(fd.get('wording'), 300), { trialled })
   revalidatePath('/management', 'layout')
-  return { done: result }
+  return { done: { ...result, trialled } }
 }
