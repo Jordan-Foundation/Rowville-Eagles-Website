@@ -48,10 +48,18 @@ export async function emailTournamentInterest(payload: Payload, entry: Selection
 }
 
 /** What families see on their profile for each status. */
-export function entryStatusLabel(e: Pick<SelectionEntry, 'status' | 'kind'>): { label: string; tone: 'info' | 'action' | 'ok' | 'muted' } {
+const shortDate = (iso: string) => new Intl.DateTimeFormat('en-AU', { day: 'numeric', month: 'short', timeZone: 'Australia/Melbourne' }).format(new Date(iso))
+
+export function entryStatusLabel(e: Pick<SelectionEntry, 'status' | 'kind'> & Partial<Pick<SelectionEntry, 'trialInvitedAt' | 'trialReminderAt' | 'notifiedSessions'>>): { label: string; tone: 'info' | 'action' | 'ok' | 'muted' } {
   switch (e.status) {
     case 'interested':
-      return { label: e.kind === 'tournament' ? 'Interest registered — awaiting selection' : 'Interest registered — we’ll email trial dates', tone: 'info' }
+      if (e.kind === 'tournament') return { label: 'Interest registered — awaiting selection', tone: 'info' }
+      // Trial dates already sent (one-tap confirm link by email + text) but not confirmed yet
+      if (e.trialInvitedAt || e.notifiedSessions?.length) {
+        const sent = e.trialInvitedAt ? ` ${shortDate(e.trialInvitedAt)}` : ''
+        return { label: `Trial dates sent${sent} — not confirmed yet${e.trialReminderAt ? ` · reminder sent ${shortDate(e.trialReminderAt)}` : ''}`, tone: 'action' }
+      }
+      return { label: 'Interest registered — we’ll email trial dates', tone: 'info' }
     case 'trial-booked':
       return { label: 'Trial booked', tone: 'info' }
     case 'attended':
