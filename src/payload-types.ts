@@ -1769,6 +1769,12 @@ export interface SelectionEntry {
     | ('facebook-instagram-ad' | 'google' | 'friend-family' | 'school' | 'rowville-eagles' | 'social-post' | 'other')
     | null;
   /**
+   * From the form they filled in (e.g. the old Google form)
+   */
+  marketingOptIn?: boolean | null;
+  marketingOptInAt?: string | null;
+  marketingWording?: string | null;
+  /**
    * When the “trial dates are here” email and text went out
    */
   trialInvitedAt?: string | null;
@@ -4735,6 +4741,9 @@ export interface SquadsSelect<T extends boolean = true> {
 export interface SelectionEntriesSelect<T extends boolean = true> {
   source?: T;
   heardFrom?: T;
+  marketingOptIn?: T;
+  marketingOptInAt?: T;
+  marketingWording?: T;
   trialInvitedAt?: T;
   trialReminderAt?: T;
   referralCode?: T;

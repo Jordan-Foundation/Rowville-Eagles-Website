@@ -25,7 +25,7 @@ export function bankDate(s: string): string | null {
   return null
 }
 
-function splitCsv(line: string): string[] {
+export function splitCsv(line: string): string[] {
   const out: string[] = []
   let cur = ''
   let quoted = false
