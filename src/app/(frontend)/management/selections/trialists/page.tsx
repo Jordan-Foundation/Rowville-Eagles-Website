@@ -6,6 +6,7 @@ import { groupLabel } from '@/lib/age-groups'
 import { playingYear } from '@/selections/board'
 import { isTrialist, PROGRAMS, STAGE_LABEL, trialistStage } from '@/selections/flow'
 import { loadSelection, matchesSearch, nameOf } from '@/selections/board-data'
+import { entryStatusLabel } from '@/selections/entries'
 import { SelectionsNav, Flash } from '../_shared/Nav'
 import { href, selectionContext, type Search } from '../_shared/ctx'
 import { trialistAction } from '../v2-actions'
@@ -113,7 +114,7 @@ export default async function TrialistsPage({ searchParams }: { searchParams: Pr
                         {invites.length ? invites.map((i) => <span key={i.id} className="block">{i.attended ? '✓' : '·'} {day(i.start)}{i.attended ? '' : new Date(i.start).getTime() < Date.now() ? ' (didn’t attend)' : ' (invited)'}</span>) : <span className="text-muted">Not invited yet</span>}
                       </td>
                       <td className="px-2 py-2 text-xs">{e.position || (typeof e.participant === 'object' && e.participant?.football?.position) || ''}{e.player.notes ? <span className="block text-muted">{e.player.notes.slice(0, 120)}</span> : null}</td>
-                      <td className="px-2 py-2 text-xs"><span className={st === 'another_trial' ? 'text-amber-300' : st === 'attended' ? 'text-emerald-300' : 'text-muted'}>{STAGE_LABEL[st]}</span></td>
+                      <td className="px-2 py-2 text-xs"><span className={st === 'another_trial' ? 'text-amber-300' : st === 'attended' ? 'text-emerald-300' : 'text-muted'}>{STAGE_LABEL[st]}</span>{st === 'registered' && e.kind !== 'tournament' && <span className="block text-muted" data-invite-status>{entryStatusLabel(e).label}</span>}</td>
                       <td className="px-2 py-2">
                         <span className="flex flex-wrap gap-1.5">
                           <button name="one" value={`${e.id}:successful`} aria-label={`${nameOf(e)}: successful`} className={`${btn} border-emerald-400/60 text-emerald-200`}>Successful</button>
