@@ -19,8 +19,11 @@ export default async function PickNumberPage({ params }: { params: Promise<{ id:
   const kid = await p.findByID({ collection: 'participants', id: Number(id), depth: 0, overrideAccess: true, disableErrors: true })
   if (!kid || (typeof kid.account === 'object' ? kid.account?.id : kid.account) !== user.id) notFound()
   const s = await numberState(p, kid)
+  // Eagles registrations: the training preferences survey comes next
+  const survey = await (await import('@/selections/prefs')).pendingSurveyFor(p, user.id, kid.id)
+  const next = survey ? (await import('@/selections/prefs')).surveyHref(survey.ref) : null
   let body: React.ReactNode
-  if (s.kind === 'has') body = <div className="text-center" data-number-has><p className="text-sm uppercase tracking-[0.2em] text-muted">{kid.firstName}’s number</p><p className="mt-2 font-[family-name:var(--font-barlow)] text-8xl font-extrabold">{s.number}</p><p className="mt-3 text-muted">It’s theirs for the Academy and Rowville Eagles.</p></div>
+  if (s.kind === 'has') body = <div className="text-center" data-number-has><p className="text-sm uppercase tracking-[0.2em] text-muted">{kid.firstName}’s number</p><p className="mt-2 font-[family-name:var(--font-barlow)] text-8xl font-extrabold">{s.number}</p><p className="mt-3 text-muted">It’s theirs for the Academy and Rowville Eagles.</p>{next && <a href={next} className="mt-6 inline-block rounded-full bg-brand px-6 py-3 font-semibold text-white" data-survey-next>Next: training preferences →</a>}</div>
   else if (s.kind === 'no-dob') body = <p className="text-muted">We need {kid.firstName}’s date of birth before a number can be picked. Please contact the club.</p>
   else if (s.kind === 'senior') body = <p className="text-muted">Senior players don’t pick a number here — your team manager sorts out senior numbers.</p>
   else if (s.kind !== 'pick') body = <p className="text-muted">Numbers aren’t set up for this age group yet — the club will be in touch.</p>
@@ -28,7 +31,7 @@ export default async function PickNumberPage({ params }: { params: Promise<{ id:
   else body = (
     <>
       <p className="text-muted">Born {s.birthYear} · numbers {s.range.start}–{s.range.end}. Tap a number, then confirm. Once confirmed it’s {kid.firstName}’s for both the Academy and Rowville Eagles.</p>
-      <div className="mt-6"><NumberPicker kidId={kid.id} name={kid.firstName} numbers={numbersIn(s.range)} taken={s.taken} initial={s.held?.number ?? null} previous={s.previous} /></div>
+      <div className="mt-6"><NumberPicker kidId={kid.id} name={kid.firstName} numbers={numbersIn(s.range)} taken={s.taken} initial={s.held?.number ?? null} previous={s.previous} next={next} /></div>
     </>
   )
   return (

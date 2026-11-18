@@ -54,14 +54,24 @@ export const SelectionEntries: CollectionConfig = {
     ],
     beforeChange: [
       ({ data, originalDoc }) => {
-        if (data.status === 'offered' && originalDoc?.status !== 'offered' && (!data.offeredTeam || !data.registrationProgram)) {
-          throw new APIError('To offer a place, choose the team and the registration program first.', 400, undefined, true)
+        // Teams are now built after offers go out, so an offer only needs the registration program
+        if (data.status === 'offered' && originalDoc?.status !== 'offered' && !(data.registrationProgram ?? originalDoc?.registrationProgram)) {
+          throw new APIError('To offer a place, choose the registration program first.', 400, undefined, true)
         }
         return data
       },
     ],
     afterChange: [
       async ({ doc, previousDoc, req, context }) => {
+        // A trial night booked through the join form goes on the player's trial history (and the attendance list)
+        for (const k of ['trialSession', 'trialSession2'] as const) {
+          const now = doc[k] && typeof doc[k] === 'object' ? doc[k].id : doc[k]
+          const was = previousDoc?.[k] && typeof previousDoc[k] === 'object' ? previousDoc[k].id : previousDoc?.[k]
+          if (now && now !== was) {
+            const { ensureInvite } = await import('../v2')
+            await ensureInvite(req.payload, { entry: doc.id, session: now, source: 'booked' }, req).catch((e) => req.payload.logger.error({ err: e, msg: `Trial history for ${doc.reference}` }))
+          }
+        }
         if (context.skipOffer) return
         if (doc.status === 'offered' && previousDoc?.status !== 'offered') await sendOffer(req.payload, doc, req)
       },
@@ -163,6 +173,36 @@ export const SelectionEntries: CollectionConfig = {
           { name: 'outcomeSentAt', type: 'date', admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } } },
           { name: 'outcomeSentBy', type: 'relationship', relationTo: 'users', admin: { readOnly: true } },
         ] },
+      ],
+    },
+    {
+      type: 'collapsible',
+      label: 'Trials, depth chart & preferences',
+      admin: { initCollapsed: true },
+      fields: [
+        { type: 'row', fields: [
+          { name: 'needsAnotherTrial', label: 'Needs another trial', type: 'checkbox', defaultValue: false, index: true },
+          { name: 'outcomeMarkedAt', label: 'Outcome marked', type: 'date', admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } } },
+          { name: 'outcomeMarkedBy', type: 'relationship', relationTo: 'users', admin: { readOnly: true } },
+        ] },
+        { type: 'row', fields: [
+          { name: 'position', label: 'Position (if given)', type: 'text', admin: { description: 'e.g. Goalkeeper, striker' } },
+          { name: 'positionGroup', label: 'Depth chart position', type: 'select', options: [{ label: 'GK', value: 'gk' }, { label: 'DEF', value: 'def' }, { label: 'MID', value: 'mid' }, { label: 'FWD', value: 'fwd' }] },
+          { name: 'sortOrder', type: 'number', admin: { hidden: true } },
+        ] },
+        {
+          name: 'prefs',
+          label: 'Family preferences (after registration)',
+          type: 'group',
+          admin: { description: 'Can’t be guaranteed — collected to help balance teams' },
+          fields: [
+            { type: 'row', fields: [
+              { name: 'trainingNights', label: 'Training nights', type: 'select', options: [{ label: 'Monday & Wednesday', value: 'mon_wed' }, { label: 'Tuesday & Thursday', value: 'tue_thu' }, { label: 'No preference', value: 'none' }] },
+              { name: 'gameDay', label: 'Game day', type: 'select', options: [{ label: 'Saturday', value: 'sat' }, { label: 'Sunday', value: 'sun' }, { label: 'No preference', value: 'none' }] },
+              { name: 'answeredAt', type: 'date', admin: { readOnly: true } },
+            ] },
+          ],
+        },
       ],
     },
     { name: 'trialSession', label: 'Trial night', type: 'relationship', relationTo: 'trial-sessions', admin: { position: 'sidebar', condition: (d) => d?.kind !== 'tournament' } },

@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useState, useTransition } from 'react'
 import { confirmAction, holdAction, type PickState } from './actions'
 
-export function NumberPicker({ kidId, name, numbers, taken, initial, previous }: { kidId: number; name: string; numbers: number[]; taken: number[]; initial: number | null; previous: number | null }) {
+export function NumberPicker({ kidId, name, numbers, taken, initial, previous, next }: { kidId: number; name: string; numbers: number[]; taken: number[]; initial: number | null; previous: number | null; next?: string | null }) {
   const [selected, setSelected] = useState<number | null>(initial ?? previous)
   const [state, setState] = useState<PickState>(initial ? { held: initial } : {})
   const [gone, setGone] = useState<number[]>(taken)
@@ -15,7 +15,11 @@ export function NumberPicker({ kidId, name, numbers, taken, initial, previous }:
         <p className="text-sm uppercase tracking-[0.2em] text-muted">{name}’s number</p>
         <p className="mt-2 font-[family-name:var(--font-barlow)] text-8xl font-extrabold">{state.done}</p>
         <p className="mt-3 text-muted">It’s theirs for the Academy and Rowville Eagles.</p>
-        <Link href="/account" className="mt-6 inline-block rounded-full bg-brand px-6 py-3 font-semibold text-white">Done</Link>
+        {next ? (
+          <Link href={next} className="mt-6 inline-block rounded-full bg-brand px-6 py-3 font-semibold text-white" data-survey-next>Next: training preferences →</Link>
+        ) : (
+          <Link href="/account" className="mt-6 inline-block rounded-full bg-brand px-6 py-3 font-semibold text-white">Done</Link>
+        )}
       </div>
     )
   }

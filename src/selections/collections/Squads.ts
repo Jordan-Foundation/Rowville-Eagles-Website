@@ -25,6 +25,23 @@ export const Squads: CollectionConfig = {
       { name: 'fee', label: 'Fee override (AUD)', type: 'number', min: 0, admin: { description: 'Leave blank to use the round’s fee' } },
     ] },
     { name: 'coaches', type: 'relationship', relationTo: 'users', hasMany: true, filterOptions: { roles: { in: ['coach', 'admin', 'committee'] } } },
-    { name: 'team', type: 'relationship', relationTo: 'teams', admin: { description: 'The club team / tournament team page players join once paid' } },
+    { name: 'team', type: 'relationship', relationTo: 'teams', admin: { description: 'The club team / tournament team page players join once the team is finalised' } },
+    { name: 'sortOrder', type: 'number', admin: { hidden: true } },
+    {
+      type: 'collapsible',
+      label: 'Coach welcome & finalising',
+      fields: [
+        { name: 'welcomeMessage', label: 'Coach welcome message', type: 'textarea', maxLength: 600, admin: { description: 'Written by the coach in the coach portal (Management can edit). Goes in the team email.' } },
+        { type: 'row', fields: [
+          { name: 'welcomeUpdatedBy', type: 'relationship', relationTo: 'users', admin: { readOnly: true } },
+          { name: 'welcomeUpdatedAt', type: 'date', admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } } },
+        ] },
+        { type: 'row', fields: [
+          { name: 'finalisedAt', type: 'date', admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } } },
+          { name: 'finalisedBy', type: 'relationship', relationTo: 'users', admin: { readOnly: true } },
+          { name: 'teamEmailSentAt', type: 'date', admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } } },
+        ] },
+      ],
+    },
   ],
 }

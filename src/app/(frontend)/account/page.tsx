@@ -24,6 +24,7 @@ import { appPageMetadata, appViewer } from '@/lib/app-viewer'
 import { APP } from '@/lib/app-brand'
 import { appProgress } from '@/lib/app-install'
 import { AppTaskCard } from '@/components/app/AppTaskCard'
+import { pendingSurveys, surveyHref } from '@/selections/prefs'
 
 export const dynamic = 'force-dynamic'
 export const generateMetadata = (): Promise<Metadata> => appPageMetadata({ title: 'My account', robots: { index: false } })
@@ -121,6 +122,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   const past = sessionItems.filter((i) => new Date(i.date).getTime() < now).reverse()
 
   const { brand: appBrand } = await appViewer()
+  const surveys = await pendingSurveys(p, user.id)
   const appState = appProgress(user)
   return (
     <div className="container-x py-14">
@@ -139,6 +141,12 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
       </div>
       {welcome && <p className="mt-6 rounded-xl border border-accent bg-accent/10 px-5 py-4">Your account is ready. Welcome to the Eagles!</p>}
       <AppTaskCard appName={APP[appBrand].name} installed={appState.installed} push={appState.push} show={appState.showCard} />
+      {surveys.length > 0 && (
+        <div className="mt-6 rounded-xl border-2 border-accent bg-accent/10 px-5 py-4" data-prefs-banner>
+          <p className="font-semibold">Tell us your preferred training nights and game day</p>
+          <p className="mt-1 flex flex-wrap gap-3 text-sm">{surveys.map((s) => <Link key={s.ref} href={surveyHref(s.ref)} className="font-semibold underline">Answer for {s.name} →</Link>)}</p>
+        </div>
+      )}
       {needNumbers.length > 0 && (
         <div className="mt-6 rounded-xl border-2 border-accent bg-accent/10 px-5 py-4" data-number-banner>
           <p className="font-semibold">Pick your shirt number</p>

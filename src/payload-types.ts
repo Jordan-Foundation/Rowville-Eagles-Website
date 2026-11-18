@@ -100,6 +100,8 @@ export interface Config {
     'selection-rounds': SelectionRound;
     squads: Squad;
     'selection-entries': SelectionEntry;
+    'trial-invites': TrialInvite;
+    'selection-audit': SelectionAudit;
     'trial-sessions': TrialSession;
     programs: Program;
     bookings: Booking;
@@ -202,6 +204,8 @@ export interface Config {
     'selection-rounds': SelectionRoundsSelect<false> | SelectionRoundsSelect<true>;
     squads: SquadsSelect<false> | SquadsSelect<true>;
     'selection-entries': SelectionEntriesSelect<false> | SelectionEntriesSelect<true>;
+    'trial-invites': TrialInvitesSelect<false> | TrialInvitesSelect<true>;
+    'selection-audit': SelectionAuditSelect<false> | SelectionAuditSelect<true>;
     'trial-sessions': TrialSessionsSelect<false> | TrialSessionsSelect<true>;
     programs: ProgramsSelect<false> | ProgramsSelect<true>;
     bookings: BookingsSelect<false> | BookingsSelect<true>;
@@ -975,6 +979,10 @@ export interface Team {
    * Changes are highlighted on the team page for 14 days
    */
   trainingChangedAt?: string | null;
+  /**
+   * Shown in the team email once set
+   */
+  gameDay?: ('Saturday' | 'Sunday') | null;
   /**
    * Short text for the public Fixtures page, e.g. “Tue & Thu 5:00pm”
    */
@@ -1886,6 +1894,23 @@ export interface SelectionEntry {
   selectedAt?: string | null;
   outcomeSentAt?: string | null;
   outcomeSentBy?: (number | null) | User;
+  needsAnotherTrial?: boolean | null;
+  outcomeMarkedAt?: string | null;
+  outcomeMarkedBy?: (number | null) | User;
+  /**
+   * e.g. Goalkeeper, striker
+   */
+  position?: string | null;
+  positionGroup?: ('gk' | 'def' | 'mid' | 'fwd') | null;
+  sortOrder?: number | null;
+  /**
+   * Can’t be guaranteed — collected to help balance teams
+   */
+  prefs?: {
+    trainingNights?: ('mon_wed' | 'tue_thu' | 'none') | null;
+    gameDay?: ('sat' | 'sun' | 'none') | null;
+    answeredAt?: string | null;
+  };
   trialSession?: (number | null) | TrialSession;
   trialSession2?: (number | null) | TrialSession;
   offeredTeam?: (number | null) | Team;
@@ -1931,9 +1956,19 @@ export interface Squad {
   fee?: number | null;
   coaches?: (number | User)[] | null;
   /**
-   * The club team / tournament team page players join once paid
+   * The club team / tournament team page players join once the team is finalised
    */
   team?: (number | null) | Team;
+  sortOrder?: number | null;
+  /**
+   * Written by the coach in the coach portal (Management can edit). Goes in the team email.
+   */
+  welcomeMessage?: string | null;
+  welcomeUpdatedBy?: (number | null) | User;
+  welcomeUpdatedAt?: string | null;
+  finalisedAt?: string | null;
+  finalisedBy?: (number | null) | User;
+  teamEmailSentAt?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1947,6 +1982,7 @@ export interface TrialSession {
    * e.g. "MiniRoos trials — night 1"
    */
   title: string;
+  program?: ('eagles' | 'rfa') | null;
   start: string;
   durationMinutes?: number | null;
   capacityPerAgeGroup?: number | null;
@@ -2425,6 +2461,42 @@ export interface Post {
     };
     [k: string]: unknown;
   } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "trial-invites".
+ */
+export interface TrialInvite {
+  id: number;
+  /**
+   * <entry>-<session>
+   */
+  key?: string | null;
+  entry: number | SelectionEntry;
+  session: number | TrialSession;
+  source?: ('booked' | 'invited') | null;
+  invitedAt?: string | null;
+  invitedBy?: (number | null) | User;
+  attended?: boolean | null;
+  attendedAt?: string | null;
+  markedBy?: (number | null) | User;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "selection-audit".
+ */
+export interface SelectionAudit {
+  id: number;
+  round?: (number | null) | SelectionRound;
+  entry?: (number | null) | SelectionEntry;
+  squad?: (number | null) | Squad;
+  action: string;
+  summary: string;
+  by?: (number | null) | User;
   updatedAt: string;
   createdAt: string;
 }
@@ -3847,6 +3919,14 @@ export interface PayloadLockedDocument {
         value: number | SelectionEntry;
       } | null)
     | ({
+        relationTo: 'trial-invites';
+        value: number | TrialInvite;
+      } | null)
+    | ({
+        relationTo: 'selection-audit';
+        value: number | SelectionAudit;
+      } | null)
+    | ({
         relationTo: 'trial-sessions';
         value: number | TrialSession;
       } | null)
@@ -4988,6 +5068,13 @@ export interface SquadsSelect<T extends boolean = true> {
   fee?: T;
   coaches?: T;
   team?: T;
+  sortOrder?: T;
+  welcomeMessage?: T;
+  welcomeUpdatedBy?: T;
+  welcomeUpdatedAt?: T;
+  finalisedAt?: T;
+  finalisedBy?: T;
+  teamEmailSentAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -5036,6 +5123,19 @@ export interface SelectionEntriesSelect<T extends boolean = true> {
   selectedAt?: T;
   outcomeSentAt?: T;
   outcomeSentBy?: T;
+  needsAnotherTrial?: T;
+  outcomeMarkedAt?: T;
+  outcomeMarkedBy?: T;
+  position?: T;
+  positionGroup?: T;
+  sortOrder?: T;
+  prefs?:
+    | T
+    | {
+        trainingNights?: T;
+        gameDay?: T;
+        answeredAt?: T;
+      };
   trialSession?: T;
   trialSession2?: T;
   offeredTeam?: T;
@@ -5068,10 +5168,42 @@ export interface SelectionEntriesSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "trial-invites_select".
+ */
+export interface TrialInvitesSelect<T extends boolean = true> {
+  key?: T;
+  entry?: T;
+  session?: T;
+  source?: T;
+  invitedAt?: T;
+  invitedBy?: T;
+  attended?: T;
+  attendedAt?: T;
+  markedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "selection-audit_select".
+ */
+export interface SelectionAuditSelect<T extends boolean = true> {
+  round?: T;
+  entry?: T;
+  squad?: T;
+  action?: T;
+  summary?: T;
+  by?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "trial-sessions_select".
  */
 export interface TrialSessionsSelect<T extends boolean = true> {
   title?: T;
+  program?: T;
   start?: T;
   durationMinutes?: T;
   capacityPerAgeGroup?: T;
@@ -5628,6 +5760,7 @@ export interface TeamsSelect<T extends boolean = true> {
         id?: T;
       };
   trainingChangedAt?: T;
+  gameDay?: T;
   trainingTimes?: T;
   driblTeamId?: T;
   photo?: T;

@@ -182,18 +182,19 @@ export async function sendOffer(
 ) {
   const programId = typeof reg.registrationProgram === 'object' ? reg.registrationProgram?.id : reg.registrationProgram
   const teamId = typeof reg.offeredTeam === 'object' ? reg.offeredTeam?.id : reg.offeredTeam
-  if (!programId || !teamId) return null
+  if (!programId) return null
+  // Teams are built after offers, so the team is often not known yet
   const [program, team] = (await Promise.all([
     payload.findByID({ collection: 'programs', id: programId, depth: 0, req }),
-    payload.findByID({ collection: 'teams', id: teamId, depth: 0, req }),
-  ])) as [Program, Team]
+    teamId ? payload.findByID({ collection: 'teams', id: teamId, depth: 0, req }) : Promise.resolve(null),
+  ])) as [Program, Team | null]
 
   const { user } = await ensureAccount(payload, reg.contact, req)
   const participant = await findOrCreateParticipant(payload, user.id, { ...reg.player, gender: reg.player.gender ?? undefined }, req)
   await payload.update({
     collection: 'participants',
     id: participant.id,
-    data: { team: team.id, registrationOffer: { program: program.id, status: 'offered' } },
+    data: { ...(team ? { team: team.id } : {}), registrationOffer: { program: program.id, status: 'offered' } },
     overrideAccess: true,
     req,
   })
@@ -210,10 +211,10 @@ export async function sendOffer(
   const html = emailLayout('club', [
     {
       heading: custom?.heading ?? `Welcome to the Eagles, ${reg.player.firstName}!`,
-      intro: custom ? custom.bodyHtml : `Congratulations ${esc(reg.contact.firstName)} — after trials we’d love ${esc(reg.player.firstName)} to join <strong>${esc(team.name)}</strong> for the ${reg.season} season. ${user.activated ? 'Log in' : 'Create your account'} to accept the place and pay the club registration fee.`,
+      intro: custom ? custom.bodyHtml : `Congratulations ${esc(reg.contact.firstName)} — after trials we’d love ${esc(reg.player.firstName)} to join <strong>${esc(team?.name ?? 'Rowville Eagles')}</strong> for the ${reg.season} season. ${user.activated ? 'Log in' : 'Create your account'} to accept the place and pay the club registration fee.`,
       rows: [
         ['Player', `${reg.player.firstName} ${reg.player.lastName}`],
-        ['Team', team.name],
+        ['Team', team?.name ?? 'Announced once teams are finalised'],
         ['Club registration', formatAUD(program.price ?? 0)],
       ],
       cta: custom?.cta ?? link,
@@ -221,7 +222,7 @@ export async function sendOffer(
         'After paying the club fee you’ll complete the Football Victoria section in PlayFootball. This link is personal — please don’t forward it.',
     },
   ])
-  await sendEmail(payload, { to: reg.contact.email, subject: custom?.subject ?? `Your place in ${team.name} — Rowville Eagles ${reg.season}`, html, sender: 'club', replyTo: await replyTo(payload, req), userId: user.id, req })
+  await sendEmail(payload, { to: reg.contact.email, subject: custom?.subject ?? `Your place in ${team?.name ?? 'Rowville Eagles'} — Rowville Eagles ${reg.season}`, html, sender: 'club', replyTo: await replyTo(payload, req), userId: user.id, req })
   return { user, link }
 }
 

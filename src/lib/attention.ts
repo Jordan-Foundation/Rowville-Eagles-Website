@@ -55,7 +55,7 @@ export async function coachTeams(p: Payload, user: User) {
   return docs
 }
 
-export type CoachCounts = Record<'messages' | 'sessions' | 'attendance' | 'availability' | 'groups' | 'teams' | 'reviews' | 'reports' | 'camps' | 'reflections' | 'summaries', number>
+export type CoachCounts = Record<'messages' | 'sessions' | 'attendance' | 'availability' | 'groups' | 'teams' | 'reviews' | 'reports' | 'camps' | 'reflections' | 'summaries' | 'welcome', number>
 
 export async function coachAttention(p: Payload, user: User, coach: AcademyCoach): Promise<CoachCounts> {
   const seen = await seenAt(p, user.id, ['sessions', 'groups'])
@@ -94,7 +94,9 @@ export async function coachAttention(p: Payload, user: User, coach: AcademyCoach
   })
   // Session summaries still to write (last 14 days)
   const summaries = await safe(async () => (await (await import('../academy/summaries/service')).pendingSummaries(p, { coachId: coach.id })).length)
-  return { messages, sessions, attendance, availability, groups, teams, reviews, reports, camps, reflections, summaries }
+  // New teams this coach has been given that still need a welcome message
+  const welcome = await safe(async () => (await p.count({ collection: 'squads', where: { coaches: { contains: user.id }, finalisedAt: { exists: false }, or: [{ welcomeMessage: { exists: false } }, { welcomeMessage: { equals: '' } }] }, ...q })).totalDocs)
+  return { messages, sessions, attendance, availability, groups, teams, reviews, reports, camps, reflections, summaries, welcome }
 }
 
 export type ManagementCounts = Record<'bookings' | 'payments' | 'cover' | 'availability' | 'terms' | 'selections' | 'messages' | 'store' | 'foundation' | 'consent' | 'reports' | 'dates' | 'promotions' | 'camps' | 'yearly' | 'announcements' | 'invoices' | 'referrals' | 'reflections' | 'coaches' | 'tournaments' | 'summaries', number>
@@ -103,7 +105,8 @@ export type ManagementCounts = Record<'bookings' | 'payments' | 'cover' | 'avail
 async function undecided(p: Payload, kind: 'rowville' | 'tournament') {
   const { docs: rounds } = await p.find({ pagination: false, collection: 'selection-rounds', where: { status: { in: ['open', 'selecting'] }, kind: { equals: kind } }, limit: 50, depth: 0, ...q, select: { title: true } })
   if (!rounds.length) return 0
-  return (await p.count({ collection: 'selection-entries', where: { round: { in: rounds.map((r) => r.id) }, status: { in: ['interested', 'trial-booked', 'attended'] } }, ...q })).totalDocs
+  // Trialists with no outcome marked yet, plus outcomes marked but not sent yet
+  return (await p.count({ collection: 'selection-entries', where: { round: { in: rounds.map((r) => r.id) }, or: [{ status: { in: ['interested', 'trial-booked', 'attended'] }, outcomeQueued: { exists: false } }, { outcomeQueued: { exists: true } }] }, ...q })).totalDocs
 }
 
 export async function managementAttention(p: Payload, user: User): Promise<ManagementCounts> {
