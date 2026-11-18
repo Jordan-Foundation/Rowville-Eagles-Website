@@ -6,19 +6,21 @@ import { inTab, playingYear, type Tab } from '@/selections/board'
 import { toCsv } from '@/selections/board'
 import { loadRound } from '@/selections/service'
 import { entryStatusLabel } from '@/selections/entries'
-import { selectorOrNull } from '../../access'
+import { managementOrNull } from '@/lib/management'
+import { isSuccessful, notPaid, TRAINING_TAG, GAME_TAG } from '@/selections/flow'
 import type { Squad, TrialSession } from '@/payload-types'
 
-/** CSV export of a round's tab (staff and coaches). */
+/** CSV export of a round (Management). ?tab=selected → the selected players with team, position and preferences. */
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  if (!(await selectorOrNull())) return new Response('Unauthorised', { status: 401 })
+  if (!(await managementOrNull())) return new Response('Unauthorised', { status: 401 })
   const p = await payload()
   const data = await loadRound(p, Number((await params).id))
   if (!data) return new Response('Not found', { status: 404 })
-  const tab = (new URL(req.url).searchParams.get('tab') ?? 'all') as Tab
+  const tabParam = new URL(req.url).searchParams.get('tab') ?? 'all'
+  const tab = tabParam as Tab
   const rules = await getAgeRules(p)
   const rows = data.entries
-    .filter((e) => inTab(e, tab))
+    .filter((e) => (tabParam === 'selected' ? isSuccessful(e) : inTab(e, tab)))
     .map((e) => ({
       reference: e.reference,
       player: `${e.player.firstName} ${e.player.lastName}`,
@@ -36,6 +38,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       club: e.player.previousClub ?? '',
       flags: (e.flags ?? []).join(' '),
       notes: e.player.notes ?? '',
+      position: e.positionGroup?.toUpperCase() ?? e.position ?? '',
+      paid: notPaid(e) ? 'NP' : 'paid',
+      training_nights: e.prefs?.trainingNights ? (TRAINING_TAG[e.prefs.trainingNights] ?? 'No preference') : '',
+      game_day: e.prefs?.gameDay ? (GAME_TAG[e.prefs.gameDay] ?? 'No preference') : '',
     }))
   const name = `${data.round.title}-${tab}`.toLowerCase().replace(/[^a-z0-9]+/g, '-')
   return new Response(toCsv(rows), { headers: { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': `attachment; filename="${name}.csv"` } })

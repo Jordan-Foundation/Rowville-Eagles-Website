@@ -56,12 +56,14 @@ export async function addMember(payload: Payload, m: { team: number; participant
   return payload.create({ collection: 'team-members', overrideAccess: true, data: { ...m, active: true } })
 }
 
-/** A paid selection → the player joins the squad's team. */
+/** A paid selection → the player joins the squad's team page, once the team has been finalised. */
 export async function joinFromEntry(payload: Payload, e: SelectionEntry) {
   const participant = rel(e.participant)
   const account = rel(e.account)
   if (!e.squad || !participant || !account) return null
   const squad = (typeof e.squad === 'object' ? e.squad : await payload.findByID({ collection: 'squads', id: e.squad, depth: 1, overrideAccess: true })) as Squad
+  // Teams are built after payment: families see the team page when it's finalised (and the team email goes)
+  if (!squad.finalisedAt) return null
   const team = await ensureSquadTeam(payload, squad)
   if (!team) return null
   return addMember(payload, { team, participant, account, source: 'selection', selectionEntry: e.id })

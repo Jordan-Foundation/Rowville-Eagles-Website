@@ -72,6 +72,13 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
         if (kid && needsNumber(kid) && !(await activeNumber(p, kid.id))) numberKids.push({ id: kid.id, name: kid.firstName })
       }
     }
+    // Eagles registration paid with a number already (or none needed): straight to the preferences survey
+    let surveyLink: string | null = null
+    if (paid && program.type === 'registration' && !numberKids.length) {
+      const entryId = typeof doc.selectionEntry === 'object' ? doc.selectionEntry?.id : doc.selectionEntry
+      const entry = entryId ? await p.findByID({ collection: 'selection-entries', id: entryId, depth: 0, overrideAccess: true, disableErrors: true }) : null
+      if (entry?.reference && entry.kind === 'rowville' && !entry.prefs?.answeredAt) surveyLink = (await import('@/selections/prefs')).surveyHref(entry.reference)
+    }
     return (
       <div data-brand={academy ? 'academy' : undefined} data-page-brand={academy ? 'academy' : undefined} className="relative overflow-hidden">
         {academy && <AcademyBackdrop />}
@@ -87,6 +94,12 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
             {paidTotal > 0 && <Row k="Paid" v={`${formatAUD(paidTotal)} to ${payeeLabel}`} />}
           </dl>
           {numberKids.length > 0 && <NumberNext kids={numberKids} />}
+          {surveyLink && (
+            <div className="mt-6 rounded-2xl border-2 border-accent bg-accent/10 p-5 text-left" data-survey-card>
+              <p className="font-semibold">Next: tell us your preferred training nights and game day</p>
+              <a href={surveyLink} className="mt-3 inline-block rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-accent-ink">Answer 2 quick questions →</a>
+            </div>
+          )}
           {paid && doc.reference && (
             <BookingNextSteps
               reference={doc.reference}

@@ -13,6 +13,7 @@ export const coachItems: DashItem[] = [
   { key: 'camps', href: '/coach/camps', label: 'Holiday camps', icon: 'whistle', hint: 'Confirm & sheets' },
   { key: 'reflections', href: '/coach/reflections', label: 'Match reflections', icon: 'report', hint: 'Players’ game reflections' },
   { key: 'teams', href: '/coach/teams', label: 'Teams', icon: 'users', hint: 'Team Chat' },
+  { key: 'welcome', href: '/coach/team-welcome', label: 'Team welcome', icon: 'chat', hint: 'Write a welcome for your new team' },
   { key: 'reports', href: '/coach/reports', label: 'Reports', icon: 'report', hint: 'Player reports' },
   { key: 'reviews', href: '/coach/reviews', label: 'Video reviews', icon: 'video', hint: 'Foundation+' },
   { key: 'share', href: '/coach/share', label: 'Share links', icon: 'link' },

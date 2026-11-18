@@ -20,6 +20,7 @@ export const TrialSessions: CollectionConfig = {
   },
   fields: [
     { name: 'title', type: 'text', required: true, admin: { description: 'e.g. "MiniRoos trials — night 1"' } },
+    { name: 'program', type: 'select', defaultValue: 'eagles', options: [{ label: 'Rowville Eagles', value: 'eagles' }, { label: 'Foundation Academy (tournament teams)', value: 'rfa' }], admin: { position: 'sidebar' } },
     {
       type: 'row',
       fields: [

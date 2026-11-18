@@ -96,6 +96,7 @@ export const Teams: CollectionConfig = {
       ],
     },
     { name: 'trainingChangedAt', type: 'date', admin: { readOnly: true, description: 'Changes are highlighted on the team page for 14 days' } },
+    { name: 'gameDay', label: 'Game day', type: 'select', options: ['Saturday', 'Sunday'], admin: { description: 'Shown in the team email once set' } },
     { name: 'trainingTimes', label: 'Training (public summary)', type: 'text', admin: { description: 'Short text for the public Fixtures page, e.g. “Tue & Thu 5:00pm”' } },
     { name: 'driblTeamId', type: 'text', admin: { description: 'Dribl team identifier (future automatic fixtures)' } },
     { name: 'photo', type: 'upload', relationTo: 'media' },

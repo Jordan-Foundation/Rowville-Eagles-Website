@@ -8,7 +8,7 @@ import { siteUrl } from '../lib/payments'
 import { sendSms } from '../lib/sms'
 import { sendOffer } from '../lib/trials'
 import { pickOutcome, playingYear } from './board'
-import { DEFAULT_TEMPLATES, fill, leftovers, toHtml, type OutcomeKind } from './templates'
+import { DEFAULT_TEMPLATES, OLD_DEFAULTS, fill, leftovers, toHtml, type OutcomeKind } from './templates'
 import { dueDate, payUrl } from './payment'
 
 /** Selection dashboard actions (server). Nothing reaches a family until staff press "Send" in Review & send. */
@@ -90,16 +90,18 @@ export async function queueOutcome(payload: Payload, round: SelectionRound, ids:
 
 // ── Rendering & sending ──────────────────────────────────────────────────────
 
-function templateFor(round: SelectionRound, kind: OutcomeKind) {
+export function templateFor(round: SelectionRound, kind: OutcomeKind) {
   const t = (round.templates ?? {}) as Record<string, string | null | undefined>
-  return {
-    subject: t[`${kind}Subject`] || DEFAULT_TEMPLATES[kind].subject,
-    body: t[`${kind}Body`] || DEFAULT_TEMPLATES[kind].body,
-    sms: t[`${kind}Sms`] ?? DEFAULT_TEMPLATES[kind].sms,
+  // Untouched old wording → today's default (rounds store the default they were created with)
+  const pick = (k: 'subject' | 'body' | 'sms') => {
+    const v = t[`${kind}${k[0].toUpperCase()}${k.slice(1)}`]
+    if (v === undefined || v === null || (k !== 'sms' && !v) || v === OLD_DEFAULTS[kind][k]) return DEFAULT_TEMPLATES[kind][k]
+    return v
   }
+  return { subject: pick('subject'), body: pick('body'), sms: pick('sms') }
 }
 
-export function renderOutcome(e: SelectionEntry, round: SelectionRound, rules: AgeRules) {
+export function renderOutcome(e: SelectionEntry, round: SelectionRound, rules: AgeRules, extra: { trialDate?: string | null } = {}) {
   const kind = e.outcomeQueued as OutcomeKind
   const squad = e.squad && typeof e.squad === 'object' ? (e.squad as Squad) : null
   const program = round.program && typeof round.program === 'object' ? (round.program as Program) : null
@@ -109,7 +111,10 @@ export function renderOutcome(e: SelectionEntry, round: SelectionRound, rules: A
     parent: e.contact.firstName,
     player: e.player.firstName,
     playerFull: `${e.player.firstName} ${e.player.lastName}`,
-    team: squad?.name ?? '',
+    team: squad?.name ?? (round.kind === 'rowville' ? 'a Rowville Eagles team' : 'a team'),
+    program: round.kind === 'tournament' ? (program?.title ?? round.title) : `Rowville Eagles ${round.season}`,
+    trialDate: extra.trialDate ? formatDate(extra.trialDate, { weekday: 'long', day: 'numeric', month: 'long' }) : 'trials',
+    siteUrl: siteUrl(),
     ageGroup: by ? groupLabel(by) : '',
     event: round.kind === 'tournament' ? (program?.title ?? round.title) : `Rowville Eagles ${round.season}`,
     link: payUrl(e),
@@ -119,7 +124,7 @@ export function renderOutcome(e: SelectionEntry, round: SelectionRound, rules: A
   const subject = fill(t.subject, vars)
   const body = fill(t.body, vars)
   const sms = t.sms ? fill(t.sms, vars) : ''
-  const heading = kind === 'unsuccessful' ? 'Trial outcome' : kind === 'selected' ? `${e.player.firstName} has been selected` : `Welcome to the Eagles, ${e.player.firstName}!`
+  const heading = kind === 'unsuccessful' ? 'Thank you for trialling' : kind === 'selected' ? `${e.player.firstName} has been selected` : `Welcome to the Eagles, ${e.player.firstName}!`
   return { kind, subject, heading, bodyHtml: toHtml(body), body, sms, missing: leftovers(`${subject} ${body} ${sms}`), placement: by ? fullLabel(groupInfo(by, rules)) : '' }
 }
 
@@ -129,6 +134,7 @@ export async function sendQueued(payload: Payload, roundId: number, actor: User,
   if (!data) return { ok: false as const, error: 'Round not found.' }
   const { round } = data
   const queued = data.entries.filter((e) => e.outcomeQueued)
+  const trialDates = await lastTrialDates(payload, queued.map((e) => e.id))
   const brand = round.kind === 'tournament' && round.program && typeof round.program === 'object' && (round.program as Program).brand === 'academy' ? 'academy' : 'club'
   const result = { selected: 0, successful: 0, unsuccessful: 0, emailed: 0, failed: [] as string[] }
   for (const queuedEntry of queued) {
@@ -136,17 +142,18 @@ export async function sendQueued(payload: Payload, roundId: number, actor: User,
     const due = dueDate(new Date(), round.paymentDeadlineDays)
     // The deadline in the message must match the one we store
     const e = { ...queuedEntry, paymentDueAt: queuedEntry.outcomeQueued === 'unsuccessful' ? queuedEntry.paymentDueAt : due }
-    const r = renderOutcome(e, round, rules)
+    const r = renderOutcome(e, round, rules, { trialDate: trialDates.get(e.id) })
     try {
       const user = e.account ? ((await payload.findByID({ collection: 'users', id: rel(e.account)!, depth: 0, overrideAccess: true, disableErrors: true })) as User | null) : null
       if (r.kind === 'successful') {
-        const squad = e.squad as Squad
+        const squad = e.squad && typeof e.squad === 'object' ? (e.squad as Squad) : null
+        if (!round.program) throw new Error('This round has no registration program')
         await payload.update({
           collection: 'selection-entries',
           id: e.id,
           overrideAccess: true,
           context: { skipOffer: true },
-          data: { status: 'offered', offeredTeam: rel(squad.team), registrationProgram: rel(round.program), outcomeQueued: null, outcomeSentAt: now, outcomeSentBy: actor.id, selectedAt: now, paymentDueAt: due, remindersSent: [] },
+          data: { status: 'offered', offeredTeam: squad?.finalisedAt ? rel(squad.team) : null, registrationProgram: rel(round.program), outcomeQueued: null, outcomeSentAt: now, outcomeSentBy: actor.id, selectedAt: now, paymentDueAt: due, remindersSent: [] },
         })
         const fresh = await payload.findByID({ collection: 'selection-entries', id: e.id, depth: 0, overrideAccess: true })
         await sendOffer(payload, fresh, undefined, { subject: r.subject, heading: r.heading, bodyHtml: r.bodyHtml, cta: { label: 'Complete registration', href: payUrl(e) } })
@@ -174,4 +181,17 @@ export async function sendQueued(payload: Payload, roundId: number, actor: User,
     }
   }
   return { ok: true as const, ...result }
+}
+
+/** Each player's most recent trial date (from their trial history), for {trialDate}. */
+export async function lastTrialDates(payload: Payload, entryIds: number[]) {
+  const out = new Map<number, string>()
+  if (!entryIds.length) return out
+  const { docs } = await payload.find({ pagination: false, collection: 'trial-invites', where: { entry: { in: entryIds } }, limit: 10000, depth: 1, overrideAccess: true, select: { entry: true, session: true, attended: true } })
+  for (const i of docs) {
+    const start = i.session && typeof i.session === 'object' ? i.session.start : null
+    const id = rel(i.entry as never)
+    if (start && id && (!out.has(id) || start > out.get(id)!) && start < new Date().toISOString()) out.set(id, start)
+  }
+  return out
 }
