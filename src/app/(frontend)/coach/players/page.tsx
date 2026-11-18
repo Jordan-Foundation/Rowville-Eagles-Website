@@ -34,6 +34,7 @@ export default async function CoachPlayers({ searchParams }: { searchParams: Pro
   const { docs } = term.length >= 2
     ? await p.find({ collection: 'participants', where: { or: [{ firstName: { like: term } }, { lastName: { like: term } }] }, sort: 'firstName', limit: 50, depth: 0, overrideAccess: true })
     : { docs: [] }
+  const shirts = await (await import('@/numbers/service')).numbersFor(p, [...mine, ...docs].map((k) => k.id))
   return (
     <div className="space-y-8">
       <div>
@@ -55,7 +56,7 @@ export default async function CoachPlayers({ searchParams }: { searchParams: Pro
                   <li key={k.id}>
                     <Link href={`/foundation-plus/${k.id}`} className="flex items-center justify-between gap-4 p-4 transition hover:bg-white/5">
                       <span>
-                        <span className="font-semibold">{k.firstName} {k.lastName}</span>
+                        <span className="font-semibold">{shirts.get(k.id) ? <span className="mr-2 text-muted">#{shirts.get(k.id)}</span> : null}{k.firstName} {k.lastName}</span>
                         {k.medical?.conditions?.trim() && <span className="ml-2 bg-red-600 px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-white">Medical</span>}
                         <span className="block text-xs text-muted">{[...(where.get(k.id) ?? [])].join(' · ')}</span>
                       </span>

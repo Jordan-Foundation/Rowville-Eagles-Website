@@ -31,6 +31,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   const user = await currentUser()
   if (!user) redirect('/login?next=/account')
   const { welcome, view } = await searchParams
+  const needNumbers = user ? await (await import('@/numbers/service')).familyNeedsNumbers(await payload(), user.id) : []
   // Management and coaches land on their own dashboard; their family page is one click away (?view=family)
   const home = homeFor(user)
   if (home !== '/account' && view !== 'family') redirect(home)
@@ -131,6 +132,12 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
         <LogoutButton />
       </div>
       {welcome && <p className="mt-6 rounded-xl border border-accent bg-accent/10 px-5 py-4">Your account is ready. Welcome to the Eagles!</p>}
+      {needNumbers.length > 0 && (
+        <div className="mt-6 rounded-xl border-2 border-accent bg-accent/10 px-5 py-4" data-number-banner>
+          <p className="font-semibold">Pick your shirt number</p>
+          <p className="mt-1 flex flex-wrap gap-3 text-sm">{needNumbers.map((k) => <Link key={k.id} href={`/account/players/${k.id}/number`} className="font-semibold underline">Pick {k.firstName}’s number →</Link>)}</p>
+        </div>
+      )}
 
       {(plans.docs.length > 0 || fplusPastDue.length > 0 || invoices.length > 0) && (
         <section className="mt-10 space-y-3">

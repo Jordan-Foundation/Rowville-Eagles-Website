@@ -1,5 +1,6 @@
 import { BookingNextSteps } from '@/components/BookingNextSteps'
 import { TrackConversion } from '@/tracking/TrackConversion'
+import { NumberNext } from '@/components/numbers/NumberNext'
 import { bookingCategory, conversionFor } from '@/tracking/config'
 import { programPlace } from '@/lib/place'
 import { groupLabel } from '@/lib/age-groups'
@@ -58,6 +59,19 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
     const paidTotal = group.reduce((n, b) => n + (b.amount ?? 0), 0)
     const academy = program.brand === 'academy'
     const settings = await p.findGlobal({ slug: 'site-settings' })
+    // Shirt numbers: after an Academy term / full year or an Eagles registration, players without one pick next
+    let numberKids: { id: number; name: string }[] = []
+    if (paid && ['registration', 'academy-term', 'academy-year'].includes(program.type ?? '')) {
+      const { activeNumber, needsNumber } = await import('@/numbers/service')
+      // Re-read: the player is linked to the booking as the payment is confirmed (just above)
+      const { docs: fresh } = await p.find({ pagination: false, collection: 'bookings', where: { id: { in: group.map((b) => b.id) } }, limit: 10, depth: 0, overrideAccess: true, select: { participant: true } })
+      for (const b of fresh) {
+        const pid = typeof b.participant === 'object' ? b.participant?.id : b.participant
+        if (!pid) continue
+        const kid = await p.findByID({ collection: 'participants', id: pid, depth: 0, overrideAccess: true, disableErrors: true })
+        if (kid && needsNumber(kid) && !(await activeNumber(p, kid.id))) numberKids.push({ id: kid.id, name: kid.firstName })
+      }
+    }
     return (
       <div data-brand={academy ? 'academy' : undefined} data-page-brand={academy ? 'academy' : undefined} className="relative overflow-hidden">
         {academy && <AcademyBackdrop />}
@@ -72,6 +86,7 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
             {promoLine && <Row k={promoLine[0]} v={promoLine[1]} />}
             {paidTotal > 0 && <Row k="Paid" v={`${formatAUD(paidTotal)} to ${payeeLabel}`} />}
           </dl>
+          {numberKids.length > 0 && <NumberNext kids={numberKids} />}
           {paid && doc.reference && (
             <BookingNextSteps
               reference={doc.reference}

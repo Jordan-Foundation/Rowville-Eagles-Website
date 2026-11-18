@@ -22,6 +22,7 @@ export default async function PlayerReport({ params, searchParams }: { params: P
   const { report, tier } = await loadReport(p, kid)
   const passed = report.reduce((n, a) => n + a.passed, 0)
   const { earned, total, toCelebrate } = await loadCabinet(p, kid)
+  const shirt = await (await import('@/numbers/service')).activeNumber(p, kid.id)
   const owner = (typeof kid.account === 'object' ? kid.account?.id : kid.account) === user?.id
   const challenge = await currentChallenge(p)
   const myChallenge = challenge ? await myEntries(p, challenge, kid.id) : null
@@ -32,7 +33,7 @@ export default async function PlayerReport({ params, searchParams }: { params: P
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="eyebrow">{settings.name} · {TIER_LABEL[tier]} plan</p>
-          <h1 className="mt-2 font-display text-5xl font-bold uppercase tracking-tight">{kid.firstName} {kid.lastName.charAt(0)}.</h1>
+          <h1 className="mt-2 font-display text-5xl font-bold uppercase tracking-tight">{shirt ? <span className="mr-3 opacity-60" data-shirt>#{shirt.number}</span> : null}{kid.firstName} {kid.lastName.charAt(0)}.</h1>
         </div>
         <div className="text-right text-sm">
           <p className="text-muted">{passed} stage{passed === 1 ? '' : 's'} passed</p>

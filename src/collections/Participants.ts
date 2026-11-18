@@ -1,5 +1,8 @@
 import type { CollectionConfig } from 'payload'
-import { isAdminField, staffOrOwner } from '../access'
+import { hasRole, isAdminField, staffOrOwner, type WithRoles } from '../access'
+import type { FieldAccess } from 'payload'
+
+const staffField: FieldAccess = ({ req: { user } }) => hasRole(user as WithRoles, 'admin', 'committee')
 
 /** A player (often a child) managed by an account holder. Foundation for the player development portal. */
 export const Participants: CollectionConfig = {
@@ -18,6 +21,14 @@ export const Participants: CollectionConfig = {
   hooks: {
     beforeChange: [
       ({ data }) => ({ ...data, fullName: `${data.firstName ?? ''} ${data.lastName ?? ''}`.trim() }),
+    ],
+    // Marked inactive → their shirt number goes back into the pool (marketing consent lives on the parent's account and isn't touched)
+    afterChange: [
+      async ({ doc, previousDoc, req, context }) => {
+        if (context?.skipNumberRelease || doc.status !== 'inactive' || previousDoc?.status === 'inactive') return
+        const { releaseNumber } = await import('../numbers/service')
+        await releaseNumber(req.payload, doc.id, { by: req.user?.id ?? null, action: 'released-inactive', req })
+      },
     ],
   },
   fields: [
@@ -38,6 +49,27 @@ export const Participants: CollectionConfig = {
     },
     { name: 'account', type: 'relationship', relationTo: 'users', required: true, label: 'Parent / account holder' },
     { name: 'team', type: 'relationship', relationTo: 'teams' },
+    {
+      name: 'status',
+      type: 'select',
+      defaultValue: 'active',
+      index: true,
+      options: [{ label: 'Active', value: 'active' }, { label: 'Inactive (left the club / academy)', value: 'inactive' }],
+      access: { update: staffField },
+      admin: { position: 'sidebar', description: 'Inactive releases their shirt number. Marketing preferences are not changed.' },
+    },
+    {
+      name: 'numbers',
+      label: 'Shirt number',
+      type: 'group',
+      admin: { position: 'sidebar' },
+      access: { update: staffField },
+      fields: [
+        { name: 'required', label: 'Needs to pick a number', type: 'checkbox', defaultValue: false, admin: { readOnly: true, description: 'Set when an RFA term or Eagles registration is paid' } },
+        { name: 'requiredAt', type: 'date', admin: { readOnly: true } },
+        { name: 'reminderAt', label: 'Reminder sent', type: 'date', admin: { readOnly: true } },
+      ],
+    },
     { name: 'ffaNumber', label: 'FFA / PlayFootball number', type: 'text' },
     {
       name: 'football',
