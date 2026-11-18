@@ -1,3 +1,4 @@
+import { heardFromField } from '../../tracking/heard'
 import type { CollectionConfig } from 'payload'
 import { APIError } from 'payload'
 import { isStaff } from '../../access'
@@ -67,6 +68,10 @@ export const SelectionEntries: CollectionConfig = {
     ],
   },
   fields: [
+    { name: 'source', label: 'Came from', type: 'select', defaultValue: 'web', index: true, options: [{ label: 'Website form', value: 'web' }, { label: 'Imported (old Google form)', value: 'import' }, { label: 'Added by Management', value: 'admin' }], admin: { position: 'sidebar', readOnly: true } },
+    heardFromField,
+    { name: 'trialInvitedAt', label: 'Trial dates sent', type: 'date', admin: { position: 'sidebar', readOnly: true, date: { pickerAppearance: 'dayAndTime' }, description: 'When the “trial dates are here” email and text went out' } },
+    { name: 'trialReminderAt', label: 'Trial reminder sent', type: 'date', admin: { position: 'sidebar', readOnly: true, date: { pickerAppearance: 'dayAndTime' } } },
     { name: 'referralCode', label: 'Referral code used', type: 'text', index: true, admin: { position: 'sidebar', readOnly: true } },
     { name: 'displayName', type: 'text', admin: { hidden: true } },
     { name: 'reference', type: 'text', unique: true, admin: { readOnly: true, description: 'Created automatically when saved' } },

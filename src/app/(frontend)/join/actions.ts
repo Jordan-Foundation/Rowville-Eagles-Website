@@ -13,6 +13,7 @@ import type { SelectionEntry } from '@/payload-types'
 import { currentUser } from '@/lib/auth'
 import { rowvilleRound } from '@/selections/rounds'
 import { entryFlags, linkFamily } from '@/selections/entries'
+import { heardFromValue } from '@/tracking/heard'
 
 export type JoinState = { error?: string; values?: Record<string, string> }
 
@@ -91,6 +92,8 @@ export async function joinUs(_prev: JoinState, fd: FormData): Promise<JoinState>
         trialSession: trialSessionId,
         trialSession2: trialSession2Id,
         referralCode: ref.code ?? undefined,
+        heardFrom: heardFromValue(fd.get('heardFrom')),
+        source: 'web',
         contact,
         player,
         token: newToken(),
