@@ -1,6 +1,7 @@
 'use client'
 
 import { KidQuickFill } from '@/components/forms/KidQuickFill'
+import { HeardFrom } from '@/components/forms/HeardFrom'
 import { ReferralCodeField } from '@/components/forms/ReferralCodeField'
 import type { KidOption } from '@/lib/family-kids'
 import { PolicyLink } from '@/components/PolicyLink'
@@ -96,12 +97,13 @@ export function JoinForm({ rules, trials, kids = [], prefill }: { rules: AgeRule
           ) : (
             <p className="text-sm text-muted">
               Trial dates for <strong className="text-ink">{ageGroup}</strong> haven’t been set yet. Submit this form to register your interest — we’ll email
-              you as soon as dates are announced, with a link to choose a night.
+              and text you as soon as dates are announced, and you confirm your spot with one tap.
             </p>
           )}
         </fieldset>
       )}
 
+      <HeardFrom defaultValue={v.heardFrom} />
       <ReferralCodeField defaultValue={v.referralCode} />
       <label className="flex items-start gap-3 text-sm">
         <input type="checkbox" name="consent" required defaultChecked={v.consent === 'on'} className="mt-1" />

@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 const steps = [
   { t: 'Register', d: 'Tell us about your player — it takes two minutes.' },
-  { t: 'Trial night', d: 'Pick a trial night, or we’ll email you when dates are set.' },
+  { t: 'Trial night', d: 'Pick a trial night, or we’ll email and text you when dates are set.' },
   { t: 'Get your offer', d: 'Coaches place players in teams. You’ll get an email with your offer.' },
   { t: 'Pay & play', d: 'Pay the club fee from your account, then finish the Football Victoria step in PlayFootball.' },
 ]
@@ -79,7 +79,7 @@ export default async function JoinPage() {
                 ))}
               </ul>
             ) : (
-              <p className="mt-3 text-sm text-muted">Trial dates aren’t set yet. Register below and we’ll email you as soon as they are.</p>
+              <p className="mt-3 text-sm text-muted">Trial dates aren’t set yet. Register your interest below — we’ll email and text you as soon as they are, and you confirm your spot with one tap.</p>
             )}
           </section>
           <section className="rounded-2xl border border-line p-6">

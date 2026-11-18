@@ -84,6 +84,7 @@ import * as migration_20261116_211323_finance from './20261116_211323_finance';
 import * as migration_20261116_234112_coach_signup from './20261116_234112_coach_signup';
 import * as migration_20261117_013925_upload_object_keys from './20261117_013925_upload_object_keys';
 import * as migration_20261117_060000_meta_pixel_id from './20261117_060000_meta_pixel_id';
+import * as migration_20261118_000049_eoi_audience from './20261118_000049_eoi_audience';
 
 export const migrations = [
   {
@@ -509,11 +510,16 @@ export const migrations = [
   {
     up: migration_20261117_013925_upload_object_keys.up,
     down: migration_20261117_013925_upload_object_keys.down,
-    name: '20261117_013925_upload_object_keys'
+    name: '20261117_013925_upload_object_keys',
   },
   {
     up: migration_20261117_060000_meta_pixel_id.up,
     down: migration_20261117_060000_meta_pixel_id.down,
     name: '20261117_060000_meta_pixel_id',
+  },
+  {
+    up: migration_20261118_000049_eoi_audience.up,
+    down: migration_20261118_000049_eoi_audience.down,
+    name: '20261118_000049_eoi_audience'
   },
 ];

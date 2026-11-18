@@ -1764,6 +1764,15 @@ export interface Booking {
  */
 export interface SelectionEntry {
   id: number;
+  source?: ('web' | 'import' | 'admin') | null;
+  heardFrom?:
+    | ('facebook-instagram-ad' | 'google' | 'friend-family' | 'school' | 'rowville-eagles' | 'social-post' | 'other')
+    | null;
+  /**
+   * When the “trial dates are here” email and text went out
+   */
+  trialInvitedAt?: string | null;
+  trialReminderAt?: string | null;
   referralCode?: string | null;
   displayName?: string | null;
   /**
@@ -4724,6 +4733,10 @@ export interface SquadsSelect<T extends boolean = true> {
  * via the `definition` "selection-entries_select".
  */
 export interface SelectionEntriesSelect<T extends boolean = true> {
+  source?: T;
+  heardFrom?: T;
+  trialInvitedAt?: T;
+  trialReminderAt?: T;
   referralCode?: T;
   displayName?: T;
   reference?: T;
