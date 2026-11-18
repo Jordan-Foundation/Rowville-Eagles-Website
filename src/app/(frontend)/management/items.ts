@@ -16,6 +16,7 @@ export const managementItems: DashItem[] = [
   { key: 'payments', href: '/management/academy#payments', label: 'Weekly payments', icon: 'card' },
   { key: 'cover', href: '/management/academy#cover', label: 'Cover', icon: 'swap' },
   { key: 'coaches', href: '/management/coaches', label: 'Coaches', icon: 'users', hint: 'Add coaches, check WWCC' },
+  { key: 'summaries', href: '/management/summaries', label: 'Session summaries', icon: 'report', hint: 'After 1-on-1s & small groups' },
   { key: 'availability', href: '/management/academy', label: 'Coach availability', icon: 'clock' },
   { key: 'terms', href: '/management/academy/terms', label: 'Academy setup', icon: 'grid', hint: 'Terms, training times, groups' },
   { key: 'camps', href: '/management/camps', label: 'Holiday camps', icon: 'users', hint: 'Groups & coaches' },
@@ -46,7 +47,7 @@ export type ManagementSection = { key: string; label: string; hint: string; icon
 const solo = (key: string): ManagementSection => { const i = by([key])[0]; return { key, label: i.label, hint: i.hint ?? '', icon: i.icon, items: [i], href: i.href } }
 export const managementSections: ManagementSection[] = [
   { key: 'refc', label: 'REFC', hint: 'Eagles selections, teams, reflections, reports', icon: 'flag', items: by(['selections', 'teams', 'reflections', 'reports']) },
-  { key: 'coaches', label: 'Coaches', hint: 'Add coaches, availability, cover', icon: 'users', items: by(['coaches', 'availability', 'cover']) },
+  { key: 'coaches', label: 'Coaches', hint: 'Add coaches, summaries, availability, cover', icon: 'users', items: by(['coaches', 'summaries', 'availability', 'cover']) },
   { key: 'finances', label: 'Finances', hint: 'Finance, invoices, refunds, payments', icon: 'dollar', items: by(['finance', 'invoices', 'refunds', 'payments']) },
   { key: 'academy', label: 'Foundation Academy', hint: 'Bookings, academy setup, tournaments, Foundation+', icon: 'grid', items: by(['bookings', 'terms', 'tournaments', 'foundation']) },
   { key: 'communication', label: 'Communication', hint: 'Messages, audience, emails, offers', icon: 'chat', items: by(['messages', 'notifications', 'audience', 'broadcast', 'announcements', 'promotions', 'referrals']) },

@@ -7,6 +7,8 @@ import { siteBase } from '@/lib/seo'
 import { coachStatus, STATUS_LABEL } from '@/lib/coach-signup'
 import { localYmd } from '@/lib/time'
 import { WwccForm } from './WwccForm'
+import { PushToggle } from '@/components/coach/PushToggle'
+import { pushKeys } from '@/push/send'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'My profile' }
@@ -45,6 +47,7 @@ export default async function CoachProfilePage({ searchParams }: { searchParams:
       <section id="alerts" className="panel scroll-mt-24 border border-line p-6">
         <h2 className="font-display text-2xl font-semibold uppercase">Alerts</h2>
         <p className="mt-1 text-sm text-muted">Choose how you hear about bookings, cancellations and parent messages.</p>
+        <div className="mt-4"><PushToggle publicKey={(await pushKeys(await payload())).publicKey} /></div>
         <div className="mt-4">
           <AlertSettings hasPhone={Boolean(user.phone)} alerts={{ bookingEmail: a.bookingEmail !== false, bookingText: a.bookingText !== false, cancelEmail: a.cancelEmail !== false, cancelText: Boolean(a.cancelText), replyEmail: a.replyEmail !== false, replyText: Boolean(a.replyText) }} />
         </div>

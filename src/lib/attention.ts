@@ -56,7 +56,7 @@ export async function coachTeams(p: Payload, user: User) {
   return docs
 }
 
-export type CoachCounts = Record<'messages' | 'sessions' | 'attendance' | 'availability' | 'groups' | 'teams' | 'reviews' | 'reports' | 'camps' | 'reflections', number>
+export type CoachCounts = Record<'messages' | 'sessions' | 'attendance' | 'availability' | 'groups' | 'teams' | 'reviews' | 'reports' | 'camps' | 'reflections' | 'summaries', number>
 
 export async function coachAttention(p: Payload, user: User, coach: AcademyCoach): Promise<CoachCounts> {
   const seen = await seenAt(p, user.id, ['sessions', 'groups'])
@@ -93,10 +93,12 @@ export async function coachAttention(p: Payload, user: User, coach: AcademyCoach
     const held = await (await import('../reflections/service')).heldForWelfare(p, docs.map((r) => r.id))
     return docs.filter((r) => !held.has(r.id) && !(r.feedback ?? []).some((f) => (typeof f.coach === 'object' ? f.coach?.id : f.coach) === user.id)).length
   })
-  return { messages, sessions, attendance, availability, groups, teams, reviews, reports, camps, reflections }
+  // Session summaries still to write (last 14 days)
+  const summaries = await safe(async () => (await (await import('../academy/summaries/service')).pendingSummaries(p, { coachId: coach.id })).length)
+  return { messages, sessions, attendance, availability, groups, teams, reviews, reports, camps, reflections, summaries }
 }
 
-export type ManagementCounts = Record<'bookings' | 'payments' | 'cover' | 'availability' | 'terms' | 'selections' | 'messages' | 'store' | 'foundation' | 'consent' | 'reports' | 'dates' | 'promotions' | 'camps' | 'yearly' | 'announcements' | 'invoices' | 'referrals' | 'reflections' | 'coaches' | 'tournaments', number>
+export type ManagementCounts = Record<'bookings' | 'payments' | 'cover' | 'availability' | 'terms' | 'selections' | 'messages' | 'store' | 'foundation' | 'consent' | 'reports' | 'dates' | 'promotions' | 'camps' | 'yearly' | 'announcements' | 'invoices' | 'referrals' | 'reflections' | 'coaches' | 'tournaments' | 'summaries', number>
 
 /** Selection interest still waiting for a decision, for one kind of round (Rowville Eagles trials or tournament teams). */
 async function undecided(p: Payload, kind: 'rowville' | 'tournament') {
@@ -175,5 +177,7 @@ export async function managementAttention(p: Payload, user: User): Promise<Manag
   // Coaches whose WWCC is waiting to be checked
   const coaches = await safe(async () => (await p.count({ collection: 'users', where: { roles: { contains: 'coach' }, 'wwcc.submittedAt': { exists: true }, 'wwcc.checkedAt': { exists: false } }, ...q })).totalDocs)
   const tournaments = await safe(() => undecided(p, 'tournament'))
-  return { bookings, payments, cover, availability, terms, selections, messages, store, foundation, consent, reports, dates, promotions, camps, yearly, announcements, invoices, referrals, reflections, coaches, tournaments }
+  // Session summaries more than 48 hours late
+  const summaries = await safe(async () => (await import('../academy/summaries/service')).overdueSummaries(p))
+  return { bookings, payments, cover, availability, terms, selections, messages, store, foundation, consent, reports, dates, promotions, camps, yearly, announcements, invoices, referrals, reflections, coaches, tournaments, summaries }
 }

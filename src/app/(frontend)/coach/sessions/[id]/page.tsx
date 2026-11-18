@@ -26,6 +26,11 @@ export default async function CoachSessionPage({ params }: { params: Promise<{ i
   // Notes carry over: the latest earlier session with this player that has notes
   const lastNotes = [...history].filter((h) => h.startsAt < s.startsAt && h.coachNotes?.trim()).sort((a, b) => b.startsAt.localeCompare(a.startsAt))[0] ?? null
   const tel = (n: string) => `tel:${n.replace(/\s+/g, '')}`
+  // Session summaries: the latest ones before this session (for whoever coaches next, incl. cover), and this one's if written
+  const { lastSummariesFor, pendingSummaries } = await import('@/academy/summaries/service')
+  const recent = await lastSummariesFor(p, [b.id], s.startsAt, 3)
+  const { docs: mineDone } = await p.find({ collection: 'session-summaries', where: { session: { equals: s.id } }, limit: 1, depth: 0, overrideAccess: true, pagination: false })
+  const summaryDue = !mineDone[0] && (await pendingSummaries(p, { coachId: coach.id })).some((x) => x.sessionId === s.id)
 
   return (
     <div className="space-y-10">
@@ -95,6 +100,25 @@ export default async function CoachSessionPage({ params }: { params: Promise<{ i
         <section className="border-l-4 border-white/60 bg-white/5 p-5" aria-label="From last session">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">From last session · {formatDate(lastNotes.startsAt, { weekday: 'short', day: 'numeric', month: 'short' })}</p>
           <p className="mt-2 whitespace-pre-line text-sm">{lastNotes.coachNotes}</p>
+        </section>
+      )}
+
+      {recent.length > 0 && (
+        <section className="panel space-y-3 border border-line p-5" aria-label="Recent session summaries">
+          <h2 className="font-display text-xl font-semibold uppercase">Recent summaries</h2>
+          {recent.map((r) => (
+            <div key={r.id} className="border-t border-line pt-3 text-sm first:border-0 first:pt-0" data-recent-summary>
+              <p className="text-xs text-muted">{formatDate(r.sessionAt, { weekday: 'short', day: 'numeric', month: 'short' })} · {typeof r.coach === 'object' && r.coach ? r.coach.displayName : ''} · {(r.workedOn ?? []).join(', ')}</p>
+              {r.nextSteps && <p className="mt-1"><span className="text-muted">Next steps: </span>{r.nextSteps}</p>}
+              {r.privateNotes && <p className="mt-1"><span className="text-muted">🔒 Coach notes: </span>{r.privateNotes}</p>}
+            </div>
+          ))}
+        </section>
+      )}
+
+      {(summaryDue || mineDone[0]) && (
+        <section className="panel border border-line p-5" aria-label="Session summary">
+          {mineDone[0] ? <p className="text-sm">✓ Summary sent to the family{mineDone[0].submittedAt ? ` ${formatDate(mineDone[0].submittedAt, { weekday: 'short', day: 'numeric', month: 'short' })}` : ''}.</p> : <p className="flex flex-wrap items-center justify-between gap-3 text-sm"><span>Write the 2-minute summary for this session.</span><Link href={`/coach/summaries?s=${s.id}`} className="min-h-10 bg-white px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.12em] text-black">Write summary</Link></p>}
         </section>
       )}
 

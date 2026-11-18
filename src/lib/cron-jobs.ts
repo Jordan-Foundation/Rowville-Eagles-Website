@@ -59,6 +59,7 @@ export const cronJobs: Record<string, Record<string, Job>> = {
     openAcademyPrograms: (payload) => openDuePrograms(payload),
     announcements: (payload) => runAnnouncements(payload),
     referrals: async (payload) => (await import('../referrals/service')).runReferralConfirmations(payload),
+    sessionSummaries: async (payload) => (await import('../academy/summaries/service')).nudgeCoaches(payload, (globalThis as { __cronNow?: Date }).__cronNow ?? new Date()),
     financeGmail: async (payload) => (await import('../finance/gmail')).importGmailReceipts(payload),
     financeReport: async (payload) => (await import('../finance/report')).runWeeklyFinanceReport(payload),
     staffAlerts: async (payload) => (await import('../staff-feed/service')).runStaffAlerts(payload),

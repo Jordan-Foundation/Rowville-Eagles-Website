@@ -6,6 +6,7 @@ export const coachItems: DashItem[] = [
   { key: 'messages', href: '/coach/messages', label: 'Messages', icon: 'chat' },
   { key: 'broadcast', href: '/coach/broadcast', label: 'Message a group', icon: 'megaphone', hint: 'Group or team' },
   { key: 'sessions', href: '/coach/sessions', label: 'My sessions', icon: 'calendar', hint: '1-on-1s' },
+  { key: 'summaries', href: '/coach/summaries', label: 'Session summaries', icon: 'report', hint: '2 minutes after each session' },
   { key: 'attendance', href: '/coach/sessions', label: 'Attendance', icon: 'check', hint: 'Sessions to mark' },
   { key: 'availability', href: '/coach#availability', label: 'Availability', icon: 'clock' },
   { key: 'groups', href: '/coach/groups', label: 'Academy groups', icon: 'grid' },
