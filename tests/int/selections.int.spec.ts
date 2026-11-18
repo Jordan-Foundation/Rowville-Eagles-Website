@@ -13,7 +13,10 @@ describe('selection entries', () => {
   })
   it('shows families a clear status', () => {
     expect(entryStatusLabel({ status: 'interested', kind: 'tournament' }).label).toBe('Interest registered — awaiting selection')
-    expect(entryStatusLabel({ status: 'interested', kind: 'rowville' }).label).toMatch(/trial dates/)
+    expect(entryStatusLabel({ status: 'interested', kind: 'rowville' }).label).toBe('Interest registered — we’ll email trial dates')
+    expect(entryStatusLabel({ status: 'interested', kind: 'rowville', trialInvitedAt: '2026-11-18T02:00:00Z' }).label).toBe('Trial dates sent 18 Nov — not confirmed yet')
+    expect(entryStatusLabel({ status: 'interested', kind: 'rowville', trialInvitedAt: '2026-11-18T02:00:00Z', trialReminderAt: '2026-11-21T20:00:00Z' }).label).toBe('Trial dates sent 18 Nov — not confirmed yet · reminder sent 22 Nov')
+    expect(entryStatusLabel({ status: 'interested', kind: 'rowville', notifiedSessions: [3] }).label).toBe('Trial dates sent — not confirmed yet') // told under the earlier flow
     expect(entryStatusLabel({ status: 'unsuccessful', kind: 'rowville' }).tone).toBe('muted')
   })
 })
