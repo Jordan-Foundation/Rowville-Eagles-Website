@@ -43,6 +43,7 @@ export const cronJobs: Record<string, Record<string, Job>> = {
     reportReminders: (payload) => sendReportReminders(payload),
     weeklySummary: (payload) => sendWeeklySummary(payload),
     trialReminders: async (payload) => (await import('./trials')).sendTrialReminders(payload),
+    numberReminders: async (payload) => (await import('../numbers/service')).sendNumberReminders(payload),
     accountReminders: (payload) => sendAccountReminders(payload),
     foundationTrialReminders: (payload) => trialReminders(payload),
     foundationChallengeStart: (payload) => announceChallenges(payload),

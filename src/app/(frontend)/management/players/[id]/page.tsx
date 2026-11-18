@@ -39,12 +39,14 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
   const by = birthYearOf(k.dateOfBirth)
   const oneDone = sessions.docs.filter((s) => s.status === 'completed').length
   const oneMissed = sessions.docs.filter((s) => s.status === 'no_show').length
+  const shirt = await (await import('@/numbers/service')).activeNumber(p, k.id)
   return (
     <div className="max-w-6xl space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-[0.25em] text-muted">Player</p>
-          <h1 className="mt-1 font-display text-4xl font-semibold uppercase tracking-tight">{k.firstName} {k.lastName}</h1>
+          <h1 className="mt-1 font-display text-4xl font-semibold uppercase tracking-tight">{shirt ? <span className="mr-3" data-shirt>#{shirt.number}</span> : null}{k.firstName} {k.lastName}{k.status === 'inactive' ? <span className="ml-3 align-middle text-sm text-muted">Inactive</span> : null}</h1>
+          <p className="text-xs text-muted">{shirt ? `Shirt number ${shirt.number}` : 'No shirt number'} · <Link href={`/management/numbers/player/${k.id}`} className="underline">Assign, change or release</Link></p>
           <p className="mt-1 text-sm text-muted">Born {day(k.dateOfBirth)}{by ? ` · ${groupLabel(by)}` : ''}{parent ? <> · Family <Link href={`/management/families/${parent.id}`} className="underline">{[parent.firstName, parent.lastName].filter(Boolean).join(' ') || parent.email}</Link></> : ''}</p>
         </div>
         <div className="flex flex-wrap gap-2">

@@ -56,6 +56,7 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
     showForum ? p.find({ pagination: false, collection: 'forum-threads', where: { team: { equals: team.id }, removedAt: { exists: false } }, sort: '-lastActivityAt', limit: 50, depth: 1, overrideAccess: true }) : Promise.resolve({ docs: [] }),
     access.manage ? p.find({ pagination: false, collection: 'team-members', where: { team: { equals: team.id }, active: { equals: true } }, depth: 1, limit: 200, overrideAccess: true }) : Promise.resolve({ docs: [] }),
   ])
+  const shirts = await (await import('@/numbers/service')).numbersFor(p, members.map((m) => (typeof m.participant === 'object' ? m.participant?.id : m.participant)).filter((x): x is number => typeof x === 'number'))
   const replies = threads.length
     ? (await p.find({ pagination: false, collection: 'forum-replies', where: { thread: { in: threads.map((t) => t.id) }, removedAt: { exists: false } }, sort: 'createdAt', limit: 1000, depth: 1, overrideAccess: true })).docs
     : []
@@ -225,7 +226,7 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
                     const parent = m.account as User
                     return (
                       <li key={m.id} className="rounded-lg border border-line p-3">
-                        <p className="font-semibold">{kid.firstName} {kid.lastName}</p>
+                        <p className="font-semibold">{shirts.get(kid.id) ? <span className="mr-1.5 text-muted">#{shirts.get(kid.id)}</span> : null}{kid.firstName} {kid.lastName}</p>
                         <MedicalBadge note={kid.medical?.conditions} quiet={false} />
                         {kid.medical?.emergencyContact && <p className="mt-1 text-xs text-muted">Emergency: {kid.medical.emergencyContact}{kid.medical.emergencyPhone ? ` · ${formatPhone(kid.medical.emergencyPhone)}` : ''}</p>}
                         <div className="mt-2">

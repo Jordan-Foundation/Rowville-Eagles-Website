@@ -80,6 +80,8 @@ export async function onBookingPaid(payload: Payload, booking: Booking) {
     const participant = await payload.findByID({ collection: 'participants', id: participantId, depth: 0, overrideAccess: true })
     if (program.type === 'registration') {
       const updated = await addMembership(payload, participant, 'rowville', { registrationOffer: { ...participant.registrationOffer, status: 'paid' } })
+      // Shirt number: pick one now (if they don't already have one)
+      await (await import('../numbers/service')).requireNumber(payload, participant.id).catch((e) => payload.logger.error({ err: e, msg: 'Shirt number requirement failed' }))
       // Club registration paid → onto the team (and its team page)
       if (updated.team) await addMember(payload, { team: typeof updated.team === 'object' ? updated.team.id : updated.team, participant: updated.id, account: user.id, source: 'registration' })
       const regs = await payload.find({ collection: 'selection-entries', where: { participant: { equals: participantId } }, limit: 5, depth: 0, overrideAccess: true })
@@ -88,6 +90,7 @@ export async function onBookingPaid(payload: Payload, booking: Booking) {
       }
     } else if (program.type === 'academy-term' || program.type === 'academy-year') {
       await addMembership(payload, participant, 'rfa')
+      await (await import('../numbers/service')).requireNumber(payload, participant.id).catch((e) => payload.logger.error({ err: e, msg: 'Shirt number requirement failed' }))
     }
   }
   await payload.update({ collection: 'bookings', id: booking.id, data: { account: user.id, participant: participantId || undefined }, overrideAccess: true })

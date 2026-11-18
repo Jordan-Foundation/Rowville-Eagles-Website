@@ -31,6 +31,8 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
   if (!kid || (typeof kid.account === 'object' ? kid.account.id : kid.account) !== user.id) notFound()
 
   const teams = await myTeams(p, user, kid.id)
+  const { activeNumber, needsNumber } = await import('@/numbers/service')
+  const shirt = await activeNumber(p, kid.id)
   const reports = await releasedFor(p, kid.id)
   const latest = reports[0] ? await reportCard(p, reports[0]) : null
   const foundation = await foundationSettings(p)
@@ -115,7 +117,8 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
       <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="eyebrow !text-brand">Player</p>
-          <h1 className="mt-2 font-[family-name:var(--font-barlow)] text-5xl font-extrabold uppercase">{kid.firstName} {kid.lastName}</h1>
+          <h1 className="mt-2 font-[family-name:var(--font-barlow)] text-5xl font-extrabold uppercase">{shirt ? <span className="mr-3 text-accent" data-shirt>#{shirt.number}</span> : null}{kid.firstName} {kid.lastName}</h1>
+          {!shirt && needsNumber(kid) && <Link href={`/account/players/${kid.id}/number`} className="mt-2 inline-block rounded-full bg-accent px-4 py-2 text-sm font-semibold text-accent-ink">Pick {kid.firstName}’s shirt number →</Link>}
           <p className="mt-2 text-muted">
             Age {ageOn(kid.dateOfBirth)} · born {formatDate(kid.dateOfBirth, { day: 'numeric', month: 'long', year: 'numeric' })}
             {kid.football?.position ? ` · ${kid.football.position}` : ''}

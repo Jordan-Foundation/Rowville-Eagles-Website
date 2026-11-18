@@ -142,6 +142,12 @@ export interface Config {
     'wwcc-files': WwccFile;
     'push-subscriptions': PushSubscription;
     'session-summaries': SessionSummary;
+    'number-ranges': NumberRange;
+    'player-numbers': PlayerNumber;
+    'number-audit-log': NumberAuditLog;
+    'kit-items': KitItem;
+    'fitout-sessions': FitoutSession;
+    'fitout-entries': FitoutEntry;
     'activity-log': ActivityLog;
     'staff-feed': StaffFeed;
     'coach-pay-rates': CoachPayRate;
@@ -238,6 +244,12 @@ export interface Config {
     'wwcc-files': WwccFilesSelect<false> | WwccFilesSelect<true>;
     'push-subscriptions': PushSubscriptionsSelect<false> | PushSubscriptionsSelect<true>;
     'session-summaries': SessionSummariesSelect<false> | SessionSummariesSelect<true>;
+    'number-ranges': NumberRangesSelect<false> | NumberRangesSelect<true>;
+    'player-numbers': PlayerNumbersSelect<false> | PlayerNumbersSelect<true>;
+    'number-audit-log': NumberAuditLogSelect<false> | NumberAuditLogSelect<true>;
+    'kit-items': KitItemsSelect<false> | KitItemsSelect<true>;
+    'fitout-sessions': FitoutSessionsSelect<false> | FitoutSessionsSelect<true>;
+    'fitout-entries': FitoutEntriesSelect<false> | FitoutEntriesSelect<true>;
     'activity-log': ActivityLogSelect<false> | ActivityLogSelect<true>;
     'staff-feed': StaffFeedSelect<false> | StaffFeedSelect<true>;
     'coach-pay-rates': CoachPayRatesSelect<false> | CoachPayRatesSelect<true>;
@@ -779,6 +791,18 @@ export interface Participant {
   gender?: ('female' | 'male' | 'non-binary' | 'prefer-not-to-say') | null;
   account: number | User;
   team?: (number | null) | Team;
+  /**
+   * Inactive releases their shirt number. Marketing preferences are not changed.
+   */
+  status?: ('active' | 'inactive') | null;
+  numbers?: {
+    /**
+     * Set when an RFA term or Eagles registration is paid
+     */
+    required?: boolean | null;
+    requiredAt?: string | null;
+    reminderAt?: string | null;
+  };
   ffaNumber?: string | null;
   /**
    * Shared with the player’s coaches. Filled in from their first 1-on-1 booking; families can update it in their account.
@@ -3225,6 +3249,116 @@ export interface SessionSummary {
   createdAt: string;
 }
 /**
+ * Use Management → Kit & numbers → Number ranges.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "number-ranges".
+ */
+export interface NumberRange {
+  id: number;
+  label?: string | null;
+  birthYear: number;
+  start: number;
+  end: number;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Use Management → Kit & numbers → Player numbers.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "player-numbers".
+ */
+export interface PlayerNumber {
+  id: number;
+  participant: number | Participant;
+  birthYear: number;
+  number: number;
+  status: 'held' | 'active' | 'released';
+  /**
+   * Set while held or active; cleared when released
+   */
+  slot?: string | null;
+  heldUntil?: string | null;
+  assignedAt?: string | null;
+  releasedAt?: string | null;
+  assignedBy?: ('player' | 'admin') | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "number-audit-log".
+ */
+export interface NumberAuditLog {
+  id: number;
+  participant: number | Participant;
+  action: 'picked' | 'assigned' | 'changed' | 'released' | 'released-inactive';
+  oldNumber?: number | null;
+  newNumber?: number | null;
+  birthYear?: number | null;
+  by?: (number | null) | User;
+  note?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "kit-items".
+ */
+export interface KitItem {
+  id: number;
+  name: string;
+  sortOrder?: number | null;
+  active?: boolean | null;
+  sizes?:
+    | {
+        label: string;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "fitout-sessions".
+ */
+export interface FitoutSession {
+  id: number;
+  name: string;
+  date: string;
+  program?: ('both' | 'rfa' | 'rowville') | null;
+  createdBy?: (number | null) | User;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "fitout-entries".
+ */
+export interface FitoutEntry {
+  id: number;
+  /**
+   * <session>-<player>
+   */
+  key?: string | null;
+  session: number | FitoutSession;
+  participant: number | Participant;
+  sizes?:
+    | {
+        item: number | KitItem;
+        size: string;
+        id?: string | null;
+      }[]
+    | null;
+  notes?: string | null;
+  updatedBy?: (number | null) | User;
+  exportedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "activity-log".
  */
@@ -3860,6 +3994,30 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'session-summaries';
         value: number | SessionSummary;
+      } | null)
+    | ({
+        relationTo: 'number-ranges';
+        value: number | NumberRange;
+      } | null)
+    | ({
+        relationTo: 'player-numbers';
+        value: number | PlayerNumber;
+      } | null)
+    | ({
+        relationTo: 'number-audit-log';
+        value: number | NumberAuditLog;
+      } | null)
+    | ({
+        relationTo: 'kit-items';
+        value: number | KitItem;
+      } | null)
+    | ({
+        relationTo: 'fitout-sessions';
+        value: number | FitoutSession;
+      } | null)
+    | ({
+        relationTo: 'fitout-entries';
+        value: number | FitoutEntry;
       } | null)
     | ({
         relationTo: 'activity-log';
@@ -5546,6 +5704,14 @@ export interface ParticipantsSelect<T extends boolean = true> {
   gender?: T;
   account?: T;
   team?: T;
+  status?: T;
+  numbers?:
+    | T
+    | {
+        required?: T;
+        requiredAt?: T;
+        reminderAt?: T;
+      };
   ffaNumber?: T;
   football?:
     | T
@@ -5952,6 +6118,100 @@ export interface SessionSummariesSelect<T extends boolean = true> {
   submittedBy?: T;
   emailedAt?: T;
   hidden?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "number-ranges_select".
+ */
+export interface NumberRangesSelect<T extends boolean = true> {
+  label?: T;
+  birthYear?: T;
+  start?: T;
+  end?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "player-numbers_select".
+ */
+export interface PlayerNumbersSelect<T extends boolean = true> {
+  participant?: T;
+  birthYear?: T;
+  number?: T;
+  status?: T;
+  slot?: T;
+  heldUntil?: T;
+  assignedAt?: T;
+  releasedAt?: T;
+  assignedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "number-audit-log_select".
+ */
+export interface NumberAuditLogSelect<T extends boolean = true> {
+  participant?: T;
+  action?: T;
+  oldNumber?: T;
+  newNumber?: T;
+  birthYear?: T;
+  by?: T;
+  note?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "kit-items_select".
+ */
+export interface KitItemsSelect<T extends boolean = true> {
+  name?: T;
+  sortOrder?: T;
+  active?: T;
+  sizes?:
+    | T
+    | {
+        label?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "fitout-sessions_select".
+ */
+export interface FitoutSessionsSelect<T extends boolean = true> {
+  name?: T;
+  date?: T;
+  program?: T;
+  createdBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "fitout-entries_select".
+ */
+export interface FitoutEntriesSelect<T extends boolean = true> {
+  key?: T;
+  session?: T;
+  participant?: T;
+  sizes?:
+    | T
+    | {
+        item?: T;
+        size?: T;
+        id?: T;
+      };
+  notes?: T;
+  updatedBy?: T;
+  exportedAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }

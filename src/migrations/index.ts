@@ -88,6 +88,7 @@ import * as migration_20261118_000049_eoi_audience from './20261118_000049_eoi_a
 import * as migration_20261118_012636_eoi_marketing from './20261118_012636_eoi_marketing';
 import * as migration_20261118_031053_session_summaries from './20261118_031053_session_summaries';
 import * as migration_20261118_040712_staff_push from './20261118_040712_staff_push';
+import * as migration_20261118_071452_numbers_fitout from './20261118_071452_numbers_fitout';
 
 export const migrations = [
   {
@@ -538,6 +539,11 @@ export const migrations = [
   {
     up: migration_20261118_040712_staff_push.up,
     down: migration_20261118_040712_staff_push.down,
-    name: '20261118_040712_staff_push'
+    name: '20261118_040712_staff_push',
+  },
+  {
+    up: migration_20261118_071452_numbers_fitout.up,
+    down: migration_20261118_071452_numbers_fitout.down,
+    name: '20261118_071452_numbers_fitout'
   },
 ];
