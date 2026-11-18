@@ -1,3 +1,4 @@
+import { VIC_SCHOOL_TERMS } from '@/academy/hours'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { requireManagement } from '@/lib/management'
@@ -24,6 +25,7 @@ export default async function YearlySetupPage({ searchParams }: { searchParams: 
   const p = await payload()
   const setup = await loadSetup(p, year)
   const hasDates = !!setup?.terms?.length
+  const vic = VIC_SCHOOL_TERMS.filter((t) => t.start.startsWith(String(year)))
   const published = setup?.status === 'published'
   const plan = hasDates ? await publishPlan(p, setup!) : []
   const opens = setup?.term1OpensAt ? `${localYmd(new Date(setup.term1OpensAt))}T${localWeekdayTime(setup.term1OpensAt).time}` : ''
@@ -53,11 +55,12 @@ export default async function YearlySetupPage({ searchParams }: { searchParams: 
         <form action={startAction} className="panel space-y-4 border border-line p-5">
           <input type="hidden" name="year" value={year} />
           <h2 className="font-display text-2xl font-semibold uppercase">1. Term dates</h2>
+          {vic.length === 4 && <p className="text-sm text-muted">Filled in with the Victorian government school terms for {year} — check them before continuing.</p>}
           {[1, 2, 3, 4].map((n) => (
             <fieldset key={n} className="flex flex-wrap items-end gap-3">
               <legend className="w-full text-sm font-semibold">Term {n}</legend>
-              <label className="text-sm">First day <input type="date" name={`t${n}start`} required className={input} aria-label={`Term ${n} first day`} /></label>
-              <label className="text-sm">Last day <input type="date" name={`t${n}end`} required className={input} aria-label={`Term ${n} last day`} /></label>
+              <label className="text-sm">First day <input type="date" name={`t${n}start`} required defaultValue={vic[n - 1]?.start} className={input} aria-label={`Term ${n} first day`} /></label>
+              <label className="text-sm">Last day <input type="date" name={`t${n}end`} required defaultValue={vic[n - 1]?.end} className={input} aria-label={`Term ${n} last day`} /></label>
             </fieldset>
           ))}
           <button className="min-h-11 bg-white px-5 text-sm font-semibold uppercase tracking-[0.15em] text-black">Work out the holidays</button>

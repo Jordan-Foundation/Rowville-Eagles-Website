@@ -151,6 +151,7 @@ export async function blastNotice(payload: Payload, team: Team, post: { id: numb
   for (const u of recipients) {
     await sendEmail(payload, { to: u.email, subject: `${title}: ${post.title}`, html, sender: brand, userId: u.id })
     await sendSms(payload, { to: u.phone, kind: 'service', optedOut: u.smsOptOut, body: `${title} notice: ${summary} — ${url} – ${brand === 'academy' ? 'Foundation Academy' : 'Rowville Eagles'}` })
+    await (await import('../lib/app-install')).notifyUser(payload, u.id, 'teams', { title, body: post.title, url: `/teams/${team.slug}#notices`, tag: `team-post-${post.id}` })
   }
   await payload.update({ collection: 'team-posts', id: post.id, data: { sentAt: new Date().toISOString(), sentTo: recipients.length }, overrideAccess: true })
   return recipients.length

@@ -7,7 +7,7 @@ import { formatAUD, formatDate } from '../lib/format'
 import { siteUrl } from '../lib/payments'
 import { makeReference } from '../lib/reference'
 import { sendSms, toE164 } from '../lib/sms'
-import { createHold, loadTermBookingData, openTerms, releaseBooking, releaseExpiredHolds } from './booking-data'
+import { createHold, engineFor, loadTermBookingData, openTerms, releaseBooking, releaseExpiredHolds } from './booking-data'
 import { casualSlots, findTermSlot, isCasualOpen, termSlots } from './slots'
 import { toYmd } from './term-dates'
 import { hashShareToken, holdUntil, linkExpiry, newShareToken, validShareToken } from './share-rules'
@@ -40,7 +40,8 @@ export async function coachOpenSlots(p: Payload, coachId: number) {
   if (!term) return null
   const data = await loadTermBookingData(p, term)
   const mine = data.availability.filter((a) => a.coachId === coachId)
-  const engine = { term, coaches: mine, taken: data.taken, now: new Date(), cutoffHours: term.bookingCutoffHours ?? 24 }
+  // The coach picks the time, so they see every open time (no back-to-back rule)
+  const engine = { ...engineFor(term, data, { customer: false, kind: 'casual' }), coaches: mine }
   return {
     term,
     casual: casualSlots(engine).map((s) => s.startsAt),
@@ -51,7 +52,7 @@ export async function coachOpenSlots(p: Payload, coachId: number) {
 /** Work out the sessions and price for a slot, checking it's still open (optionally ignoring one reservation). */
 async function resolveSlot(p: Payload, term: AcademyTerm, coachId: number, slot: { mode: 'casual' | 'term'; startsAt?: string | null; weekday?: string | null; startTime?: string | null }, ignoreBooking?: number | null) {
   const data = await loadTermBookingData(p, term, { ignoreBooking })
-  const engine = { term, coaches: data.availability, taken: data.taken, now: new Date(), cutoffHours: term.bookingCutoffHours ?? 24 }
+  const engine = engineFor(term, data, { customer: false, kind: slot.mode })
   if (slot.mode === 'term') {
     const s = findTermSlot({ ...engine, minSessions: term.minTermSessions ?? 2, coachId, weekday: slot.weekday ?? '', time: slot.startTime ?? '' })
     if (!s) return null

@@ -13,7 +13,7 @@ import { startCheckout, checkoutFailMessage } from '@/lib/payments'
 import { findDiscount, recordUse, settleUses } from '@/promotions/service'
 import { paymentsMode } from '@/lib/stripe-accounts'
 import { findTermSlot, isCasualOpen } from '@/academy/slots'
-import { confirmAcademyBooking, createHold, holdMinutesFor, loadTermBookingData, releaseAcademyHold, releaseExpiredHolds } from '@/academy/booking-data'
+import { bookingInternally, engineFor, confirmAcademyBooking, createHold, holdMinutesFor, loadTermBookingData, releaseAcademyHold, releaseExpiredHolds } from '@/academy/booking-data'
 import { creditBalance, creditStateFor, reserveCredit } from '@/academy/credits'
 import { toYmd } from '@/academy/term-dates'
 import { weeklyPlan, type WeeklyPlan } from '@/academy/weekly'
@@ -52,7 +52,8 @@ export async function bookSession(_prev: BookState, fd: FormData): Promise<BookS
   const share = shareLink && mode !== 'pack' && linkMatches(shareLink, { mode, coach: coachId, start: s('start'), weekday: s('weekday'), time: s('time') }) ? shareLink : null
   const shareHold = share ? await activeHold(p, share) : null
   const data = await loadTermBookingData(p, term, { ignoreBooking: shareHold?.id })
-  const engine = { term, coaches: data.availability, taken: data.taken, now: new Date(), cutoffHours: term.bookingCutoffHours ?? 24 }
+  // Re-checked on the server: hours, closed dates and (for families) the back-to-back rule
+  const engine = engineFor(term, data, { customer: !shareHold && !bookingInternally(user), kind: mode })
 
   // Re-check the slot and work out the sessions + price
   let sessions: { startsAt: string; needsCover?: boolean }[]
@@ -63,7 +64,7 @@ export async function bookSession(_prev: BookState, fd: FormData): Promise<BookS
   let memberPrice = false
   if (mode === 'term') {
     const slot = findTermSlot({ ...engine, minSessions: term.minTermSessions ?? 2, coachId, weekday: s('weekday'), time: s('time') })
-    if (!slot) return fail('Sorry — that weekly time has just been booked. Please choose another.')
+    if (!slot) return fail('That time is no longer available. Please choose another.')
     const away = new Set(slot.awayDates[coachId] ?? [])
     sessions = slot.sessions.map((startsAt) => ({ startsAt, needsCover: away.has(toYmd(startsAt)) }))
     amount = term.pricePerSession * sessions.length
@@ -85,7 +86,7 @@ export async function bookSession(_prev: BookState, fd: FormData): Promise<BookS
     amount = packTotal(sessions.length, pack.price)
   } else {
     const startsAt = s('start')
-    if (Number.isNaN(Date.parse(startsAt)) || !isCasualOpen({ ...engine, coachId, startsAt })) return fail('Sorry — that time has just been booked. Please choose another.')
+    if (Number.isNaN(Date.parse(startsAt)) || !isCasualOpen({ ...engine, coachId, startsAt })) return fail('That time is no longer available. Please choose another.')
     sessions = [{ startsAt: new Date(startsAt).toISOString() }]
     // Term families pay the member price for sessions in the next couple of weeks
     const priced = casualPrice(term, { startsAt: sessions[0].startsAt, now: new Date(), termMember: await isTermMember(p, user?.id) })

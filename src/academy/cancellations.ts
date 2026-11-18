@@ -296,6 +296,8 @@ async function notifyCancellation(
     },
   ])
   await sendEmail(payload, { to: booking.contact.email, subject: o.makeUp ? `Make-up session booked for ${booking.player.firstName}` : `Cancelled: ${booking.player.firstName}’s 1-on-1${whole ? 's' : ''} with ${coach.displayName}`, html, sender: 'academy', userId: rel(booking.account) })
+  // The family asked for it themselves → no phone alert; a coach or Management cancellation → alert
+  if (o.by !== 'family') await (await import('../lib/app-install')).notifyUser(payload, rel(booking.account), 'changes', { title: o.makeUp ? 'Session moved — make-up booked' : 'Session cancelled', body: `${booking.player.firstName}’s session on ${dates.join(', ')} with ${coach.displayName} is cancelled.${o.makeUp ? ' A free make-up is booked.' : ''}`, url: `/account/bookings/${booking.reference}` })
 
   // Tell the coach (and the make-up coach if different)
   const coachUser = typeof coach.user === 'object' ? coach.user : null

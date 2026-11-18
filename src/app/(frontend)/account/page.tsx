@@ -20,9 +20,13 @@ import { inbox } from '@/messaging/service'
 import { homeFor } from '@/lib/home'
 import { graceDaysLeft } from '@/academy/pdr/manage-rules'
 import { invoiceLink } from '@/invoices/service'
+import { appPageMetadata, appViewer } from '@/lib/app-viewer'
+import { APP } from '@/lib/app-brand'
+import { appProgress } from '@/lib/app-install'
+import { AppTaskCard } from '@/components/app/AppTaskCard'
 
 export const dynamic = 'force-dynamic'
-export const metadata: Metadata = { title: 'My account', robots: { index: false } }
+export const generateMetadata = (): Promise<Metadata> => appPageMetadata({ title: 'My account', robots: { index: false } })
 
 const orderStatus: Record<string, string> = { paid: 'Being prepared', ready: 'Ready to collect', completed: 'Collected / sent', cancelled: 'Cancelled', refunded: 'Refunded' }
 const tagLabel = { rowville: 'Rowville player', rfa: 'RFA', 'foundation-plus': 'Foundation+ player' } as const
@@ -116,6 +120,8 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   const upcoming = [...clubItems, ...teamItems, ...sessionItems.filter((i) => new Date(i.date).getTime() >= now)].sort((a, b) => (a.date ?? '9999').localeCompare(b.date ?? '9999'))
   const past = sessionItems.filter((i) => new Date(i.date).getTime() < now).reverse()
 
+  const { brand: appBrand } = await appViewer()
+  const appState = appProgress(user)
   return (
     <div className="container-x py-14">
       {home !== '/account' && (
@@ -132,6 +138,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
         <LogoutButton />
       </div>
       {welcome && <p className="mt-6 rounded-xl border border-accent bg-accent/10 px-5 py-4">Your account is ready. Welcome to the Eagles!</p>}
+      <AppTaskCard appName={APP[appBrand].name} installed={appState.installed} push={appState.push} show={appState.showCard} />
       {needNumbers.length > 0 && (
         <div className="mt-6 rounded-xl border-2 border-accent bg-accent/10 px-5 py-4" data-number-banner>
           <p className="font-semibold">Pick your shirt number</p>

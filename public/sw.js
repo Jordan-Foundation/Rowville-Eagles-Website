@@ -1,5 +1,6 @@
 /*
- * Rowville Eagles service worker — only for the coach portal at the ground with poor reception.
+ * Rowville Eagles service worker — offline copies of the coach portal (poor reception at the ground) and phone
+ * notifications for everyone who turns them on.
  * Coach pages (dashboard, training day, groups) are fetched from the network first; the last good copy is kept
  * so it can still be read offline. Nothing else on the site is cached. Logging out clears it.
  */
@@ -50,15 +51,15 @@ self.addEventListener('fetch', (event) => {
   }
 })
 
-// Notifications (coach portal): show them, and open the right page when tapped
+// Notifications (families, coaches and Management): show them, and open the right page when tapped
 self.addEventListener('push', (event) => {
   let data = {}
   try { data = event.data ? event.data.json() : {} } catch { data = { title: 'Rowville Eagles', body: event.data ? event.data.text() : '' } }
-  event.waitUntil(self.registration.showNotification(data.title || 'Rowville Eagles', { body: data.body || '', tag: data.tag, icon: '/icon.png', badge: '/icon.png', data: { url: data.url || '/coach' } }))
+  event.waitUntil(self.registration.showNotification(data.title || 'Rowville Eagles', { body: data.body || '', tag: data.tag, icon: data.icon || '/icons/eagles-192.png', badge: '/icons/favicon-32.png', data: { url: data.url || '/account' } }))
 })
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
-  const url = (event.notification.data && event.notification.data.url) || '/coach'
+  const url = (event.notification.data && event.notification.data.url) || '/account'
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((wins) => {
       const same = wins.find((w) => w.url.startsWith(self.location.origin))

@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { payload, formatDate } from '@/lib/payload'
 import { requireCoach } from '@/academy/portal'
-import { WEEKDAYS, startTimesFor } from '@/academy/constants'
+import { WEEKDAYS, startTimesLoader } from '@/academy/constants'
 import { termDatesForWeekday, toYmd } from '@/academy/term-dates'
 import { AvailabilityGrid } from '../AvailabilityGrid'
 import { AwayPeriods } from '../AwayPeriods'
@@ -19,7 +19,8 @@ export default async function TermAvailability({ params }: { params: Promise<{ t
   const { docs } = await p.find({ pagination: false, collection: 'academy-availability', where: { coach: { equals: coach.id }, term: { equals: term.id } }, limit: 1, depth: 0, overrideAccess: true })
   const mine = docs[0]
   const locked = !['availability', 'open'].includes(term.status)
-  const allowed = Object.fromEntries(WEEKDAYS.map((d) => [d, startTimesFor(term, d)]))
+  const startTimesFor = await startTimesLoader(p, term)
+  const allowed = Object.fromEntries(WEEKDAYS.map((d) => [d, startTimesFor(d)]))
   const times = Array.from(new Set(Object.values(allowed).flat())).sort()
   const counts = WEEKDAYS.map((d) => `${d.slice(0, 3)} ${termDatesForWeekday(term, d).length}`).join(' · ')
   // "Copy last term": the most recent other timeframe of the same kind (term → term, holidays → holidays)

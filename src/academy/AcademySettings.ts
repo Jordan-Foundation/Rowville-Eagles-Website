@@ -2,6 +2,9 @@ import type { GlobalConfig } from 'payload'
 import { refreshGlobal } from '../lib/revalidate'
 import { isStaff } from '../access'
 import { toE164 } from '../lib/sms'
+import { TIME_RE } from './hours'
+
+const hhmm = (v: unknown) => !v || TIME_RE.test(String(v)) || 'Use 24-hour time, e.g. 16:00'
 
 /** Foundation Academy settings that aren't tied to a term. */
 export const AcademySettings: GlobalConfig = {
@@ -11,6 +14,71 @@ export const AcademySettings: GlobalConfig = {
   access: { read: isStaff, update: isStaff },
   hooks: { afterChange: [refreshGlobal] },
   fields: [
+    {
+      type: 'collapsible',
+      label: '1-on-1 booking hours',
+      fields: [
+        {
+          name: 'bookingHours',
+          type: 'group',
+          label: false,
+          admin: { description: 'Sessions run back to back inside these hours (1-hour sessions in 4pm–9pm → 4, 5, 6, 7 and 8pm). A coach’s availability is only bookable inside them. School terms come from the Timeframes (Yearly setup); any date outside a school term uses the holiday hours. 24-hour times, e.g. 16:00.' },
+          fields: [
+            { type: 'row', fields: [
+              { name: 'termWeekdayFrom', label: 'School term Mon–Fri from', type: 'text', defaultValue: '16:00', validate: hhmm },
+              { name: 'termWeekdayTo', label: 'until', type: 'text', defaultValue: '21:00', validate: hhmm },
+            ] },
+            { type: 'row', fields: [
+              { name: 'termWeekendFrom', label: 'School term Sat & Sun from', type: 'text', defaultValue: '07:00', validate: hhmm },
+              { name: 'termWeekendTo', label: 'until', type: 'text', defaultValue: '21:00', validate: hhmm },
+            ] },
+            { type: 'row', fields: [
+              { name: 'holidayFrom', label: 'School holidays (every day) from', type: 'text', defaultValue: '07:00', validate: hhmm },
+              { name: 'holidayTo', label: 'until', type: 'text', defaultValue: '21:00', validate: hhmm },
+            ] },
+          ],
+        },
+        {
+          name: 'closedDates',
+          label: 'Closed dates (no 1-on-1s or small groups)',
+          type: 'array',
+          admin: { description: 'e.g. Christmas Day. No times show on these dates.' },
+          fields: [{ type: 'row', fields: [
+            { name: 'date', type: 'date', required: true, admin: { date: { pickerAppearance: 'dayOnly', displayFormat: 'd MMM yyyy' } } },
+            { name: 'note', type: 'text' },
+          ] }],
+        },
+      ],
+    },
+    {
+      type: 'collapsible',
+      label: 'Back-to-back booking',
+      fields: [
+        {
+          name: 'backToBack',
+          type: 'group',
+          label: false,
+          admin: { description: 'On the family booking pages, once a coach has a booking on a day, only the times directly before or after their bookings are shown, so sessions fill up back to back. Management and coaches booking internally always see every time. Nothing is deleted — times are only hidden. Switch it off for one coach on their coach record.' },
+          fields: [
+            { name: 'enabled', label: 'Use back-to-back booking', type: 'checkbox', defaultValue: true },
+            {
+              name: 'appliesTo',
+              label: 'Applies to',
+              type: 'select',
+              hasMany: true,
+              defaultValue: ['casual', 'term', 'pack'],
+              options: [
+                { label: 'One-off 1-on-1s', value: 'casual' },
+                { label: 'Weekly 1-on-1s for the term', value: 'term' },
+                { label: 'Holiday 1-on-1 packs', value: 'pack' },
+              ],
+              admin: { description: 'Small groups are set up by coaches and Management, so they can always use any time.' },
+            },
+            { name: 'releaseHours', label: 'Show every time again this many hours before the day (0 = off)', type: 'number', defaultValue: 0, min: 0, max: 336 },
+          ],
+        },
+      ],
+    },
     {
       type: 'collapsible',
       label: 'Phone calls',

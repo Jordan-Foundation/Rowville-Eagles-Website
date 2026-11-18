@@ -121,6 +121,11 @@ export async function sendAnnouncement(p: Payload, id: number) {
   const a = claimed.docs[0]
   const { ids } = await announcementAudience(p, a)
   await p.update({ collection: 'announcements', id, data: { sendState: { ids, emailDone: [], smsDone: [], email: zero(), sms: zero() } satisfies SendState }, ...q })
+  // Phone notification ("New holiday camps and 1-on-1 times") to the same opted-in families, once
+  if (a.kind === 'open') {
+    const program = await p.findByID({ collection: 'programs', id: idOf(a.program)!, ...q }).catch(() => null)
+    await (await import('../lib/app-install')).notifyMany(p, ids, 'openings', { title: 'Registrations are open', body: program ? `${program.title} — book your place now.` : a.subject, url: program?.slug ? `/programs/${program.slug}` : '/academy', tag: `announcement-${a.id}` }).catch(() => 0)
+  }
   return continueAnnouncement(p, id)
 }
 

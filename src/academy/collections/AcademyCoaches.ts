@@ -28,6 +28,14 @@ export const AcademyCoaches: CollectionConfig = {
     { name: 'specialties', type: 'array', maxRows: 6, fields: [{ name: 'label', type: 'text', required: true }] },
     { name: 'active', type: 'checkbox', defaultValue: true, admin: { position: 'sidebar', description: 'Inactive coaches are hidden from families' }, access: { update: ({ req: { user } }) => hasRole(user as never, 'admin', 'committee') } },
     { name: 'order', type: 'number', defaultValue: 0, admin: { position: 'sidebar' } },
+    {
+      name: 'backToBack',
+      label: 'Back-to-back booking',
+      type: 'checkbox',
+      defaultValue: true,
+      admin: { position: 'sidebar', description: 'Families only see times next to this coach’s existing bookings on a day (when it’s on in Academy settings)' },
+      access: { update: ({ req: { user } }) => hasRole(user as never, 'admin', 'committee') },
+    },
     { name: 'organisation', type: 'text', defaultValue: 'rowville', admin: { position: 'sidebar', readOnly: true } },
     {
       name: 'alerts',

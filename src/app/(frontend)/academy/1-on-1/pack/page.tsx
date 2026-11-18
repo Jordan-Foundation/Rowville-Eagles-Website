@@ -1,8 +1,9 @@
+import { currentUser } from '@/lib/auth'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { payload, formatAUD, formatDate } from '@/lib/payload'
 import { casualSlots } from '@/academy/slots'
-import { loadTermBookingData, openTerms, releaseExpiredHolds } from '@/academy/booking-data'
+import { bookingInternally, engineFor, loadTermBookingData, openTerms, releaseExpiredHolds } from '@/academy/booking-data'
 import { isHolidayTimeframe } from '@/academy/timeframes'
 import { packSettings } from '@/academy/packs'
 import { PackPicker } from './PackPicker'
@@ -27,7 +28,7 @@ export default async function PackPage({ searchParams }: { searchParams: Promise
   }
   const pack = packSettings(term)
   const data = await loadTermBookingData(p, term)
-  const slots = casualSlots({ term, coaches: data.availability, taken: data.taken, now: new Date(), cutoffHours: term.bookingCutoffHours ?? 24 })
+  const slots = casualSlots(engineFor(term, data, { customer: !bookingInternally(await currentUser()), kind: 'pack' }))
   const counts = new Map(data.coaches.map((c) => [c.id, slots.filter((s) => s.coachIds.includes(c.id)).length]))
   const coach = data.coaches.find((c) => String(c.id) === sp.coach)
   const minSize = pack.sizes[0]

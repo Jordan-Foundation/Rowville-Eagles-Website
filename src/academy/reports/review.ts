@@ -140,6 +140,7 @@ export async function notifyReleased(p: Payload, cycleId: number | null, deadlin
       if (ok) emailed++
     }
     await sendSms(p, { to: f.phone, kind: 'service', optedOut: user?.smsOptOut, userId: user?.id, body: `${names}’s ${round} report${many ? 's are' : ' is'} ready: ${link} – Foundation Academy` })
+    if (user) await (await import('../../lib/app-install')).notifyUser(p, user.id, 'progress', { title: `${round} report${many ? 's' : ''} ready`, body: `${names}’s ${round} report${many ? 's are' : ' is'} ready to read.`, url: link.replace(siteUrl(), '') })
     await markNotified(f.items.map((i) => i.id))
     done++
   }

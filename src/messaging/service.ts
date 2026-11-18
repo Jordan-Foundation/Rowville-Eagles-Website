@@ -206,6 +206,7 @@ export async function staffReply(p: Payload, v: Viewer, convId: number, text: st
     delivery = 'email'
   }
   await addMessage(p, conv, { direction: 'out', channel: delivery === 'email' ? 'email' : 'sms', authorRole: v.side === 'coach' ? 'coach' : 'admin', author: v.user.id, authorName, body, delivery })
+  if (family) await (await import('../lib/app-install')).notifyUser(p, family.id, 'messages', { title: `Message from ${authorName}`, body: body.length > 140 ? `${body.slice(0, 137)}…` : body, url: '/account/messages', tag: `conv-${conv.id}` })
   return { delivery, reason: sms.sent ? null : (sms as { reason?: string }).reason }
 }
 

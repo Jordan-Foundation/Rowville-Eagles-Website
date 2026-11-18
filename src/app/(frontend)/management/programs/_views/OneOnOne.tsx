@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { payload, formatMoney, formatDate } from '@/lib/payload'
-import { loadTermBookingData } from '@/academy/booking-data'
+import { engineFor, loadTermBookingData } from '@/academy/booking-data'
 import { cashPaid } from '@/academy/cancellation'
 import { coachCapacity, utilisation } from '@/academy/dashboard'
 import { casualSlots } from '@/academy/slots'
@@ -55,7 +55,7 @@ export async function OneOnOneView({ q }: { q: Q }) {
   const groupIds = new Set(active.filter((b) => b.kind === 'group').map((b) => rel(b.group as never)))
 
   // Capacity & open slots per coach
-  const engine = { term, coaches: data.availability, taken: data.taken, now, cutoffHours: term.bookingCutoffHours ?? 24 }
+  const engine = engineFor(term, data, { customer: false, kind: 'casual', now })
   const soon = casualSlots(engine).filter((s) => new Date(s.startsAt).getTime() < now.getTime() + 14 * DAY)
   const coachRows = data.coaches
     .filter((c) => !coachFilter || c.id === coachFilter)

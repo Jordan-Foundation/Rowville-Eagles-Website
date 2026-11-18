@@ -4,6 +4,8 @@ import { redirect } from 'next/navigation'
 import { payload, formatDate } from '@/lib/payload'
 import { currentUser } from '@/lib/auth'
 import { PreferencesForm } from './PreferencesForm'
+import { NOTIFY_TYPES } from '@/lib/app-install'
+import { saveNotifyTypes } from './notify-actions'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Communication preferences', robots: { index: false } }
@@ -24,7 +26,8 @@ const sourceLabel: Record<string, string> = {
   admin: 'Club admin',
 }
 
-export default async function PreferencesPage() {
+export default async function PreferencesPage({ searchParams }: { searchParams: Promise<{ saved?: string }> }) {
+  const sp = await searchParams
   const me = await currentUser()
   if (!me) redirect('/login?next=/account/preferences')
   const p = await payload()
@@ -42,6 +45,22 @@ export default async function PreferencesPage() {
           Booking confirmations, session changes and cancellations, payment receipts and failed payments, account and security messages, and important
           club or team updates. We need to send these while your account is active.
         </p>
+      </section>
+
+      <section className="mt-10" id="notifications" aria-labelledby="notify-h">
+        <h2 id="notify-h" className="font-semibold">Phone notifications</h2>
+        <p className="mt-2 text-sm text-muted">
+          For the app on your phone. {user.app?.pushEnabledAt ? 'Choose which ones you get.' : <>Notifications aren’t on yet — <Link href="/account/app" className="underline">get the app and turn them on</Link>.</>}
+        </p>
+        {sp.saved === 'notify' && <p role="status" className="mt-3 text-sm text-emerald-300">Saved.</p>}
+        <form action={saveNotifyTypes} className="mt-4 space-y-2">
+          {NOTIFY_TYPES.map((t) => (
+            <label key={t.key} className="flex items-center gap-3 text-sm">
+              <input type="checkbox" name="notify" value={t.key} defaultChecked={user.notify?.[t.key] !== false} /> {t.label}
+            </label>
+          ))}
+          <button className="mt-2 text-sm rounded-full bg-brand px-6 py-3 font-semibold text-white hover:brightness-110 disabled:opacity-60 [[data-brand=academy]_&]:rounded-none [[data-brand=academy]_&]:bg-white [[data-brand=academy]_&]:uppercase [[data-brand=academy]_&]:tracking-[0.18em] [[data-brand=academy]_&]:text-black">Save notifications</button>
+        </form>
       </section>
 
       <section className="mt-10">

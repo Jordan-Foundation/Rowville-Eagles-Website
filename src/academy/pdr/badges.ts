@@ -80,6 +80,7 @@ export async function awardLevelBadge(payload: Payload, playerId: number, areaId
         },
       ])
       await sendEmail(payload, { to: parent.email, subject: `${kid.firstName} earned a new badge: ${name} 🏅`, html, sender: 'academy', userId: parent.id })
+      await (await import('../../lib/app-install')).notifyUser(payload, parent.id, 'progress', { title: 'New badge! 🏅', body: `${kid.firstName} earned the ${name} badge.`, url: `/foundation-plus/${kid.id}/trophies` })
     }
   } catch (e) {
     payload.logger.error({ err: e, msg: `Badge email for player ${playerId} failed` })
