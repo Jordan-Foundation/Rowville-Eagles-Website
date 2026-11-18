@@ -140,6 +140,8 @@ export interface Config {
     messages: Message;
     'invite-tokens': InviteToken;
     'wwcc-files': WwccFile;
+    'push-subscriptions': PushSubscription;
+    'session-summaries': SessionSummary;
     'activity-log': ActivityLog;
     'staff-feed': StaffFeed;
     'coach-pay-rates': CoachPayRate;
@@ -234,6 +236,8 @@ export interface Config {
     messages: MessagesSelect<false> | MessagesSelect<true>;
     'invite-tokens': InviteTokensSelect<false> | InviteTokensSelect<true>;
     'wwcc-files': WwccFilesSelect<false> | WwccFilesSelect<true>;
+    'push-subscriptions': PushSubscriptionsSelect<false> | PushSubscriptionsSelect<true>;
+    'session-summaries': SessionSummariesSelect<false> | SessionSummariesSelect<true>;
     'activity-log': ActivityLogSelect<false> | ActivityLogSelect<true>;
     'staff-feed': StaffFeedSelect<false> | StaffFeedSelect<true>;
     'coach-pay-rates': CoachPayRatesSelect<false> | CoachPayRatesSelect<true>;
@@ -268,6 +272,7 @@ export interface Config {
     'reflection-settings': ReflectionSetting;
     'finance-settings': FinanceSetting;
     'setup-progress': SetupProgress;
+    'push-keys': PushKey;
   };
   globalsSelect: {
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
@@ -280,6 +285,7 @@ export interface Config {
     'reflection-settings': ReflectionSettingsSelect<false> | ReflectionSettingsSelect<true>;
     'finance-settings': FinanceSettingsSelect<false> | FinanceSettingsSelect<true>;
     'setup-progress': SetupProgressSelect<false> | SetupProgressSelect<true>;
+    'push-keys': PushKeysSelect<false> | PushKeysSelect<true>;
   };
   locale: null;
   widgets: {
@@ -3156,6 +3162,70 @@ export interface InviteToken {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "push-subscriptions".
+ */
+export interface PushSubscription {
+  id: number;
+  user: number | User;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  device?: string | null;
+  lastSentAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Written by coaches after each session. Tick “Hide from family” to take one down.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "session-summaries".
+ */
+export interface SessionSummary {
+  id: number;
+  title?: string | null;
+  session: number | AcademySession;
+  kind?: ('one-on-one' | 'group') | null;
+  coach: number | AcademyCoach;
+  sessionAt: string;
+  workedOn?:
+    | (
+        | 'First touch'
+        | 'Ball mastery'
+        | 'Dribbling & 1v1'
+        | 'Passing'
+        | 'Receiving & turning'
+        | 'Shooting & finishing'
+        | 'Weak foot'
+        | 'Defending 1v1'
+        | 'Heading'
+        | 'Speed & agility'
+        | 'Game understanding'
+        | 'Confidence'
+      )[]
+    | null;
+  wentWell?: string | null;
+  nextSteps?: string | null;
+  homework?: string | null;
+  effort?: number | null;
+  players?:
+    | {
+        session: number | AcademySession;
+        name?: string | null;
+        note?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  privateNotes?: string | null;
+  submittedAt?: string | null;
+  submittedBy?: (number | null) | User;
+  emailedAt?: string | null;
+  hidden?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "activity-log".
  */
 export interface ActivityLog {
@@ -3189,6 +3259,7 @@ export interface StaffFeed {
   id: number;
   kind: 'problem' | 'trial' | 'enquiry' | 'booking' | 'payment';
   urgent?: boolean | null;
+  pushStatus?: ('none' | 'sent' | 'held') | null;
   textStatus?: ('none' | 'sent' | 'held' | 'failed') | null;
   title: string;
   detail?: string | null;
@@ -3781,6 +3852,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'wwcc-files';
         value: number | WwccFile;
+      } | null)
+    | ({
+        relationTo: 'push-subscriptions';
+        value: number | PushSubscription;
+      } | null)
+    | ({
+        relationTo: 'session-summaries';
+        value: number | SessionSummary;
       } | null)
     | ({
         relationTo: 'activity-log';
@@ -5833,6 +5912,51 @@ export interface WwccFilesSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "push-subscriptions_select".
+ */
+export interface PushSubscriptionsSelect<T extends boolean = true> {
+  user?: T;
+  endpoint?: T;
+  p256dh?: T;
+  auth?: T;
+  device?: T;
+  lastSentAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "session-summaries_select".
+ */
+export interface SessionSummariesSelect<T extends boolean = true> {
+  title?: T;
+  session?: T;
+  kind?: T;
+  coach?: T;
+  sessionAt?: T;
+  workedOn?: T;
+  wentWell?: T;
+  nextSteps?: T;
+  homework?: T;
+  effort?: T;
+  players?:
+    | T
+    | {
+        session?: T;
+        name?: T;
+        note?: T;
+        id?: T;
+      };
+  privateNotes?: T;
+  submittedAt?: T;
+  submittedBy?: T;
+  emailedAt?: T;
+  hidden?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "activity-log_select".
  */
 export interface ActivityLogSelect<T extends boolean = true> {
@@ -5854,6 +5978,7 @@ export interface ActivityLogSelect<T extends boolean = true> {
 export interface StaffFeedSelect<T extends boolean = true> {
   kind?: T;
   urgent?: T;
+  pushStatus?: T;
   textStatus?: T;
   title?: T;
   detail?: T;
@@ -6582,6 +6707,17 @@ export interface SetupProgress {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "push-keys".
+ */
+export interface PushKey {
+  id: number;
+  publicKey?: string | null;
+  privateKey?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "site-settings_select".
  */
 export interface SiteSettingsSelect<T extends boolean = true> {
@@ -6962,6 +7098,17 @@ export interface FinanceSettingsSelect<T extends boolean = true> {
  */
 export interface SetupProgressSelect<T extends boolean = true> {
   ticked?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "push-keys_select".
+ */
+export interface PushKeysSelect<T extends boolean = true> {
+  publicKey?: T;
+  privateKey?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

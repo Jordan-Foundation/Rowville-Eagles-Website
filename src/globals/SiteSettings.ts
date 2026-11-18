@@ -66,7 +66,7 @@ export const SiteSettings: GlobalConfig = {
     },
     {
       name: 'smsAlertNumbers',
-      label: 'Text alerts for new messages',
+      label: 'Urgent text alerts',
       type: 'text',
       admin: { description: 'Mobiles that get a text whenever someone texts the club’s number, and for urgent website events (a session in the next 48 hours booked, cancelled or moved; cover needed; a trial sign-up — held overnight and sent at 7am), e.g. 0412 345 678, 0498 765 432 (separate with commas). Leave empty for none.' },
       validate: (v: unknown) => {

@@ -49,3 +49,21 @@ self.addEventListener('fetch', (event) => {
     )
   }
 })
+
+// Notifications (coach portal): show them, and open the right page when tapped
+self.addEventListener('push', (event) => {
+  let data = {}
+  try { data = event.data ? event.data.json() : {} } catch { data = { title: 'Rowville Eagles', body: event.data ? event.data.text() : '' } }
+  event.waitUntil(self.registration.showNotification(data.title || 'Rowville Eagles', { body: data.body || '', tag: data.tag, icon: '/icon.png', badge: '/icon.png', data: { url: data.url || '/coach' } }))
+})
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  const url = (event.notification.data && event.notification.data.url) || '/coach'
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((wins) => {
+      const same = wins.find((w) => w.url.startsWith(self.location.origin))
+      if (same) return same.navigate(url).then((w) => (w || same).focus())
+      return self.clients.openWindow(url)
+    }),
+  )
+})

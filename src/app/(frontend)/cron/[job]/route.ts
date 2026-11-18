@@ -18,6 +18,9 @@ function authorised(req: Request) {
 export async function GET(req: Request, { params }: { params: Promise<{ job: string }> }) {
   if (!authorised(req)) return new Response('Unauthorized', { status: 401 })
   const { job } = await params
+  // Tests only: pretend it's another time (never in production)
+  const at = new URL(req.url).searchParams.get('now')
+  ;(globalThis as { __cronNow?: Date }).__cronNow = process.env.NODE_ENV !== 'production' && at ? new Date(at) : undefined
   const group = cronJobs[job]
   if (!group) return new Response('Unknown job', { status: 404 })
 

@@ -36,8 +36,21 @@ async function textAll(p: Payload, body: string) {
   return ok
 }
 
+/** Push to Management phones (free). Never throws. */
+async function pushAll(p: Payload, item: FeedItem) {
+  try {
+    const { pushStaff } = await import('../push/send')
+    return await pushStaff(p, { title: item.title, body: item.detail ?? '', url: item.href ?? '/management/notifications', tag: undefined })
+  } catch (e) {
+    p.logger.error({ err: e, msg: 'Staff push failed' })
+    return 0
+  }
+}
+
 /**
- * Records one event (once — `key` stops repeats). Urgent ones are texted now, or held for the 7am text overnight.
+ * Records one event (once — `key` stops repeats). Every event goes to Management phones as a notification (held
+ * overnight 9pm–7am, then one bundled notification). Urgent ones (a session soon cancelled or moved, cover needed)
+ * are also texted to the alert numbers — now, or at 7am.
  * Never throws: a notification problem must not break a booking or payment.
  */
 export async function record(p: Payload, key: string, item: FeedItem, req?: PayloadRequest) {
@@ -47,10 +60,11 @@ export async function record(p: Payload, key: string, item: FeedItem, req?: Payl
     const quiet = isQuiet(localHour())
     const doc = await p.create({
       collection: 'staff-feed',
-      data: { kind: item.kind, title: item.title.slice(0, 200), detail: item.detail?.slice(0, 300) ?? null, href: item.href ?? null, urgent: Boolean(item.urgent), sourceKey: key, textStatus: item.urgent ? (quiet ? 'held' : 'none') : 'none' },
+      data: { kind: item.kind, title: item.title.slice(0, 200), detail: item.detail?.slice(0, 300) ?? null, href: item.href ?? null, urgent: Boolean(item.urgent), sourceKey: key, textStatus: item.urgent ? (quiet ? 'held' : 'none') : 'none', pushStatus: quiet ? 'held' : 'none' },
       ...q,
       req,
     })
+    if (!quiet && (await pushAll(p, item))) await p.update({ collection: 'staff-feed', id: doc.id, data: { pushStatus: 'sent' }, ...q, req })
     if (item.urgent && !quiet) {
       const sent = await textAll(p, urgentText(item, abs(item.href)))
       await p.update({ collection: 'staff-feed', id: doc.id, data: { textStatus: sent ? 'sent' : 'failed' }, ...q, req })
@@ -65,8 +79,16 @@ export async function record(p: Payload, key: string, item: FeedItem, req?: Payl
 /** Hourly: the 7am bundle of anything held overnight, and the 8pm digest email. */
 export async function runStaffAlerts(p: Payload, now = new Date()) {
   const hour = localHour(now)
-  const out = { morning: 0, digest: 0 }
+  const out = { morning: 0, digest: 0, pushed: 0 }
   if (!isQuiet(hour)) {
+    // Overnight notifications: one bundled push at 7am
+    const { docs: heldPush } = await p.find({ collection: 'staff-feed', where: { pushStatus: { equals: 'held' } }, sort: 'createdAt', limit: 200, pagination: false, ...q })
+    if (heldPush.length) {
+      const n = heldPush.length
+      await pushAll(p, { kind: 'booking', title: `${n} update${n === 1 ? '' : 's'} overnight`, detail: heldPush.slice(0, 4).map((h) => h.title).join(' · ').slice(0, 160), href: '/management/notifications' })
+      for (const h of heldPush) await p.update({ collection: 'staff-feed', id: h.id, data: { pushStatus: 'sent' }, ...q })
+      out.pushed = n
+    }
     const { docs: held } = await p.find({ collection: 'staff-feed', where: { textStatus: { equals: 'held' } }, sort: 'createdAt', limit: 100, pagination: false, ...q })
     if (held.length) {
       const sent = await textAll(p, morningText(held, `${siteUrl()}/management/notifications`))

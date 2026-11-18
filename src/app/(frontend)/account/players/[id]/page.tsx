@@ -60,6 +60,8 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
   const upcoming = sessions.filter((s) => new Date(s.startsAt).getTime() >= now)
   const past = sessions.filter((s) => new Date(s.startsAt).getTime() < now).reverse()
   const done = past.filter((s) => s.status === 'completed').length
+  // The coach's session summaries (never the coach & admin notes)
+  const summaries = await (await import('@/academy/summaries/service')).summariesForSessions(p, past.map((s) => s.id))
 
   const row = (s: (typeof sessions)[number]) => {
     const b = byId.get((typeof s.booking === 'object' ? s.booking?.id : s.booking) ?? 0) as AcademyBooking
@@ -85,6 +87,18 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
         </div>
         <span className="w-fit rounded-full bg-black px-2.5 py-1 text-xs font-semibold text-white">RFA →</span>
         </Link>
+        {summaries.get(s.id) && (() => {
+          const sm = summaries.get(s.id)!
+          return (
+            <div className="border-t border-line px-5 pb-5 pt-3 text-sm" data-summary>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">Coach’s summary · {(sm.workedOn ?? []).join(', ')}{sm.effort ? ` · effort ${'★'.repeat(sm.effort)}` : ''}</p>
+              {sm.wentWell && <p className="mt-1"><span className="text-muted">Went well: </span>{sm.wentWell}</p>}
+              {sm.mine && <p className="mt-1"><span className="text-muted">For {s.booking && typeof s.booking === 'object' ? (s.booking as AcademyBooking).player.firstName : 'your player'}: </span>{sm.mine}</p>}
+              {sm.nextSteps && <p className="mt-1"><span className="text-muted">Next steps: </span>{sm.nextSteps}</p>}
+              {sm.homework && <p className="mt-1"><span className="text-muted">Practise at home: </span>{sm.homework}</p>}
+            </div>
+          )
+        })()}
       </li>
     )
   }

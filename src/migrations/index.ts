@@ -86,6 +86,8 @@ import * as migration_20261117_013925_upload_object_keys from './20261117_013925
 import * as migration_20261117_060000_meta_pixel_id from './20261117_060000_meta_pixel_id';
 import * as migration_20261118_000049_eoi_audience from './20261118_000049_eoi_audience';
 import * as migration_20261118_012636_eoi_marketing from './20261118_012636_eoi_marketing';
+import * as migration_20261118_031053_session_summaries from './20261118_031053_session_summaries';
+import * as migration_20261118_040712_staff_push from './20261118_040712_staff_push';
 
 export const migrations = [
   {
@@ -526,6 +528,16 @@ export const migrations = [
   {
     up: migration_20261118_012636_eoi_marketing.up,
     down: migration_20261118_012636_eoi_marketing.down,
-    name: '20261118_012636_eoi_marketing'
+    name: '20261118_012636_eoi_marketing',
+  },
+  {
+    up: migration_20261118_031053_session_summaries.up,
+    down: migration_20261118_031053_session_summaries.down,
+    name: '20261118_031053_session_summaries',
+  },
+  {
+    up: migration_20261118_040712_staff_push.up,
+    down: migration_20261118_040712_staff_push.down,
+    name: '20261118_040712_staff_push'
   },
 ];
