@@ -172,6 +172,7 @@ async function notifyReschedule(payload: Payload, booking: AcademyBooking, moves
     },
   ])
   await sendEmail(payload, { to: booking.contact.email, subject: `New ${moves.length === 1 ? 'time' : 'times'}: ${booking.player.firstName}’s 1-on-1${moves.length === 1 ? '' : 's'}`, html, sender: 'academy', userId: rel(booking.account) })
+  await (await import('../lib/app-install')).notifyUser(payload, rel(booking.account), 'changes', { title: moves.length === 1 ? 'Session time changed' : 'Session times changed', body: `${booking.player.firstName}’s ${moves.length === 1 ? 'session has' : `${moves.length} sessions have`} moved — tap to see the new ${moves.length === 1 ? 'time' : 'times'}.`, url: `/account/bookings/${booking.reference}` })
 
   // One message to each coach affected (losing or gaining sessions)
   for (const c of coaches) {

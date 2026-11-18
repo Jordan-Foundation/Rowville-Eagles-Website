@@ -7,7 +7,7 @@ import type { Metadata } from 'next'
 import { payload, formatAUD, formatDate } from '@/lib/payload'
 import { currentUser } from '@/lib/auth'
 import { findTermSlot, isCasualOpen } from '@/academy/slots'
-import { loadTermBookingData, openTerms, releaseAcademyHold, releaseExpiredHolds } from '@/academy/booking-data'
+import { bookingInternally, engineFor, loadTermBookingData, openTerms, releaseAcademyHold, releaseExpiredHolds } from '@/academy/booking-data'
 import { toYmd } from '@/academy/term-dates'
 import { weeklyPlan } from '@/academy/weekly'
 import { creditBalance } from '@/academy/credits'
@@ -51,7 +51,8 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
   const share = shareLink && mode !== 'pack' && linkMatches(shareLink, { mode, coach: coachId, start: q.start, weekday: q.weekday, time: q.time }) ? shareLink : null
   const shareHold = share ? await activeHold(p, share) : null
   const data = term ? await loadTermBookingData(p, term, { ignoreBooking: shareHold?.id }) : null
-  const engine = term && data ? { term, coaches: data.availability, taken: data.taken, now: new Date(), cutoffHours: term.bookingCutoffHours ?? 24 } : null
+  // The coach's reserved time is always this family's to book; staff booking internally see every time
+  const engine = term && data ? engineFor(term, data, { customer: !shareHold && !bookingInternally(user), kind: mode }) : null
 
   const termSlot = engine && mode === 'term' && q.weekday && q.time ? findTermSlot({ ...engine, minSessions: term!.minTermSessions ?? 2, coachId, weekday: q.weekday, time: q.time }) : null
   const casualOpen = Boolean(engine && mode === 'casual' && q.start && isCasualOpen({ ...engine, coachId, startsAt: q.start }))
@@ -118,7 +119,7 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
             ) : (
               <p className="panel border border-line p-6">
                 {mode === 'pack' && packCheck && !packCheck.ok ? <>{packCheck.error} <Link href={`/academy/1-on-1/pack?coach=${coachId}`} className="font-semibold underline">Choose your times</Link>.</> : <>
-                That {mode === 'term' ? 'weekly time' : 'time'} isn’t available any more. <Link href={`/academy/1-on-1${mode === 'term' ? '?mode=term' : ''}`} className="font-semibold underline">Choose another</Link>.</>}
+                That {mode === 'term' ? 'weekly time' : 'time'} is no longer available. <Link href={`/academy/1-on-1${mode === 'term' ? '?mode=term' : ''}`} className="font-semibold underline">Choose another</Link>.</>}
               </p>
             )}
           </div>

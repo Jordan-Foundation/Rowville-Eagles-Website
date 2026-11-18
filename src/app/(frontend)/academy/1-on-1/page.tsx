@@ -1,11 +1,12 @@
 import type { Metadata } from 'next'
 import { payload, formatAUD, formatDate } from '@/lib/payload'
 import { casualSlots, termSlots } from '@/academy/slots'
-import { loadTermBookingData, openTerms, releaseExpiredHolds } from '@/academy/booking-data'
+import { bookingInternally, engineFor, loadTermBookingData, openTerms, releaseExpiredHolds } from '@/academy/booking-data'
 import { AcademyBackdrop } from '@/components/AcademyBackdrop'
 import { RfaLogo } from '@/components/Logos'
 import { SlotBrowser } from './SlotBrowser'
 import { currentUser } from '@/lib/auth'
+import { localYmd } from '@/lib/time'
 import { allowsWeekly } from '@/academy/timeframes'
 import { packSettings } from '@/academy/packs'
 import { isTermMember, memberWindowEnd } from '@/academy/pricing'
@@ -28,11 +29,14 @@ export default async function OneOnOnePage({ searchParams }: { searchParams: Pro
   const weeklyOk = !!term && terms.find(allowsWeekly)?.id === term.id
   const mode = sp.mode === 'term' && weeklyOk ? 'term' : 'casual'
   const data = term ? await loadTermBookingData(p, term) : null
-  const engine = term && data ? { term, coaches: data.availability, taken: data.taken, now: new Date(), cutoffHours: term.bookingCutoffHours ?? 24 } : null
-  const slots = engine ? casualSlots(engine) : []
-  const weekly = engine && weeklyOk ? termSlots({ ...engine, minSessions: term!.minTermSessions ?? 2 }) : []
-  // Families with an active term booking: lower casual price for the next couple of weeks
   const user = await currentUser()
+  const customer = !bookingInternally(user)
+  const slots = term && data ? casualSlots(engineFor(term, data, { customer, kind: 'casual' })) : []
+  // Days with bookings and nothing left to show read "Fully booked"
+  const shown = new Set(slots.map((s) => s.date))
+  const fullDates = data ? [...new Set(data.backToBack.booked.map((b) => localYmd(new Date(b.startsAt))))].filter((d) => !shown.has(d)) : []
+  const weekly = term && data && weeklyOk ? termSlots({ ...engineFor(term, data, { customer, kind: 'term' }), minSessions: term.minTermSessions ?? 2 }) : []
+  // Families with an active term booking: lower casual price for the next couple of weeks
   const now = new Date()
   const member =
     term && term.termMemberPrice != null && term.termMemberPrice < term.casualPrice && (await isTermMember(p, user?.id, now))
@@ -120,6 +124,7 @@ export default async function OneOnOnePage({ searchParams }: { searchParams: Pro
               · all times Sydney/Melbourne time
             </p>
             <SlotBrowser
+              fullDates={fullDates}
               mode={mode}
               slots={slots}
               weekly={weekly}

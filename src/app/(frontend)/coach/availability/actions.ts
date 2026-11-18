@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { payload } from '@/lib/payload'
 import { coachOrNull } from '@/academy/portal'
-import { WEEKDAYS, startTimesFor, type Weekday } from '@/academy/constants'
+import { WEEKDAYS, startTimesLoader, type Weekday } from '@/academy/constants'
 import { toYmd } from '@/academy/term-dates'
 import { localToUtc } from '@/lib/time'
 import type { AcademyAvailability, AcademyTerm } from '@/payload-types'
@@ -30,10 +30,11 @@ export async function saveAvailability(_prev: AvailabilityState, fd: FormData): 
   const { me, p, term, existing } = ctx
 
   let picked: { weekday: Weekday; startTime: string }[]
+  const startTimesFor = await startTimesLoader(p, term)
   try {
     picked = (JSON.parse(String(fd.get('slots') ?? '[]')) as string[]).map((k) => {
       const [weekday, startTime] = k.split(' ')
-      if (!(WEEKDAYS as readonly string[]).includes(weekday) || !startTimesFor(term, weekday).includes(startTime)) throw new Error(k)
+      if (!(WEEKDAYS as readonly string[]).includes(weekday) || !startTimesFor(weekday).includes(startTime)) throw new Error(k)
       return { weekday: weekday as Weekday, startTime }
     })
   } catch {

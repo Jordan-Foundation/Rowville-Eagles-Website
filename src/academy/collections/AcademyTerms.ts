@@ -151,7 +151,7 @@ export const AcademyTerms: CollectionConfig = {
             label: 'Weekday start times (Mon–Fri)',
             type: 'array',
             defaultValue: DEFAULT_WEEKDAY_TIMES.map((time) => ({ time })),
-            admin: { description: '24-hour, e.g. 17:00. Default 3pm–9pm.', width: '50%' },
+            admin: { hidden: true }, // Replaced by Academy settings → 1-on-1 booking hours
             fields: [{ name: 'time', type: 'text', required: true }],
           },
           {
@@ -159,7 +159,7 @@ export const AcademyTerms: CollectionConfig = {
             label: 'Weekend start times (Sat & Sun)',
             type: 'array',
             defaultValue: DEFAULT_WEEKEND_TIMES.map((time) => ({ time })),
-            admin: { description: '24-hour. Default 8am–5pm (last session starts 4pm).', width: '50%' },
+            admin: { hidden: true },
             fields: [{ name: 'time', type: 'text', required: true }],
           },
         ] },

@@ -30,7 +30,7 @@ export async function removeSubscription(p: Payload, userId: number, endpoint: s
 export const hasPush = async (p: Payload, userId: number) => (await p.count({ collection: 'push-subscriptions', where: { user: { equals: userId } }, overrideAccess: true })).totalDocs > 0
 
 /** Send a notification to every device a user has turned on. Dead devices are removed. Returns how many it reached. */
-export async function pushTo(p: Payload, userId: number, msg: { title: string; body: string; url: string; tag?: string }) {
+export async function pushTo(p: Payload, userId: number, msg: { title: string; body: string; url: string; tag?: string; icon?: string }) {
   const { docs } = await p.find({ collection: 'push-subscriptions', where: { user: { equals: userId } }, limit: 20, depth: 0, overrideAccess: true })
   if (!docs.length) return 0
   const keys = await pushKeys(p)

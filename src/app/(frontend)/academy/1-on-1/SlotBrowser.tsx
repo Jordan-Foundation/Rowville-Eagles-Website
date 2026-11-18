@@ -31,6 +31,8 @@ type Props = {
   pricePerSession: number
   /** Term families: lower casual price for sessions starting before `until` */
   member?: { price: number; until: string } | null
+  /** Days a coach has bookings but no times left next to them (back-to-back) */
+  fullDates?: string[]
 }
 
 const priceFor = (p: Props, startsAt: string) => (p.member && startsAt <= p.member.until ? p.member.price : p.casualPrice)
@@ -43,7 +45,7 @@ export function SlotBrowser(props: Props) {
   const [picked, setPicked] = useState<Picked | null>(null)
   return (
     <div>
-      {props.mode === 'casual' ? <CasualView slots={props.slots} member={props.member} onPick={(slot) => setPicked({ mode: 'casual', slot })} /> : <TermView weekly={props.weekly} pricePerSession={props.pricePerSession} onPick={(slot) => setPicked({ mode: 'term', slot })} />}
+      {props.mode === 'casual' ? <CasualView slots={props.slots} full={props.fullDates} member={props.member} onPick={(slot) => setPicked({ mode: 'casual', slot })} /> : <TermView weekly={props.weekly} pricePerSession={props.pricePerSession} onPick={(slot) => setPicked({ mode: 'term', slot })} />}
       {picked && (
         <CoachCarousel
           picked={picked}
@@ -56,7 +58,7 @@ export function SlotBrowser(props: Props) {
   )
 }
 
-function CasualView({ slots, member, onPick }: { slots: CasualSlot[]; member?: Props['member']; onPick: (s: CasualSlot) => void }) {
+function CasualView({ slots, full = [], member, onPick }: { slots: CasualSlot[]; full?: string[]; member?: Props['member']; onPick: (s: CasualSlot) => void }) {
   const weeks = useMemo(() => Array.from(new Set(slots.map((s) => mondayOf(s.date)))).sort(), [slots])
   const [week, setWeek] = useState(0)
   const monday = weeks[week]
@@ -93,7 +95,7 @@ function CasualView({ slots, member, onPick }: { slots: CasualSlot[]; member?: P
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">{DAY[i]}</p>
               <p className="font-display text-xl font-semibold">{fmt(d, { day: 'numeric', month: 'short' })}</p>
               <div className="mt-3 flex flex-wrap gap-2 lg:flex-col">
-                {list.length === 0 && <p className="text-xs text-muted">No times</p>}
+                {list.length === 0 && <p className="text-xs text-muted" data-full={full.includes(d) ? d : undefined}>{full.includes(d) ? 'Fully booked' : 'No times'}</p>}
                 {list.map((s) => (
                   <button key={s.startsAt} type="button" onClick={() => onPick(s)} className="border border-white/30 px-3 py-2 text-left text-sm transition hover:border-white hover:bg-white hover:text-black">
                     <span className="font-semibold">{time12(s.time)}</span>

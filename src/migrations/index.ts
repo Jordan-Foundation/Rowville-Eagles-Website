@@ -89,6 +89,7 @@ import * as migration_20261118_012636_eoi_marketing from './20261118_012636_eoi_
 import * as migration_20261118_031053_session_summaries from './20261118_031053_session_summaries';
 import * as migration_20261118_040712_staff_push from './20261118_040712_staff_push';
 import * as migration_20261118_071452_numbers_fitout from './20261118_071452_numbers_fitout';
+import * as migration_20261118_091706_booking_hours_app from './20261118_091706_booking_hours_app';
 
 export const migrations = [
   {
@@ -544,6 +545,11 @@ export const migrations = [
   {
     up: migration_20261118_071452_numbers_fitout.up,
     down: migration_20261118_071452_numbers_fitout.down,
-    name: '20261118_071452_numbers_fitout'
+    name: '20261118_071452_numbers_fitout',
+  },
+  {
+    up: migration_20261118_091706_booking_hours_app.up,
+    down: migration_20261118_091706_booking_hours_app.down,
+    name: '20261118_091706_booking_hours_app'
   },
 ];

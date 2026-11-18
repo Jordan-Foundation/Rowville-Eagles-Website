@@ -45,12 +45,14 @@ export const cronJobs: Record<string, Record<string, Job>> = {
     trialReminders: async (payload) => (await import('./trials')).sendTrialReminders(payload),
     numberReminders: async (payload) => (await import('../numbers/service')).sendNumberReminders(payload),
     accountReminders: (payload) => sendAccountReminders(payload),
+    appReminders: async (payload) => (await import('./app-install')).sendAppReminders(payload, (globalThis as { __cronNow?: Date }).__cronNow ?? new Date()),
     foundationTrialReminders: (payload) => trialReminders(payload),
     foundationChallengeStart: (payload) => announceChallenges(payload),
     foundationChallengeResults: (payload) => finaliseChallenges(payload),
   },
   // Every hour (Vercel Pro): bulk messages and time-sensitive sweeps, each with its own time limit and able to carry on next run
   messages: {
+    sessionReminderPushes: async (payload) => (await import('./app-install')).sendSessionReminderPushes(payload, (globalThis as { __cronNow?: Date }).__cronNow ?? new Date()),
     scheduledPromotions: (payload) => runScheduledPromotions(payload),
     reportNotifications: (payload) => notifyReleasedJob(payload),
     foundationLaunchEmails: (payload) => sendLaunchEmails(payload, 100, { deadline: Date.now() + 60_000 }),

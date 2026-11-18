@@ -38,7 +38,9 @@ export async function savePushAction(sub: { endpoint: string; keys: { p256dh: st
   const u = await currentUser()
   if (!u) return { error: 'Please log in again.' }
   try {
-    await saveSubscription(await payload(), u.id, sub, device)
+    const p = await payload()
+    await saveSubscription(p, u.id, sub, device)
+    await (await import('@/lib/app-install')).recordAppStep(p, u.id, 'push')
     return { ok: true }
   } catch {
     return { error: 'Couldn’t turn on notifications on this device.' }

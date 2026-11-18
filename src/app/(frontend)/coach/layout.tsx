@@ -1,3 +1,4 @@
+import { appPageMetadata } from '@/lib/app-viewer'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { CoachNav, CoachTabs } from './CoachNav'
@@ -6,7 +7,8 @@ import { coachOrNull } from '@/academy/portal'
 import { payload } from '@/lib/payload'
 import { unreadCount } from '@/messaging/service'
 
-export const metadata: Metadata = { title: { default: 'Coach portal', template: '%s · Coach portal' }, robots: { index: false } }
+// Coaches install the Foundation Academy app (Management keeps Rowville Eagles)
+export const generateMetadata = (): Promise<Metadata> => appPageMetadata({ title: { default: 'Coach portal', template: '%s · Coach portal' }, robots: { index: false } })
 
 export default async function CoachLayout({ children }: { children: React.ReactNode }) {
   const c = await coachOrNull()

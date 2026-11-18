@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { isAway, scheduleSummary, slotOccurrences, termDatesForWeekday } from '@/academy/term-dates'
-import { startTimesFor } from '@/academy/constants'
+import { weeklyStarts, DEFAULT_HOURS } from '@/academy/hours'
 
 // Sample school term: Mon 1 Feb – Thu 1 Apr 2027 (dates stored as Sydney midnight = 13:00 UTC the day before)
 const term = { startDate: '2027-01-31T13:00:00.000Z', endDate: '2027-04-01T12:59:00.000Z' }
@@ -30,11 +30,10 @@ describe('term dates follow the school term', () => {
 })
 
 describe('start times', () => {
-  const t = { slotStartTimes: [{ time: '15:00' }, { time: '20:00' }], weekendStartTimes: [{ time: '08:00' }, { time: '16:00' }] }
-  it('uses weekend hours on Saturday and Sunday', () => {
-    expect(startTimesFor(t, 'Saturday')).toEqual(['08:00', '16:00'])
-    expect(startTimesFor(t, 'Sunday')).toEqual(['08:00', '16:00'])
-    expect(startTimesFor(t, 'Wednesday')).toEqual(['15:00', '20:00'])
+  it('uses weekend hours on Saturday and Sunday in a school term, every day in the holidays', () => {
+    expect(weeklyStarts('term', 'Saturday', DEFAULT_HOURS, 60)[0]).toBe('07:00')
+    expect(weeklyStarts('term', 'Wednesday', DEFAULT_HOURS, 60)).toEqual(['16:00', '17:00', '18:00', '19:00', '20:00'])
+    expect(weeklyStarts('holiday', 'Wednesday', DEFAULT_HOURS, 60)[0]).toBe('07:00')
   })
 })
 

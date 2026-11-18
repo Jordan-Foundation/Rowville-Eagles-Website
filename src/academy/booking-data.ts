@@ -3,7 +3,10 @@ import type { Payload } from 'payload'
 import { commitTransaction, createLocalReq, initTransaction, killTransaction } from 'payload'
 import type { AcademyBooking, AcademyCoach, AcademyTerm, Media } from '@/payload-types'
 import type { CoachAvailability } from './slots'
-import { WEEKDAYS, startTimesFor } from './constants'
+import { WEEKDAYS } from './constants'
+import { weeklyStarts, dayTypeOf, type BackToBack } from './hours'
+import { loadBookingHours } from './hours-data'
+import { isHolidayTimeframe } from './timeframes'
 import { blockedStarts } from '../lib/camp-staffing'
 import { accountLink, addMembership, ensureAccount, findOrCreateParticipant } from '../lib/accounts'
 import { recordConsent } from '../lib/consent'
@@ -50,9 +53,10 @@ export type PublicCoach = { id: number; name: string; photo: string | null; bio:
 
 /** Everything the slot engine needs for a term, plus the public coach cards. */
 export async function loadTermBookingData(payload: Payload, term: AcademyTerm, o: { ignoreBooking?: number | null } = {}) {
-  const [{ docs: coaches }, { docs: avail }] = await Promise.all([
+  const [{ docs: coaches }, { docs: avail }, hours] = await Promise.all([
     payload.find({ pagination: false, collection: 'academy-coaches', where: { active: { equals: true } }, depth: 1, limit: 200, sort: 'order' }),
     payload.find({ pagination: false, collection: 'academy-availability', where: { term: { equals: term.id } }, depth: 0, limit: 500, overrideAccess: true }),
+    loadBookingHours(payload),
   ])
   const activeIds = new Set(coaches.map((c) => c.id))
   const { docs: live } = await payload.find({
@@ -78,14 +82,46 @@ export async function loadTermBookingData(payload: Payload, term: AcademyTerm, o
     specialties: (c.specialties ?? []).map((s) => s.label),
   }))
   // A coach's share-link reservation is free for the family it was made for
-  const taken = live.filter((s) => !o.ignoreBooking || id(s.booking) !== o.ignoreBooking).map((s) => ({ coachId: id(s.coach)!, startsAt: s.startsAt }))
+  const mineFree = live.filter((s) => !o.ignoreBooking || id(s.booking) !== o.ignoreBooking)
+  const taken = mineFree.map((s) => ({ coachId: id(s.coach)!, startsAt: s.startsAt }))
+  const sessionMinutes = term.sessionMinutes ?? 60
   // Times a coach is booked elsewhere (confirmed holiday camp days) can't be booked either
   const { docs: blocks } = await payload.find({ pagination: false, collection: 'coach-blocks', where: { coach: { in: [...activeIds] }, to: { greater_than: new Date().toISOString() }, from: { less_than: term.endDate } }, limit: 2000, depth: 0, overrideAccess: true, select: { coach: true, from: true, to: true } })
   if (blocks.length) {
     const weekdayOf = (ymd: string) => WEEKDAYS[(new Date(`${ymd}T12:00:00Z`).getUTCDay() + 6) % 7]
-    taken.push(...blockedStarts(blocks.map((b) => ({ coachId: id(b.coach)!, from: b.from, to: b.to })), (ymd) => startTimesFor(term, weekdayOf(ymd)), term.sessionMinutes ?? 60))
+    taken.push(...blockedStarts(blocks.map((b) => ({ coachId: id(b.coach)!, from: b.from, to: b.to })), (ymd) => weeklyStarts(dayTypeOf(ymd, hours.terms), weekdayOf(ymd), hours, sessionMinutes), sessionMinutes))
   }
-  return { availability, taken, coaches: cards }
+  // Back-to-back (customer pages): the booked blocks per coach, and the coaches it's switched off for
+  const backToBack: BackToBack = {
+    booked: mineFree.map((s) => ({ coachId: id(s.coach)!, startsAt: s.startsAt, endsAt: new Date(new Date(s.startsAt).getTime() + sessionMinutes * 60_000).toISOString() })),
+    off: coaches.filter((c) => c.backToBack === false).map((c) => c.id),
+    releaseHours: hours.backToBack.releaseHours,
+    now: new Date(),
+  }
+  return { availability, taken, coaches: cards, hours, sessionMinutes, backToBack, backToBackSettings: hours.backToBack, holidays: isHolidayTimeframe(term) }
+}
+
+/** Management and coaches booking internally see every time (no back-to-back rule). */
+export const bookingInternally = (user: { roles?: string[] | null } | null | undefined) => (user?.roles ?? []).some((r) => r === 'admin' || r === 'committee' || r === 'coach')
+
+type BookingData = Awaited<ReturnType<typeof loadTermBookingData>>
+
+/**
+ * The slot-engine inputs for a page. Every caller gets the bookable hours; family-facing pages (`customer`)
+ * also get the back-to-back rule for this kind of booking when it's switched on.
+ */
+export function engineFor(term: AcademyTerm, data: BookingData, o: { customer: boolean; kind: 'casual' | 'term' | 'pack'; now?: Date }) {
+  const b = data.backToBackSettings
+  return {
+    term,
+    coaches: data.availability,
+    taken: data.taken,
+    now: o.now ?? new Date(),
+    cutoffHours: term.bookingCutoffHours ?? 24,
+    hours: data.hours,
+    sessionMinutes: data.sessionMinutes,
+    backToBack: o.customer && b.enabled && b.appliesTo.includes(o.kind) ? data.backToBack : null,
+  }
 }
 
 type HoldInput = Omit<AcademyBooking, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'holdExpiresAt' | 'kind'> & {

@@ -34,9 +34,13 @@ export const Users: CollectionConfig = {
       },
     ],
     afterChange: [
-      async ({ doc, operation, req }) => {
+      async ({ doc, previousDoc, operation, req, context }) => {
         // Refer a Friend: an invited family has signed up
         if (operation === 'create') await (await import('../referrals/service')).advanceInvites(req.payload, { email: doc.email, phone: doc.phone, status: 'signed_up', account: doc.id }).catch(() => null)
+        // A family has set up their account (any route: invite link, login link, sign-up): welcome email with the app guide
+        if (doc.activated && !previousDoc?.activated && !doc.app?.welcomeSentAt && !context?.skipWelcome) {
+          await (await import('../lib/app-install')).sendWelcomeEmail(req.payload, doc, req).catch((e) => req.payload.logger.error({ err: e, msg: `Welcome email to user ${doc.id} failed` }))
+        }
         return doc
       },
     ],
@@ -133,6 +137,34 @@ export const Users: CollectionConfig = {
       type: 'checkbox',
       defaultValue: false,
       admin: { readOnly: true, position: 'sidebar', description: 'Has set their own password / logged in' },
+    },
+    {
+      name: 'app',
+      label: 'App & notifications',
+      type: 'group',
+      admin: { position: 'sidebar', description: 'Recorded by the site when the app is installed and notifications are turned on' },
+      access: { update: isStaffField },
+      fields: [
+        { name: 'installedAt', label: 'App installed', type: 'date', admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } } },
+        { name: 'pushEnabledAt', label: 'Notifications turned on', type: 'date', admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } } },
+        { name: 'cardSnoozedUntil', label: '“Get the app” hidden until', type: 'date', admin: { readOnly: true } },
+        { name: 'welcomeSentAt', label: 'Welcome email sent', type: 'date', admin: { readOnly: true } },
+        { name: 'reminderSentAt', label: 'App reminder email sent', type: 'date', admin: { readOnly: true } },
+      ],
+    },
+    {
+      name: 'notify',
+      label: 'Notification types',
+      type: 'group',
+      admin: { description: 'Phone notifications this person gets (all on for new accounts; they can turn each off in their account)' },
+      fields: [
+        { name: 'reminders', label: 'Session reminders', type: 'checkbox', defaultValue: true },
+        { name: 'changes', label: 'Changes and cancellations', type: 'checkbox', defaultValue: true },
+        { name: 'teams', label: 'Fixtures and team updates', type: 'checkbox', defaultValue: true },
+        { name: 'openings', label: 'New holiday camps and 1-on-1 times', type: 'checkbox', defaultValue: true },
+        { name: 'messages', label: 'Messages from coaches and the club', type: 'checkbox', defaultValue: true },
+        { name: 'progress', label: 'Progress, badges and reports', type: 'checkbox', defaultValue: true },
+      ],
     },
     {
       name: 'reviewRequestSentAt',

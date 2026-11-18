@@ -520,6 +520,10 @@ export interface AcademyCoach {
    */
   active?: boolean | null;
   order?: number | null;
+  /**
+   * Families only see times next to this coach’s existing bookings on a day (when it’s on in Academy settings)
+   */
+  backToBack?: boolean | null;
   organisation?: string | null;
   alerts?: {
     bookingEmail?: boolean | null;
@@ -569,6 +573,27 @@ export interface User {
    * Has set their own password / logged in
    */
   activated?: boolean | null;
+  /**
+   * Recorded by the site when the app is installed and notifications are turned on
+   */
+  app?: {
+    installedAt?: string | null;
+    pushEnabledAt?: string | null;
+    cardSnoozedUntil?: string | null;
+    welcomeSentAt?: string | null;
+    reminderSentAt?: string | null;
+  };
+  /**
+   * Phone notifications this person gets (all on for new accounts; they can turn each off in their account)
+   */
+  notify?: {
+    reminders?: boolean | null;
+    changes?: boolean | null;
+    teams?: boolean | null;
+    openings?: boolean | null;
+    messages?: boolean | null;
+    progress?: boolean | null;
+  };
   reviewRequestSentAt?: string | null;
   /**
    * The one reminder sent to a guest who hasn’t set up their account yet
@@ -708,18 +733,12 @@ export interface AcademyTerm {
    */
   termMemberWindowDays: number;
   sessionMinutes: number;
-  /**
-   * 24-hour, e.g. 17:00. Default 3pm–9pm.
-   */
   slotStartTimes?:
     | {
         time: string;
         id?: string | null;
       }[]
     | null;
-  /**
-   * 24-hour. Default 8am–5pm (last session starts 4pm).
-   */
   weekendStartTimes?:
     | {
         time: string;
@@ -4831,6 +4850,7 @@ export interface AcademyCoachesSelect<T extends boolean = true> {
       };
   active?: T;
   order?: T;
+  backToBack?: T;
   organisation?: T;
   alerts?:
     | T
@@ -5778,6 +5798,25 @@ export interface UsersSelect<T extends boolean = true> {
   smsOptOut?: T;
   consentReviewStatus?: T;
   activated?: T;
+  app?:
+    | T
+    | {
+        installedAt?: T;
+        pushEnabledAt?: T;
+        cardSnoozedUntil?: T;
+        welcomeSentAt?: T;
+        reminderSentAt?: T;
+      };
+  notify?:
+    | T
+    | {
+        reminders?: T;
+        changes?: T;
+        teams?: T;
+        openings?: T;
+        messages?: T;
+        progress?: T;
+      };
   reviewRequestSentAt?: T;
   accountReminderSentAt?: T;
   roles?: T;
@@ -6779,6 +6818,38 @@ export interface DifferencePage {
 export interface AcademySetting {
   id: number;
   /**
+   * Sessions run back to back inside these hours (1-hour sessions in 4pm–9pm → 4, 5, 6, 7 and 8pm). A coach’s availability is only bookable inside them. School terms come from the Timeframes (Yearly setup); any date outside a school term uses the holiday hours. 24-hour times, e.g. 16:00.
+   */
+  bookingHours?: {
+    termWeekdayFrom?: string | null;
+    termWeekdayTo?: string | null;
+    termWeekendFrom?: string | null;
+    termWeekendTo?: string | null;
+    holidayFrom?: string | null;
+    holidayTo?: string | null;
+  };
+  /**
+   * e.g. Christmas Day. No times show on these dates.
+   */
+  closedDates?:
+    | {
+        date: string;
+        note?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * On the family booking pages, once a coach has a booking on a day, only the times directly before or after their bookings are shown, so sessions fill up back to back. Management and coaches booking internally always see every time. Nothing is deleted — times are only hidden. Switch it off for one coach on their coach record.
+   */
+  backToBack?: {
+    enabled?: boolean | null;
+    /**
+     * Small groups are set up by coaches and Management, so they can always use any time.
+     */
+    appliesTo?: ('casual' | 'term' | 'pack')[] | null;
+    releaseHours?: number | null;
+  };
+  /**
    * Calls to the Twilio number ring this mobile (e.g. 0451 525 684). If nobody answers within 20 seconds the caller hears the Foundation Academy voicemail, and the message is emailed to the academy inbox. Leave empty to use the CALL_FORWARD_TO setting in Vercel.
    */
   callForwardTo?: string | null;
@@ -7220,6 +7291,30 @@ export interface DifferencePageSelect<T extends boolean = true> {
  * via the `definition` "academy-settings_select".
  */
 export interface AcademySettingsSelect<T extends boolean = true> {
+  bookingHours?:
+    | T
+    | {
+        termWeekdayFrom?: T;
+        termWeekdayTo?: T;
+        termWeekendFrom?: T;
+        termWeekendTo?: T;
+        holidayFrom?: T;
+        holidayTo?: T;
+      };
+  closedDates?:
+    | T
+    | {
+        date?: T;
+        note?: T;
+        id?: T;
+      };
+  backToBack?:
+    | T
+    | {
+        enabled?: T;
+        appliesTo?: T;
+        releaseHours?: T;
+      };
   callForwardTo?: T;
   voicemailGreeting?: T;
   googleReviewUrl?: T;
