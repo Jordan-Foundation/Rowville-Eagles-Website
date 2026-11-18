@@ -49,7 +49,7 @@ const yearOf = (dob?: string | null) => (dob ? Number(dob.slice(0, 4)) || null :
 export async function loadAudience(p: Payload): Promise<Contact[]> {
   const [users, entries, bookings, academy, regs, orders, waitlist, programs] = await Promise.all([
     p.find({ ...q, collection: 'users', select: { email: true, firstName: true, lastName: true, phone: true, roles: true, marketingEmail: true, marketingSms: true, createdAt: true } }),
-    p.find({ ...q, collection: 'selection-entries', select: { kind: true, status: true, source: true, heardFrom: true, contact: true, player: true, birthYear: true, createdAt: true } }),
+    p.find({ ...q, collection: 'selection-entries', select: { kind: true, status: true, source: true, heardFrom: true, marketingOptIn: true, contact: true, player: true, birthYear: true, createdAt: true } }),
     p.find({ ...q, collection: 'bookings', where: { status: { in: ['paid', 'refunded', 'waitlisted', 'cancelled'] } }, select: { program: true, bookingType: true, heardFrom: true, contact: true, player: true, birthYear: true, createdAt: true } }),
     p.find({ ...q, collection: 'academy-bookings', where: { status: { not_in: ['held', 'expired'] } }, select: { heardFrom: true, marketingOptIn: true, contact: true, player: true, createdAt: true } }),
     p.find({ ...q, collection: 'academy-registrations', where: { status: { not_equals: 'cancelled' } }, select: { contact: true, player: true, createdAt: true } }),
@@ -89,6 +89,7 @@ export async function loadAudience(p: Payload): Promise<Contact[]> {
     const source: Source = e.kind === 'tournament' ? 'tournament' : e.status === 'interested' ? 'eagles-eoi' : ['offered', 'registered', 'selected'].includes(e.status ?? '') ? 'eagles-player' : 'eagles-trial'
     const c = touch(e.contact?.email, e.createdAt, { name: nm(e.contact), phone: e.contact?.phone, source, heard: e.heardFrom, player: e.player, birthYear: e.birthYear })
     if (c && e.source === 'import') c.sources.add('import')
+    if (c && e.marketingOptIn) Object.assign(c, { marketingEmail: true, marketingSms: true })
   }
   for (const b of bookings.docs) {
     const type = programType.get(typeof b.program === 'object' ? b.program.id : b.program)

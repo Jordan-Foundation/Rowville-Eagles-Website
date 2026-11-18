@@ -27,7 +27,7 @@ export default async function SelectionsPage({ searchParams }: { searchParams: P
       <h1 className="mt-2 font-[family-name:var(--font-barlow)] text-5xl font-extrabold uppercase">{view?.title ?? 'Selections'}</h1>
       <p className="mt-3 max-w-2xl text-muted">{view?.intro ?? 'Tournament and Rowville trial interest, grouped by year of birth. Rounds are created automatically when the first family registers interest.'}</p>
       {view && <p className="mt-2 text-sm"><Link href={`/management/selections?kind=${view.other.kind}`} className="underline">{view.other.label} →</Link></p>}
-      {kind !== 'tournament' && <p className="mt-2 text-sm"><Link href="/management/selections/trial-invites" className="underline">Send trial dates to waiting families →</Link></p>}
+      {kind !== 'tournament' && <p className="mt-2 flex flex-wrap gap-4 text-sm"><Link href="/management/selections/trial-invites" className="underline">Send trial dates to waiting families →</Link><Link href="/management/selections/import" className="underline">Import EOIs from an old form →</Link></p>}
       <ul className="mt-8 grid gap-4 md:grid-cols-2">
         {rounds.map((r) => (
           <li key={r.id}>

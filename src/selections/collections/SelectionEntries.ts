@@ -70,6 +70,9 @@ export const SelectionEntries: CollectionConfig = {
   fields: [
     { name: 'source', label: 'Came from', type: 'select', defaultValue: 'web', index: true, options: [{ label: 'Website form', value: 'web' }, { label: 'Imported (old Google form)', value: 'import' }, { label: 'Added by Management', value: 'admin' }], admin: { position: 'sidebar', readOnly: true } },
     heardFromField,
+    { name: 'marketingOptIn', label: 'Agreed to news & offers (email + SMS)', type: 'checkbox', admin: { position: 'sidebar', readOnly: true, description: 'From the form they filled in (e.g. the old Google form)' } },
+    { name: 'marketingOptInAt', label: 'Agreed on', type: 'date', admin: { position: 'sidebar', readOnly: true, condition: (d) => Boolean(d?.marketingOptIn) } },
+    { name: 'marketingWording', label: 'Question they answered', type: 'text', admin: { position: 'sidebar', readOnly: true, condition: (d) => Boolean(d?.marketingOptIn) } },
     { name: 'trialInvitedAt', label: 'Trial dates sent', type: 'date', admin: { position: 'sidebar', readOnly: true, date: { pickerAppearance: 'dayAndTime' }, description: 'When the “trial dates are here” email and text went out' } },
     { name: 'trialReminderAt', label: 'Trial reminder sent', type: 'date', admin: { position: 'sidebar', readOnly: true, date: { pickerAppearance: 'dayAndTime' } } },
     { name: 'referralCode', label: 'Referral code used', type: 'text', index: true, admin: { position: 'sidebar', readOnly: true } },
