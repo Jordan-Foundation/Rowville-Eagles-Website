@@ -19,7 +19,7 @@ export function TrialsList({ sessions, highlight, compact = false }: { sessions:
             {list.map((s) => (
               <li key={s.key} id={`s-${s.key}`} data-trial-session={s.key} className={`mt-2 border p-3 text-sm ${highlight === s.key ? 'border-mgmt-tint' : 'border-line'}`}>
                 <p className="font-semibold">{formatDate(s.startsAt, { hour: 'numeric', minute: '2-digit' })} · {s.program}</p>
-                <p className="text-xs text-muted">{[s.venue, s.coaches.length ? `Coach ${s.coaches.join(', ')}` : 'Coach not set'].filter(Boolean).join(' · ')}</p>
+                <p className="text-xs text-muted">{[s.venue, s.coaches.length ? `with ${s.coaches.join(', ')}` : 'Coach not set'].filter(Boolean).join(' · ')}</p>
                 <ul className="mt-2 space-y-0.5">
                   {s.players.map((x) => (
                     <li key={x.bookingId} data-trial-player={x.name}>

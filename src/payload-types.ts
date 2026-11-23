@@ -130,6 +130,9 @@ export interface Config {
     sponsors: Sponsor;
     events: Event;
     enquiries: Enquiry;
+    'rfa-tournaments': RfaTournament;
+    'tournament-squads': TournamentSquad;
+    'tournament-invites': TournamentInvite;
     participants: Participant;
     users: User;
     'consent-records': ConsentRecord;
@@ -237,6 +240,9 @@ export interface Config {
     sponsors: SponsorsSelect<false> | SponsorsSelect<true>;
     events: EventsSelect<false> | EventsSelect<true>;
     enquiries: EnquiriesSelect<false> | EnquiriesSelect<true>;
+    'rfa-tournaments': RfaTournamentsSelect<false> | RfaTournamentsSelect<true>;
+    'tournament-squads': TournamentSquadsSelect<false> | TournamentSquadsSelect<true>;
+    'tournament-invites': TournamentInvitesSelect<false> | TournamentInvitesSelect<true>;
     participants: ParticipantsSelect<false> | ParticipantsSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'consent-records': ConsentRecordsSelect<false> | ConsentRecordsSelect<true>;
@@ -3176,6 +3182,65 @@ export interface Enquiry {
   createdAt: string;
 }
 /**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "rfa-tournaments".
+ */
+export interface RfaTournament {
+  id: number;
+  name: string;
+  startDate: string;
+  endDate?: string | null;
+  venue?: string | null;
+  ageGroups?: string | null;
+  squadSize: number;
+  fee?: number | null;
+  rsvpDeadline: string;
+  arrivalTime?: string | null;
+  whatToBring?: string | null;
+  details?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tournament-squads".
+ */
+export interface TournamentSquad {
+  id: number;
+  tournament: number | RfaTournament;
+  name: string;
+  /**
+   * Used to suggest players
+   */
+  birthYears?: number[] | null;
+  limit?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tournament-invites".
+ */
+export interface TournamentInvite {
+  id: number;
+  tournament: number | RfaTournament;
+  squad: number | TournamentSquad;
+  participant: number | Participant;
+  account?: (number | null) | User;
+  playerName?: string | null;
+  birthYear?: number | null;
+  status: 'invited' | 'accepted' | 'declined' | 'expired' | 'paid' | 'withdrawn';
+  token: string;
+  invitedAt?: string | null;
+  respondedAt?: string | null;
+  reminderAt?: string | null;
+  paidAt?: string | null;
+  invoice?: (number | null) | Invoice;
+  invitedBy?: (number | null) | User;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * Read-only history. Changes are made from the member’s preferences, unsubscribe links or STOP replies.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -4153,8 +4218,12 @@ export interface PayloadLockedDocument {
         value: number | Event;
       } | null)
     | ({
-        relationTo: 'enquiries';
-        value: number | Enquiry;
+        relationTo: 'rfa-tournaments';
+        value: number | RfaTournament;
+      } | null)
+    | ({
+        relationTo: 'tournament-squads';
+        value: number | TournamentSquad;
       } | null)
     | ({
         relationTo: 'participants';
@@ -5981,6 +6050,59 @@ export interface EnquiriesSelect<T extends boolean = true> {
   message?: T;
   status?: T;
   emailedTo?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "rfa-tournaments_select".
+ */
+export interface RfaTournamentsSelect<T extends boolean = true> {
+  name?: T;
+  startDate?: T;
+  endDate?: T;
+  venue?: T;
+  ageGroups?: T;
+  squadSize?: T;
+  fee?: T;
+  rsvpDeadline?: T;
+  arrivalTime?: T;
+  whatToBring?: T;
+  details?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tournament-squads_select".
+ */
+export interface TournamentSquadsSelect<T extends boolean = true> {
+  tournament?: T;
+  name?: T;
+  birthYears?: T;
+  limit?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tournament-invites_select".
+ */
+export interface TournamentInvitesSelect<T extends boolean = true> {
+  tournament?: T;
+  squad?: T;
+  participant?: T;
+  account?: T;
+  playerName?: T;
+  birthYear?: T;
+  status?: T;
+  token?: T;
+  invitedAt?: T;
+  respondedAt?: T;
+  reminderAt?: T;
+  paidAt?: T;
+  invoice?: T;
+  invitedBy?: T;
   updatedAt?: T;
   createdAt?: T;
 }

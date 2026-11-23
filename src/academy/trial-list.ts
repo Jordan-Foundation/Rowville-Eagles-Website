@@ -60,6 +60,7 @@ export async function upcomingTrials(p: Payload, o: { from?: Date; days?: number
     sess.players.push({ bookingId: b.id, name: `${first} ${last}`.trim() || 'Trial player', short: `${first}${last ? ` ${last[0]}` : ''}`.trim(), birthYear: b.birthYear ?? null, ageGroup: b.birthYear ? ageGroupOf(b.birthYear, new Date(startsAt).getFullYear()) : null, reference: b.reference ?? null })
     out.set(key, sess)
   }
+  for (const s of out.values()) s.players.sort((x, y) => x.name.localeCompare(y.name))
   return [...out.values()].filter((s) => new Date(s.startsAt).getTime() > from.getTime() - 3 * 3_600_000).sort((a, b) => a.startsAt.localeCompare(b.startsAt))
 }
 

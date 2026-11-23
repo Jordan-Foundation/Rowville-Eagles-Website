@@ -172,7 +172,7 @@ body:has([data-portal='management']) .site-header,
 body:has([data-portal='management']) .site-footer {
   display: none !important;
 }
-[data-portal='management'] main .container-x,
+[data-portal='management'] .container-x,
 [data-portal='management'] .container-x {
   margin-inline: 0;
   padding-inline: 0;
@@ -181,15 +181,15 @@ body:has([data-portal='management']) .site-footer {
 
 /* Management: primary buttons (white-on-black elsewhere) become dark red; brand-coloured text uses the readable tint;
    pressed/selected tabs and filters are dark red. */
-[data-portal='management'] main :is(a, button).bg-white.text-black {
+[data-portal='management'] :is(a, button).bg-white.text-black {
   background-color: var(--mgmt);
   color: var(--mgmt-ink);
 }
-[data-portal='management'] main :is(a, button).bg-white.text-black:hover:not(:disabled) { background-color: var(--mgmt-hover); }
-[data-portal='management'] main .text-brand,
-[data-portal='management'] main .\!text-brand { color: var(--mgmt-tint) !important; }
-[data-portal='management'] main :is(button, a)[aria-pressed='true'],
-[data-portal='management'] main [role='tab'][aria-selected='true'] {
+[data-portal='management'] :is(a, button).bg-white.text-black:hover:not(:disabled) { background-color: var(--mgmt-hover); }
+[data-portal='management'] .text-brand,
+[data-portal='management'] .\!text-brand { color: var(--mgmt-tint) !important; }
+[data-portal='management'] :is(button, a)[aria-pressed='true'],
+[data-portal='management'] [role='tab'][aria-selected='true'] {
   background-color: var(--mgmt);
   border-color: var(--mgmt);
   color: var(--mgmt-ink);
