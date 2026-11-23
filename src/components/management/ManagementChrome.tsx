@@ -73,7 +73,7 @@ export function ManagementNav({ groups, counts }: { groups: NavGroup[]; counts: 
               const n = i.key ? counts[i.key] ?? 0 : 0
               return (
                 <li key={i.href}>
-                  <Link href={i.href} aria-current={active(i.href) ? 'page' : undefined} className={`flex items-center justify-between gap-2 px-3 py-2 text-sm ${active(i.href) ? 'bg-white font-semibold text-mgmt' : 'text-mgmt-ink/85 hover:bg-mgmt-hover hover:text-mgmt-ink'}`}>
+                  <Link href={i.href} aria-current={active(i.href) ? 'page' : undefined} className={`flex items-center justify-between gap-2 px-3 py-2 text-sm ${active(i.href) ? 'bg-white font-semibold text-[#2b070a]' : 'text-mgmt-ink/85 hover:bg-mgmt-hover hover:text-mgmt-ink'}`}>
                     {i.label}
                     {n > 0 && <span className="rounded-full bg-white px-1.5 text-[11px] font-bold leading-5 text-mgmt ring-1 ring-mgmt">{n > 99 ? '99+' : n}</span>}
                   </Link>

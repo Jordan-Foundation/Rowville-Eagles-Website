@@ -35,16 +35,25 @@
   color: var(--ink);
 }
 
-/* MANAGEMENT — dark red, so staff can tell at a glance they're in Management (scoped to the Management layout only).
-   White on --mgmt is 10.5:1 and --mgmt-tint on black is 11:1 (WCAG AA needs 4.5:1; tested in tests/int/management-theme). */
-[data-portal='management'] {
-  --mgmt: #7a1219;        /* dark red (darker than the crest red #ca272c) */
-  --mgmt-hover: #921a23;
-  --mgmt-ink: #ffffff;    /* text/icons on dark red */
-  --mgmt-tint: #f4a9ad;   /* red accents as text/icons on the black background */
+/* MANAGEMENT — the whole area in deep red, so staff can tell at a glance they're in Management (Management layout only).
+   Contrast (WCAG AA needs 4.5:1) is checked in tests/int/management-theme. Pages inside also carry data-brand="academy",
+   so the tokens are set on those too. */
+[data-portal='management'],
+[data-portal='management'] [data-brand='academy'] {
+  --mgmt: #4a0b11;        /* menu bar — darker than the crest red #ca272c */
+  --mgmt-hover: #5e1018;
+  --mgmt-ink: #ffffff;    /* text/icons on red */
+  --mgmt-tint: #f4a9ad;   /* red accents as text/icons */
+  --surface: #2b070a;     /* page */
+  --surface-2: #3d0b10;   /* cards / panels */
+  --line: #5e1820;
+  --ink: #ffffff;
+  --muted: #d9a7ab;
   --brand: var(--mgmt);
   --accent: var(--mgmt-tint);
-  --accent-ink: #000000;
+  --accent-ink: #2b070a;
+  background: var(--surface);
+  color: var(--ink);
 }
 
 /* Decorative effects live in the components layer so layout utilities (sticky, absolute…) always win. */
@@ -179,18 +188,19 @@ body:has([data-portal='management']) .site-footer {
   padding-top: 0.5rem;
 }
 
-/* Management: primary buttons (white-on-black elsewhere) become dark red; brand-coloured text uses the readable tint;
-   pressed/selected tabs and filters are dark red. */
-[data-portal='management'] :is(a, button).bg-white.text-black {
-  background-color: var(--mgmt);
-  color: var(--mgmt-ink);
-}
-[data-portal='management'] :is(a, button).bg-white.text-black:hover:not(:disabled) { background-color: var(--mgmt-hover); }
+/* Management: primary buttons and pressed/selected tabs are white with deep red text (stand out on the red page);
+   brand-coloured text uses the readable tint. */
+[data-portal='management'] :is(a, button).bg-white.text-black { color: var(--surface); }
+[data-portal='management'] :is(a, button).bg-white.text-black:hover:not(:disabled) { background-color: #f6dfe1; }
 [data-portal='management'] .text-brand,
 [data-portal='management'] .\!text-brand { color: var(--mgmt-tint) !important; }
 [data-portal='management'] :is(button, a)[aria-pressed='true'],
 [data-portal='management'] [role='tab'][aria-selected='true'] {
-  background-color: var(--mgmt);
-  border-color: var(--mgmt);
-  color: var(--mgmt-ink);
+  background-color: #ffffff;
+  border-color: #ffffff;
+  color: var(--surface);
 }
+
+/* Management: red page and panels (after the academy black rules so these win) */
+body:has([data-portal='management']) { background: #2b070a; }
+[data-portal='management'] .panel { background: var(--surface-2); border-color: var(--line); box-shadow: none; }
