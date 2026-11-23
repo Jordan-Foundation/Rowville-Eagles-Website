@@ -1595,6 +1595,11 @@ export interface AcademyTermSlot {
    * 24h, e.g. 18:00
    */
   endTime: string;
+  /**
+   * Weeks before the date on the right finished at this time (session length changed mid-term)
+   */
+  previousEndTime?: string | null;
+  previousEndUntil?: string | null;
   venue?: string | null;
   /**
    * e.g. 2017, 2018. Mini Ballers: leave empty — filled in for ages 2–5 (age is checked from the date of birth when booking).
@@ -4661,6 +4666,8 @@ export interface AcademyTermSlotsSelect<T extends boolean = true> {
   weekday?: T;
   startTime?: T;
   endTime?: T;
+  previousEndTime?: T;
+  previousEndUntil?: T;
   venue?: T;
   birthYears?: T;
   capacity?: T;
@@ -7275,6 +7282,32 @@ export interface AcademySetting {
     escalateHours?: number | null;
   };
   /**
+   * Phone notifications 1 day, 3 hours and 15 minutes before each session with RFA trial players. Leave empty to send to all Management users. Each person can turn off “Session reminders” in their notification settings.
+   */
+  trialAlertUsers?: (number | User)[] | null;
+  /**
+   * Academy training times for these age groups run this long (e.g. U7 = 60 minutes). Upcoming sessions are updated automatically; weeks already held and anything booked are left alone. Empty = U7 60 minutes.
+   */
+  sessionLengths?:
+    | {
+        ageGroup: string;
+        minutes: number;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Last time the lengths were applied: what changed and anything skipped because it had bookings
+   */
+  sessionLengthsLastRun?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
    * Shown on every Academy program page, card and checkout: “Academy-only players don’t pay the $950 Rowville Eagles player registration — it’s only for players in a Rowville Eagles club team.”
    */
   clubRegistrationFee?: number | null;
@@ -7837,6 +7870,15 @@ export interface AcademySettingsSelect<T extends boolean = true> {
         confirmReminderHours?: T;
         escalateHours?: T;
       };
+  trialAlertUsers?: T;
+  sessionLengths?:
+    | T
+    | {
+        ageGroup?: T;
+        minutes?: T;
+        id?: T;
+      };
+  sessionLengthsLastRun?: T;
   clubRegistrationFee?: T;
   updatedAt?: T;
   createdAt?: T;

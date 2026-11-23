@@ -52,7 +52,7 @@ function SearchBox({ onDone }: { onDone?: () => void }) {
       }}
     >
       <label className="sr-only" htmlFor="mgmt-search">Search families, players, emails, phones or references</label>
-      <input id="mgmt-search" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name, email, phone, ref…" className="min-h-10 w-full border border-line bg-black/40 px-3 text-sm" />
+      <input id="mgmt-search" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name, email, phone, ref…" className="min-h-10 w-full border border-mgmt-ink/30 bg-black/30 px-3 text-sm text-mgmt-ink placeholder:text-mgmt-ink/60" />
     </form>
   )
 }
@@ -67,15 +67,15 @@ export function ManagementNav({ groups, counts }: { groups: NavGroup[]; counts: 
     <div className="space-y-6">
       {groups.map((g) => (
         <div key={g.title}>
-          <p className="px-3 text-[11px] font-semibold uppercase tracking-[0.25em] text-muted">{g.title}</p>
+          <p className="px-3 text-[11px] font-semibold uppercase tracking-[0.25em] text-mgmt-ink/70">{g.title}</p>
           <ul className="mt-1">
             {g.items.map((i) => {
               const n = i.key ? counts[i.key] ?? 0 : 0
               return (
                 <li key={i.href}>
-                  <Link href={i.href} aria-current={active(i.href) ? 'page' : undefined} className={`flex items-center justify-between gap-2 px-3 py-2 text-sm ${active(i.href) ? 'bg-white font-semibold text-black' : 'text-muted hover:text-ink'}`}>
+                  <Link href={i.href} aria-current={active(i.href) ? 'page' : undefined} className={`flex items-center justify-between gap-2 px-3 py-2 text-sm ${active(i.href) ? 'bg-white font-semibold text-mgmt' : 'text-mgmt-ink/85 hover:bg-mgmt-hover hover:text-mgmt-ink'}`}>
                     {i.label}
-                    {n > 0 && <span className="rounded-full bg-red-600 px-1.5 text-[11px] font-bold leading-5 text-white">{n > 99 ? '99+' : n}</span>}
+                    {n > 0 && <span className="rounded-full bg-white px-1.5 text-[11px] font-bold leading-5 text-mgmt ring-1 ring-mgmt">{n > 99 ? '99+' : n}</span>}
                   </Link>
                 </li>
               )
@@ -88,22 +88,22 @@ export function ManagementNav({ groups, counts }: { groups: NavGroup[]; counts: 
   return (
     <>
       {/* Phones */}
-      <div className="sticky top-0 z-40 border-b border-line bg-black/95 backdrop-blur lg:hidden">
+      <div className="sticky top-0 z-40 border-b border-mgmt-hover bg-mgmt text-mgmt-ink lg:hidden" data-mgmt-bar>
         <div className="flex items-center justify-between gap-3 px-4 py-3">
           <Link href="/management" className="font-display text-sm font-semibold uppercase tracking-[0.2em]">Management</Link>
-          <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-controls="mgmt-menu" className="min-h-10 border border-line px-3 text-xs font-semibold uppercase tracking-[0.15em]">{open ? 'Close' : 'Menu'}</button>
+          <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-controls="mgmt-menu" className="min-h-10 border border-mgmt-ink/40 px-3 text-xs font-semibold uppercase tracking-[0.15em]">{open ? 'Close' : 'Menu'}</button>
         </div>
         {open && (
-          <div id="mgmt-menu" className="max-h-[80vh] space-y-5 overflow-y-auto border-t border-line px-1 py-4">
+          <div id="mgmt-menu" className="max-h-[80vh] space-y-5 overflow-y-auto border-t border-mgmt-hover px-1 py-4">
             <div className="px-3"><SearchBox onDone={() => setOpen(false)} /></div>
             {list}
           </div>
         )}
       </div>
       {/* Computers */}
-      <aside aria-label="Management menu" className="sticky top-0 hidden h-screen w-60 shrink-0 overflow-y-auto border-r border-line bg-surface-2 py-6 lg:block">
+      <aside aria-label="Management menu" className="sticky top-0 hidden h-screen w-60 shrink-0 overflow-y-auto border-r border-mgmt-hover bg-mgmt py-6 text-mgmt-ink lg:block" data-mgmt-bar>
         <Link href="/management" className="block px-6 font-display text-lg font-semibold uppercase tracking-[0.15em]">Management</Link>
-        <p className="px-6 text-[11px] text-muted">Rowville Eagles &amp; Foundation Academy</p>
+        <p className="px-6 text-[11px] text-mgmt-ink/70">Rowville Eagles &amp; Foundation Academy</p>
         <div className="mt-4 px-3"><SearchBox /></div>
         <nav aria-label="Management" className="mt-6 px-3">{list}</nav>
       </aside>

@@ -15,9 +15,9 @@ type NavItem = NavLink | { label: string; key: string; items: NavLink[] }
 export const nav: NavItem[] = [
   { href: '/join', label: 'Join us' },
   { key: 'about', label: 'About', items: [{ href: '/about/history', label: 'History' }, { href: '/about/committee', label: 'Committee' }, { href: '/sponsors', label: 'Sponsors' }] },
-  { key: 'seniors', label: 'Senior teams', items: [{ href: '/seniors/senior-men', label: 'Senior Men' }, { href: '/seniors/reserves', label: 'Reserves' }, { href: '/seniors/senior-women', label: 'Senior Women' }] },
-  { key: 'juniors', label: 'Junior football', items: [{ href: '/what-makes-us-different', label: 'Why us' }, { href: '/programs', label: 'Camps & Programs' }] },
-  { key: 'academy', label: 'Academy', items: [{ href: '/academy', label: 'Foundation Academy' }, { href: '/academy/trial', label: 'Book a free trial' }, { href: '/academy/1-on-1', label: '1-on-1 coaching' }, { href: '/foundation-plus', label: 'Foundation+', fplus: true }] },
+  { key: 'seniors', label: 'Senior Teams', items: [{ href: '/seniors/senior-men', label: 'Senior Men' }, { href: '/seniors/reserves', label: 'Reserves' }, { href: '/seniors/senior-women', label: 'Senior Women' }] },
+  { key: 'juniors', label: 'Junior Football', items: [{ href: '/what-makes-us-different', label: 'Why Us?' }, { href: '/programs', label: 'Camps & Programs' }] },
+  { key: 'academy', label: 'Academy', items: [{ href: '/academy', label: 'Foundation Academy' }, { href: '/academy/trial', label: 'Book a Free Trial' }, { href: '/academy/1-on-1', label: '1-on-1 Coaching' }, { href: '/foundation-plus', label: 'Foundation+', fplus: true }] },
   { href: '/events', label: 'Events' },
   { href: '/shop', label: 'Shop' },
   { href: '/news', label: 'News' },

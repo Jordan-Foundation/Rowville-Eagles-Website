@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { LastTime } from '@/components/coach/LastTime'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { payload, formatDate } from '@/lib/payload'
@@ -29,6 +30,10 @@ export default async function GroupSessionPage({ params, searchParams }: { param
   const term = typeof g.term === 'object' ? (g.term as AcademyTerm) : null
   const coachName = typeof g.coach === 'object' ? (g.coach as AcademyCoach).displayName : coach.displayName
   const role = rows[0].role
+  // "Last time" for each player on an upcoming session
+  const kidOf = (b: { participant?: unknown }) => (b.participant ? (typeof b.participant === 'object' ? (b.participant as { id: number }).id : (b.participant as number)) : null)
+  const upcoming = new Date(startsAt).getTime() > Date.now() - 60 * 60_000
+  const lastTimes = upcoming ? await (await import('@/academy/coach-players')).lastTimeFor(p, rows.map((r) => kidOf(r.booking)).filter((x): x is number => Boolean(x)), startsAt) : new Map()
   return (
     <div className="space-y-8">
       <div>
@@ -58,6 +63,7 @@ export default async function GroupSessionPage({ params, searchParams }: { param
                 </div>
                 <ContactButtons compact name={player.parent.name} phone={player.parent.mobile} accountId={typeof b.account === 'object' ? b.account?.id : b.account} />
               </div>
+              {upcoming && <div className="mt-4"><LastTime last={lastTimes.get(kidOf(b) ?? -1) ?? null} participantId={kidOf(b)} firstName={player.firstName} /></div>}
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
                 {role === 'covered' ? <p className="text-sm text-muted">The cover coach marks attendance.</p> : <Attendance id={s.id} status={s.status} open={canMarkAttendance(s.startsAt)} />}
                 <Link href={`/coach/sessions/${s.id}`} className="text-sm underline">Notes & history →</Link>

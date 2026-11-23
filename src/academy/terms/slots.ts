@@ -17,6 +17,8 @@ export type SlotShape = {
   birthYears?: number[] | null
   capacity?: number | null
   active?: boolean | null
+  previousEndTime?: string | null
+  previousEndUntil?: string | null
   exceptions?: { date: string; cancelled?: boolean | null; startTime?: string | null; endTime?: string | null; note?: string | null }[] | null
 }
 export type TermDates = { startDate?: string | null; endDate?: string | null }
@@ -33,7 +35,9 @@ export function slotSessions(slot: SlotShape, term: TermDates): GroupSession[] {
   return termDatesForWeekday({ startDate: term.startDate, endDate: term.endDate }, slot.weekday as Weekday).map((date) => {
     const e = ex.get(date)
     const start = e?.startTime || slot.startTime
-    const end = e?.endTime || slot.endTime
+    // A mid-term length change keeps the old finish time for weeks before it (history and pay unchanged)
+    const before = slot.previousEndTime && slot.previousEndUntil && date < toYmd(slot.previousEndUntil)
+    const end = e?.endTime || (before ? slot.previousEndTime! : slot.endTime)
     return {
       date,
       startsAt: localToUtc(date, start).toISOString(),

@@ -175,6 +175,30 @@ export const AcademySettings: GlobalConfig = {
     },
     {
       type: 'collapsible',
+      label: 'RFA trial reminders',
+      fields: [
+        { name: 'trialAlertUsers', label: 'Send trial reminders to', type: 'relationship', relationTo: 'users', hasMany: true, filterOptions: { roles: { in: ['admin', 'committee'] } }, admin: { description: 'Phone notifications 1 day, 3 hours and 15 minutes before each session with RFA trial players. Leave empty to send to all Management users. Each person can turn off “Session reminders” in their notification settings.' } },
+      ],
+    },
+    {
+      type: 'collapsible',
+      label: 'Session length by age group',
+      fields: [
+        {
+          name: 'sessionLengths',
+          label: 'Session lengths',
+          type: 'array',
+          admin: { description: 'Academy training times for these age groups run this long (e.g. U7 = 60 minutes). Upcoming sessions are updated automatically; weeks already held and anything booked are left alone. Empty = U7 60 minutes.' },
+          fields: [{ type: 'row', fields: [
+            { name: 'ageGroup', label: 'Age group', type: 'text', required: true, admin: { placeholder: 'U7' }, validate: (v: unknown) => /^U\d{1,2}$/i.test(String(v ?? '').trim()) || 'Like U7' },
+            { name: 'minutes', type: 'number', required: true, min: 15, max: 240 },
+          ] }],
+        },
+        { name: 'sessionLengthsLastRun', type: 'json', admin: { readOnly: true, description: 'Last time the lengths were applied: what changed and anything skipped because it had bookings' } },
+      ],
+    },
+    {
+      type: 'collapsible',
       label: 'Academy fees note',
       fields: [
         { name: 'clubRegistrationFee', label: 'Rowville Eagles player registration (AUD)', type: 'number', defaultValue: 950, min: 0, admin: { description: 'Shown on every Academy program page, card and checkout: “Academy-only players don’t pay the $950 Rowville Eagles player registration — it’s only for players in a Rowville Eagles club team.”' } },
