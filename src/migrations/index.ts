@@ -95,6 +95,7 @@ import * as migration_20261123_050535_player_import_launch from './20261123_0505
 import * as migration_20261123_065017_site_pages_events from './20261123_065017_site_pages_events';
 import * as migration_20261123_081943_no_lock_system_collections from './20261123_081943_no_lock_system_collections';
 import * as migration_20261123_091321_portal_updates from './20261123_091321_portal_updates';
+import * as migration_20261124_000000_why_us_session_lengths from './20261124_000000_why_us_session_lengths';
 
 export const migrations = [
   {
@@ -581,5 +582,10 @@ export const migrations = [
     up: migration_20261123_091321_portal_updates.up,
     down: migration_20261123_091321_portal_updates.down,
     name: '20261123_091321_portal_updates'
+  },
+  {
+    up: migration_20261124_000000_why_us_session_lengths.up,
+    down: migration_20261124_000000_why_us_session_lengths.down,
+    name: '20261124_000000_why_us_session_lengths'
   },
 ];
