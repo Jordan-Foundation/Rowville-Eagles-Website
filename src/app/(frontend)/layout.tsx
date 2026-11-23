@@ -22,8 +22,10 @@ export const metadata: Metadata = {
   title: { default: 'Rowville Eagles Football Club', template: '%s · Rowville Eagles FC' },
   description: 'Community football in Rowville, Victoria — MiniRoos, juniors, seniors and the Rowville Foundation Academy. Est. 1985.',
   // Browser tab: the Rowville Eagles crest. Family pages switch the home-screen app to the family's brand (src/lib/app-brand.ts)
-  icons: { icon: [{ url: '/favicon.ico', sizes: '48x48' }, { url: '/icons/favicon-32.png', type: 'image/png', sizes: '32x32' }, { url: '/icons/crest-192.png', type: 'image/png', sizes: '192x192' }], apple: '/icons/eagles-apple-touch-icon.png' },
+  icons: { icon: [{ url: '/favicon.ico', sizes: '48x48' }, { url: '/icons/favicon-32.png', type: 'image/png', sizes: '32x32' }, { url: '/icons/favicon-96.png', type: 'image/png', sizes: '96x96' }, { url: '/icons/crest-192.png', type: 'image/png', sizes: '192x192' }], apple: '/icons/eagles-apple-touch-icon.png' },
   appleWebApp: { capable: true, title: 'Rowville Eagles', statusBarStyle: 'black-translucent' },
+  // Search result thumbnail: the crest on solid white (the transparent crest shows on a grey background)
+  other: { thumbnail: 'https://www.rowvilleeagles.com.au/brand/rowville-eagles-crest-square.png' },
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -53,7 +55,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               email: settings.email || undefined,
               address: settings.ground?.address ? { '@type': 'PostalAddress', streetAddress: settings.ground.address, addressCountry: 'AU' } : undefined,
               sameAs: [settings.links?.facebook, settings.links?.instagram].filter(Boolean),
-              logo: `${siteBase()}/brand/rowville-eagles-crest.png`,
+              logo: `${siteBase()}/brand/rowville-eagles-crest-square.png`,
+              image: `${siteBase()}/brand/rowville-eagles-crest-square.png`,
             }).replace(/</g, '\\u003c'),
           }}
         />
