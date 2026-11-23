@@ -24,6 +24,7 @@ import { Squads } from './selections/collections/Squads'
 import { TrialInvites } from './selections/collections/TrialInvites'
 import { SelectionAudit } from './selections/collections/SelectionAudit'
 import { ImportBatches } from './imports/collections'
+import { PortalLaunch } from './launch/collections'
 import { TeamMembers } from './teams/collections/TeamMembers'
 import { TeamPosts } from './teams/collections/TeamPosts'
 import { ForumReplies, ForumThreads } from './teams/collections/Forum'
@@ -130,7 +131,7 @@ export default buildConfig({
     },
   },
   collections: [AcademyBookings, AcademyShareLinks, AcademySessions, AcademyGroups, AcademyGroupInvites, TrainingAttendance, AcademyTerms, YearSetups, Announcements, AcademyTermSlots, AcademyRegistrations, PdrAreas, PdrLevels, PdrStages, PdrVideos, PdrBadges, PdrProgress, PdrChallenges, PdrSubmissions, PdrAudit, PdrAwards, FplusWaitlist, FplusEvents, FplusTrialCards, FormThrottle, AcademyCoaches, AcademyAvailability, AcademyReminderLog, AcademyCredits, Posts, SelectionRounds, Squads, SelectionEntries, TrialInvites, SelectionAudit, ImportBatches, TrialSessions, Programs, Bookings, CampPlacements, CampCoaches, CoachBlocks, Products, Orders, Invoices, Refunds, ReferralInvites, Referrals, ReferralMilestones, ReferralRewards, ReflectionPillars, MatchReflections, WelfareFlags, ReflectionReports, ReflectionReminders, Teams, TeamMembers, TeamPosts, ForumThreads, ForumReplies, Sponsors, Participants, Users, ConsentRecords, MessageLog, CurriculumStandards, ReportCycles, PlayerReports, ReportReminderLog, Promotions, PromotionUses, SeenMarkers, Conversations, Messages, InviteTokens, WwccFiles, PushSubscriptions, SessionSummaries, NumberRanges, PlayerNumbers, NumberAudit, KitItems, FitoutSessions, FitoutEntries, ActivityLog, StaffFeed, CoachPayRates, CoachPayProfiles, CoachHourAdjustments, PayWeeks, FinanceReports, ExpenseCategories, ReceiptFiles, Expenses, BankTransactions, ProjectionScenarios, FinanceAuditLog, Media].map((c) => withStaffFeed(withActivity(withMoneyCells(c)))),
-  globals: [SiteSettings, About, Policies, DifferencePage, AcademySettings, PdrSettings, ReferralSettings, ReflectionSettings, FinanceSettings, SetupProgress, PushKeys].map((g) => withGlobalActivity(g)),
+  globals: [SiteSettings, About, Policies, DifferencePage, AcademySettings, PdrSettings, ReferralSettings, ReflectionSettings, FinanceSettings, SetupProgress, PushKeys, PortalLaunch].map((g) => withGlobalActivity(g)),
   editor: lexicalEditor(),
   ...(process.env.RESEND_API_KEY
     ? {

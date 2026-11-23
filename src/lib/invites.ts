@@ -56,3 +56,10 @@ export async function purgeOldInvites(payload: Payload) {
   const res = await payload.delete({ collection: 'invite-tokens', where: { expiresAt: { less_than: cutoff } }, overrideAccess: true })
   return { deleted: res.docs.length }
 }
+
+/** Who a create-account link belongs to, even if it has expired or been used (for "email me a new link"). */
+export async function inviteOwner(payload: Payload, token: string | undefined) {
+  if (!token) return null
+  const { docs } = await payload.find({ collection: 'invite-tokens', where: { tokenHash: { equals: hash(token) } }, limit: 1, depth: 0, overrideAccess: true })
+  return docs[0] ? (typeof docs[0].user === 'object' ? docs[0].user.id : docs[0].user) : null
+}

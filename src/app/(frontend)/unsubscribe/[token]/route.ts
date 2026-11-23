@@ -13,6 +13,8 @@ async function unsubscribe(token: string, req: Request) {
   const p = await payload()
   const user = await p.findByID({ collection: 'users', id: parsed.userId, depth: 0, overrideAccess: true, disableErrors: true })
   if (!user) return false
+  // Portal launch / follow-up emails stop too
+  if (user.launch && !user.launch.unsubscribedAt) await p.update({ collection: 'users', id: user.id, overrideAccess: true, context: { skipWelcome: true }, data: { launch: { ...user.launch, unsubscribedAt: new Date().toISOString() } } })
   if (user.marketingEmail) {
     await recordConsent(
       p,

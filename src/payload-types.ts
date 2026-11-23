@@ -291,6 +291,7 @@ export interface Config {
     'finance-settings': FinanceSetting;
     'setup-progress': SetupProgress;
     'push-keys': PushKey;
+    'portal-launch': PortalLaunch;
   };
   globalsSelect: {
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
@@ -304,6 +305,7 @@ export interface Config {
     'finance-settings': FinanceSettingsSelect<false> | FinanceSettingsSelect<true>;
     'setup-progress': SetupProgressSelect<false> | SetupProgressSelect<true>;
     'push-keys': PushKeysSelect<false> | PushKeysSelect<true>;
+    'portal-launch': PortalLaunchSelect<false> | PortalLaunchSelect<true>;
   };
   locale: null;
   widgets: {
@@ -575,6 +577,8 @@ export interface User {
     followUpAt?: string | null;
     followUpStatus?: ('sent' | 'delivered' | 'bounced' | 'failed') | null;
     unsubscribedAt?: string | null;
+    emailSubject?: string | null;
+    followUpSubject?: string | null;
     shortCode?: string | null;
     shortCodeExpires?: string | null;
   };
@@ -6050,6 +6054,8 @@ export interface UsersSelect<T extends boolean = true> {
         followUpAt?: T;
         followUpStatus?: T;
         unsubscribedAt?: T;
+        emailSubject?: T;
+        followUpSubject?: T;
         shortCode?: T;
         shortCodeExpires?: T;
       };
@@ -7320,6 +7326,49 @@ export interface PushKey {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "portal-launch".
+ */
+export interface PortalLaunch {
+  id: number;
+  launchSubject?: string | null;
+  launchBody?: string | null;
+  launchSms?: string | null;
+  followUpSubject?: string | null;
+  followUpBody?: string | null;
+  reminderEnabled?: boolean | null;
+  reminderDays?: number | null;
+  followUpDays?: number | null;
+  followUpPaused?: boolean | null;
+  run?: {
+    status?: ('idle' | 'scheduled' | 'sending' | 'done') | null;
+    scheduledFor?: string | null;
+    filter?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+    by?: (number | null) | User;
+    startedAt?: string | null;
+    finishedAt?: string | null;
+    counts?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "site-settings_select".
  */
 export interface SiteSettingsSelect<T extends boolean = true> {
@@ -7735,6 +7784,35 @@ export interface SetupProgressSelect<T extends boolean = true> {
 export interface PushKeysSelect<T extends boolean = true> {
   publicKey?: T;
   privateKey?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "portal-launch_select".
+ */
+export interface PortalLaunchSelect<T extends boolean = true> {
+  launchSubject?: T;
+  launchBody?: T;
+  launchSms?: T;
+  followUpSubject?: T;
+  followUpBody?: T;
+  reminderEnabled?: T;
+  reminderDays?: T;
+  followUpDays?: T;
+  followUpPaused?: T;
+  run?:
+    | T
+    | {
+        status?: T;
+        scheduledFor?: T;
+        filter?: T;
+        by?: T;
+        startedAt?: T;
+        finishedAt?: T;
+        counts?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

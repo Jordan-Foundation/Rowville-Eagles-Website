@@ -39,26 +39,28 @@ const inline = (s: string) =>
 
 export const BUTTON_STYLE = 'display:inline-block;background:#1e3a8a;color:#ffffff;font:bold 15px Arial,sans-serif;text-decoration:none;padding:14px 26px;border-radius:999px'
 
-/** Filled template text → email HTML (paragraphs, lists, buttons). */
+/** Filled template text → email HTML (paragraphs, lists, buttons). Lines in a block are grouped into runs. */
 export function toEmailHtml(text: string) {
-  const blocks = text.replace(/\r/g, '').split(/\n\s*\n/)
-  return blocks
-    .map((b) => {
-      const lines = b.split('\n').filter((l) => l.trim())
-      if (!lines.length) return ''
-      const btn = lines.length === 1 && lines[0].trim().match(/^\[\[(.+?)\|(.+?)\]\]$/)
-      if (btn) return `<p style="margin:20px 0"><a href="${esc(btn[2].trim())}" style="${BUTTON_STYLE}">${esc(btn[1].trim())}</a></p>`
-      if (lines.every((l) => /^\s*-\s+/.test(l))) return `<ul style="margin:0 0 16px;padding-left:20px">${lines.map((l) => `<li style="margin:4px 0">${inline(l.replace(/^\s*-\s+/, ''))}</li>`).join('')}</ul>`
-      if (lines.every((l) => /^\s*\d+\.\s+/.test(l))) return `<ol style="margin:0 0 16px;padding-left:20px">${lines.map((l) => `<li style="margin:4px 0">${inline(l.replace(/^\s*\d+\.\s+/, ''))}</li>`).join('')}</ol>`
-      return `<p style="margin:0 0 16px">${lines
-        .map((l) => {
-          const b2 = l.trim().match(/^\[\[(.+?)\|(.+?)\]\]$/)
-          return b2 ? `<a href="${esc(b2[2].trim())}" style="${BUTTON_STYLE}">${esc(b2[1].trim())}</a>` : inline(l)
-        })
-        .join('<br>')}</p>`
-    })
-    .filter(Boolean)
-    .join('\n')
+  const button = (l: string) => {
+    const b = l.trim().match(/^\[\[(.+?)\|(.+?)\]\]$/)
+    return b ? `<p style="margin:20px 0"><a href="${esc(b[2].trim())}" style="${BUTTON_STYLE}">${esc(b[1].trim())}</a></p>` : null
+  }
+  const kindOf = (l: string) => (/^\s*-\s+/.test(l) ? 'ul' : /^\s*\d+\.\s+/.test(l) ? 'ol' : button(l) ? 'btn' : 'p')
+  const out: string[] = []
+  for (const block of text.replace(/\r/g, '').split(/\n\s*\n/)) {
+    const lines = block.split('\n').filter((l) => l.trim())
+    let i = 0
+    while (i < lines.length) {
+      const k = kindOf(lines[i])
+      const run: string[] = []
+      while (i < lines.length && kindOf(lines[i]) === k && (k !== 'btn' || run.length === 0)) run.push(lines[i++])
+      if (k === 'btn') out.push(button(run[0])!)
+      else if (k === 'ul') out.push(`<ul style="margin:0 0 16px;padding-left:20px">${run.map((l) => `<li style="margin:4px 0">${inline(l.replace(/^\s*-\s+/, ''))}</li>`).join('')}</ul>`)
+      else if (k === 'ol') out.push(`<ol style="margin:0 0 16px;padding-left:20px">${run.map((l) => `<li style="margin:4px 0">${inline(l.replace(/^\s*\d+\.\s+/, ''))}</li>`).join('')}</ol>`)
+      else out.push(`<p style="margin:0 0 ${i < lines.length ? 6 : 16}px">${run.map(inline).join('<br>')}</p>`)
+    }
+  }
+  return out.join('\n')
 }
 
 // ── SMS: plain GSM-7 only (one curly quote or emoji makes the whole text Unicode and roughly doubles the cost) ──

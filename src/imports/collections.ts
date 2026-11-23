@@ -67,6 +67,8 @@ export const userImportFields: Field[] = [
         { name: 'followUpStatus', type: 'select', options: ['sent', 'delivered', 'bounced', 'failed'] },
         { name: 'unsubscribedAt', type: 'date' },
       ] },
+      { name: 'emailSubject', type: 'text', admin: { hidden: true } },
+      { name: 'followUpSubject', type: 'text', admin: { hidden: true } },
       { name: 'shortCode', type: 'text', unique: true, index: true, admin: { hidden: true } },
       { name: 'shortCodeExpires', type: 'date', admin: { hidden: true } },
     ],

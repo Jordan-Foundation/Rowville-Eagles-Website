@@ -45,7 +45,7 @@ export async function logSms(payload: Payload, o: { to: string; body: string; ki
   }
 }
 
-export async function sendSms(payload: Payload, o: { to: string | null | undefined; body: string; kind: SmsKind; optedOut?: boolean | null; userId?: number | null }) {
+export async function sendSms(payload: Payload, o: { to: string | null | undefined; body: string; kind: SmsKind; optedOut?: boolean | null; userId?: number | null; statusCallback?: string }) {
   const to = toE164(o.to)
   if (!to) return { sent: false as const, reason: 'no_mobile' }
   if (o.optedOut) {
@@ -57,7 +57,7 @@ export async function sendSms(payload: Payload, o: { to: string | null | undefin
     return { sent: false as const, reason: 'not_configured' }
   }
   try {
-    const r = await sendTwilioSms(to, o.body)
+    const r = await sendTwilioSms(to, o.body, o.statusCallback)
     if (r.ok) {
       await logSms(payload, { to, body: o.body, kind: o.kind, status: 'sent', userId: o.userId, sid: r.sid })
       return { sent: true as const, sid: r.sid }

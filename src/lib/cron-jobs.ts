@@ -45,6 +45,7 @@ export const cronJobs: Record<string, Record<string, Job>> = {
     trialReminders: async (payload) => (await import('./trials')).sendTrialReminders(payload),
     numberReminders: async (payload) => (await import('../numbers/service')).sendNumberReminders(payload),
     accountReminders: (payload) => sendAccountReminders(payload),
+    portalLaunchReminders: async (payload) => (await import('../launch/service')).sendLaunchReminders(payload, (globalThis as { __cronNow?: Date }).__cronNow ?? new Date()),
     appReminders: async (payload) => (await import('./app-install')).sendAppReminders(payload, (globalThis as { __cronNow?: Date }).__cronNow ?? new Date()),
     foundationTrialReminders: (payload) => trialReminders(payload),
     foundationChallengeStart: (payload) => announceChallenges(payload),
@@ -52,6 +53,7 @@ export const cronJobs: Record<string, Record<string, Job>> = {
   },
   // Every hour (Vercel Pro): bulk messages and time-sensitive sweeps, each with its own time limit and able to carry on next run
   messages: {
+    portalLaunch: async (payload) => (await import('../launch/service')).launchJob(payload, (globalThis as { __cronNow?: Date }).__cronNow ?? new Date()),
     sessionReminderPushes: async (payload) => (await import('./app-install')).sendSessionReminderPushes(payload, (globalThis as { __cronNow?: Date }).__cronNow ?? new Date()),
     scheduledPromotions: (payload) => runScheduledPromotions(payload),
     reportNotifications: (payload) => notifyReleasedJob(payload),

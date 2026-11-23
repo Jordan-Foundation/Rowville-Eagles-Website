@@ -6,12 +6,25 @@ import { payload } from '@/lib/payload'
 import { checkInvite } from '@/lib/invites'
 import { ActivateForm } from '../ActivateForm'
 import { CreateAccountForm } from '../CreateAccountForm'
+import { newLinkAction } from './actions'
+
+function NewLink({ invite, code, used, error }: { invite?: string; code?: string; used?: boolean; error?: string }) {
+  return (
+    <form action={newLinkAction} className="space-y-3 text-center" data-new-link>
+      {invite && <input type="hidden" name="invite" value={invite} />}
+      {code && <input type="hidden" name="code" value={code} />}
+      {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
+      <button className="w-full rounded-full bg-brand px-6 py-3.5 font-semibold text-white hover:brightness-110">Email me a new link</button>
+      <p className="text-sm text-muted">{used ? 'Already set up? ' : 'Or '}<Link href="/login" className="font-semibold text-brand underline">log in</Link>.</p>
+    </form>
+  )
+}
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Create your account', robots: { index: false } }
 
-export default async function ActivatePage({ searchParams }: { searchParams: Promise<{ token?: string; mode?: string; invite?: string }> }) {
-  const { token, mode, invite } = await searchParams
+export default async function ActivatePage({ searchParams }: { searchParams: Promise<{ token?: string; mode?: string; invite?: string; next?: string; expired?: string; code?: string; sent?: string; error?: string }> }) {
+  const { token, mode, invite, next, expired, code, sent, error } = await searchParams
   const reset = mode === 'reset' && token
 
   let body: React.ReactNode
@@ -38,16 +51,21 @@ export default async function ActivatePage({ searchParams }: { searchParams: Pro
       body = user.activated ? (
         <p className="text-center">Your account is already set up. <Link href="/login" className="font-semibold text-brand underline">Log in</Link></p>
       ) : (
-        <CreateAccountForm invite={invite} email={user.email} firstName={user.firstName} lastName={user.lastName} mobile={user.phone} />
+        <CreateAccountForm invite={invite} email={user.email} firstName={user.firstName} lastName={user.lastName} mobile={user.phone} next={next} />
       )
     } else {
-      body = (
-        <p className="text-center text-muted">
-          {check.reason === 'expired' ? 'This link has expired.' : check.reason === 'used' ? 'This link has already been used.' : 'This link isn’t valid.'}{' '}
-          <Link href="/account/forgot" className="font-semibold text-brand underline">Get a new link</Link> or <Link href="/login" className="font-semibold text-brand underline">log in</Link>.
-        </p>
-      )
+      title = check.reason === 'used' ? 'Link already used' : 'This link has expired'
+      intro = check.reason === 'used' ? 'If you’ve already set up your account, just log in.' : 'Links are personal and work for 14 days.'
+      body = <NewLink invite={invite} used={check.reason === 'used'} />
     }
+  } else if (sent) {
+    title = 'Check your email'
+    intro = 'If that link was yours, we’ve emailed you a fresh one. It works for 14 days.'
+    body = <p className="text-center"><Link href="/login" className="font-semibold text-brand underline">Log in</Link></p>
+  } else if (expired) {
+    title = 'This link has expired'
+    intro = 'Links are personal and work for 14 days.'
+    body = <NewLink code={code} error={error} />
   } else if (token) {
     // Links sent before invite tokens existed (Payload reset tokens)
     body = <ActivateForm token={token} />
