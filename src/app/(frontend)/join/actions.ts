@@ -1,5 +1,7 @@
 'use server'
 
+import { OLDEST_JUNIOR } from '@/lib/age-groups'
+
 import { rateLimit } from '@/lib/form-guard'
 import { checkoutReferralCode } from '@/referrals/capture'
 import { dobProblem, phoneOk } from '@/lib/validate'
@@ -50,7 +52,7 @@ export async function joinUs(_prev: JoinState, fd: FormData): Promise<JoinState>
   const season = rules.season
   const birthYear = birthYearOf(player.dateOfBirth)
   if (!birthYear || birthYear > season || birthYear < season - 80) return fail('Please check the date of birth.')
-  if (season - birthYear >= 18) return fail('Players 18 and over join our senior teams — please use the senior enquiry form at /join/seniors.')
+  if (season - birthYear > OLDEST_JUNIOR) return fail(`Players born ${season - OLDEST_JUNIOR - 1} or earlier join our senior teams — please use the senior enquiry form at /join/seniors.`)
 
   // Trial choice (required when trials are open for this age group)
   const sessions = await openTrialSessions(p, birthYear)

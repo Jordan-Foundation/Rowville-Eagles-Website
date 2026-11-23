@@ -127,7 +127,7 @@ export default async function Home() {
       <section className="border-b border-line bg-surface">
         <div className="container-x grid divide-y divide-line sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-4">
           {[
-            { href: '/join', t: `Join us for ${season}`, d: 'Juniors 5–17 or seniors 18+' },
+            { href: '/join', t: `Join us for ${season}`, d: 'Juniors U6–U18 or seniors (U16+ can choose)' },
             { href: '/programs?type=holiday-camp', t: 'Holiday camps', d: 'School holiday clinics' },
             { href: '/foundation-plus', fplus: true, t: fplus.enabled ? 'Foundation+' : 'Foundation+ · Coming soon', d: fplus.enabled ? 'Online training — drills, badges, leaderboards' : 'Online training is on its way — join the waitlist' },
             { href: '/academy', t: 'Academy trials', d: 'Rowville Foundation Academy' },

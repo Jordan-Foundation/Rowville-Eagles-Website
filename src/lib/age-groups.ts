@@ -1,8 +1,10 @@
 /**
  * Age groups (pure — safe for server and browser). One engine for every flow.
  *
- * FV/FA MiniRoos rule: age group number = season year − birth year (e.g. 2026 season: born 2017 → 9s).
- * Groups are identified and labelled by YEAR OF BIRTH everywhere ("2017s"), with the FV group as a hint.
+ * Club rule: age group = season year − birth year, written "U" + that number (2027 season: born 2021 → U6,
+ * born 2015 → U12, born 2009 → U18). MiniRoos U6–U11, juniors U12–U18, seniors after that. U16–U18 players may
+ * choose juniors or seniors (see `seniorsOptional`).
+ * Groups are identified and labelled by YEAR OF BIRTH everywhere ("2017s"), with the U-group as a hint.
  * The season and the rules are admin settings (Site settings → Age groups), so groups roll over each season.
  *
  * Moving players (MiniRoos only):
@@ -29,6 +31,12 @@ export const DEFAULT_RULES: Omit<AgeRules, 'season'> = { miniMin: 6, miniMax: 11
 
 export type GroupKind = 'too-young' | 'miniroos' | 'junior' | 'senior'
 
+/** Oldest junior group (U18); from U16 a player may choose juniors or seniors. */
+export const OLDEST_JUNIOR = 18
+export const SENIORS_FROM = 16
+/** U16–U18: can trial for juniors or send a senior enquiry. */
+export const seniorsOptional = (g: { kind: GroupKind; ageNumber: number }) => g.kind === 'junior' && g.ageNumber >= SENIORS_FROM
+
 export type AgeGroupInfo = {
   birthYear: number
   /** season − birth year */
@@ -36,7 +44,7 @@ export type AgeGroupInfo = {
   kind: GroupKind
   /** "2017s" */
   label: string
-  /** FV name, e.g. "9s" (MiniRoos), "U14" (juniors), "Seniors" */
+  /** Age group, e.g. "U9" (MiniRoos), "U14" (juniors), "Seniors" */
   hint: string
 }
 
@@ -56,8 +64,8 @@ export const groupLabel = (birthYear: number) => `${birthYear}s`
 
 export function groupInfo(birthYear: number, rules: AgeRules): AgeGroupInfo {
   const ageNumber = rules.season - birthYear
-  const kind: GroupKind = ageNumber < rules.miniMin ? 'too-young' : ageNumber <= rules.miniMax ? 'miniroos' : ageNumber < 18 ? 'junior' : 'senior'
-  const hint = kind === 'miniroos' ? `${ageNumber}s` : kind === 'junior' ? `U${ageNumber + 1}` : kind === 'senior' ? 'Seniors' : `Under ${rules.miniMin}`
+  const kind: GroupKind = ageNumber < rules.miniMin ? 'too-young' : ageNumber <= rules.miniMax ? 'miniroos' : ageNumber <= OLDEST_JUNIOR ? 'junior' : 'senior'
+  const hint = kind === 'senior' ? 'Seniors' : kind === 'too-young' ? `Under ${rules.miniMin}` : `U${ageNumber}`
   return { birthYear, ageNumber, kind, label: kind === 'senior' ? 'Seniors' : groupLabel(birthYear), hint }
 }
 
@@ -67,7 +75,7 @@ export function groupFor(dob: string | Date | null | undefined, rules: AgeRules)
   return by === null ? null : groupInfo(by, rules)
 }
 
-/** "2017s · 9s" */
+/** "2017s · U10" */
 export const fullLabel = (g: AgeGroupInfo) => (g.kind === 'senior' ? 'Seniors' : `${g.label} · ${g.hint}`)
 
 /** MiniRoos birth years for the season, youngest first: e.g. 2026 → [2020 … 2015]. */
@@ -117,7 +125,7 @@ export function checkMove(rightfulBirthYear: number, targetBirthYear: number, ru
   return { direction, steps, allowed: true, warning: false, ruled, message: `Moving down ${g(steps)} to ${fullLabel(to)} (only if they can’t take part in their rightful age group).` }
 }
 
-/** "Born 2017 · rightful 2017s (9s) · playing in 2016s (10s)" */
+/** "Born 2017 · rightful 2017s (U10) · playing in 2016s (U11)" */
 export function placementLabel(rightfulBirthYear: number, playingBirthYear: number | null | undefined, rules: AgeRules) {
   const r = groupInfo(rightfulBirthYear, rules)
   if (!playingBirthYear || playingBirthYear === rightfulBirthYear) return `Born ${rightfulBirthYear} · ${fullLabel(r)}`
