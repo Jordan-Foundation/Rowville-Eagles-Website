@@ -72,7 +72,7 @@ export async function sendAvailabilityReminders(payload: Payload, now = new Date
       } catch {
         continue
       }
-      await sendEmail(payload, { to: user.email, subject: subjectFor(term, kind), html: reminderHtml(user, coach.displayName, term, kind), sender: 'academy', userId: user.id })
+      await sendEmail(payload, { to: user.email, subject: subjectFor(term, kind), html: reminderHtml(user, coach.displayName, term, kind), sender: 'academy', userId: user.id, push: { type: 'reminders', url: `/coach/availability/${term.id}`, body: `Please add your availability for ${term.name}.` } })
       result.sent++
     }
   }

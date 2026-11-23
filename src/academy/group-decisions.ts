@@ -50,7 +50,7 @@ async function tellCoach(p: Payload, g: AcademyGroup, o: { subject: string; head
   const user = typeof coach.user === 'object' ? (coach.user as User) : null
   if (!user) return
   const link = `${siteUrl()}/coach/sessions/group/${g.id}`
-  await sendEmail(p, { to: user.email, subject: o.subject, html: emailLayout('academy', [{ heading: o.heading, intro: o.intro, rows: [['When', groupWhen(g)], ['Reference', g.reference]], cta: { label: 'Open the group', href: link } }]), sender: 'academy', userId: user.id })
+  await sendEmail(p, { to: user.email, subject: o.subject, html: emailLayout('academy', [{ heading: o.heading, intro: o.intro, rows: [['When', groupWhen(g)], ['Reference', g.reference]], cta: { label: 'Open the group', href: link } }]), sender: 'academy', userId: user.id, push: { type: 'changes', url: link, body: o.text } })
   if (coach.alerts?.bookingText !== false) await sendSms(p, { to: user.phone, kind: 'coach_alert', optedOut: user.smsOptOut, body: `Foundation Academy: ${o.text} ${link}` })
 }
 

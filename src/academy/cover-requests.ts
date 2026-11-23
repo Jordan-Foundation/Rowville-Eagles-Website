@@ -62,6 +62,7 @@ export async function askCoverCoach(p: Payload, sessionId: number, req?: Payload
       html: emailLayout('academy', [{ heading: 'You’ve been asked to cover a session', intro: `Hi ${esc(coach.displayName)} — the Academy has asked you to cover this session${booked ? ` for ${esc(booked.displayName)}` : ''}. Please confirm or let us know you can’t.`, rows: [['When', when(s.startsAt)], ['Session', d.what], ['Player', d.who], ...(s.coverNote ? ([['Handover', s.coverNote]] as [string, string][]) : [])], cta: { label: 'Confirm or decline', href: link } }]),
       sender: 'academy',
       userId: user.id,
+      push: { type: 'changes', url: link, body: `${d.what} · ${d.who}. Tap to confirm or decline.`, tag: `cover-${s.id}` },
     })
   }
   if (user?.phone) await sendSms(p, { to: user.phone, kind: 'coach_alert', userId: user.id, body: `Foundation Academy: can you cover ${d.what.toLowerCase()} on ${formatDate(s.startsAt, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}? Confirm or decline: ${link}` })
@@ -87,6 +88,7 @@ export async function askCoachesToCover(p: Payload, sessionIds: number[], o: { e
       html: emailLayout('academy', [{ heading: sessions.length === 1 ? 'A session needs cover' : 'Sessions need cover', intro: `Hi ${esc(c.displayName)} — can you pick up ${sessions.length === 1 ? 'this session' : 'any of these'}? The first coach to say yes (and who’s free then) gets it.<br><br>${list}`, ...(sessions.length === 1 ? { cta: { label: 'I can take it', href: coverLink('p', sessions[0].id, c.id) } } : {}) }]),
       sender: 'academy',
       userId: user.id,
+      push: { type: 'changes', url: sessions.length === 1 ? coverLink('p', sessions[0].id, c.id) : '/coach', body: described.map(({ s, d }) => `${formatDate(s.startsAt, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })} ${d.what}`).join(' · ') },
     })
     sent++
   }

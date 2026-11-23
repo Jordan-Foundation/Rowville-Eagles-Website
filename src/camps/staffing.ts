@@ -107,7 +107,7 @@ async function sendInvite(p: Payload, o: { program: Program; coach: AcademyCoach
       after: 'Once you confirm, these days are blocked out of your 1-on-1 availability so families can’t book you then. You’ll also see this in the coach portal under Camps.',
     },
   ])
-  await sendEmail(p, { to: o.user.email, subject: `${o.reminder ? 'Reminder: ' : ''}Coach ${o.program.title}? Please confirm`, html, sender: 'academy', userId: o.user.id })
+  await sendEmail(p, { to: o.user.email, subject: `${o.reminder ? 'Reminder: ' : ''}Coach ${o.program.title}? Please confirm`, html, sender: 'academy', userId: o.user.id, push: { type: 'changes', url, body: `${campDates(o.program)} — tap to confirm or decline.`, tag: `camp-${o.program.id}` } })
   await sendSms(p, { to: o.user.phone, kind: 'coach_alert', optedOut: o.user.smsOptOut, userId: o.user.id, body: `Foundation Academy: ${o.reminder ? 'Reminder — ' : ''}can you coach ${o.program.title}, ${campDates(o.program)}? Confirm or decline: ${url}` })
 }
 
@@ -171,7 +171,7 @@ export async function removeCampCoach(p: Payload, campCoachId: number) {
   await p.delete({ collection: 'coach-blocks', where: { campCoach: { equals: cc.id } }, ...q })
   const program = await p.findByID({ collection: 'programs', id: idOf(cc.program)!, ...q })
   const { coach, user } = await coachUser(p, idOf(cc.coach)!)
-  if (user) await sendEmail(p, { to: user.email, subject: `${program.title}: you’re no longer needed`, sender: 'academy', userId: user.id, html: emailLayout('academy', [{ heading: 'Camp update', intro: `Hi ${user.firstName || coach.displayName} — you’re no longer needed to coach ${program.title}. Those days are free in your availability again. Thanks!` }]) })
+  if (user) await sendEmail(p, { to: user.email, subject: `${program.title}: you’re no longer needed`, sender: 'academy', userId: user.id, push: { type: 'changes', url: '/coach/camps', body: 'Those days are free in your availability again.' }, html: emailLayout('academy', [{ heading: 'Camp update', intro: `Hi ${user.firstName || coach.displayName} — you’re no longer needed to coach ${program.title}. Those days are free in your availability again. Thanks!` }]) })
 }
 
 /** Management has looked at a decline (clears it from the badge). */

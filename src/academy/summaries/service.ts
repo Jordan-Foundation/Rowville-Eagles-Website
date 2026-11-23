@@ -148,11 +148,11 @@ async function onceFor(p: Payload, userId: number, key: string) {
   return true
 }
 
-/** Hourly job: at 8pm each coach with sessions today still to summarise gets one email + push with one link; at 9am a reminder for yesterday's. */
+/** Hourly job: at 9am a reminder (email + push) for yesterday's summaries still not written. (Same-day wrap-ups go out 15 minutes after each block — see wrap-up.ts.) */
 export async function nudgeCoaches(p: Payload, now = new Date()) {
   const hour = hourIn(now)
-  if (hour !== 20 && hour !== 9) return { skipped: 'not 8pm or 9am' }
-  const reminder = hour === 9
+  if (hour !== 9) return { skipped: 'not 9am' }
+  const reminder = true
   const today = localYmd(now)
   const yesterday = localYmd(new Date(now.getTime() - 86_400_000))
   const day = reminder ? yesterday : today
@@ -169,9 +169,7 @@ export async function nudgeCoaches(p: Payload, now = new Date()) {
     const link = `${siteUrl()}/coach/summaries`
     const title = reminder ? `Reminder: ${n} session summar${n === 1 ? 'y' : 'ies'} from yesterday` : `${n} session summar${n === 1 ? 'y' : 'ies'} to write`
     const html = emailLayout('academy', [{ heading: title, intro: `Hi ${esc(user.firstName || coach!.displayName)} — ${reminder ? 'these are still waiting from yesterday' : 'thanks for today'}. Two minutes each: what you worked on, what went well and next steps. Families get them straight away, and it helps whoever coaches them next.`, rows: list.map((x) => [when(x.at), x.title] as [string, string]), cta: { label: n === 1 ? 'Write the summary' : `Write ${n} summaries`, href: link } }])
-    await sendEmail(p, { to: user.email, subject: title, html, sender: 'academy', userId: user.id })
-    const { pushTo } = await import('../../push/send')
-    await pushTo(p, user.id, { title, body: list.map((x) => x.title).join(' · ').slice(0, 140), url: '/coach/summaries', tag: `summaries-${day}` })
+    await sendEmail(p, { to: user.email, subject: title, html, sender: 'academy', userId: user.id, push: { type: 'reminders', url: '/coach/summaries', body: list.map((x) => x.title).join(' · '), tag: `summaries-${day}` } })
     sent++
   }
   return { sent, reminder }

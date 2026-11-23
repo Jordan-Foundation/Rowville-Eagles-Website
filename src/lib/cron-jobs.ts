@@ -53,6 +53,7 @@ export const cronJobs: Record<string, Record<string, Job>> = {
   },
   // Every 5 minutes: time-critical reminders (RFA trials: 1 day, 3 hours and 15 minutes before)
   frequent: {
+    coachWrapUps: async (payload) => (await import('../academy/wrap-up')).sendWrapUps(payload, (globalThis as { __cronNow?: Date }).__cronNow ?? new Date()),
     rfaTrialReminders: async (payload) => (await import('../academy/trial-list')).sendTrialReminders(payload, (globalThis as { __cronNow?: Date }).__cronNow ?? new Date()),
   },
   // Every hour (Vercel Pro): bulk messages and time-sensitive sweeps, each with its own time limit and able to carry on next run

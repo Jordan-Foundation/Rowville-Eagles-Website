@@ -181,7 +181,7 @@ export async function sendReportReminders(p: Payload, now = new Date()) {
       }
       const user = await p.findByID({ collection: 'users', id: coachId, ...q, disableErrors: true })
       if (!user?.email) continue
-      await sendEmail(p, { to: user.email, subject: reminderSubject(cycle, kind, outstanding), html: reminderHtml(user, cycle, outstanding, kind), sender: 'academy', userId: user.id })
+      await sendEmail(p, { to: user.email, subject: reminderSubject(cycle, kind, outstanding), html: reminderHtml(user, cycle, outstanding, kind), sender: 'academy', userId: user.id, push: { type: 'reminders', url: '/coach/reports', body: `${outstanding} report${outstanding === 1 ? '' : 's'} still to finish for ${cycle.name}.` } })
       result.sent++
     }
   }

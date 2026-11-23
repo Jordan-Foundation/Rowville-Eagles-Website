@@ -21,6 +21,7 @@ export type TrainingBlock = {
   title: string
   subtitle: string
   startsAt: string
+  endsAt: string
   rows: RosterRow[]
   present: number[] | null
   takenAt?: string | null
@@ -47,6 +48,7 @@ export async function trainingDay(p: Payload, user: User, coach: AcademyCoach, y
       title: g.title,
       subtitle: g.program.title,
       startsAt: s.startsAt,
+      endsAt: s.endsAt,
       present: null,
       rows: g.players.map((r) => ({
         id: r.id,
@@ -68,6 +70,7 @@ export async function trainingDay(p: Payload, user: User, coach: AcademyCoach, y
         title: t.name,
         subtitle: [`Team training`, tr.location].filter(Boolean).join(' · '),
         startsAt: localToUtc(ymd, tr.start).toISOString(),
+        endsAt: (tr.end ? localToUtc(ymd, tr.end) : new Date(localToUtc(ymd, tr.start).getTime() + 90 * 60_000)).toISOString(),
         present: null,
         rows: members
           .map((m) => {
