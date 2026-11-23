@@ -57,7 +57,11 @@ function priceLine(prog: Program) {
 
 /** The venue in a text message: the club's home ground by name, otherwise the program's own location. */
 const HOME_GROUND = 'Park Ridge Reserve'
-export const smsVenue = (location?: string | null) => (!location || /^home ground$/i.test(location.trim()) ? HOME_GROUND : location.trim())
+const isHome = (location?: string | null) => !location || /^home ground$/i.test(location.trim())
+export const smsVenue = (location?: string | null) => (isHome(location) ? HOME_GROUND : location!.trim())
+/** The venue in an email: "Park Ridge Reserve · 208 Dandelion Drive, Rowville VIC 3178" for the home ground. */
+export const emailVenue = (location: string | null | undefined, address: string | null) =>
+  isHome(location) ? [HOME_GROUND, address].filter(Boolean).join(' · ') : programPlace(location, address).place || location!.trim()
 
 const stopLink = (ref: string) => `${siteUrl()}/follow-ups/stop/${makeFollowToken(ref)}`
 const detailsLink = (ref: string) => `${siteUrl()}/trial-details/${makeFollowToken(ref)}`
@@ -94,7 +98,7 @@ export async function sendTrialReminders(p: Payload, now = new Date()) {
         intro: `A reminder that ${esc(kid)}’s free trial is ${esc(when)}. Please arrive 10 minutes early.`,
         rows: [
           ['When', new Intl.DateTimeFormat('en-AU', { timeZone: 'Australia/Sydney', weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' }).format(start)],
-          ['Where', where.place || 'Rowville'],
+          ['Where', emailVenue(prog.location, s.address)],
           ['Program', prog.title],
         ],
         ...(needs ? { cta: { label: 'Add emergency contact (1 minute)', href: detailsLink(b.reference!) } } : {}),
