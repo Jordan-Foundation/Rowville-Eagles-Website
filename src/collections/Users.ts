@@ -5,6 +5,7 @@ import type { FieldAccess } from 'payload'
 
 const isStaffField: FieldAccess = ({ req: { user } }) => hasRole(user as WithRoles, 'admin', 'committee')
 import { toE164 } from '../lib/sms'
+import { userImportFields } from '../imports/collections'
 
 /**
  * One account type for everyone: committee, coaches, parents and adult players.
@@ -73,6 +74,7 @@ export const Users: CollectionConfig = {
     delete: ({ req: { user } }) => hasRole(user as never, 'admin'),
   },
   fields: [
+    ...userImportFields,
     { name: 'referralCode', label: 'Referred with code', type: 'text', index: true, admin: { position: 'sidebar', readOnly: true, description: 'The referral code this family arrived with' } },
     { name: 'referralCodeAt', type: 'date', admin: { position: 'sidebar', readOnly: true, hidden: true } },
     {

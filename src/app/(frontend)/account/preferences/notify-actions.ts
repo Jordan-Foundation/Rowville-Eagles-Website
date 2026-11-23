@@ -2,7 +2,7 @@
 
 import { redirect } from 'next/navigation'
 import { payload } from '@/lib/payload'
-import { currentUser } from '@/lib/auth'
+import { currentLogin as currentUser } from '@/lib/auth'
 import { NOTIFY_TYPES } from '@/lib/app-install'
 
 /** Turn individual phone notification types on or off. */

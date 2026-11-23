@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { participantImportFields } from '../imports/collections'
 import { hasRole, isAdminField, staffOrOwner, type WithRoles } from '../access'
 import type { FieldAccess } from 'payload'
 
@@ -32,6 +33,7 @@ export const Participants: CollectionConfig = {
     ],
   },
   fields: [
+    ...participantImportFields,
     { name: 'referralCode', label: 'Referral code', type: 'text', unique: true, index: true, admin: { position: 'sidebar', readOnly: true, description: 'This player’s Refer a Friend code' } },
     { name: 'fullName', type: 'text', admin: { hidden: true } },
     {

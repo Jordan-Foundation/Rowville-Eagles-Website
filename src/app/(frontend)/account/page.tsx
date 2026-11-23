@@ -121,9 +121,9 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   const upcoming = [...clubItems, ...teamItems, ...sessionItems.filter((i) => new Date(i.date).getTime() >= now)].sort((a, b) => (a.date ?? '9999').localeCompare(b.date ?? '9999'))
   const past = sessionItems.filter((i) => new Date(i.date).getTime() < now).reverse()
 
-  const { brand: appBrand } = await appViewer()
+  const { brand: appBrand, user: login } = await appViewer()
   const surveys = await pendingSurveys(p, user.id)
-  const appState = appProgress(user)
+  const appState = appProgress(login ?? user)
   return (
     <div className="container-x py-14">
       {home !== '/account' && (
@@ -135,7 +135,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="eyebrow !text-brand">My account</p>
-          <h1 className="mt-2 font-[family-name:var(--font-barlow)] text-5xl font-extrabold uppercase">Hi {user.firstName || 'there'}</h1>
+          <h1 className="mt-2 font-[family-name:var(--font-barlow)] text-5xl font-extrabold uppercase">Hi {login?.firstName || user.firstName || 'there'}</h1>
         </div>
         <LogoutButton />
       </div>

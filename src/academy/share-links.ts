@@ -24,7 +24,19 @@ export async function isExistingClient(p: Payload, o: { email?: string | null; a
   ]
   if (!or.length) return false
   const { totalDocs } = await p.count({ collection: 'academy-bookings', where: { or, status: { in: ['confirmed', 'completed', 'payment_failed', 'cancelled', 'refunded'] } }, overrideAccess: true })
-  return totalDocs > 0
+  if (totalDocs > 0) return true
+  // Imported families who'd already paid for 1-on-1s, camps or the academy (or are RFA players) aren't new clients
+  const users: Where[] = [...(o.email ? [{ email: { equals: o.email.trim().toLowerCase() } }] : []), ...(o.accountId ? [{ id: { equals: o.accountId } }] : [])]
+  const { docs } = await p.find({ collection: 'users', where: { or: users }, limit: 2, depth: 0, overrideAccess: true, select: { imported: true, familyAccount: true } })
+  for (const u of docs) {
+    if (u.imported?.priorClient) return true
+    const fam = u.familyAccount && typeof u.familyAccount === 'object' ? u.familyAccount.id : u.familyAccount
+    if (fam) {
+      const f = await p.findByID({ collection: 'users', id: fam, depth: 0, overrideAccess: true, disableErrors: true })
+      if (f?.imported?.priorClient) return true
+    }
+  }
+  return false
 }
 
 export const NEW_FAMILIES_ONLY = 'Coach share links are for families new to the Foundation Academy. This family has booked 1-on-1s or small groups before — they can book any open time on the website as usual.'
