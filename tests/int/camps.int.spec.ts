@@ -16,7 +16,7 @@ describe('Camp days', () => {
   })
   it('uses the days set on the camp, sorted, without duplicates', () => {
     const days = campDayList({ campDays: [{ date: '2027-01-12T13:00:00.000Z', startTime: '08:30', endTime: '14:30' }, { date: '2027-01-10T13:00:00.000Z' }, { date: '2027-01-12T13:00:00.000Z' }] })
-    expect(days).toEqual([{ date: '2027-01-11', start: '09:00', end: '15:00' }, { date: '2027-01-13', start: '08:30', end: '14:30' }])
+    expect(days).toEqual([{ date: '2027-01-11', start: '09:00', end: '15:30' }, { date: '2027-01-13', start: '08:30', end: '14:30' }])
   })
   it('prices default to $300 / $110', () => {
     expect(campPrices({})).toEqual({ full: 300, day: 110 })

@@ -6,7 +6,7 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { payload, formatAUD, formatDate } from '@/lib/payload'
 import { campBookings, placesTaken } from '@/lib/payments'
-import { campDayLabel, campDayList, campHoursLabel, campPrices, fullCampSaving, placesByDay } from '@/lib/camps'
+import { campDayLabel, campDayList, campHoursLabel, campPrices, fullCampSaving, placesByDay, programSchedule } from '@/lib/camps'
 import { localYmd } from '@/lib/time'
 import { defaultPayee, programTypes } from '@/collections/Programs'
 import { isPayee, paymentsMode, stripeAccounts } from '@/lib/stripe-accounts'
@@ -17,6 +17,8 @@ import { redirect } from 'next/navigation'
 import { currentUser } from '@/lib/auth'
 import { AcademyBackdrop } from '@/components/AcademyBackdrop'
 import { TermBookingForm, type TermSlotOption } from './TermBookingForm'
+import { readFollowToken } from '@/lib/follow-up-token'
+import { resumeValues } from '@/lib/follow-ups'
 import { nightRate, programSlots, slotTaken } from '@/academy/terms/service'
 import { slotLabel as termSlotLabel, spotsLeft, termQuote, yearsLabel } from '@/academy/terms/slots'
 import { programPriceLabel } from '@/lib/format'
@@ -33,10 +35,13 @@ export default async function BookPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>
-  searchParams: Promise<{ cancelled?: string; participant?: string }>
+  searchParams: Promise<{ cancelled?: string; participant?: string; resume?: string }>
 }) {
-  const [{ slug }, { cancelled, participant: participantParam }] = await Promise.all([params, searchParams])
+  const [{ slug }, { cancelled, participant: participantParam, resume: resumeParam }] = await Promise.all([params, searchParams])
   const p = await payload()
+  // From a follow-up email ("finish booking" / "enrol after the trial"): the form opens with what they typed before
+  const resumeRef = readFollowToken(resumeParam)
+  const resume = resumeRef ? (await resumeValues(p, resumeRef))?.values : undefined
   const { docs } = await p.find({ pagination: false, collection: 'programs', where: { slug: { equals: slug } }, limit: 1, depth: 0 })
   const program = docs[0]
   if (!program) notFound()
@@ -170,9 +175,9 @@ export default async function BookPage({
                 This program is fully booked. Please check back later or contact the club about the waitlist.
               </p>
             ) : yearOptionsView ? (
-              <FullYearForm slug={program.slug} options={yearOptionsView} payeeLabel={stripeAccounts[payee].label} prefill={contactPrefill(me)} kids={kids} />
+              <FullYearForm slug={program.slug} options={yearOptionsView} payeeLabel={stripeAccounts[payee].label} prefill={{ ...contactPrefill(me), ...resume }} kids={kids} />
             ) : termSlots ? (
-              <TermBookingForm slug={program.slug} slots={termSlots} perTerm={isPerTerm(program) ? program.termPrice ?? 400 : null} rates={{ one: program.pricePerSession ?? null, two: program.twoNightPricePerSession ?? null }} payeeLabel={stripeAccounts[payee].label} prefill={prefill} kids={kids} bounds={ageBounds(program)} />
+              <TermBookingForm slug={program.slug} slots={termSlots} perTerm={isPerTerm(program) ? program.termPrice ?? 400 : null} rates={{ one: program.pricePerSession ?? null, two: program.twoNightPricePerSession ?? null }} payeeLabel={stripeAccounts[payee].label} prefill={resume ? { ...prefill, ...resume } : prefill} kids={kids} bounds={ageBounds(program)} />
             ) : (
               <BookingForm
                 slug={program.slug}
@@ -188,6 +193,7 @@ export default async function BookPage({
                 maxChildren={program.type === 'registration' || offered?.length ? 1 : 4}
                 camp={camp}
                 payeeLabel={stripeAccounts[payee].label}
+                resume={resume}
               />
             )}
           </div>
@@ -195,7 +201,7 @@ export default async function BookPage({
         <aside className={`panel h-fit border border-line bg-surface-2 p-7 lg:sticky lg:top-24 ${academy ? 'gloss-sheen rounded-sm' : 'rounded-2xl'}`}>
           <p className="text-sm text-muted">Order summary</p>
           <p className="mt-2 text-xl font-semibold">{program.title}</p>
-          <p className="mt-1 text-sm text-muted">{[program.ageRange, program.scheduleNote].filter(Boolean).join(' · ')}</p>
+          <p className="mt-1 text-sm text-muted">{[program.ageRange, programSchedule(program)].filter(Boolean).join(' · ')}</p>
           {camp ? (
             <dl className="mt-6 space-y-2 border-t border-line pt-5">
               <div className="flex items-baseline justify-between"><dt className="text-muted">Full camp ({camp.days.length} days)</dt><dd className="text-2xl font-bold">{formatAUD(camp.fullPrice)}</dd></div>

@@ -147,6 +147,20 @@ export const Bookings: CollectionConfig = {
     },
     { name: 'stripeCheckoutId', type: 'text', admin: { readOnly: true } },
     {
+      name: 'followUps',
+      label: 'Follow-up emails',
+      type: 'group',
+      admin: { position: 'sidebar', description: 'Sent automatically (each once).' },
+      fields: [
+        { name: 'trialReminderAt', label: 'Trial reminder (day before)', type: 'date', admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } } },
+        { name: 'trialEnrolAt', label: 'After the trial: enrol', type: 'date', admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } } },
+        { name: 'trialNudgeAt', label: 'After the trial: last reminder', type: 'date', admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } } },
+        { name: 'detailsAt', label: 'Trial details added', type: 'date', admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' }, description: 'Emergency contact and medical answer, added after booking' } },
+        { name: 'recoveryAt', label: 'Unfinished booking email', type: 'date', admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } } },
+        { name: 'stopped', label: 'No more follow-ups', type: 'checkbox', admin: { description: 'The family said “no thanks”, or staff turned them off.' } },
+      ],
+    },
+    {
       name: 'playFootballComplete',
       type: 'checkbox',
       admin: { description: 'Season registrations: FV section completed in PlayFootball' },

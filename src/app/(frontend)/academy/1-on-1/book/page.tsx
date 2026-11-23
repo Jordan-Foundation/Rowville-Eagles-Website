@@ -1,3 +1,5 @@
+import { readFollowToken } from '@/lib/follow-up-token'
+import { resumeValues } from '@/lib/follow-ups'
 import { allowsWeekly, isHolidayTimeframe } from '@/academy/timeframes'
 import { checkPack, packSaving, packSettings, packTotal } from '@/academy/packs'
 import Image from 'next/image'
@@ -18,7 +20,7 @@ import { activeHold, findShareLink, linkMatches } from '@/academy/share-links'
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Book a 1-on-1', robots: { index: false } }
 
-type Search = { mode?: string; coach?: string; start?: string; starts?: string; weekday?: string; time?: string; cancelled?: string; share?: string }
+type Search = { mode?: string; coach?: string; start?: string; starts?: string; weekday?: string; time?: string; cancelled?: string; share?: string; resume?: string }
 
 /** "Mon 1 Mar – Sun 7 Mar" style ranges from consecutive away session dates. */
 function awayRanges(dates: string[], periods: { from: string; to: string }[]) {
@@ -33,6 +35,9 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
   const packStarts = mode === 'pack' ? (q.starts ?? '').split(',').filter(Boolean) : []
   const firstStartRaw = mode === 'pack' ? [...packStarts].sort()[0] : q.start
   const p = await payload()
+  // From an "unfinished booking" email: the form opens with what they typed before
+  const resumeRef = readFollowToken(q.resume)
+  const resumeVals = resumeRef ? (await resumeValues(p, resumeRef))?.values : undefined
   if (q.cancelled) {
     // Came back from Stripe without paying — free that exact hold straight away
     const held = (await p.find({ pagination: false, collection: 'academy-bookings', where: { reference: { equals: q.cancelled }, status: { equals: 'held' } }, limit: 1, depth: 0, overrideAccess: true })).docs[0]
@@ -114,6 +119,7 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
                 loginHref={`/login?next=${encodeURIComponent(`/academy/1-on-1/book?${new URLSearchParams(Object.entries(q).filter(([k, v]) => k !== 'cancelled' && v) as [string, string][]).toString()}`)}`}
                 me={user ? { firstName: user.firstName, lastName: user.lastName, email: user.email, phone: user.phone } : null}
                 players={players}
+                resume={resumeVals}
                 share={share && !user ? { token: q.share!, prefill: { contactFirstName: share.client.firstName, contactLastName: share.client.lastName, contactEmail: share.client.email, contactMobile: share.client.mobile ?? '', playerFirstName: share.client.playerFirstName ?? '', playerLastName: share.client.lastName } } : share ? { token: q.share!, prefill: {} } : undefined}
               />
             ) : (

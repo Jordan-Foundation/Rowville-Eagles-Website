@@ -1,3 +1,4 @@
+import { programSchedule } from '@/lib/camps'
 import { payload } from '@/lib/payload'
 import { icsFile, type CalEvent } from '@/lib/ics'
 import { programPlace } from '@/lib/place'
@@ -22,7 +23,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ ref: st
     const b = club[0]
     const prog = b.program as Program
     const where = programPlace(prog.location, ground).place
-    const description = [prog.scheduleNote, prog.dropOffPickUp, prog.whatToBring && `What to bring: ${prog.whatToBring}`, `Booking ${ref}`].filter(Boolean).join('\n')
+    const description = [programSchedule(prog), prog.dropOffPickUp, prog.whatToBring && `What to bring: ${prog.whatToBring}`, `Booking ${ref}`].filter(Boolean).join('\n')
     const reg = b.academyRegistration && typeof b.academyRegistration === 'object' ? b.academyRegistration : null
     const slot = reg?.slot && typeof reg.slot === 'object' ? (reg.slot as AcademyTermSlot) : null
     if (slot) {

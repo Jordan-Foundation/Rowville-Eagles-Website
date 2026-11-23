@@ -58,6 +58,9 @@ export const cronJobs: Record<string, Record<string, Job>> = {
   },
   // Every hour (Vercel Pro): bulk messages and time-sensitive sweeps, each with its own time limit and able to carry on next run
   messages: {
+    trialFamilyReminders: async (payload) => (await import('./follow-ups')).sendTrialReminders(payload, (globalThis as { __cronNow?: Date }).__cronNow ?? new Date()),
+    trialFollowUps: async (payload) => (await import('./follow-ups')).sendTrialFollowUps(payload, (globalThis as { __cronNow?: Date }).__cronNow ?? new Date()),
+    bookingRecovery: async (payload) => (await import('./follow-ups')).sendRecoveryEmails(payload, (globalThis as { __cronNow?: Date }).__cronNow ?? new Date()),
     tournamentInvites: async (payload) => (await import('../tournaments/service')).sweepInvites(payload, (globalThis as { __cronNow?: Date }).__cronNow ?? new Date()),
     sessionLengths: async (payload) => { const r = await (await import('../academy/session-lengths')).applySessionLengths(payload, (globalThis as { __cronNow?: Date }).__cronNow ?? new Date()); return { changed: r.changed.length, skipped: r.skipped.length, trialNights: r.trialNights } },
     portalLaunch: async (payload) => (await import('../launch/service')).launchJob(payload, (globalThis as { __cronNow?: Date }).__cronNow ?? new Date()),

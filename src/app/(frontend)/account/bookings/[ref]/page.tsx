@@ -1,3 +1,4 @@
+import { programSchedule } from '@/lib/camps'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
@@ -142,7 +143,7 @@ export default async function MyBookingPage({ params }: { params: Promise<{ ref:
       : prog.startDate
         ? ([['Dates', `${formatDate(prog.startDate, { day: 'numeric', month: 'short', year: 'numeric' })}${prog.endDate ? ` – ${formatDate(prog.endDate, { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}`]] as [string, string][])
         : []),
-    ...(prog.scheduleNote ? ([['Schedule', prog.scheduleNote]] as [string, string][]) : []),
+    ...(programSchedule(prog) ? ([['Schedule', programSchedule(prog)!]] as [string, string][]) : []),
     ...(prog.location ? ([['Where', prog.location]] as [string, string][]) : []),
     ...(clubPromo ? [clubPromo] : []),
     ['Paid', formatAUD(club.amount ?? 0)],

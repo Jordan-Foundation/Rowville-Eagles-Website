@@ -5,7 +5,7 @@
  */
 import { localWeekdayTime, localYmd } from './time'
 
-export const CAMP_DEFAULTS = { fullPrice: 300, dayPrice: 110, start: '09:00', end: '15:00' } as const
+export const CAMP_DEFAULTS = { fullPrice: 300, dayPrice: 110, start: '09:00', end: '15:30' } as const
 
 export type CampDay = { date: string; start: string; end: string }
 
@@ -128,3 +128,15 @@ export const campHoursLabel = (d: { start: string; end: string }) => {
 /** "Full camp (4 days)" or "Mon 5 Jan, Wed 7 Jan" */
 export const campChoiceLabel = (o: { fullCamp?: boolean | null; days: string[]; totalDays: number }) =>
   o.fullCamp || o.days.length === 0 ? `Full camp (${o.totalDays} day${o.totalDays === 1 ? '' : 's'})` : o.days.map(campDayLabel).join(', ')
+
+/**
+ * What a program's "Schedule" says. Holiday camps: worked out from the camp days ("3 days · 9am–3:30pm"), so the
+ * page, emails and calendars can never disagree with the actual hours. Anything else: the schedule note as typed.
+ */
+export function programSchedule(p: CampLike & { type?: string | null; scheduleNote?: string | null }): string | null {
+  if (p.type !== 'holiday-camp') return p.scheduleNote || null
+  const days = campDayList(p)
+  if (!days.length) return p.scheduleNote || null
+  const hours = [...new Set(days.map(campHoursLabel))]
+  return `${days.length} day${days.length === 1 ? '' : 's'} · ${hours.length === 1 ? hours[0] : 'hours vary by day'}`
+}
