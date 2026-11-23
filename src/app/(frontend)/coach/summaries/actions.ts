@@ -6,7 +6,7 @@ import { payload } from '@/lib/payload'
 import { coachOrNull } from '@/academy/portal'
 import { saveSummary } from '@/academy/summaries/service'
 import { removeSubscription, saveSubscription } from '@/push/send'
-import { currentUser } from '@/lib/auth'
+import { currentLogin as currentUser } from '@/lib/auth'
 
 export type SummaryState = { error?: string }
 

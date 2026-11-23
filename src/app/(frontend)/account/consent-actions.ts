@@ -4,7 +4,7 @@ import { linkGuestRecords } from '@/lib/accounts'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { payload } from '@/lib/payload'
-import { currentUser } from '@/lib/auth'
+import { currentLogin as currentUser } from '@/lib/auth'
 import { checkInvite, consumeInvite } from '@/lib/invites'
 import { recordConsent, recordSignupConsent, updateMarketingPreferences } from '@/lib/consent'
 import { CONSENT_WORDING } from '@/lib/consent-wording'
@@ -61,7 +61,9 @@ export async function createAccountFromInvite(_prev: ConsentFormState, fd: FormD
       maxAge: p.collections.users.config.auth.tokenExpiration,
     })
   }
-  redirect('/account?welcome=1')
+  // From the portal launch email: straight on to "Get the app" (add to home screen + notifications)
+  const next = s('next')
+  redirect(/^\/account(\/[a-z-]+)?$/.test(next) ? next : '/account?welcome=1')
 }
 
 /** Logged-in member changes marketing email / SMS separately. Service messages can't be turned off. */

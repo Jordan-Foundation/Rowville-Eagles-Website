@@ -5,11 +5,12 @@ import { Input, PasswordInput } from '@/components/forms/Field'
 import { CONSENT_WORDING } from '@/lib/consent-wording'
 import { createAccountFromInvite, type ConsentFormState } from './consent-actions'
 
-export function CreateAccountForm(props: { invite: string; email: string; firstName?: string | null; lastName?: string | null; mobile?: string | null }) {
+export function CreateAccountForm(props: { invite: string; email: string; firstName?: string | null; lastName?: string | null; mobile?: string | null; next?: string | null }) {
   const [state, action, pending] = useActionState<ConsentFormState, FormData>(createAccountFromInvite, {})
   return (
     <form action={action} className="space-y-4">
       <input type="hidden" name="invite" value={props.invite} />
+      {props.next && <input type="hidden" name="next" value={props.next} />}
       <div className="rounded-lg bg-surface-2 px-4 py-3 text-sm">
         <span className="text-muted">Email</span> <strong className="ml-2">{props.email}</strong>
       </div>

@@ -102,6 +102,7 @@ export interface Config {
     'selection-entries': SelectionEntry;
     'trial-invites': TrialInvite;
     'selection-audit': SelectionAudit;
+    'import-batches': ImportBatch;
     'trial-sessions': TrialSession;
     programs: Program;
     bookings: Booking;
@@ -206,6 +207,7 @@ export interface Config {
     'selection-entries': SelectionEntriesSelect<false> | SelectionEntriesSelect<true>;
     'trial-invites': TrialInvitesSelect<false> | TrialInvitesSelect<true>;
     'selection-audit': SelectionAuditSelect<false> | SelectionAuditSelect<true>;
+    'import-batches': ImportBatchesSelect<false> | ImportBatchesSelect<true>;
     'trial-sessions': TrialSessionsSelect<false> | TrialSessionsSelect<true>;
     programs: ProgramsSelect<false> | ProgramsSelect<true>;
     bookings: BookingsSelect<false> | BookingsSelect<true>;
@@ -289,6 +291,7 @@ export interface Config {
     'finance-settings': FinanceSetting;
     'setup-progress': SetupProgress;
     'push-keys': PushKey;
+    'portal-launch': PortalLaunch;
   };
   globalsSelect: {
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
@@ -302,6 +305,7 @@ export interface Config {
     'finance-settings': FinanceSettingsSelect<false> | FinanceSettingsSelect<true>;
     'setup-progress': SetupProgressSelect<false> | SetupProgressSelect<true>;
     'push-keys': PushKeysSelect<false> | PushKeysSelect<true>;
+    'portal-launch': PortalLaunchSelect<false> | PortalLaunchSelect<true>;
   };
   locale: null;
   widgets: {
@@ -548,6 +552,37 @@ export interface AcademyCoach {
 export interface User {
   id: number;
   /**
+   * Parent 2 logins see this family’s players, bookings and payments
+   */
+  familyAccount?: (number | null) | User;
+  /**
+   * Set by Management → Import players
+   */
+  imported?: {
+    batch?: (number | null) | ImportBatch;
+    relationship?: string | null;
+    priorClient?: boolean | null;
+    suburb?: string | null;
+    postcode?: string | null;
+    getsMessages?: boolean | null;
+  };
+  launch?: {
+    emailAt?: string | null;
+    emailStatus?: ('sent' | 'delivered' | 'bounced' | 'failed') | null;
+    smsAt?: string | null;
+    smsStatus?: ('sent' | 'delivered' | 'failed' | 'skipped' | 'shared') | null;
+    smsSid?: string | null;
+    smsTries?: number | null;
+    reminderAt?: string | null;
+    followUpAt?: string | null;
+    followUpStatus?: ('sent' | 'delivered' | 'bounced' | 'failed') | null;
+    unsubscribedAt?: string | null;
+    emailSubject?: string | null;
+    followUpSubject?: string | null;
+    shortCode?: string | null;
+    shortCodeExpires?: string | null;
+  };
+  /**
    * The referral code this family arrived with
    */
   referralCode?: string | null;
@@ -635,6 +670,44 @@ export interface User {
     | null;
   password?: string | null;
   collection: 'users';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "import-batches".
+ */
+export interface ImportBatch {
+  id: number;
+  fileName: string;
+  by?: (number | null) | User;
+  status?: ('imported' | 'undone') | null;
+  /**
+   * familiesCreated, familiesMatched, playersCreated, playersUpdated, skipped
+   */
+  counts?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * What was created / changed, for Undo
+   */
+  log?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  undoneAt?: string | null;
+  undoneBy?: (number | null) | User;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -803,6 +876,18 @@ export interface AcademyGroupInvite {
  */
 export interface Participant {
   id: number;
+  imported?: {
+    batch?: (number | null) | ImportBatch;
+    registrationStatus?: ('paid' | 'not_paid' | 'na') | null;
+    /**
+     * imported_paid_offline when paid before the portal
+     */
+    registrationSource?: string | null;
+    mobile?: string | null;
+    email?: string | null;
+    owingEmailAt?: string | null;
+    notes?: string | null;
+  };
   /**
    * This player’s Refer a Friend code
    */
@@ -3927,6 +4012,10 @@ export interface PayloadLockedDocument {
         value: number | SelectionAudit;
       } | null)
     | ({
+        relationTo: 'import-batches';
+        value: number | ImportBatch;
+      } | null)
+    | ({
         relationTo: 'trial-sessions';
         value: number | TrialSession;
       } | null)
@@ -5199,6 +5288,21 @@ export interface SelectionAuditSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "import-batches_select".
+ */
+export interface ImportBatchesSelect<T extends boolean = true> {
+  fileName?: T;
+  by?: T;
+  status?: T;
+  counts?: T;
+  log?: T;
+  undoneAt?: T;
+  undoneBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "trial-sessions_select".
  */
 export interface TrialSessionsSelect<T extends boolean = true> {
@@ -5849,6 +5953,17 @@ export interface SponsorsSelect<T extends boolean = true> {
  * via the `definition` "participants_select".
  */
 export interface ParticipantsSelect<T extends boolean = true> {
+  imported?:
+    | T
+    | {
+        batch?: T;
+        registrationStatus?: T;
+        registrationSource?: T;
+        mobile?: T;
+        email?: T;
+        owingEmailAt?: T;
+        notes?: T;
+      };
   referralCode?: T;
   fullName?: T;
   firstName?: T;
@@ -5915,6 +6030,35 @@ export interface ParticipantsSelect<T extends boolean = true> {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
+  familyAccount?: T;
+  imported?:
+    | T
+    | {
+        batch?: T;
+        relationship?: T;
+        priorClient?: T;
+        suburb?: T;
+        postcode?: T;
+        getsMessages?: T;
+      };
+  launch?:
+    | T
+    | {
+        emailAt?: T;
+        emailStatus?: T;
+        smsAt?: T;
+        smsStatus?: T;
+        smsSid?: T;
+        smsTries?: T;
+        reminderAt?: T;
+        followUpAt?: T;
+        followUpStatus?: T;
+        unsubscribedAt?: T;
+        emailSubject?: T;
+        followUpSubject?: T;
+        shortCode?: T;
+        shortCodeExpires?: T;
+      };
   referralCode?: T;
   referralCodeAt?: T;
   firstName?: T;
@@ -7182,6 +7326,49 @@ export interface PushKey {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "portal-launch".
+ */
+export interface PortalLaunch {
+  id: number;
+  launchSubject?: string | null;
+  launchBody?: string | null;
+  launchSms?: string | null;
+  followUpSubject?: string | null;
+  followUpBody?: string | null;
+  reminderEnabled?: boolean | null;
+  reminderDays?: number | null;
+  followUpDays?: number | null;
+  followUpPaused?: boolean | null;
+  run?: {
+    status?: ('idle' | 'scheduled' | 'sending' | 'done') | null;
+    scheduledFor?: string | null;
+    filter?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+    by?: (number | null) | User;
+    startedAt?: string | null;
+    finishedAt?: string | null;
+    counts?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "site-settings_select".
  */
 export interface SiteSettingsSelect<T extends boolean = true> {
@@ -7597,6 +7784,35 @@ export interface SetupProgressSelect<T extends boolean = true> {
 export interface PushKeysSelect<T extends boolean = true> {
   publicKey?: T;
   privateKey?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "portal-launch_select".
+ */
+export interface PortalLaunchSelect<T extends boolean = true> {
+  launchSubject?: T;
+  launchBody?: T;
+  launchSms?: T;
+  followUpSubject?: T;
+  followUpBody?: T;
+  reminderEnabled?: T;
+  reminderDays?: T;
+  followUpDays?: T;
+  followUpPaused?: T;
+  run?:
+    | T
+    | {
+        status?: T;
+        scheduledFor?: T;
+        filter?: T;
+        by?: T;
+        startedAt?: T;
+        finishedAt?: T;
+        counts?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

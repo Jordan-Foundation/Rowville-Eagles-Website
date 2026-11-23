@@ -53,7 +53,7 @@ export async function takenNumbers(p: Payload, birthYear: number, exceptParticip
   return new Set(docs.filter((d) => idOf(d.participant) !== exceptParticipant || d.status === 'active').map((d) => d.number))
 }
 
-const audit = (p: Payload, data: { participant: number; action: 'picked' | 'assigned' | 'changed' | 'released' | 'released-inactive'; oldNumber?: number | null; newNumber?: number | null; birthYear?: number | null; by?: number | null; note?: string }, req?: PayloadRequest) =>
+export const numberAudit = (p: Payload, data: { participant: number; action: 'picked' | 'assigned' | 'changed' | 'released' | 'released-inactive'; oldNumber?: number | null; newNumber?: number | null; birthYear?: number | null; by?: number | null; note?: string }, req?: PayloadRequest) =>
   p.create({ ...q, collection: 'number-audit-log', data: { ...data, oldNumber: data.oldNumber ?? null, newNumber: data.newNumber ?? null }, req })
 
 /** Where a player stands with their number (for the picker page and the banner). */
@@ -104,7 +104,7 @@ export async function confirmNumber(p: Payload, kid: Participant, userId: number
   const held = docs[0]
   if (!held) throw new NumberError('That hold ran out — please pick the number again.')
   const doc = await p.update({ ...q, collection: 'player-numbers', id: held.id, data: { status: 'active', heldUntil: null, assignedAt: new Date().toISOString() } })
-  await audit(p, { participant: kid.id, action: 'picked', newNumber: doc.number, birthYear: doc.birthYear, by: userId })
+  await numberAudit(p, { participant: kid.id, action: 'picked', newNumber: doc.number, birthYear: doc.birthYear, by: userId })
   return doc
 }
 
@@ -120,7 +120,7 @@ export async function assignNumber(p: Payload, participantId: number, number: nu
   if (current) await p.update({ ...q, collection: 'player-numbers', id: current.id, data: { status: 'released', slot: null, releasedAt: new Date().toISOString() } })
   try {
     const doc = await p.create({ ...q, collection: 'player-numbers', data: { participant: participantId, birthYear, number, status: 'active', slot: slotKey(birthYear, number), assignedAt: new Date().toISOString(), assignedBy: 'admin' } })
-    await audit(p, { participant: participantId, action: current ? 'changed' : 'assigned', oldNumber: current?.number, newNumber: number, birthYear, by })
+    await numberAudit(p, { participant: participantId, action: current ? 'changed' : 'assigned', oldNumber: current?.number, newNumber: number, birthYear, by })
     return doc
   } catch (e) {
     if (current) await p.update({ ...q, collection: 'player-numbers', id: current.id, data: { status: 'active', slot: slotKey(current.birthYear, current.number), releasedAt: null } })
@@ -134,7 +134,7 @@ export async function releaseNumber(p: Payload, participantId: number, o: { by?:
   const { docs } = await p.find({ ...q, collection: 'player-numbers', where: { participant: { equals: participantId }, status: { in: ['active', 'held'] } }, limit: 5, depth: 0, req: o.req })
   for (const d of docs) {
     await p.update({ ...q, collection: 'player-numbers', id: d.id, data: { status: 'released', slot: null, releasedAt: new Date().toISOString() }, req: o.req })
-    if (d.status === 'active') await audit(p, { participant: participantId, action: o.action ?? 'released', oldNumber: d.number, birthYear: d.birthYear, by: o.by ?? null }, o.req)
+    if (d.status === 'active') await numberAudit(p, { participant: participantId, action: o.action ?? 'released', oldNumber: d.number, birthYear: d.birthYear, by: o.by ?? null }, o.req)
   }
   return docs.length
 }

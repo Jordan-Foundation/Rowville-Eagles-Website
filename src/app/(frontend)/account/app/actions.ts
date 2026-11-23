@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { payload } from '@/lib/payload'
-import { currentUser } from '@/lib/auth'
+import { currentLogin as currentUser } from '@/lib/auth'
 import { recordAppStep, snoozeAppCard } from '@/lib/app-install'
 import { saveSubscription } from '@/push/send'
 
