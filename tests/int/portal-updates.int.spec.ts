@@ -6,14 +6,15 @@ import { openPlaces, squadCounts } from '@/tournaments/service'
 
 describe('session length by age group', () => {
   const rules = [{ ageGroup: 'U7', minutes: 60 }]
-  it('U7 = turns 6 that year', () => {
-    expect(ageGroupOf(2020, 2026)).toBe('U7')
-    expect(ageGroupOf(2021, 2027)).toBe('U7')
+  it('U7 = turns 7 that year (season − year of birth)', () => {
+    expect(ageGroupOf(2019, 2026)).toBe('U7')
+    expect(ageGroupOf(2020, 2027)).toBe('U7')
+    expect(ageGroupOf(2021, 2027)).toBe('U6')
   })
   it('applies only when every year in the slot is in the group', () => {
-    expect(lengthFor([2020], 2026, rules)).toBe(60)
-    expect(lengthFor([2020, 2019], 2026, rules)).toBeNull() // U7 + U8 together: left alone
-    expect(lengthFor([2018], 2026, rules)).toBeNull() // other age groups unchanged
+    expect(lengthFor([2019], 2026, rules)).toBe(60)
+    expect(lengthFor([2019, 2018], 2026, rules)).toBeNull() // U7 + U8 together: left alone
+    expect(lengthFor([2017], 2026, rules)).toBeNull() // other age groups unchanged
     expect(lengthFor([], 2026, rules)).toBeNull()
   })
   it('works out the new finish time', () => {

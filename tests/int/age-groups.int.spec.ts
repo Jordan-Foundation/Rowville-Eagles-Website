@@ -6,16 +6,16 @@ const r2027 = { season: 2027, ...DEFAULT_RULES }
 
 describe('rightful age group', () => {
   it('follows the FV MiniRoos table for 2026', () => {
-    const table: [number, string][] = [[2020, '6s'], [2019, '7s'], [2018, '8s'], [2017, '9s'], [2016, '10s'], [2015, '11s']]
+    const table: [number, string][] = [[2020, 'U6'], [2019, 'U7'], [2018, 'U8'], [2017, 'U9'], [2016, 'U10'], [2015, 'U11']]
     for (const [by, hint] of table) expect(groupInfo(by, r2026)).toMatchObject({ kind: 'miniroos', hint, label: `${by}s` })
   })
   it('rolls over with the season setting — no hard-coded birth years', () => {
-    expect(groupInfo(2021, r2027).hint).toBe('6s')
+    expect(groupInfo(2021, r2027).hint).toBe('U6')
     expect(miniRoosBirthYears(r2027)).toEqual([2021, 2020, 2019, 2018, 2017, 2016])
   })
   it('flags players outside MiniRoos', () => {
     expect(groupInfo(2021, r2026)).toMatchObject({ kind: 'too-young', hint: 'Under 6' })
-    expect(groupInfo(2013, r2026)).toMatchObject({ kind: 'junior', hint: 'U14', label: '2013s' })
+    expect(groupInfo(2013, r2026)).toMatchObject({ kind: 'junior', hint: 'U13', label: '2013s' })
     expect(groupInfo(2007, r2026)).toMatchObject({ kind: 'senior', label: 'Seniors' })
   })
   it('reads the birth year in Sydney time', () => {
@@ -41,11 +41,19 @@ describe('moving between age groups', () => {
     expect(checkMove(2012, 2015, r2026)).toMatchObject({ ruled: false, allowed: true, warning: false })
   })
   it('shows rightful and playing groups', () => {
-    expect(placementLabel(2017, 2016, r2026)).toBe('Born 2017 · rightful 2017s (9s) · playing in 2016s (10s)')
-    expect(placementLabel(2017, null, r2026)).toBe('Born 2017 · 2017s · 9s')
+    expect(placementLabel(2017, 2016, r2026)).toBe('Born 2017 · rightful 2017s (U9) · playing in 2016s (U10)')
+    expect(placementLabel(2017, null, r2026)).toBe('Born 2017 · 2017s · U9')
   })
   it('converts legacy U-groups', () => {
     expect(birthYearFromLegacy('U10', 2027)).toBe(2018)
     expect(birthYearFromLegacy('Seniors', 2027)).toBeNull()
+  })
+})
+
+describe('2027 age groups (club rule: U = season − year of birth)', () => {
+  const r = { season: 2027, miniMin: 6, miniMax: 11, maxDown: 2, warnDown: 2 }
+  it('matches the join page table', () => {
+    const rows: [number, string, string][] = [[2021, 'U6', 'miniroos'], [2016, 'U11', 'miniroos'], [2015, 'U12', 'junior'], [2010, 'U17', 'junior'], [2009, 'Seniors', 'senior']]
+    for (const [by, hint, kind] of rows) expect(groupInfo(by, r)).toMatchObject({ hint, kind })
   })
 })

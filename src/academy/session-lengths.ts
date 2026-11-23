@@ -11,8 +11,8 @@ import { localYmd } from '../lib/time'
 export type LengthRule = { ageGroup: string; minutes: number }
 export const DEFAULT_LENGTHS: LengthRule[] = [{ ageGroup: 'U7', minutes: 60 }]
 
-/** "U7" for a player born in 2020 in a 2026 program (Australian age groups: U(n) = turns n-1 that year). */
-export const ageGroupOf = (birthYear: number, year: number) => `U${year - birthYear + 1}`
+/** "U7" for a player born in 2020 in a 2027 program (club rule: U = year − year of birth, as on the join page). */
+export const ageGroupOf = (birthYear: number, year: number) => `U${year - birthYear}`
 
 /** The configured length for these years of birth, or null if they're not all in one configured group. */
 export function lengthFor(birthYears: number[] | null | undefined, year: number, rules: LengthRule[]) {
