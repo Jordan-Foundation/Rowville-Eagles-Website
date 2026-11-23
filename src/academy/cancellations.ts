@@ -310,7 +310,7 @@ async function notifyCancellation(
       },
     ])
     // The coach chooses how they hear about cancellations (Coach portal → My profile → Alerts)
-    if (coach.alerts?.cancelEmail !== false) await sendEmail(payload, { to: coachUser.email, subject: `Cancelled: ${booking.player.firstName} ${dates.length === 1 ? day(cancelled[0].startsAt) : `(${dates.length} sessions)`}`, html: coachHtml, sender: 'academy', userId: coachUser.id })
+    if (coach.alerts?.cancelEmail !== false) await sendEmail(payload, { to: coachUser.email, subject: `Cancelled: ${booking.player.firstName} ${dates.length === 1 ? day(cancelled[0].startsAt) : `(${dates.length} sessions)`}`, html: coachHtml, sender: 'academy', userId: coachUser.id, push: { type: 'changes', url: '/coach/sessions', body: `${booking.player.firstName}’s ${dates.length === 1 ? 'session' : 'sessions'} on ${dates.join(', ')} cancelled.` } })
     if (coach.alerts?.cancelText && o.by !== 'coach') {
       const { sendSms } = await import('../lib/sms')
       await sendSms(payload, { to: coachUser.phone, kind: 'coach_alert', optedOut: coachUser.smsOptOut, userId: coachUser.id, body: `Foundation Academy: ${booking.player.firstName} ${booking.player.lastName.charAt(0)}. cancelled ${dates.length === 1 ? dates[0] : `${dates.length} sessions`}.${o.makeUp ? ` Make-up: ${when(o.makeUp.startsAt)}.` : ''} ${siteUrl()}/coach/sessions` })

@@ -144,6 +144,12 @@ async function alertStaff(p: Payload, conv: Conversation, text: string, via: str
       sender: 'academy',
     })
   for (const email of to) await send(email, `${siteUrl()}/coach/messages/${conv.id}`)
+  // …and a phone notification for every coach on the conversation
+  const { notifyUser } = await import('../lib/app-install')
+  for (const c of coaches) {
+    const u = typeof c.user === 'object' ? (c.user as User | null) : null
+    if (u) await notifyUser(p, u.id, 'messages', { title: `New message from ${conv.title}`, body: text.slice(0, 140), url: `/coach/messages/${conv.id}`, tag: `conversation-${conv.id}` })
+  }
   if (!coaches.length) await send(academyBrand.email, `${siteUrl()}/management/messages/${conv.id}`)
 }
 

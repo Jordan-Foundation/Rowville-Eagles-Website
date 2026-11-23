@@ -53,7 +53,7 @@ export async function alertCoachNewBooking(payload: Payload, booking: AcademyBoo
     },
   ])
   // The coach chooses how they hear about new bookings (Coach portal → My profile → Alerts)
-  if (coach.alerts?.bookingEmail !== false) await sendEmail(payload, { to: user.email, subject: `${heading}: ${p.firstName} — ${summary}`, html, sender: 'academy', userId: user.id })
+  if (coach.alerts?.bookingEmail !== false) await sendEmail(payload, { to: user.email, subject: `${heading}: ${p.firstName} — ${summary}`, html, sender: 'academy', userId: user.id, push: { type: 'changes', url: link, body: `${p.firstName} ${p.lastName[0] ?? ''} · ${summary}`, tag: `booking-${booking.id}` } })
   if (coach.alerts?.bookingText !== false) await sendSms(payload, {
     to: user.phone,
     kind: 'coach_alert',

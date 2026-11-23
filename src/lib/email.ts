@@ -56,6 +56,8 @@ type SendOptions = {
   attachments?: { filename: string; content: Buffer }[]
   userId?: number
   req?: PayloadRequest
+  /** Also send a phone notification to `userId` (title = the subject) — used for coach emails. */
+  push?: { type: 'reminders' | 'changes' | 'teams' | 'openings' | 'messages' | 'progress'; url: string; body: string; tag?: string }
 }
 
 async function logEmail(payload: Payload, opts: SendOptions, status: 'sent' | 'failed' | 'not-configured' | 'skipped-opted-out', error?: string) {
@@ -76,6 +78,10 @@ async function logEmail(payload: Payload, opts: SendOptions, status: 'sent' | 'f
  * written to ./.outbox as an HTML file so it can be previewed, and nothing is sent.
  */
 export async function sendEmail(payload: Payload, opts: SendOptions): Promise<boolean> {
+  if (opts.push && opts.userId) {
+    const { notifyUser } = await import('./app-install') // lazy: avoids an import cycle
+    await notifyUser(payload, opts.userId, opts.push.type, { title: opts.subject, body: opts.push.body.slice(0, 180), url: opts.push.url, tag: opts.push.tag }).catch(() => 0)
+  }
   const text = htmlToText(opts.html)
   if (process.env.RESEND_API_KEY) {
     const attempt = () => payload.sendEmail({ to: opts.to, from: from(opts.sender), subject: opts.subject, html: opts.html, text, replyTo: opts.replyTo, headers: opts.headers, ...(opts.attachments?.length ? { attachments: opts.attachments } : {}) })

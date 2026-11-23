@@ -193,7 +193,7 @@ async function notifyReschedule(payload: Payload, booking: AcademyBooking, moves
         cta: { label: 'Open my sessions', href: `${siteUrl()}/coach/sessions` },
       },
     ])
-    await sendEmail(payload, { to: user.email, subject: `Rescheduled: ${booking.player.firstName} — ${theirs.length} session${theirs.length === 1 ? '' : 's'}`, html: coachHtml, sender: 'academy', userId: user.id })
+    await sendEmail(payload, { to: user.email, subject: `Rescheduled: ${booking.player.firstName} — ${theirs.length} session${theirs.length === 1 ? '' : 's'}`, html: coachHtml, sender: 'academy', userId: user.id, push: { type: 'changes', url: '/coach/sessions', body: `${booking.player.firstName}: ${theirs.length} session${theirs.length === 1 ? '' : 's'} moved. Tap for the new times.` } })
     const first = gaining[0] ?? losing[0]
     await sendSms(payload, {
       to: user.phone,

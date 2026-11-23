@@ -105,7 +105,7 @@ export async function moveGroupDate(p: Payload, o: { groupId: number; from: stri
       }
     }
     const user = typeof coach.user === 'object' ? (coach.user as User) : null
-    if (user) await sendEmail(p, { to: user.email, subject: `Small group moved to ${when(to)}`, html: emailLayout('academy', [{ heading: 'A small group session has moved', intro: `Your small group on ${esc(when(o.from))} has moved to <strong>${esc(when(to))}</strong>.`, cta: { label: 'Open the group', href: `${siteUrl()}/coach/sessions/group/${g.id}` } }]), sender: 'academy', userId: user.id })
+    if (user) await sendEmail(p, { to: user.email, subject: `Small group moved to ${when(to)}`, html: emailLayout('academy', [{ heading: 'A small group session has moved', intro: `Your small group on ${esc(when(o.from))} has moved to <strong>${esc(when(to))}</strong>.`, cta: { label: 'Open the group', href: `${siteUrl()}/coach/sessions/group/${g.id}` } }]), sender: 'academy', userId: user.id, push: { type: 'changes', url: `/coach/sessions/group/${g.id}`, body: `Now ${when(to)}.` } })
   }
   return { moved: players.length }
 }
