@@ -61,7 +61,7 @@ export function BookingForm(props: {
     : props.unitPrice != null && children > 1 ? `${children} children · ${aud(props.unitPrice * children)}` : props.priceLabel
 
   return (
-    <form action={action} className="space-y-6">
+    <form action={action} data-track-begin={camp ? 'camp' : 'program'} className="space-y-6">
       <input type="hidden" name="program" value={props.slug} />
 
       {props.slots.length > 0 && (

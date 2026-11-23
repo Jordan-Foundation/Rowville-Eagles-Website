@@ -7,6 +7,7 @@ import { RfaLogo } from '@/components/Logos'
 import { RfaTrialForm } from './RfaTrialForm'
 import { contactPrefill, familyKids } from '@/lib/family-kids'
 import { currentUser } from '@/lib/auth'
+import { StickyCta } from '@/components/StickyCta'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = {
@@ -20,6 +21,9 @@ export default async function RfaTrialPage({ searchParams }: { searchParams: Pro
   const me = await currentUser()
   const [term, settings] = await Promise.all([currentAcademyTerm(p), p.findGlobal({ slug: 'site-settings', depth: 0 })])
   const nights = term ? await trialNights(p, term) : []
+  const open = !!term && nights.length > 0
+  const price = term?.trialPrice ?? 0
+  const priceText = price > 0 ? formatAUD(price) : 'Free'
 
   return (
     <div data-brand="academy" data-page-brand="academy">
@@ -35,16 +39,27 @@ export default async function RfaTrialPage({ searchParams }: { searchParams: Pro
               {term.startDate && ` (from ${formatDate(term.startDate)})`}. Trial spots are limited to {term.trialPlacesPerNight ?? 2} players per age group each night, and each player can book one trial.
             </p>
           )}
+          {open && (
+            <>
+              <p className="mt-5 text-sm font-semibold uppercase tracking-[0.2em] text-ink" data-trial-offer>
+                {price > 0 ? `Trial ${priceText}` : 'Free trial · no payment needed'} · book in 2 minutes
+              </p>
+              <a href="#book" data-cta className="mt-5 inline-block bg-white px-7 py-4 text-sm font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-white/85">
+                Choose a trial night →
+              </a>
+            </>
+          )}
         </div>
       </section>
-      <div className="container-x max-w-3xl py-14">
+      <div id="book" data-cta-zone className="container-x max-w-3xl scroll-mt-20 py-14">
         {cancelled && <p className="panel mb-6 border border-line bg-surface-2 px-4 py-3 text-sm">Payment was cancelled — nothing was charged.</p>}
-        {term && nights.length > 0 ? (
+        {open ? (
           <RfaTrialForm rules={await getAgeRules(p)} nights={nights} priceLabel={formatAUD(term.trialPrice ?? 0)} kids={await familyKids(p, me?.id)} prefill={contactPrefill(me)} />
         ) : (
           <p className="panel border border-line bg-surface-2 p-6 text-muted">Trial nights for the next Academy term will open soon.</p>
         )}
       </div>
+      {open && <StickyCta academy href="#book" label={price > 0 ? 'Book a trial' : 'Book free trial'} note={`${priceText} · limited spots each night`} />}
     </div>
   )
 }

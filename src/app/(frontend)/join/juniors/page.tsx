@@ -7,6 +7,7 @@ import { clubTrialOptions } from '@/lib/trial-options'
 import { JoinForm } from '../JoinForm'
 import { contactPrefill, familyKids } from '@/lib/family-kids'
 import { currentUser } from '@/lib/auth'
+import { StickyCta } from '@/components/StickyCta'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = {
@@ -32,6 +33,8 @@ export default async function JoinPage() {
   // Who plays where this season: MiniRoos and junior birth years, then seniors
   const groups = Array.from({ length: 18 - rules.miniMin }, (_, i) => groupInfo(season - rules.miniMin - i, rules))
   const { docs: fees } = await p.find({ pagination: false, collection: 'programs', where: { type: { equals: 'registration' }, status: { not_equals: 'draft' } }, sort: 'title', limit: 20, depth: 0 })
+  // The season fee up front, as the ads say it ("U5 – U11 · $950"), with what it costs to trial: nothing
+  const feeLine = fees.filter((f) => f.price).map((f) => `${f.ageRange || f.title} ${formatAUD(f.price!)}`).join(' · ')
 
   return (
     <>
@@ -42,6 +45,12 @@ export default async function JoinPage() {
             Join us for <span className="text-accent">{season}</span>
           </h1>
           <p className="mt-5 max-w-xl text-lg text-white/75">Every Eagle starts with a trial. Register below and we’ll see you at the ground.</p>
+          <p className="mt-4 max-w-xl text-sm font-semibold text-white" data-fee-line>
+            Free to trial{feeLine ? <> · {season} season fee: {feeLine}</> : null} — you only pay once you accept a place.
+          </p>
+          <a href="#register" data-cta className="mt-6 inline-block rounded-full bg-accent px-7 py-3.5 font-semibold text-accent-ink transition hover:brightness-110">
+            Register for trials — 2 minutes →
+          </a>
           <ol className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {steps.map((s, i) => (
               <li key={s.t} className="rounded-2xl border border-white/10 bg-white/5 p-5">
@@ -101,11 +110,12 @@ export default async function JoinPage() {
           </section>
         </div>
       </div>
-      <div className="container-x max-w-3xl py-14">
+      <div id="register" data-cta-zone className="container-x max-w-3xl scroll-mt-20 py-14">
         <p className="mb-3 text-sm"><Link href="/join" className="text-muted underline">← Juniors or seniors</Link></p>
         <h2 className="mb-6 font-[family-name:var(--font-barlow)] text-3xl font-bold uppercase">Register for trials</h2>
         <JoinForm rules={rules} trials={trials} kids={await familyKids(p, me?.id)} prefill={contactPrefill(me)} />
       </div>
+      <StickyCta href="#register" label="Register for trials" note={`Free to trial · ages 5–17`} />
     </>
   )
 }

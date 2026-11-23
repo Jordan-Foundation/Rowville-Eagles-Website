@@ -29,6 +29,10 @@ const nextConfig: NextConfig = {
       { source: '/interest', destination: '/join', permanent: true },
       { source: '/about', destination: '/about/history', permanent: false },
       { source: '/seniors', destination: '/join/seniors', permanent: false },
+      // Ad links: MiniRoos / junior ads land straight on the junior registration (no "juniors or seniors?" step)
+      { source: '/miniroos', destination: '/join/juniors', permanent: false },
+      { source: '/juniors', destination: '/join/juniors', permanent: false },
+      ...['utm_campaign', 'utm_content', 'utm_term'].map((key) => ({ source: '/join', has: [{ type: 'query' as const, key, value: '.*(?:[Mm][Ii][Nn][Ii].?[Rr][Oo][Oo]|[Jj][Uu][Nn][Ii][Oo][Rr]).*' }], destination: '/join/juniors', permanent: false })),
     ]
   },
   images: {

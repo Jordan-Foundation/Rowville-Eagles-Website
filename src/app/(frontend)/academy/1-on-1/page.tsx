@@ -10,6 +10,7 @@ import { localYmd } from '@/lib/time'
 import { allowsWeekly } from '@/academy/timeframes'
 import { packSettings } from '@/academy/packs'
 import { isTermMember, memberWindowEnd } from '@/academy/pricing'
+import { StickyCta } from '@/components/StickyCta'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = {
@@ -43,6 +44,10 @@ export default async function OneOnOnePage({ searchParams }: { searchParams: Pro
       ? { price: term.termMemberPrice, until: memberWindowEnd(term, now).toISOString() }
       : null
 
+  const listed = mode === 'term' ? weekly : slots
+  const next = slots[0]
+  const nextLabel = next ? formatDate(next.startsAt, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : null
+
   return (
     <div data-brand="academy" data-page-brand="academy">
       <section className="relative overflow-hidden border-b border-line">
@@ -54,6 +59,14 @@ export default async function OneOnOnePage({ searchParams }: { searchParams: Pro
           <p className="mt-5 max-w-2xl text-lg text-muted">
             Pick a time, see which coaches are free, and choose the one that suits your player. {term ? `${term.sessionMinutes}-minute sessions.` : ''}
           </p>
+          {term && listed.length > 0 && (
+            <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3" data-hero-cta>
+              <a href="#times" data-cta className="inline-block bg-white px-7 py-4 text-sm font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-white/85">
+                See free times →
+              </a>
+              {nextLabel && mode === 'casual' && <p className="text-sm font-medium text-ink">Next free: {nextLabel} · {formatAUD(member?.price ?? term.casualPrice)}</p>}
+            </div>
+          )}
           {terms.length > 1 && (
             <nav aria-label="Term or holidays" className="mt-8 flex flex-wrap gap-2 text-sm">
               {terms.map((t) => (
@@ -100,11 +113,11 @@ export default async function OneOnOnePage({ searchParams }: { searchParams: Pro
           )}
         </div>
       </section>
-      <div className="container-x py-12">
+      <div id="times" data-cta-zone className="container-x scroll-mt-20 py-12">
         {sp.link === 'expired' && <p role="note" className="panel mb-8 border border-line px-5 py-4 text-sm">That booking link has expired or has already been used — choose a time below, or ask your coach to send a new one.</p>}
         {!term || !data ? (
           <p className="panel border border-line p-6 text-muted">1-on-1 bookings for the next term open soon.</p>
-        ) : (mode === 'term' ? weekly : slots).length === 0 ? (
+        ) : listed.length === 0 ? (
           <p className="panel border border-line p-6 text-muted">
             {mode === 'term' ? `No weekly times are free for the rest of ${term.name} — try a casual session instead.` : `All ${term.name} sessions are booked out for now — please check back soon.`}
           </p>
@@ -136,6 +149,7 @@ export default async function OneOnOnePage({ searchParams }: { searchParams: Pro
           </>
         )}
       </div>
+      {term && listed.length > 0 && <StickyCta academy href="#times" label="See free times" note={mode === 'term' ? `Whole term · ${formatAUD(term.pricePerSession)} a session` : `1-on-1 · ${formatAUD(member?.price ?? term.casualPrice)} a session`} />}
     </div>
   )
 }

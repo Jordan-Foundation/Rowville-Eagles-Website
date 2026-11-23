@@ -32,7 +32,7 @@ export function JoinForm({ rules, trials, kids = [], prefill }: { rules: AgeRule
   const open = options.filter((t) => (t.remaining[key] ?? 0) > 0)
 
   return (
-    <form action={action} className="space-y-6">
+    <form action={action} data-track-begin="club-trial" className="space-y-6">
       <Fieldset legend="Player">
         <KidQuickFill kids={kids} onDob={setDob} />
         <Input label="First name" name="playerFirstName" required defaultValue={v.playerFirstName} />

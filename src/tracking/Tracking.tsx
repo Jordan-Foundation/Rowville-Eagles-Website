@@ -51,6 +51,23 @@ export function Tracking({ cfg }: { cfg: TrackingConfig }) {
   useEffect(() => {
     ;(window as W).__rfaTracking = cfg
   }, [cfg])
+  // A booking form sent (<form data-track-begin="camp">): "started checkout" — gives the ads a signal between a
+  // page view and a booking. Once per form per page; only the booking type is sent.
+  useEffect(() => {
+    const sent = new WeakSet<HTMLFormElement>()
+    const onSubmit = (e: Event) => {
+      const form = e.target
+      if (!(form instanceof HTMLFormElement) || sent.has(form) || !isTrackable(location.pathname, null)) return
+      const category = form.dataset.trackBegin
+      if (!category) return
+      sent.add(form)
+      const w = window as W
+      w.fbq?.('track', 'InitiateCheckout', { content_category: category })
+      if (cfg.google.length) w.gtag?.('event', 'begin_checkout', { items: [{ item_id: category, item_category: category }] })
+    }
+    document.addEventListener('submit', onSubmit, true)
+    return () => document.removeEventListener('submit', onSubmit, true)
+  }, [cfg])
   return (
     <Suspense fallback={null}>
       <PageViews cfg={cfg} />

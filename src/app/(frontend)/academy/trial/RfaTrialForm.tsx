@@ -21,7 +21,7 @@ export function RfaTrialForm({ rules, nights, priceLabel, kids = [], prefill }: 
   const offered = Array.from(new Set(nights.flatMap((n) => n.birthYears))).sort().map(groupLabel)
 
   return (
-    <form action={action} className="space-y-6">
+    <form action={action} data-track-begin="trial" className="space-y-6">
       <Fieldset legend="Player">
         <KidQuickFill kids={kids} onDob={setDob} />
         <Input label="First name" name="playerFirstName" required defaultValue={v.playerFirstName} />

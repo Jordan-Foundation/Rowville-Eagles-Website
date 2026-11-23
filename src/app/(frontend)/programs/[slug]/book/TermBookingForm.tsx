@@ -58,7 +58,7 @@ export function TermBookingForm(props: { slug: string; slots: TermSlotOption[]; 
   }
 
   return (
-    <form action={action} className="space-y-6">
+    <form action={action} data-track-begin="academy-term" className="space-y-6">
       <input type="hidden" name="program" value={props.slug} />
       <Fieldset legend="Player">
         {kids.length > 0 && (
