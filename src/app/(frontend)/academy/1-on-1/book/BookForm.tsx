@@ -27,10 +27,12 @@ type Props = {
   players: { id: number; name: string }[]
   /** Opened from a coach's share link: its secret, and the details the coach entered */
   share?: { token: string; prefill: Record<string, string> }
+  /** Reopening an unfinished booking: what they typed last time */
+  resume?: Record<string, string>
 }
 
-export function BookForm({ coach, slot, term, price, weekly, credit, loginHref, me, players, share }: Props) {
-  const [state, action] = useActionState<BookState, FormData>(bookSession, {})
+export function BookForm({ coach, slot, term, price, weekly, credit, loginHref, me, players, share, resume }: Props) {
+  const [state, action] = useActionState<BookState, FormData>(bookSession, resume ? { values: resume } : {})
   const v = state.values ?? share?.prefill ?? {}
   const [who, setWho] = useState(v.participant ?? (players[0] ? String(players[0].id) : 'new'))
   const newPlayer = !me || who === 'new'
@@ -58,32 +60,10 @@ export function BookForm({ coach, slot, term, price, weekly, credit, loginHref, 
         </>
       )}
 
-      {me ? (
-        <div className="panel border border-line p-5 text-sm">
-          <p className="text-muted">Booking as</p>
-          <p className="mt-1 font-semibold">{[me.firstName, me.lastName].filter(Boolean).join(' ') || me.email} · {me.email}</p>
-          {!me.phone && <div className="mt-4 max-w-xs"><Input label="Mobile (for session reminders)" name="contactMobile" type="tel" required defaultValue={v.contactMobile} /></div>}
-          {(!me.firstName || !me.lastName) && (
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <Input label="First name" name="contactFirstName" required defaultValue={v.contactFirstName ?? me.firstName ?? ''} />
-              <Input label="Last name" name="contactLastName" required defaultValue={v.contactLastName ?? me.lastName ?? ''} />
-            </div>
-          )}
-        </div>
-      ) : (
-        <>
-        {loginHref && (
+      {!me && loginHref && (
           <p className="panel border border-line px-5 py-4 text-sm">
             Booked with us before? <a href={loginHref} className="font-semibold underline">Log in</a> to use your saved details and keep everything in your account.
           </p>
-        )}
-        <Fieldset legend="Parent / guardian">
-          <Input label="First name" name="contactFirstName" autoComplete="given-name" required defaultValue={v.contactFirstName} />
-          <Input label="Last name" name="contactLastName" autoComplete="family-name" required defaultValue={v.contactLastName} />
-          <Input label="Email" name="contactEmail" type="email" autoComplete="email" required defaultValue={v.contactEmail} />
-          <Input label="Mobile" name="contactMobile" type="tel" autoComplete="tel" required placeholder="0412 345 678" defaultValue={v.contactMobile} />
-        </Fieldset>
-        </>
       )}
 
       <Fieldset legend="Player">
@@ -104,13 +84,21 @@ export function BookForm({ coach, slot, term, price, weekly, credit, loginHref, 
             <Input label="Date of birth" name="playerDob" type="date" required defaultValue={v.playerDob} />
           </>
         )}
-        <Input label="Current club" name="currentClub" defaultValue={v.currentClub} />
-        <Input label="Position" name="position" placeholder="e.g. Winger, Goalkeeper" defaultValue={v.position} />
-        <div className="sm:col-span-2">
-          <Field label={slot.mode === 'term' ? 'Main goals for the term' : slot.mode === 'pack' ? 'Main goals for the holidays' : 'Main goals for the session'}>
-            <textarea name="goals" rows={2} className={inputCls} defaultValue={v.goals} placeholder="e.g. Improve weak foot, confidence in 1v1s" />
-          </Field>
-        </div>
+        <details className="group sm:col-span-2" open={!!(v.currentClub || v.position || v.goals)} data-coach-extras>
+          <summary className="cursor-pointer list-none text-sm font-semibold underline-offset-4 hover:underline">
+            <span className="group-open:hidden">+ Tell the coach more (optional): club, position, goals</span>
+            <span className="hidden group-open:inline">Tell the coach more (optional)</span>
+          </summary>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <Input label="Current club" name="currentClub" defaultValue={v.currentClub} />
+            <Input label="Position" name="position" placeholder="e.g. Winger, Goalkeeper" defaultValue={v.position} />
+            <div className="sm:col-span-2">
+              <Field label={slot.mode === 'term' ? 'Main goals for the term' : slot.mode === 'pack' ? 'Main goals for the holidays' : 'Main goals for the session'}>
+                <textarea name="goals" rows={2} className={inputCls} defaultValue={v.goals} placeholder="e.g. Improve weak foot, confidence in 1v1s" />
+              </Field>
+            </div>
+          </div>
+        </details>
         <div className="sm:col-span-2">
           <Field label="Medical or injury notes" hint="Shared only with the coach.">
             <textarea name="medical" rows={2} className={inputCls} defaultValue={v.medical} />
@@ -123,6 +111,28 @@ export function BookForm({ coach, slot, term, price, weekly, credit, loginHref, 
           <span>I consent to photos/video of this player being used in Foundation Academy communications.</span>
         </label>
       </Fieldset>
+
+      {me ? (
+        <div className="panel border border-line p-5 text-sm">
+          <p className="text-muted">Booking as</p>
+          <p className="mt-1 font-semibold">{[me.firstName, me.lastName].filter(Boolean).join(' ') || me.email} · {me.email}</p>
+          {!me.phone && <div className="mt-4 max-w-xs"><Input label="Mobile (for session reminders)" name="contactMobile" type="tel" required defaultValue={v.contactMobile} /></div>}
+          {(!me.firstName || !me.lastName) && (
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <Input label="First name" name="contactFirstName" required defaultValue={v.contactFirstName ?? me.firstName ?? ''} />
+              <Input label="Last name" name="contactLastName" required defaultValue={v.contactLastName ?? me.lastName ?? ''} />
+            </div>
+          )}
+        </div>
+      ) : (
+        <Fieldset legend="Parent / guardian">
+          <Input label="First name" name="contactFirstName" autoComplete="given-name" required defaultValue={v.contactFirstName} />
+          <Input label="Last name" name="contactLastName" autoComplete="family-name" required defaultValue={v.contactLastName} />
+          <Input label="Email" name="contactEmail" type="email" autoComplete="email" required defaultValue={v.contactEmail} />
+          <Input label="Mobile" name="contactMobile" type="tel" autoComplete="tel" required placeholder="0412 345 678" defaultValue={v.contactMobile} />
+        </Fieldset>
+      )}
+
 
       {slot.mode === 'term' && (
         <Fieldset legend="Payment">

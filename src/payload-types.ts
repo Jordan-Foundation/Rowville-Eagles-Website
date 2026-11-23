@@ -415,6 +415,9 @@ export interface AcademyBooking {
   account?: (number | null) | User;
   participant?: (number | null) | Participant;
   marketingOptIn?: boolean | null;
+  followUps?: {
+    recoveryAt?: string | null;
+  };
   source?: ('web' | 'coach-link' | 'admin') | null;
   nextChargeAt?: string | null;
   chargeAnchorAt?: string | null;
@@ -1154,7 +1157,7 @@ export interface Program {
   minAge?: number | null;
   maxAge?: number | null;
   /**
-   * e.g. “Drop-off from 8:45am · pick-up by 3:15pm at the clubrooms”
+   * e.g. “Drop-off from 8:45am · pick-up at 3:30pm at the clubrooms”
    */
   dropOffPickUp?: string | null;
   /**
@@ -1204,7 +1207,7 @@ export interface Program {
          */
         startTime?: string | null;
         /**
-         * 24-hour, e.g. 15:00
+         * 24-hour, e.g. 15:30
          */
         endTime?: string | null;
         id?: string | null;
@@ -1910,6 +1913,23 @@ export interface Booking {
     photoConsent?: boolean | null;
   };
   stripeCheckoutId?: string | null;
+  /**
+   * Sent automatically (each once).
+   */
+  followUps?: {
+    trialReminderAt?: string | null;
+    trialEnrolAt?: string | null;
+    trialNudgeAt?: string | null;
+    /**
+     * Emergency contact and medical answer, added after booking
+     */
+    detailsAt?: string | null;
+    recoveryAt?: string | null;
+    /**
+     * The family said “no thanks”, or staff turned them off.
+     */
+    stopped?: boolean | null;
+  };
   /**
    * Season registrations: FV section completed in PlayFootball
    */
@@ -4425,6 +4445,11 @@ export interface AcademyBookingsSelect<T extends boolean = true> {
   account?: T;
   participant?: T;
   marketingOptIn?: T;
+  followUps?:
+    | T
+    | {
+        recoveryAt?: T;
+      };
   source?: T;
   nextChargeAt?: T;
   chargeAnchorAt?: T;
@@ -5509,6 +5534,16 @@ export interface BookingsSelect<T extends boolean = true> {
         photoConsent?: T;
       };
   stripeCheckoutId?: T;
+  followUps?:
+    | T
+    | {
+        trialReminderAt?: T;
+        trialEnrolAt?: T;
+        trialNudgeAt?: T;
+        detailsAt?: T;
+        recoveryAt?: T;
+        stopped?: T;
+      };
   playFootballComplete?: T;
   updatedAt?: T;
   createdAt?: T;

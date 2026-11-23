@@ -8,7 +8,7 @@ import { useActionState, useMemo, useState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { fullLabel, groupFor, groupLabel, type AgeRules } from '@/lib/age-groups'
 import type { TrialNight } from '@/lib/rfa-trials'
-import { Field, Fieldset, Input, inputCls } from '@/components/forms/Field'
+import { Fieldset, Input } from '@/components/forms/Field'
 import { bookRfaTrial, type RfaTrialState } from './actions'
 
 export function RfaTrialForm({ rules, nights, priceLabel, kids = [], prefill }: { rules: AgeRules; nights: TrialNight[]; priceLabel: string; kids?: KidOption[]; prefill?: Record<string, string> }) {
@@ -68,23 +68,13 @@ export function RfaTrialForm({ rules, nights, priceLabel, kids = [], prefill }: 
         <Input label="Last name" name="contactLastName" autoComplete="family-name" required defaultValue={v.contactLastName ?? prefill?.contactLastName} />
         <Input label="Email" name="contactEmail" type="email" autoComplete="email" required defaultValue={v.contactEmail ?? prefill?.contactEmail} />
         <Input label="Mobile" name="contactPhone" type="tel" autoComplete="tel" required defaultValue={v.contactPhone ?? prefill?.contactPhone} />
-        <div className="sm:col-span-2">
-          <Field label="Medical conditions, allergies or injuries">
-            <textarea name="medical" rows={2} className={inputCls} defaultValue={v.medical} />
-          </Field>
-        </div>
-        <Input label="Emergency contact name" name="emergencyName" required defaultValue={v.emergencyName} />
-        <Input label="Emergency contact phone" name="emergencyPhone" type="tel" required defaultValue={v.emergencyPhone} />
-        <label className="flex items-start gap-3 text-sm sm:col-span-2">
-          <input type="checkbox" name="photoConsent" defaultChecked={v.photoConsent === 'on'} className="mt-1" />
-          <span>I consent to photos/video of this player being used in Academy communications.</span>
-        </label>
+        <p className="text-sm text-muted sm:col-span-2">You’ll add an emergency contact and any medical information straight after booking.</p>
       </Fieldset>
 
       <HeardFrom defaultValue={v.heardFrom} />
 
       <label className="flex items-start gap-3 text-sm">
-        <input type="checkbox" name="terms" required defaultChecked={v.terms === 'on'} className="mt-1" />
+        <input type="checkbox" name="terms" required defaultChecked={v.terms === 'on'} className="mt-0.5 size-5 shrink-0" />
         <span>I agree to the Academy’s <PolicyLink k="codeOfConduct">Code of Conduct</PolicyLink>, <PolicyLink k="childSafe">Child Safe policy</PolicyLink> and <PolicyLink k="academyTerms">terms</PolicyLink>.</span>
       </label>
       {state.error && <p role="alert" className="border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300">{state.error}</p>}

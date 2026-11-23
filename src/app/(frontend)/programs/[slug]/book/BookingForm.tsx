@@ -42,9 +42,11 @@ export function BookingForm(props: {
   unitPrice?: number
   /** Holiday camps: full camp or chosen days */
   camp?: CampOptions | null
+  /** Reopening an unfinished booking: what they typed last time */
+  resume?: Record<string, string>
 }) {
   const offer = (props.offeredPlayers?.length ?? 0) > 0
-  const [state, action] = useActionState<BookingState, FormData>(bookProgram, {})
+  const [state, action] = useActionState<BookingState, FormData>(bookProgram, props.resume ? { values: props.resume } : {})
   const v = state.values ?? {}
   const c = { ...(props.prefill ?? {}), ...v }
   // Extra children (2, 3, 4) — restored after a failed submit
@@ -142,13 +144,6 @@ export function BookingForm(props: {
         </fieldset>
       )}
 
-      <Fieldset legend={props.isTeamEntry ? 'Team manager' : 'Parent / guardian'}>
-        <Input label="First name" name="contactFirstName" autoComplete="given-name" required defaultValue={c.contactFirstName} />
-        <Input label="Last name" name="contactLastName" autoComplete="family-name" required defaultValue={c.contactLastName} />
-        <Input label="Email" name="contactEmail" type="email" autoComplete="email" required defaultValue={c.contactEmail} />
-        <Input label="Mobile" name="contactPhone" type="tel" autoComplete="tel" required defaultValue={c.contactPhone} />
-      </Fieldset>
-
       {offer ? (
         <Fieldset legend="Player">
           <div className="space-y-2 sm:col-span-2">
@@ -199,6 +194,13 @@ export function BookingForm(props: {
           )}
         </>
       )}
+
+      <Fieldset legend={props.isTeamEntry ? 'Team manager' : 'Parent / guardian'}>
+        <Input label="First name" name="contactFirstName" autoComplete="given-name" required defaultValue={c.contactFirstName} />
+        <Input label="Last name" name="contactLastName" autoComplete="family-name" required defaultValue={c.contactLastName} />
+        <Input label="Email" name="contactEmail" type="email" autoComplete="email" required defaultValue={c.contactEmail} />
+        <Input label="Mobile" name="contactPhone" type="tel" autoComplete="tel" required defaultValue={c.contactPhone} />
+      </Fieldset>
 
       <ReferralCodeField defaultValue={v.referralCode} />
       <HeardFrom defaultValue={v.heardFrom} />

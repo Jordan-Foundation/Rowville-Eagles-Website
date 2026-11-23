@@ -19,7 +19,6 @@ export async function bookToddlerTrial(_prev: ToddlerTrialState, fd: FormData): 
   const player = { firstName: s('playerFirstName'), lastName: s('playerLastName'), dateOfBirth: s('playerDob'), medical: s('medical') || undefined, emergencyName: s('emergencyName'), emergencyPhone: s('emergencyPhone'), photoConsent: fd.get('photoConsent') === 'on' }
   if (!player.firstName || !player.lastName || !player.dateOfBirth || Number.isNaN(Date.parse(player.dateOfBirth))) return fail('Please complete your child’s details.')
   if (!contact.firstName || !contact.lastName || !contact.phone || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email)) return fail('Please complete your contact details.')
-  if (!player.emergencyName || !player.emergencyPhone) return fail('Please add an emergency contact.')
   if (fd.get('terms') !== 'on') return fail('Please accept the terms to continue.')
 
   const p = await payload()

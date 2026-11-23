@@ -1,3 +1,4 @@
+import { programSchedule } from '@/lib/camps'
 import type { Payload } from 'payload'
 import { localYmd, TZ } from '@/lib/time'
 import { programPlace } from '@/lib/place'
@@ -51,7 +52,7 @@ export async function publicEvents(p: Payload, from = new Date(Date.now() - 62 *
       allDay: true,
       location: programPlace(c.location, settings?.ground?.address).place,
       summary: c.summary ?? 'Holiday camp',
-      details: [c.summary, c.ageRange && `Ages: ${c.ageRange}`, c.scheduleNote].filter(Boolean).join('\n'),
+      details: [c.summary, c.ageRange && `Ages: ${c.ageRange}`, programSchedule(c)].filter(Boolean).join('\n'),
       link: `/programs/${c.slug}`,
       linkLabel: 'Details & book',
       category: c.brand === 'academy' ? 'academy' : 'juniors',

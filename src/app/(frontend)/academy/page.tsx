@@ -1,3 +1,4 @@
+import { programSchedule } from '@/lib/camps'
 import { nudgeOpenPrograms } from '@/academy/release-service'
 import { PriceTag } from '@/components/PriceTag'
 import { DashIcon } from '@/components/dashboard/icons'
@@ -47,7 +48,7 @@ export default async function AcademyPage() {
   const choices = [
     ...terms.map((t) => ({ key: 'term', eyebrow: 'Academy term', title: t.title, summary: t.summary ?? '', meta: [t.ageRange, t.scheduleNote, t.startDate && formatDate(t.startDate)], price: <PriceTag p={t} big="font-display text-3xl" />, href: `/programs/${t.slug}`, cta: t.status === 'full' ? 'Details & waitlist →' : 'Details & book →' })),
     ...years.map((y) => ({ key: 'year', eyebrow: 'Full year · save ' + (y.discountPct ?? 10) + '%', title: y.title, summary: y.summary ?? '', meta: [y.ageRange, y.startDate && formatDate(y.startDate)], price: <PriceTag p={y} big="font-display text-3xl" />, href: `/programs/${y.slug}`, cta: 'Details & book →' })),
-    ...camps.map((c) => ({ key: 'camp', eyebrow: 'Holiday camp', title: c.title, summary: c.summary ?? '', meta: [c.ageRange, c.scheduleNote, c.startDate && formatDate(c.startDate)], price: <PriceTag p={c} big="font-display text-3xl" />, href: `/programs/${c.slug}`, cta: c.status === 'full' ? 'Details & waitlist →' : 'Details & book →' })),
+    ...camps.map((c) => ({ key: 'camp', eyebrow: 'Holiday camp', title: c.title, summary: c.summary ?? '', meta: [c.ageRange, programSchedule(c), c.startDate && formatDate(c.startDate)], price: <PriceTag p={c} big="font-display text-3xl" />, href: `/programs/${c.slug}`, cta: c.status === 'full' ? 'Details & waitlist →' : 'Details & book →' })),
     {
       key: '1on1',
       eyebrow: '1-on-1 coaching',

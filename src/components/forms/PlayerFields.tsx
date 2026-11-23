@@ -120,7 +120,7 @@ export function PlayerFields(props: {
 }
 
 /** Camps: families must say "none" or give details, so coaches always have an answer. */
-function CampMedical({ n, saved }: { n: (name: string) => string; saved: { answer: string; text: string } }) {
+export function CampMedical({ n, saved, hint = 'Conditions, allergies, medication and what to do. Shared only with the camp coaches.' }: { n: (name: string) => string; saved: { answer: string; text: string }; hint?: string }) {
   const [answer, setAnswer] = useState(saved.answer)
   return (
     <fieldset className="space-y-2 sm:col-span-2">
@@ -136,7 +136,7 @@ function CampMedical({ n, saved }: { n: (name: string) => string; saved: { answe
         </label>
       </div>
       {answer === 'yes' && (
-        <Field label="Details" hint="Conditions, allergies, medication and what to do. Shared only with the camp coaches.">
+        <Field label="Details" hint={hint}>
           <textarea name={n('medical')} rows={3} required className={inputCls} defaultValue={saved.text} />
         </Field>
       )}

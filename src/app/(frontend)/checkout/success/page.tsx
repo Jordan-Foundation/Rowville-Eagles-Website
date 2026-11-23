@@ -13,6 +13,9 @@ import { isPayee, paymentsMode, stripeAccounts, stripeFor } from '@/lib/stripe-a
 import type { Program } from '@/payload-types'
 import { ClearCart } from './ClearCart'
 import { RefreshWhilePending } from './RefreshWhilePending'
+import { TrialDetailsForm } from '../../trial-details/TrialDetailsForm'
+import { makeFollowToken } from '@/lib/follow-up-token'
+import { trialNeedsDetails } from '@/lib/follow-ups'
 import { AcademyBackdrop } from '@/components/AcademyBackdrop'
 
 export const dynamic = 'force-dynamic'
@@ -94,6 +97,13 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
             {promoLine && <Row k={promoLine[0]} v={promoLine[1]} />}
             {paidTotal > 0 && <Row k="Paid" v={`${formatAUD(paidTotal)} to ${payeeLabel}`} />}
           </dl>
+          {paid && doc.bookingType === 'trial' && doc.reference && trialNeedsDetails(doc) && (
+            <div className="mt-8 text-left" data-trial-details-step>
+              <p className="font-semibold">One more step before the trial</p>
+              <p className="mb-4 mt-1 text-sm text-muted">Add an emergency contact and any medical information for {doc.player?.firstName || 'your child'} — it takes a minute.</p>
+              <TrialDetailsForm token={makeFollowToken(doc.reference)} player={doc.player?.firstName || 'your child'} academy={academy} />
+            </div>
+          )}
           {numberKids.length > 0 && <NumberNext kids={numberKids} />}
           {surveyLink && (
             <div className="mt-6 rounded-2xl border-2 border-accent bg-accent/10 p-5 text-left" data-survey-card>

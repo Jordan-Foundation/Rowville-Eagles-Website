@@ -2,7 +2,7 @@ import { programPlace } from '@/lib/place'
 import { campBookings, placesTaken } from '@/lib/payments'
 import { localYmd } from '@/lib/time'
 import { priceBreakdown } from '@/lib/format'
-import { campDayLabel, campDayList, campHoursLabel, campPrices, fullCampSaving, placesByDay } from '@/lib/camps'
+import { campDayLabel, campDayList, campHoursLabel, campPrices, fullCampSaving, placesByDay, programSchedule } from '@/lib/camps'
 import { PriceTag } from '@/components/PriceTag'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const image = mediaUrl(p.heroImage)
   return {
     title: `${p.title}${when}`,
-    description: describe([p.summary, p.ageRange, p.scheduleNote].filter(Boolean).join(' · ')),
+    description: describe([p.summary, p.ageRange, programSchedule(p)].filter(Boolean).join(' · ')),
     alternates: { canonical: `/programs/${p.slug}` },
     openGraph: { title: p.title, description: describe(p.summary), ...(image ? { images: [image] } : {}) },
   }
@@ -60,7 +60,7 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
   const campDays = campAll
   const facts = [
     ['When', [formatDate(p.startDate), p.endDate && formatDate(p.endDate)].filter(Boolean).join(' – ')],
-    ['Schedule', p.scheduleNote],
+    ['Schedule', programSchedule(p)],
     ['Ages', p.ageRange],
     ['Where', place],
     ['Places', placesLabel],

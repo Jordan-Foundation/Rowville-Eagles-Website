@@ -123,6 +123,13 @@ export const AcademyBookings: CollectionConfig = {
       { name: 'participant', type: 'relationship', relationTo: 'participants' },
     ] },
     { name: 'marketingOptIn', label: 'Ticked marketing opt-in at checkout', type: 'checkbox', admin: { readOnly: true } },
+    {
+      name: 'followUps',
+      label: 'Follow-up emails',
+      type: 'group',
+      admin: { position: 'sidebar' },
+      fields: [{ name: 'recoveryAt', label: 'Unfinished booking email', type: 'date', admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } } }],
+    },
     { name: 'source', type: 'select', defaultValue: 'web', options: ['web', 'coach-link', 'admin'], admin: { position: 'sidebar' } },
     {
       type: 'collapsible',

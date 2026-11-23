@@ -32,7 +32,11 @@ export function ProgramForm({ prog }: { prog: P }) {
         <label className="text-sm">Places (empty = no limit)<input name="capacity" type="number" min={0} defaultValue={v('capacity')} className={input} /></label>
         <label className="text-sm sm:col-span-2">Short summary (cards and search results)<textarea name="summary" rows={2} maxLength={400} defaultValue={v('summary')} className={`${input} py-2`} /></label>
         <label className="text-sm">Where<input name="location" defaultValue={v('location')} placeholder="Home ground, or a full address" className={input} /></label>
-        <label className="text-sm">Schedule<input name="scheduleNote" defaultValue={v('scheduleNote')} placeholder="3 days · 9am–3pm" className={input} /></label>
+        {prog.type === 'holiday-camp' ? (
+          <p className="text-sm">Schedule<span className="mt-1 block text-muted">Worked out from the camp days and their hours (e.g. “3 days · 9am–3:30pm”).</span></p>
+        ) : (
+          <label className="text-sm">Schedule<input name="scheduleNote" defaultValue={v('scheduleNote')} placeholder="Tuesdays 5–6pm, 8 weeks" className={input} /></label>
+        )}
         <label className="text-sm">Ages (shown)<input name="ageRange" defaultValue={v('ageRange')} placeholder="Ages 5–13" className={input} /></label>
         <div className="grid grid-cols-2 gap-3">
           <label className="text-sm">Min age<input name="minAge" type="number" min={0} defaultValue={v('minAge')} className={input} /></label>

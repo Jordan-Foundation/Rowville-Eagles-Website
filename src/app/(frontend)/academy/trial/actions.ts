@@ -27,13 +27,12 @@ export async function bookRfaTrial(_prev: RfaTrialState, fd: FormData): Promise<
     medical: s('medical') || undefined,
     emergencyName: s('emergencyName'),
     emergencyPhone: s('emergencyPhone'),
-    photoConsent: fd.get('photoConsent') === 'on',
+    photoConsent: fd.has('photoConsent') ? fd.get('photoConsent') === 'on' : undefined,
   }
   if (!player.firstName || !player.lastName || !player.dateOfBirth) return fail('Please complete the player’s details.')
   if (!contact.firstName || !contact.lastName || !contact.phone || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email)) return fail('Please complete your contact details.')
-  if (!player.emergencyName || !player.emergencyPhone) return fail('Please add an emergency contact.')
   if (dobProblem(player.dateOfBirth)) return fail(dobProblem(player.dateOfBirth)!)
-  if (!phoneOk(contact.phone) || !phoneOk(player.emergencyPhone)) return fail('Please enter Australian phone numbers, e.g. 0412 345 678.')
+  if (!phoneOk(contact.phone) || (player.emergencyPhone && !phoneOk(player.emergencyPhone))) return fail('Please enter Australian phone numbers, e.g. 0412 345 678.')
   if (fd.get('terms') !== 'on') return fail('Please accept the terms to continue.')
 
   const p = await payload()
@@ -70,6 +69,18 @@ export async function bookRfaTrial(_prev: RfaTrialState, fd: FormData): Promise<
   const reference = newReference('academy')
   const { user } = await p.auth({ headers: await headers() })
   const accountId = user?.collection === 'users' ? user.id : undefined
+  // A child already saved on the account: their emergency contact and medical details come with them
+  const savedKidId = Number(s('participant')) || null
+  if (accountId && savedKidId && !player.emergencyName) {
+    const kid = await p.findByID({ collection: 'participants', id: savedKidId, depth: 0, overrideAccess: true, disableErrors: true })
+    const owner = kid && (typeof kid.account === 'object' ? kid.account.id : kid.account)
+    if (kid && owner === accountId) {
+      player.emergencyName = kid.medical?.emergencyContact ?? ''
+      player.emergencyPhone = kid.medical?.emergencyPhone ?? ''
+      player.medical = player.medical ?? kid.medical?.conditions ?? undefined
+      if (player.photoConsent === undefined && kid.photoConsent != null) player.photoConsent = kid.photoConsent
+    }
+  }
   const promo = await findDiscount(p, accountId, [{ target: { kind: 'program', programId: term.id, programType: 'academy-trial' }, amount: price }])
   const due = Math.round((price - (promo?.off ?? 0)) * 100) / 100
   const booking = await p.create({

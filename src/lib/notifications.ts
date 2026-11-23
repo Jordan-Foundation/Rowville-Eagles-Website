@@ -10,6 +10,7 @@ import { sendEmail } from './email'
 import { emailLayout, esc } from './email-templates'
 import { formatAUD, formatDate } from './format'
 import { siteUrl } from './payments'
+import { makeFollowToken } from './follow-up-token'
 
 const when = (iso: string) => formatDate(iso, { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' })
 
@@ -45,6 +46,7 @@ export async function onBookingPaid(payload: Payload, booking: Booking) {
 
   // Trial nights: confirmation only — families get an account once they enrol.
   if (booking.bookingType === 'trial') {
+    const needsDetails = !booking.player?.emergencyName || !booking.player?.emergencyPhone
     const html = emailLayout('academy', [
       {
         heading: 'Your RFA trial is booked',
@@ -56,7 +58,8 @@ export async function onBookingPaid(payload: Payload, booking: Booking) {
           ['Where', program.location || settings.ground?.address || 'Rowville'],
           ['Reference', booking.reference ?? ''],
         ],
-        after: `${program.whatToBring ? '' : 'Please bring boots, shin pads and a water bottle. '}Arrive 10 minutes early. At the end of the session our coaches will talk you through enrolling for the term.<br><br>${bookingExtras(program, booking.reference)}`,
+        ...(needsDetails ? { cta: { label: 'Add emergency contact (1 minute)', href: `${siteUrl()}/trial-details/${makeFollowToken(booking.reference!)}` } } : {}),
+        after: `${needsDetails ? '<strong>Before the session:</strong> please add an emergency contact and any medical information using the button above.<br><br>' : ''}${program.whatToBring ? '' : 'Please bring boots, shin pads and a water bottle. '}Arrive 10 minutes early. At the end of the session our coaches will talk you through enrolling for the term.<br><br>${bookingExtras(program, booking.reference)}`,
       },
     ])
     await sendEmail(payload, { to: booking.contact.email, subject: 'RFA trial booked', html, sender: 'academy', replyTo: settings.email || undefined })

@@ -204,7 +204,7 @@ export const Programs: CollectionConfig = {
         { name: 'maxAge', label: 'Oldest age', type: 'number', min: 0, max: 99 },
       ],
     },
-    { name: 'dropOffPickUp', label: 'Drop-off & pick-up', type: 'text', admin: { description: 'e.g. “Drop-off from 8:45am · pick-up by 3:15pm at the clubrooms”' } },
+    { name: 'dropOffPickUp', label: 'Drop-off & pick-up', type: 'text', admin: { description: 'e.g. “Drop-off from 8:45am · pick-up at 3:30pm at the clubrooms”' } },
     { name: 'whatToBring', label: 'What to bring', type: 'textarea', admin: { description: 'Shown on the program page, the booking confirmation and the confirmation email' } },
     {
       type: 'row',
@@ -274,7 +274,7 @@ export const Programs: CollectionConfig = {
         { type: 'row', fields: [
           { name: 'date', type: 'date', required: true, admin: { date: { pickerAppearance: 'dayOnly', displayFormat: 'EEE d MMM yyyy' } } },
           { name: 'startTime', type: 'text', defaultValue: '09:00', admin: { description: '24-hour, e.g. 09:00' } },
-          { name: 'endTime', type: 'text', defaultValue: '15:00', admin: { description: '24-hour, e.g. 15:00' } },
+          { name: 'endTime', type: 'text', defaultValue: '15:30', admin: { description: '24-hour, e.g. 15:30' } },
         ] },
       ],
     },
