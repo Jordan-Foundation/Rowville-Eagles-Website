@@ -107,5 +107,9 @@ describe('venue in the trial reminder email', () => {
     const { emailVenue } = await import('../../src/lib/follow-ups')
     expect(emailVenue('Home ground', '208 Dandelion Drive, Rowville VIC 3178')).toBe('Park Ridge Reserve · 208 Dandelion Drive, Rowville VIC 3178')
     expect(emailVenue('Rowville Secondary College, 2 Humphreys Rd', '208 Dandelion Drive')).toBe('Rowville Secondary College, 2 Humphreys Rd')
+    // How the live Academy programs list it: the home ground's street address
+    expect(emailVenue('208 Dandelion Drive, Rowville', '208 Dandelion Drive, Rowville VIC 3178')).toBe('Park Ridge Reserve · 208 Dandelion Drive, Rowville VIC 3178')
+    const { smsVenue } = await import('../../src/lib/follow-ups')
+    expect(smsVenue('208 Dandelion Drive, Rowville', '208 Dandelion Drive, Rowville VIC 3178')).toBe('Park Ridge Reserve')
   })
 })

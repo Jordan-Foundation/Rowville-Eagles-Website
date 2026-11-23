@@ -57,11 +57,14 @@ function priceLine(prog: Program) {
 
 /** The venue in a text message: the club's home ground by name, otherwise the program's own location. */
 const HOME_GROUND = 'Park Ridge Reserve'
-const isHome = (location?: string | null) => !location || /^home ground$/i.test(location.trim())
-export const smsVenue = (location?: string | null) => (isHome(location) ? HOME_GROUND : location!.trim())
+/** "Home ground", empty, or the home ground's street address ("208 Dandelion Drive, Rowville"). */
+const street = (s?: string | null) => (s ?? '').split(',')[0].trim().toLowerCase().replace(/\s+/g, ' ')
+const isHome = (location?: string | null, address?: string | null) =>
+  !location?.trim() || /^home ground$/i.test(location.trim()) || (!!address && street(location) === street(address))
+export const smsVenue = (location?: string | null, address?: string | null) => (isHome(location, address) ? HOME_GROUND : location!.trim())
 /** The venue in an email: "Park Ridge Reserve · 208 Dandelion Drive, Rowville VIC 3178" for the home ground. */
 export const emailVenue = (location: string | null | undefined, address: string | null) =>
-  isHome(location) ? [HOME_GROUND, address].filter(Boolean).join(' · ') : programPlace(location, address).place || location!.trim()
+  isHome(location, address) ? [HOME_GROUND, address].filter(Boolean).join(' · ') : programPlace(location, address).place || location!.trim()
 
 const stopLink = (ref: string) => `${siteUrl()}/follow-ups/stop/${makeFollowToken(ref)}`
 const detailsLink = (ref: string) => `${siteUrl()}/trial-details/${makeFollowToken(ref)}`
@@ -117,7 +120,7 @@ export async function sendTrialReminders(p: Payload, now = new Date()) {
       kind: 'reminder',
       optedOut: users[0]?.smsOptOut,
       userId: users[0]?.id,
-      body: `Hi ${b.contact.firstName}, a reminder that ${kid}'s free ${brand === 'academy' ? 'Foundation Academy' : 'Rowville Eagles'} trial is ${when} at ${smsVenue(prog.location)}. Bring boots, shin pads & water.${needs ? ` Please add an emergency contact: ${detailsLink(b.reference!)}` : ''} Can't make it? Call ${s.phone}.`,
+      body: `Hi ${b.contact.firstName}, a reminder that ${kid}'s free ${brand === 'academy' ? 'Foundation Academy' : 'Rowville Eagles'} trial is ${when} at ${smsVenue(prog.location, s.address)}. Bring boots, shin pads & water.${needs ? ` Please add an emergency contact: ${detailsLink(b.reference!)}` : ''} Can't make it? Call ${s.phone}.`,
     })
     sent++
   }
