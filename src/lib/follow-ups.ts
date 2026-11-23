@@ -55,6 +55,10 @@ function priceLine(prog: Program) {
   return `${c.from ? 'From ' : ''}${formatAUD(c.amount)}${c.unit ? ` ${c.unit.replace('/ ', 'a ')}` : ''}${per ? ' (pro-rata if you join after the start)' : ''}`
 }
 
+/** The venue in a text message: the club's home ground by name, otherwise the program's own location. */
+const HOME_GROUND = 'Park Ridge Reserve'
+export const smsVenue = (location?: string | null) => (!location || /^home ground$/i.test(location.trim()) ? HOME_GROUND : location.trim())
+
 const stopLink = (ref: string) => `${siteUrl()}/follow-ups/stop/${makeFollowToken(ref)}`
 const detailsLink = (ref: string) => `${siteUrl()}/trial-details/${makeFollowToken(ref)}`
 export const trialNeedsDetails = (b: Pick<Booking, 'player'>) => !b.player?.emergencyName || !b.player?.emergencyPhone
@@ -109,7 +113,7 @@ export async function sendTrialReminders(p: Payload, now = new Date()) {
       kind: 'reminder',
       optedOut: users[0]?.smsOptOut,
       userId: users[0]?.id,
-      body: `Hi ${b.contact.firstName}, a reminder that ${kid}'s free ${brand === 'academy' ? 'Foundation Academy' : 'Rowville Eagles'} trial is ${when}${where.place ? ` at ${where.place}` : ''}. Bring boots, shin pads & water.${needs ? ` Please add an emergency contact: ${detailsLink(b.reference!)}` : ''} Can't make it? Call ${s.phone}.`,
+      body: `Hi ${b.contact.firstName}, a reminder that ${kid}'s free ${brand === 'academy' ? 'Foundation Academy' : 'Rowville Eagles'} trial is ${when} at ${smsVenue(prog.location)}. Bring boots, shin pads & water.${needs ? ` Please add an emergency contact: ${detailsLink(b.reference!)}` : ''} Can't make it? Call ${s.phone}.`,
     })
     sent++
   }

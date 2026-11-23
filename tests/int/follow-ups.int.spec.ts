@@ -92,3 +92,12 @@ describe('follow-up links stay private', () => {
     expect(isTrackable('/programs/camp/book', new URLSearchParams(''))).toBe(true)
   })
 })
+
+describe('venue in the trial text', () => {
+  it('home ground → Park Ridge Reserve; other places as typed', async () => {
+    const { smsVenue } = await import('../../src/lib/follow-ups')
+    expect(smsVenue('Home ground')).toBe('Park Ridge Reserve')
+    expect(smsVenue(null)).toBe('Park Ridge Reserve')
+    expect(smsVenue('Rowville Secondary College, 2 Humphreys Rd')).toBe('Rowville Secondary College, 2 Humphreys Rd')
+  })
+})
