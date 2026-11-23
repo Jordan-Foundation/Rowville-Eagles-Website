@@ -6,7 +6,7 @@ import { localYmd } from '../lib/time'
 import { sendMarketingEmail, sendMarketingSms } from '../lib/marketing'
 import { siteUrl } from '../lib/payments'
 import { smsBody } from '../promotions/audience'
-import { clubFeeNote, isPerTerm } from './terms/pricing'
+import { isPerTerm } from './terms/pricing'
 
 const q = { overrideAccess: true, depth: 0 } as const
 const idOf = (v: unknown) => (v && typeof v === 'object' ? (v as { id: number }).id : (v as number | null))
@@ -33,11 +33,6 @@ async function fullYearFor(p: Payload, program: Program) {
   return docs[0] ?? null
 }
 
-async function feeNoteText(p: Payload) {
-  const s = await p.findGlobal({ slug: 'academy-settings', ...q }).catch(() => null)
-  return clubFeeNote(s?.clubRegistrationFee)
-}
-
 /** Ready-to-edit wording for a program's "registrations are open" message (or the reminder). */
 export async function draftContent(p: Payload, program: Program, kind: 'open' | 'reminder') {
   const fy = await fullYearFor(p, program)
@@ -55,7 +50,6 @@ export async function draftContent(p: Payload, program: Program, kind: 'open' | 
 /** The email as families see it (also used for the preview). */
 export async function emailBlocks(p: Payload, a: Pick<Announcement, 'subject' | 'message'>, program: Program, user?: Pick<User, 'firstName'>): Promise<Block[]> {
   const fy = await fullYearFor(p, program)
-  const note = await feeNoteText(p)
   return [{
     heading: a.subject,
     intro: `${user?.firstName ? `Hi ${esc(user.firstName)} — ` : ''}${esc(a.message).replace(/\n\n/g, '<br><br>')}`,
@@ -66,7 +60,6 @@ export async function emailBlocks(p: Payload, a: Pick<Announcement, 'subject' | 
       ...(fy ? ([['Full year', `${fy.title} — save ${fy.discountPct ?? 10}%`]] as [string, string][]) : []),
     ],
     cta: { label: 'Register now', href: `${siteUrl()}/programs/${program.slug}` },
-    after: note,
   }]
 }
 

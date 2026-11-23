@@ -27,6 +27,8 @@ const nextConfig: NextConfig = {
       { source: '/staff/:path*', destination: '/management/:path*', permanent: true },
       // Old "register interest" address → the Join page
       { source: '/interest', destination: '/join', permanent: true },
+      { source: '/about', destination: '/about/history', permanent: false },
+      { source: '/seniors', destination: '/join/seniors', permanent: false },
     ]
   },
   images: {

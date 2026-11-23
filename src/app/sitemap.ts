@@ -13,7 +13,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     p.find({ pagination: false, collection: 'programs', where: { status: { in: ['open', 'full'] }, type: { not_in: ['registration', 'academy-trial', 'private-session'] } }, limit: 200, depth: 0, select: { slug: true, updatedAt: true } }),
     p.find({ pagination: false, collection: 'products', where: { status: { equals: 'active' }, audiences: { contains: 'everyone' } }, limit: 200, depth: 0, select: { slug: true, updatedAt: true } }),
   ])
-  const pages = ['', '/join', '/about', '/what-makes-us-different', '/foundation-plus', '/programs', '/academy', '/academy/trial', '/academy/1-on-1', '/shop', '/news', '/sponsors', ...POLICIES.map((x) => `/policies/${x.slug}`)]
+  const pages = ['', '/join', '/join/juniors', '/join/seniors', '/about/history', '/about/committee', '/seniors/senior-men', '/seniors/reserves', '/seniors/senior-women', '/events', '/what-makes-us-different', '/foundation-plus', '/programs', '/academy', '/academy/trial', '/academy/1-on-1', '/shop', '/news', '/sponsors', ...POLICIES.map((x) => `/policies/${x.slug}`)]
   return [
     ...pages.map((path) => ({ url: `${base}${path}`, priority: path === '' ? 1 : path.startsWith('/policies') ? 0.3 : 0.8 })),
     ...posts.docs.map((d) => ({ url: `${base}/news/${d.slug}`, lastModified: d.updatedAt, priority: 0.6 })),

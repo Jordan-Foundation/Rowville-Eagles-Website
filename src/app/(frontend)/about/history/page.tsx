@@ -5,7 +5,7 @@ import { Crest } from '@/components/Logos'
 
 export const revalidate = 3600
 export const metadata: Metadata = {
-  title: 'About the Club',
+  title: 'Our history',
   description: 'Rowville Eagles Football Club — community football in Rowville since 1985. Our history, mission and values.',
 }
 

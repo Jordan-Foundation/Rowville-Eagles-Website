@@ -130,7 +130,6 @@ export async function onBookingPaid(payload: Payload, booking: Booking) {
     }
     termRows = [...byTerm.entries()].map(([t, s]) => [t, s.join(' + ')] as [string, string])
   }
-  const feeLine = program.type === 'academy-term' || program.type === 'academy-year' ? await (await import('../academy/terms/service')).feeNote(payload) : null
   const link = await accountLink(payload, user)
   const who = booking.player?.teamName || [booking.player?.firstName, booking.player?.lastName].filter(Boolean).join(' ')
   const html = emailLayout(academy ? 'academy' : 'club', [
@@ -148,7 +147,7 @@ export async function onBookingPaid(payload: Payload, booking: Booking) {
       after:
         program.type === 'registration'
           ? `<strong>Next step:</strong> complete the Football Victoria section in <a href="${settings.links?.playFootball || 'https://www.playfootball.com.au'}">PlayFootball</a> and select Rowville Eagles FC.`
-          : `${feeLine ? `${feeLine}<br><br>` : ''}${bookingExtras(program, booking.reference)}<br><br>Your account shows every upcoming session, camp and booking for your family in one place.`,
+          : `${bookingExtras(program, booking.reference)}<br><br>Your account shows every upcoming session, camp and booking for your family in one place.`,
     },
   ])
   await sendEmail(payload, {

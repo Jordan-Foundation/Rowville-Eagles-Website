@@ -128,6 +128,8 @@ export interface Config {
     'forum-threads': ForumThread;
     'forum-replies': ForumReply;
     sponsors: Sponsor;
+    events: Event;
+    enquiries: Enquiry;
     participants: Participant;
     users: User;
     'consent-records': ConsentRecord;
@@ -233,6 +235,8 @@ export interface Config {
     'forum-threads': ForumThreadsSelect<false> | ForumThreadsSelect<true>;
     'forum-replies': ForumRepliesSelect<false> | ForumRepliesSelect<true>;
     sponsors: SponsorsSelect<false> | SponsorsSelect<true>;
+    events: EventsSelect<false> | EventsSelect<true>;
+    enquiries: EnquiriesSelect<false> | EnquiriesSelect<true>;
     participants: ParticipantsSelect<false> | ParticipantsSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'consent-records': ConsentRecordsSelect<false> | ConsentRecordsSelect<true>;
@@ -282,6 +286,7 @@ export interface Config {
   globals: {
     'site-settings': SiteSetting;
     about: About;
+    'senior-teams': SeniorTeam;
     policies: Policy;
     'difference-page': DifferencePage;
     'academy-settings': AcademySetting;
@@ -296,6 +301,7 @@ export interface Config {
   globalsSelect: {
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
     about: AboutSelect<false> | AboutSelect<true>;
+    'senior-teams': SeniorTeamsSelect<false> | SeniorTeamsSelect<true>;
     policies: PoliciesSelect<false> | PoliciesSelect<true>;
     'difference-page': DifferencePageSelect<false> | DifferencePageSelect<true>;
     'academy-settings': AcademySettingsSelect<false> | AcademySettingsSelect<true>;
@@ -3115,6 +3121,56 @@ export interface Sponsor {
   createdAt: string;
 }
 /**
+ * Shown on the Events calendar. Holiday camps are added automatically from Programs.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "events".
+ */
+export interface Event {
+  id: number;
+  title: string;
+  start: string;
+  /**
+   * Optional
+   */
+  end?: string | null;
+  allDay?: boolean | null;
+  category?: ('club' | 'juniors' | 'seniors' | 'academy' | 'social') | null;
+  location?: string | null;
+  /**
+   * One line for the calendar
+   */
+  summary?: string | null;
+  /**
+   * Shown when someone taps the event
+   */
+  details?: string | null;
+  link?: string | null;
+  linkLabel?: string | null;
+  published?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "enquiries".
+ */
+export interface Enquiry {
+  id: number;
+  name: string;
+  email: string;
+  phone?: string | null;
+  team?: ('men' | 'reserves' | 'women' | 'unsure') | null;
+  age?: number | null;
+  position?: string | null;
+  previousClub?: string | null;
+  message?: string | null;
+  status?: ('new' | 'contacted' | 'signed' | 'closed') | null;
+  emailedTo?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * Read-only history. Changes are made from the member’s preferences, unsubscribe links or STOP replies.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -4114,6 +4170,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'sponsors';
         value: number | Sponsor;
+      } | null)
+    | ({
+        relationTo: 'events';
+        value: number | Event;
+      } | null)
+    | ({
+        relationTo: 'enquiries';
+        value: number | Enquiry;
       } | null)
     | ({
         relationTo: 'participants';
@@ -5950,6 +6014,43 @@ export interface SponsorsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "events_select".
+ */
+export interface EventsSelect<T extends boolean = true> {
+  title?: T;
+  start?: T;
+  end?: T;
+  allDay?: T;
+  category?: T;
+  location?: T;
+  summary?: T;
+  details?: T;
+  link?: T;
+  linkLabel?: T;
+  published?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "enquiries_select".
+ */
+export interface EnquiriesSelect<T extends boolean = true> {
+  name?: T;
+  email?: T;
+  phone?: T;
+  team?: T;
+  age?: T;
+  position?: T;
+  previousClub?: T;
+  message?: T;
+  status?: T;
+  emailedTo?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "participants_select".
  */
 export interface ParticipantsSelect<T extends boolean = true> {
@@ -6894,6 +6995,88 @@ export interface About {
       }[]
     | null;
   childSafe?: string | null;
+  /**
+   * Shown on About → Committee, in this order
+   */
+  committee?:
+    | {
+        name: string;
+        role: string;
+        photo?: (number | null) | Media;
+        bio?: string | null;
+        email?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * The Senior Men, Reserves and Senior Women pages. Empty fields are simply left off the page.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "senior-teams".
+ */
+export interface SeniorTeam {
+  id: number;
+  enquiryEmail: string;
+  men?: {
+    /**
+     * Short line under “Senior Men”
+     */
+    tagline?: string | null;
+    about?: string | null;
+    photo?: (number | null) | Media;
+    coachName?: string | null;
+    coachRole?: string | null;
+    coachPhoto?: (number | null) | Media;
+    coachBio?: string | null;
+    league?: string | null;
+    leagueUrl?: string | null;
+    /**
+     * Nights, times and where — one per line
+     */
+    training?: string | null;
+    matchDay?: string | null;
+  };
+  reserves?: {
+    /**
+     * Short line under “Reserves”
+     */
+    tagline?: string | null;
+    about?: string | null;
+    photo?: (number | null) | Media;
+    coachName?: string | null;
+    coachRole?: string | null;
+    coachPhoto?: (number | null) | Media;
+    coachBio?: string | null;
+    league?: string | null;
+    leagueUrl?: string | null;
+    /**
+     * Nights, times and where — one per line
+     */
+    training?: string | null;
+    matchDay?: string | null;
+  };
+  women?: {
+    /**
+     * Short line under “Senior Women”
+     */
+    tagline?: string | null;
+    about?: string | null;
+    photo?: (number | null) | Media;
+    coachName?: string | null;
+    coachRole?: string | null;
+    coachPhoto?: (number | null) | Media;
+    coachBio?: string | null;
+    league?: string | null;
+    leagueUrl?: string | null;
+    /**
+     * Nights, times and where — one per line
+     */
+    training?: string | null;
+    matchDay?: string | null;
+  };
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -7444,6 +7627,71 @@ export interface AboutSelect<T extends boolean = true> {
         id?: T;
       };
   childSafe?: T;
+  committee?:
+    | T
+    | {
+        name?: T;
+        role?: T;
+        photo?: T;
+        bio?: T;
+        email?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "senior-teams_select".
+ */
+export interface SeniorTeamsSelect<T extends boolean = true> {
+  enquiryEmail?: T;
+  men?:
+    | T
+    | {
+        tagline?: T;
+        about?: T;
+        photo?: T;
+        coachName?: T;
+        coachRole?: T;
+        coachPhoto?: T;
+        coachBio?: T;
+        league?: T;
+        leagueUrl?: T;
+        training?: T;
+        matchDay?: T;
+      };
+  reserves?:
+    | T
+    | {
+        tagline?: T;
+        about?: T;
+        photo?: T;
+        coachName?: T;
+        coachRole?: T;
+        coachPhoto?: T;
+        coachBio?: T;
+        league?: T;
+        leagueUrl?: T;
+        training?: T;
+        matchDay?: T;
+      };
+  women?:
+    | T
+    | {
+        tagline?: T;
+        about?: T;
+        photo?: T;
+        coachName?: T;
+        coachRole?: T;
+        coachPhoto?: T;
+        coachBio?: T;
+        league?: T;
+        leagueUrl?: T;
+        training?: T;
+        matchDay?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

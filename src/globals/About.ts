@@ -1,6 +1,7 @@
 import type { GlobalConfig } from 'payload'
 import { refreshGlobal } from '../lib/revalidate'
 import { isStaff } from '../access'
+import { committeeField } from '../site/collections'
 
 /** About page content. Any empty field falls back to the default copy in the page component. */
 export const About: GlobalConfig = {
@@ -38,5 +39,6 @@ export const About: GlobalConfig = {
       ],
     },
     { name: 'childSafe', label: 'Child Safe commitment', type: 'textarea' },
+    committeeField,
   ],
 }

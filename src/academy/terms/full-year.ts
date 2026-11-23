@@ -114,7 +114,7 @@ type Player = { firstName: string; lastName: string; dateOfBirth: string; medica
  */
 export async function checkoutFullYear(p: Payload, o: { year: Program; slotIds: number[]; birthYear: number; contact: Contact; player: Player; accountId?: number; participantId?: number | null; cancelPath: string; referralCode?: string | null }) {
   const { confirmPayment, newReference, startCheckout } = await import('../../lib/payments')
-  const { feeNote, payeeOf, existingRegistration } = await import('./service')
+  const { payeeOf, existingRegistration } = await import('./service')
   const d = await loadYear(p, o.year)
   if (d.terms.length !== 4) throw new FullYearError('The full year isn’t set up yet — please contact us.')
   const t1Slots = (d.slots.get(d.terms[0].id) ?? []).filter((s) => o.slotIds.includes(s.id))
@@ -161,7 +161,6 @@ export async function checkoutFullYear(p: Payload, o: { year: Program; slotIds: 
   }
   await p.update({ collection: 'bookings', id: booking.id, data: { academyRegistration: primary! }, ...q })
   const who = `${o.player.firstName} ${o.player.lastName}`
-  const note = await feeNote(p)
   if (!plan.total) {
     await confirmPayment(p, 'booking', reference)
     return `/checkout/success?kind=booking&ref=${reference}`
@@ -172,7 +171,7 @@ export async function checkoutFullYear(p: Payload, o: { year: Program; slotIds: 
       kind: 'booking',
       reference,
       email: o.contact.email,
-      items: plan.terms.map((t, i) => ({ name: `${t.program.title}${i === 0 ? '' : ''}`, description: `${who} · ${t.label}${i === 0 ? ` · ${note}` : ''}`, unitAmount: t.price, quantity: 1 })),
+      items: plan.terms.map((t, i) => ({ name: `${t.program.title}${i === 0 ? '' : ''}`, description: `${who} · ${t.label}`, unitAmount: t.price, quantity: 1 })),
       discount: plan.saving > 0 ? { amount: plan.saving, label: `Full year — ${plan.pct}% off` } : null,
       cancelPath: o.cancelPath,
     })

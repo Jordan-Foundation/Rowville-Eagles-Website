@@ -9,15 +9,34 @@ import { useMe } from '@/lib/use-me'
 import { FoundationPlusLogo } from './FoundationPlusLogo'
 import { CartSync } from './CartSync'
 
-const nav = [
+type NavLink = { href: string; label: string; fplus?: boolean }
+type NavItem = NavLink | { label: string; key: string; items: NavLink[] }
+
+export const nav: NavItem[] = [
   { href: '/join', label: 'Join us' },
-  { href: '/about', label: 'About' },
-  { href: '/what-makes-us-different', label: 'Why us' },
-  { href: '/programs', label: 'Camps & Programs' },
-  { href: '/academy', label: 'Academy' },
+  { key: 'about', label: 'About', items: [{ href: '/about/history', label: 'History' }, { href: '/about/committee', label: 'Committee' }, { href: '/sponsors', label: 'Sponsors' }] },
+  { key: 'seniors', label: 'Senior teams', items: [{ href: '/seniors/senior-men', label: 'Senior Men' }, { href: '/seniors/reserves', label: 'Reserves' }, { href: '/seniors/senior-women', label: 'Senior Women' }] },
+  { key: 'juniors', label: 'Junior football', items: [{ href: '/what-makes-us-different', label: 'Why us' }, { href: '/programs', label: 'Camps & Programs' }] },
+  { key: 'academy', label: 'Academy', items: [{ href: '/academy', label: 'Foundation Academy' }, { href: '/academy/trial', label: 'Book a free trial' }, { href: '/academy/1-on-1', label: '1-on-1 coaching' }, { href: '/foundation-plus', label: 'Foundation+', fplus: true }] },
+  { href: '/events', label: 'Events' },
   { href: '/shop', label: 'Shop' },
   { href: '/news', label: 'News' },
 ]
+
+const isGroup = (n: NavItem): n is { label: string; key: string; items: NavLink[] } => 'items' in n
+const here = (path: string, href: string) => (href === '/' ? path === '/' : path === href || path.startsWith(`${href}/`))
+
+/** Dropdown entry: Foundation+ shows its small F+ mark */
+function ItemLabel({ l, fplusLive }: { l: NavLink; fplusLive: boolean }) {
+  if (!l.fplus) return <>{l.label}</>
+  return (
+    <span className="inline-flex items-center gap-2">
+      <FoundationPlusLogo variant="mark" tone="white" height={18} alt="" />
+      {l.label}
+      {!fplusLive && <span className="rounded-sm bg-white/15 px-1 text-[9px] font-bold uppercase leading-[14px] tracking-wider">Soon</span>}
+    </span>
+  )
+}
 
 export function Header({ fplusLive = true }: { fplusLive?: boolean }) {
   const path = usePathname() ?? ''
@@ -26,9 +45,21 @@ export function Header({ fplusLive = true }: { fplusLive?: boolean }) {
   const accountHref = me ? '/account' : '/login'
   const accountLabel = me ? 'My account' : 'Login'
   const [open, setOpen] = useState(false)
+  const [drop, setDrop] = useState<string | null>(null)
+  const [section, setSection] = useState<string | null>(null)
   const menuBtn = useRef<HTMLButtonElement>(null)
-  // Close the phone menu when the page changes, and with Escape
-  useEffect(() => setOpen(false), [path])
+  const navRef = useRef<HTMLElement>(null)
+  const hoverAt = useRef(0)
+  // Close the menus when the page changes, and with Escape / a click elsewhere
+  useEffect(() => { setOpen(false); setDrop(null) }, [path])
+  useEffect(() => {
+    if (!drop) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setDrop(null) }
+    const onClick = (e: MouseEvent) => { if (!navRef.current?.contains(e.target as Node)) setDrop(null) }
+    document.addEventListener('keydown', onKey)
+    document.addEventListener('mousedown', onClick)
+    return () => { document.removeEventListener('keydown', onKey); document.removeEventListener('mousedown', onClick) }
+  }, [drop])
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => {
@@ -60,29 +91,45 @@ export function Header({ fplusLive = true }: { fplusLive?: boolean }) {
             <span className="hidden whitespace-nowrap text-[10px] uppercase tracking-[0.25em] opacity-70 sm:block lg:hidden xl:block">Football Club · Est. 1985</span>
           </span>
         </Link>
-        <nav aria-label="Main" className="hidden items-center gap-4 whitespace-nowrap text-[13px] font-medium lg:flex xl:gap-7 xl:text-sm">
-          {nav.map((n) => (
-            <Link
-              key={n.href}
-              href={n.href}
-              aria-current={path.startsWith(n.href) ? 'page' : undefined}
-              className={`transition hover:opacity-100 ${path.startsWith(n.href) ? 'opacity-100' : 'opacity-75'} ${n.href === '/join' ? 'club-only font-semibold text-accent !opacity-100' : ''}`}
-            >
-              {n.label}
-            </Link>
-          ))}
+        <nav ref={navRef} aria-label="Main" className="hidden items-center gap-3 whitespace-nowrap text-[13px] font-medium lg:flex xl:gap-6 xl:text-sm">
+          {nav.map((n) =>
+            isGroup(n) ? (
+              <div key={n.key} className="relative" onMouseEnter={() => { hoverAt.current = Date.now(); setDrop(n.key) }} onMouseLeave={() => setDrop((d) => (d === n.key ? null : d))}>
+                <button
+                  type="button"
+                  aria-expanded={drop === n.key}
+                  aria-controls={`nav-${n.key}`}
+                  onClick={() => setDrop((d) => (d === n.key && Date.now() - hoverAt.current > 600 ? null : n.key))}
+                  className={`flex items-center gap-1 py-5 transition hover:opacity-100 ${n.items.some((l) => here(path, l.href)) || drop === n.key ? 'opacity-100' : 'opacity-75'}`}
+                >
+                  {n.label}
+                  <svg viewBox="0 0 12 12" className={`h-3 w-3 transition ${drop === n.key ? 'rotate-180' : ''}`} aria-hidden fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M2.5 4.5 6 8l3.5-3.5" /></svg>
+                </button>
+                {drop === n.key && (
+                  <ul id={`nav-${n.key}`} data-nav-menu={n.key} className="absolute left-1/2 top-full z-50 min-w-52 -translate-x-1/2 border border-white/10 bg-[#0f2a55] py-2 text-sm shadow-xl [body:has([data-page-brand=academy])_&]:bg-black [body:has([data-page-brand=fplus])_&]:bg-[#0b0b0c]">
+                    {n.items.map((l) => (
+                      <li key={l.href}>
+                        <Link href={l.href} aria-current={here(path, l.href) ? 'page' : undefined} className="block px-4 py-2.5 opacity-80 transition hover:bg-white/10 hover:opacity-100 aria-[current=page]:opacity-100">
+                          <ItemLabel l={l} fplusLive={fplusLive} />
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ) : (
+              <Link
+                key={n.href}
+                href={n.href}
+                aria-current={here(path, n.href) ? 'page' : undefined}
+                className={`transition hover:opacity-100 ${here(path, n.href) ? 'opacity-100' : 'opacity-75'} ${n.href === '/join' ? 'club-only font-semibold text-accent !opacity-100' : ''}`}
+              >
+                {n.label}
+              </Link>
+            ),
+          )}
         </nav>
         <div className="flex items-center gap-4">
-        <Link
-          href="/foundation-plus"
-          aria-label={fplusLive ? 'Foundation+ — online training' : 'Foundation+ — online training, coming soon'}
-          aria-current={path.startsWith('/foundation-plus') ? 'page' : undefined}
-          className="group relative hidden items-center rounded-sm sm:flex border border-white/25 px-2 py-1 transition hover:border-white hover:shadow-[0_0_18px_rgba(255,255,255,0.28)] focus-visible:border-white aria-[current=page]:border-white"
-        >
-          <span className="hidden xl:block"><FoundationPlusLogo variant="horizontal" tone="white" height={32} alt="" /></span>
-          <span className="xl:hidden"><FoundationPlusLogo variant="mark" tone="white" height={24} alt="" /></span>
-          {!fplusLive && <span aria-hidden className="absolute -bottom-2 -right-2 rounded-sm bg-white px-1 text-[9px] font-bold uppercase leading-[14px] tracking-wider text-black">Soon</span>}
-        </Link>
         {count > 0 && (
           <Link href="/shop/cart" className="text-sm font-medium opacity-90 hover:opacity-100" aria-label={`Cart, ${count} items`}>
             Cart <span className="ml-1 rounded-full bg-white/15 px-2 py-0.5 text-xs">{count}</span>
@@ -117,14 +164,33 @@ export function Header({ fplusLive = true }: { fplusLive?: boolean }) {
       {open && (
         <nav id="mobile-menu" aria-label="Menu" onClick={(e) => { if ((e.target as HTMLElement).closest('a')) setOpen(false) }} className="max-h-[calc(100dvh-4rem)] overflow-y-auto border-t border-white/10 pb-6 lg:hidden">
           <ul className="container-x divide-y divide-white/10">
-            {nav.map((n) => (
-              <li key={n.href}>
-                <Link href={n.href} aria-current={path.startsWith(n.href) ? 'page' : undefined} className="flex items-center justify-between py-4 text-lg font-semibold aria-[current=page]:text-accent">
-                  {n.label}<span aria-hidden className="opacity-50">›</span>
-                </Link>
-              </li>
-            ))}
-            <li><Link href="/foundation-plus" className="flex items-center justify-between py-4 text-lg font-semibold">Foundation+ online training{!fplusLive && <span className="ml-2 rounded-sm bg-white/15 px-1.5 py-0.5 text-xs uppercase tracking-wider">Coming soon</span>}<span aria-hidden className="ml-auto pl-2 opacity-50">›</span></Link></li>
+            {nav.map((n) =>
+              isGroup(n) ? (
+                <li key={n.key}>
+                  <button type="button" aria-expanded={section === n.key} onClick={() => setSection((x) => (x === n.key ? null : n.key))} className="flex w-full items-center justify-between py-4 text-left text-lg font-semibold">
+                    {n.label}
+                    <svg viewBox="0 0 12 12" className={`h-4 w-4 opacity-60 transition ${section === n.key ? 'rotate-180' : ''}`} aria-hidden fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M2.5 4.5 6 8l3.5-3.5" /></svg>
+                  </button>
+                  {section === n.key && (
+                    <ul className="-mt-1 pb-3 pl-4">
+                      {n.items.map((l) => (
+                        <li key={l.href}>
+                          <Link href={l.href} aria-current={here(path, l.href) ? 'page' : undefined} className="flex items-center justify-between py-2.5 text-base opacity-85 aria-[current=page]:text-accent">
+                            <ItemLabel l={l} fplusLive={fplusLive} /><span aria-hidden className="opacity-50">›</span>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              ) : (
+                <li key={n.href}>
+                  <Link href={n.href} aria-current={here(path, n.href) ? 'page' : undefined} className="flex items-center justify-between py-4 text-lg font-semibold aria-[current=page]:text-accent">
+                    {n.label}<span aria-hidden className="opacity-50">›</span>
+                  </Link>
+                </li>
+              ),
+            )}
             {count > 0 && <li><Link href="/shop/cart" className="flex items-center justify-between py-4 text-lg font-semibold">Cart ({count})<span aria-hidden className="opacity-50">›</span></Link></li>}
           </ul>
           <div className="container-x mt-4 grid gap-3">
