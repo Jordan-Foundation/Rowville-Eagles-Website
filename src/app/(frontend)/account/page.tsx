@@ -41,6 +41,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   const home = homeFor(user)
   if (home !== '/account' && view !== 'family') redirect(home)
   const p = await payload()
+  const tournaments = user ? await (await import('@/tournaments/service')).familyTournaments(p, user.id).catch(() => []) : []
   const familyUnread = (await inbox(p, { user, side: 'family' })).filter((x) => x.unread).length
   const [participants, bookings, academy, plans] = await Promise.all([
     p.find({ pagination: false, collection: 'participants', where: { account: { equals: user.id } }, depth: 1, limit: 50, overrideAccess: true }),
@@ -244,6 +245,22 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
             <div className="mb-10">
               <h2 className="font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase">Trials & selections</h2>
               <SelectionList entries={selections} rules={rules} />
+            </div>
+          )}
+          {tournaments.length > 0 && (
+            <div className="mb-10" data-tournaments>
+              <h2 className="font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase">Tournaments</h2>
+              <ul className="mt-4 space-y-3">
+                {tournaments.map((x) => (
+                  <li key={x.inv.id} className={`flex flex-wrap items-center justify-between gap-3 rounded-2xl border p-5 ${x.inv.status === 'invited' ? 'border-2 border-accent' : 'border-line'}`} data-tournament={x.inv.status}>
+                    <span>
+                      <span className="block font-semibold">{x.t.name} · {x.s.name}</span>
+                      <span className="text-sm text-muted">{(x.inv.playerName ?? '').split(' ')[0]} · {x.when}{x.t.venue ? ` · ${x.t.venue}` : ''}</span>
+                    </span>
+                    <Link href={x.url} className="rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white">{x.inv.status === 'invited' ? 'Accept or decline' : x.inv.status === 'accepted' ? 'Pay to confirm' : 'Confirmed — details'}</Link>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
           <h2 className="font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase">Upcoming</h2>

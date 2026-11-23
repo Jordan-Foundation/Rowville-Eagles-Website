@@ -197,6 +197,8 @@ export async function markInvoicePaid(p: Payload, reference: string, o: { via: '
   // A card payment still counts if the invoice was cancelled meanwhile (the money has been taken)
   if (o.via === 'manual' && inv.status !== 'sent' && inv.status !== 'draft') throw new InvoiceError('Only unpaid invoices can be marked paid.')
   let paid = await p.update({ collection: 'invoices', id: inv.id, data: { status: 'paid', paidAt: new Date().toISOString(), paidVia: o.via, paymentNote: o.note?.slice(0, 200) || null }, ...q })
+  // Anything waiting on this invoice (e.g. a tournament place) is confirmed
+  await (await import('../tournaments/service')).invoicePaid(p, paid).catch((e) => p.logger.error({ err: e, msg: `After-payment step for invoice ${reference} failed` }))
   if (o.via === 'card' && inv.status === 'cancelled') p.logger.warn(`Invoice ${reference} was paid by card after it was cancelled — refund it in Stripe if needed.`)
   const email = paid.contactEmail
   if (email) {

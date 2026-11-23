@@ -46,6 +46,15 @@ export const AcademyTermSlots: CollectionConfig = {
           const { toddlerYears } = await import('../toddler')
           data.birthYears = toddlerYears(program.startDate ?? new Date())
         }
+        // Session length by age group (Management setting, e.g. U7 = 60 minutes)
+        const touched = !originalDoc || 'startTime' in data || 'birthYears' in data
+        if (!toddler && touched && !(req.context as { skipLengthRule?: boolean })?.skipLengthRule) {
+          const { lengthRules, lengthFor, addMinutes } = await import('../../session-lengths')
+          const start = (data.startTime ?? originalDoc?.startTime) as string | undefined
+          const year = program?.startDate ? Number(String(program.startDate).slice(0, 4)) : new Date().getFullYear()
+          const mins = start ? lengthFor((data.birthYears ?? originalDoc?.birthYears) as number[], year, await lengthRules(req.payload)) : null
+          if (start && mins) data.endTime = addMinutes(start, mins)
+        }
         const m = { ...originalDoc, ...data }
         if (m.weekday && m.startTime && m.endTime) data.title = `${slotLabel(m)} · ${toddler ? 'Ages 2–5' : yearsLabel(m.birthYears)}`
         return data
@@ -71,6 +80,10 @@ export const AcademyTermSlots: CollectionConfig = {
         { name: 'endTime', type: 'text', required: true, admin: { description: '24h, e.g. 18:00' }, validate: (v: unknown) => TIME_RE.test(String(v ?? '')) || 'Use 24h time, e.g. 18:00' },
       ],
     },
+    { type: 'row', fields: [
+      { name: 'previousEndTime', label: 'Earlier finish time', type: 'text', admin: { readOnly: true, description: 'Weeks before the date on the right finished at this time (session length changed mid-term)' } },
+      { name: 'previousEndUntil', label: 'until', type: 'date', admin: { readOnly: true, date: { pickerAppearance: 'dayOnly', displayFormat: 'd MMM yyyy' } } },
+    ] },
     { name: 'venue', type: 'text' },
     {
       type: 'row',

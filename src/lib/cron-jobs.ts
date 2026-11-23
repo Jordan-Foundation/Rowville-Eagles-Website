@@ -51,8 +51,14 @@ export const cronJobs: Record<string, Record<string, Job>> = {
     foundationChallengeStart: (payload) => announceChallenges(payload),
     foundationChallengeResults: (payload) => finaliseChallenges(payload),
   },
+  // Every 5 minutes: time-critical reminders (RFA trials: 1 day, 3 hours and 15 minutes before)
+  frequent: {
+    rfaTrialReminders: async (payload) => (await import('../academy/trial-list')).sendTrialReminders(payload, (globalThis as { __cronNow?: Date }).__cronNow ?? new Date()),
+  },
   // Every hour (Vercel Pro): bulk messages and time-sensitive sweeps, each with its own time limit and able to carry on next run
   messages: {
+    tournamentInvites: async (payload) => (await import('../tournaments/service')).sweepInvites(payload, (globalThis as { __cronNow?: Date }).__cronNow ?? new Date()),
+    sessionLengths: async (payload) => { const r = await (await import('../academy/session-lengths')).applySessionLengths(payload, (globalThis as { __cronNow?: Date }).__cronNow ?? new Date()); return { changed: r.changed.length, skipped: r.skipped.length, trialNights: r.trialNights } },
     portalLaunch: async (payload) => (await import('../launch/service')).launchJob(payload, (globalThis as { __cronNow?: Date }).__cronNow ?? new Date()),
     sessionReminderPushes: async (payload) => (await import('./app-install')).sendSessionReminderPushes(payload, (globalThis as { __cronNow?: Date }).__cronNow ?? new Date()),
     scheduledPromotions: (payload) => runScheduledPromotions(payload),

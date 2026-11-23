@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation'
 import { payload, formatDate } from '@/lib/payload'
 import { requireCoach } from '@/academy/portal'
 import { loadCoachSession } from '@/academy/coach-sessions'
+import { LastTime } from '@/components/coach/LastTime'
 import { ageOn, canMarkAttendance, sessionPayment } from '@/academy/session-view'
 import { Attendance, Notes, SessionHelp } from './SessionTools'
 
@@ -29,6 +30,9 @@ export default async function CoachSessionPage({ params }: { params: Promise<{ i
   // Session summaries: the latest ones before this session (for whoever coaches next, incl. cover), and this one's if written
   const { lastSummariesFor, pendingSummaries } = await import('@/academy/summaries/service')
   const recent = await lastSummariesFor(p, [b.id], s.startsAt, 3)
+  const kidId = b.participant ? (typeof b.participant === 'object' ? b.participant.id : b.participant) : null
+  const upcoming = new Date(s.startsAt).getTime() > Date.now() - 60 * 60_000 && s.status === 'scheduled'
+  const last = upcoming && kidId ? (await (await import('@/academy/coach-players')).lastTimeFor(p, [kidId], s.startsAt)).get(kidId) ?? null : null
   const { docs: mineDone } = await p.find({ collection: 'session-summaries', where: { session: { equals: s.id } }, limit: 1, depth: 0, overrideAccess: true, pagination: false })
   const summaryDue = !mineDone[0] && (await pendingSummaries(p, { coachId: coach.id })).some((x) => x.sessionId === s.id)
 
@@ -95,6 +99,8 @@ export default async function CoachSessionPage({ params }: { params: Promise<{ i
           <p className="text-xs text-muted">Child Safe: contact the parent or guardian only — never the player directly. Booking {b.reference}.</p>
         </section>
       </div>
+
+      {upcoming && <LastTime last={last} participantId={kidId} firstName={player.name.split(' ')[0]} />}
 
       {lastNotes && (
         <section className="border-l-4 border-white/60 bg-white/5 p-5" aria-label="From last session">

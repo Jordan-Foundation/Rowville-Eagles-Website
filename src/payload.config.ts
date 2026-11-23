@@ -89,6 +89,7 @@ import { SetupProgress } from './globals/SetupProgress'
 import { DifferencePage } from './globals/DifferencePage'
 import { About } from './globals/About'
 import { Enquiries, Events, SeniorTeamsPage } from './site/collections'
+import { RfaTournaments, TournamentInvites, TournamentSquads } from './tournaments/collections'
 import { Policies } from './globals/Policies'
 import { AcademySettings } from './academy/AcademySettings'
 
@@ -99,7 +100,7 @@ const dirname = path.dirname(filename)
  * Logs and system records nobody edits in the admin: no document locking. Every lockable collection adds a column to
  * payload_locked_documents_rels, and Postgres refuses the admin dashboard's query once that passes 100 arguments.
  */
-const NO_LOCK = new Set(['activity-log', 'staff-feed', 'message-log', 'form-throttle', 'seen-markers', 'push-subscriptions', 'invite-tokens', 'consent-records', 'pdr-audit', 'selection-audit', 'number-audit-log', 'finance-audit-log', 'academy-reminder-log', 'report-reminder-log', 'reflection-reminders', 'promotion-uses', 'fplus-events', 'import-batches'])
+const NO_LOCK = new Set(['activity-log', 'staff-feed', 'message-log', 'form-throttle', 'seen-markers', 'push-subscriptions', 'invite-tokens', 'consent-records', 'pdr-audit', 'selection-audit', 'number-audit-log', 'finance-audit-log', 'academy-reminder-log', 'report-reminder-log', 'reflection-reminders', 'promotion-uses', 'fplus-events', 'import-batches', 'tournament-invites', 'enquiries'])
 const noLock = (c: CollectionConfig): CollectionConfig => (NO_LOCK.has(c.slug) ? { ...c, lockDocuments: false } : c)
 
 const databaseUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL || ''
@@ -139,7 +140,7 @@ export default buildConfig({
       },
     },
   },
-  collections: [AcademyBookings, AcademyShareLinks, AcademySessions, AcademyGroups, AcademyGroupInvites, TrainingAttendance, AcademyTerms, YearSetups, Announcements, AcademyTermSlots, AcademyRegistrations, PdrAreas, PdrLevels, PdrStages, PdrVideos, PdrBadges, PdrProgress, PdrChallenges, PdrSubmissions, PdrAudit, PdrAwards, FplusWaitlist, FplusEvents, FplusTrialCards, FormThrottle, AcademyCoaches, AcademyAvailability, AcademyReminderLog, AcademyCredits, Posts, SelectionRounds, Squads, SelectionEntries, TrialInvites, SelectionAudit, ImportBatches, TrialSessions, Programs, Bookings, CampPlacements, CampCoaches, CoachBlocks, Products, Orders, Invoices, Refunds, ReferralInvites, Referrals, ReferralMilestones, ReferralRewards, ReflectionPillars, MatchReflections, WelfareFlags, ReflectionReports, ReflectionReminders, Teams, TeamMembers, TeamPosts, ForumThreads, ForumReplies, Sponsors, Events, Enquiries, Participants, Users, ConsentRecords, MessageLog, CurriculumStandards, ReportCycles, PlayerReports, ReportReminderLog, Promotions, PromotionUses, SeenMarkers, Conversations, Messages, InviteTokens, WwccFiles, PushSubscriptions, SessionSummaries, NumberRanges, PlayerNumbers, NumberAudit, KitItems, FitoutSessions, FitoutEntries, ActivityLog, StaffFeed, CoachPayRates, CoachPayProfiles, CoachHourAdjustments, PayWeeks, FinanceReports, ExpenseCategories, ReceiptFiles, Expenses, BankTransactions, ProjectionScenarios, FinanceAuditLog, Media].map((c) => withStaffFeed(withActivity(withMoneyCells(c)))).map(noLock),
+  collections: [AcademyBookings, AcademyShareLinks, AcademySessions, AcademyGroups, AcademyGroupInvites, TrainingAttendance, AcademyTerms, YearSetups, Announcements, AcademyTermSlots, AcademyRegistrations, PdrAreas, PdrLevels, PdrStages, PdrVideos, PdrBadges, PdrProgress, PdrChallenges, PdrSubmissions, PdrAudit, PdrAwards, FplusWaitlist, FplusEvents, FplusTrialCards, FormThrottle, AcademyCoaches, AcademyAvailability, AcademyReminderLog, AcademyCredits, Posts, SelectionRounds, Squads, SelectionEntries, TrialInvites, SelectionAudit, ImportBatches, TrialSessions, Programs, Bookings, CampPlacements, CampCoaches, CoachBlocks, Products, Orders, Invoices, Refunds, ReferralInvites, Referrals, ReferralMilestones, ReferralRewards, ReflectionPillars, MatchReflections, WelfareFlags, ReflectionReports, ReflectionReminders, Teams, TeamMembers, TeamPosts, ForumThreads, ForumReplies, Sponsors, Events, Enquiries, RfaTournaments, TournamentSquads, TournamentInvites, Participants, Users, ConsentRecords, MessageLog, CurriculumStandards, ReportCycles, PlayerReports, ReportReminderLog, Promotions, PromotionUses, SeenMarkers, Conversations, Messages, InviteTokens, WwccFiles, PushSubscriptions, SessionSummaries, NumberRanges, PlayerNumbers, NumberAudit, KitItems, FitoutSessions, FitoutEntries, ActivityLog, StaffFeed, CoachPayRates, CoachPayProfiles, CoachHourAdjustments, PayWeeks, FinanceReports, ExpenseCategories, ReceiptFiles, Expenses, BankTransactions, ProjectionScenarios, FinanceAuditLog, Media].map((c) => withStaffFeed(withActivity(withMoneyCells(c)))).map(noLock),
   globals: [SiteSettings, About, SeniorTeamsPage, Policies, DifferencePage, AcademySettings, PdrSettings, ReferralSettings, ReflectionSettings, FinanceSettings, SetupProgress, PushKeys, PortalLaunch].map((g) => withGlobalActivity(g)),
   editor: lexicalEditor(),
   ...(process.env.RESEND_API_KEY

@@ -6,6 +6,8 @@ import { managementAttention } from '@/lib/attention'
 import { RoleSwitch, myChildren } from '@/components/dashboard/RoleSwitch'
 import { sectionsFor } from './items'
 import Link from 'next/link'
+import { TrialsList } from '@/components/management/TrialsList'
+import { upcomingTrials } from '@/academy/trial-list'
 import { managementThisWeek } from '@/lib/this-week'
 import { EmailMeSummary } from '@/components/management/EmailMeSummary'
 import { formatDate } from '@/lib/payload'
@@ -18,7 +20,7 @@ export default async function ManagementHome() {
   nudgeGroupClock()
   const user = await requireManagement('/management')
   const p = await payload()
-  const [kids, counts, week] = await Promise.all([myChildren(p, user), managementAttention(p, user), managementThisWeek(p)])
+  const [kids, counts, week, trials] = await Promise.all([myChildren(p, user), managementAttention(p, user), managementThisWeek(p), upcomingTrials(p, { days: 14 })])
   return (
     <div data-brand="academy" data-page-brand="academy" className="min-h-[70vh]">
       <div className="container-x py-12">
@@ -46,6 +48,15 @@ export default async function ManagementHome() {
             ))}
           </dl>
         </section>
+        {trials.length > 0 && (
+          <section aria-label="Upcoming RFA trials" className="panel mt-8 border border-line" data-upcoming-trials>
+            <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-line px-5 py-3">
+              <h2 className="font-display text-xl font-semibold uppercase">Upcoming RFA trials <span className="text-sm text-muted">· Foundation Academy · next 14 days</span></h2>
+              <Link href="/management/trials?all=1" className="text-sm underline">See all</Link>
+            </div>
+            <TrialsList sessions={trials} compact />
+          </section>
+        )}
         <div className="mt-10">
           <SectionDashboard sections={sectionsFor(Boolean(user.roles?.includes('admin')))} initial={counts} />
         </div>
