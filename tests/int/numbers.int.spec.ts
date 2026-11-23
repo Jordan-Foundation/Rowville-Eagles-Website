@@ -9,7 +9,7 @@ describe('shirt number ranges', () => {
     expect(r[0]).toEqual({ birthYear: 2022, start: 51, end: 99 })
     expect(r[1]).toEqual({ birthYear: 2021, start: 2, end: 50 })
     expect(r[2]).toEqual({ birthYear: 2020, start: 51, end: 99 })
-    expect(r.at(-1)!.birthYear).toBe(2010) // 17 in 2027 — the oldest junior year
+    expect(r.at(-1)!.birthYear).toBe(2009) // U18 in 2027 — the oldest junior year
     expect(r.every((x) => x.start > 1)).toBe(true)
   })
   it('a new, younger year continues the pattern; stored years never change', () => {

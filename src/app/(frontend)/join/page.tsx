@@ -6,26 +6,26 @@ import { getAgeRules } from '@/lib/age-rules'
 export const revalidate = 3600
 export const metadata: Metadata = {
   title: 'Join us',
-  description: 'Play for Rowville Eagles — juniors (ages 5–17: MiniRoos and junior teams) or seniors and reserves (18+: Senior Men, Reserves and Senior Women).',
+  description: 'Play for Rowville Eagles — juniors (U6–U18: MiniRoos and junior teams) or seniors and reserves (Senior Men, Reserves and Senior Women). U16–U18 players can choose either.',
 }
 
 const cards = [
   {
     key: 'juniors',
     href: '/join/juniors',
-    eyebrow: 'Ages 5–17',
+    eyebrow: 'U6–U18',
     title: 'Juniors',
     text: 'MiniRoos and junior teams for boys and girls. Register for a trial night and we’ll place your player in a team.',
-    points: ['MiniRoos (ages 5–11) and juniors (U12–U17)', 'Pick a trial night, or register interest', 'Your offer arrives by email'],
+    points: ['MiniRoos (U6–U11) and juniors (U12–U18)', 'Pick a trial night, or register interest', 'U16–U18: juniors or seniors — your choice'],
     cta: 'Register for junior trials',
   },
   {
     key: 'seniors',
     href: '/join/seniors',
-    eyebrow: 'Ages 18+',
+    eyebrow: 'Ages 16+',
     title: 'Seniors & Reserves',
     text: 'Senior Men, Reserves and Senior Women. Send us an enquiry and the club secretary will be in touch about training and trials.',
-    points: ['Senior Men and Reserves', 'Senior Women', 'Goes straight to the club secretary'],
+    points: ['Senior Men and Reserves', 'Senior Women', 'From 16 — U16–U18 players can choose seniors'],
     cta: 'Send a senior enquiry',
   },
 ] as const

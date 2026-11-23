@@ -7,7 +7,7 @@ import type { KidOption } from '@/lib/family-kids'
 import { PolicyLink } from '@/components/PolicyLink'
 import { useActionState, useMemo, useState } from 'react'
 import { useFormStatus } from 'react-dom'
-import { fullLabel, groupFor, type AgeRules } from '@/lib/age-groups'
+import { fullLabel, groupFor, type AgeRules, seniorsOptional } from '@/lib/age-groups'
 import { Field, Fieldset, Input, inputCls } from '@/components/forms/Field'
 import { joinUs, type JoinState } from './actions'
 
@@ -52,7 +52,8 @@ export function JoinForm({ rules, trials, kids = [], prefill }: { rules: AgeRule
           {ageGroup && (
             <p className="w-full rounded-lg border border-line bg-surface px-4 py-2.5 text-sm" aria-live="polite">
               {season} age group: <strong>{ageGroup}</strong>
-              {group?.kind === 'senior' && <span className="mt-1 block text-xs" data-senior-note>18 or over? Senior players don’t trial through this form — <a href="/join/seniors" className="font-semibold underline">send a senior enquiry</a> instead.</span>}
+              {group?.kind === 'senior' && <span className="mt-1 block text-xs" data-senior-note>Too old for juniors — senior players don’t trial through this form. <a href="/join/seniors" className="font-semibold underline">Send a senior enquiry</a> instead.</span>}
+              {group && seniorsOptional(group) && <span className="mt-1 block text-xs" data-choice-note>{group.hint} players can choose juniors or seniors. Keep going for junior trials, or <a href="/join/seniors" className="font-semibold underline">send a senior enquiry</a> instead.</span>}
               {group?.kind === 'too-young' && <span className="mt-1 block text-xs text-muted">Younger than our MiniRoos {rules.miniMin}s — register interest and the club will be in touch.</span>}
             </p>
           )}

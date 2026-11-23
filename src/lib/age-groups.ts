@@ -2,7 +2,8 @@
  * Age groups (pure — safe for server and browser). One engine for every flow.
  *
  * Club rule: age group = season year − birth year, written "U" + that number (2027 season: born 2021 → U6,
- * born 2015 → U12, born 2010 → U17). MiniRoos U6–U11, juniors U12–U17, seniors 18+.
+ * born 2015 → U12, born 2009 → U18). MiniRoos U6–U11, juniors U12–U18, seniors after that. U16–U18 players may
+ * choose juniors or seniors (see `seniorsOptional`).
  * Groups are identified and labelled by YEAR OF BIRTH everywhere ("2017s"), with the U-group as a hint.
  * The season and the rules are admin settings (Site settings → Age groups), so groups roll over each season.
  *
@@ -29,6 +30,12 @@ export type AgeRules = {
 export const DEFAULT_RULES: Omit<AgeRules, 'season'> = { miniMin: 6, miniMax: 11, maxDown: 2, warnDown: 2 }
 
 export type GroupKind = 'too-young' | 'miniroos' | 'junior' | 'senior'
+
+/** Oldest junior group (U18); from U16 a player may choose juniors or seniors. */
+export const OLDEST_JUNIOR = 18
+export const SENIORS_FROM = 16
+/** U16–U18: can trial for juniors or send a senior enquiry. */
+export const seniorsOptional = (g: { kind: GroupKind; ageNumber: number }) => g.kind === 'junior' && g.ageNumber >= SENIORS_FROM
 
 export type AgeGroupInfo = {
   birthYear: number
@@ -57,7 +64,7 @@ export const groupLabel = (birthYear: number) => `${birthYear}s`
 
 export function groupInfo(birthYear: number, rules: AgeRules): AgeGroupInfo {
   const ageNumber = rules.season - birthYear
-  const kind: GroupKind = ageNumber < rules.miniMin ? 'too-young' : ageNumber <= rules.miniMax ? 'miniroos' : ageNumber < 18 ? 'junior' : 'senior'
+  const kind: GroupKind = ageNumber < rules.miniMin ? 'too-young' : ageNumber <= rules.miniMax ? 'miniroos' : ageNumber <= OLDEST_JUNIOR ? 'junior' : 'senior'
   const hint = kind === 'senior' ? 'Seniors' : kind === 'too-young' ? `Under ${rules.miniMin}` : `U${ageNumber}`
   return { birthYear, ageNumber, kind, label: kind === 'senior' ? 'Seniors' : groupLabel(birthYear), hint }
 }

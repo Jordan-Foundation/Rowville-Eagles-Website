@@ -1,4 +1,4 @@
-import { groupInfo, type AgeRules } from '../lib/age-groups'
+import { groupInfo, type AgeRules, OLDEST_JUNIOR } from '../lib/age-groups'
 
 /**
  * Shirt numbers (pure — unit tested). Each junior/MiniRoos year of birth has a stored number range; ranges alternate
@@ -26,7 +26,7 @@ export const picksNumber = (birthYear: number | null | undefined, rules: AgeRule
 export function seedRanges(rules: AgeRules): Range[] {
   const youngest = rules.season - rules.miniMin
   const out: Range[] = []
-  for (let i = 0; youngest - i > rules.season - 18; i++) out.push({ birthYear: youngest - i, ...(i % 2 === 0 ? HIGH : LOW) })
+  for (let i = 0; youngest - i >= rules.season - OLDEST_JUNIOR; i++) out.push({ birthYear: youngest - i, ...(i % 2 === 0 ? HIGH : LOW) })
   return out
 }
 

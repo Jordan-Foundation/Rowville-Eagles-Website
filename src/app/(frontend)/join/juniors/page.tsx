@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { payload, formatAUD } from '@/lib/payload'
-import { groupInfo } from '@/lib/age-groups'
+import { groupInfo, OLDEST_JUNIOR, seniorsOptional } from '@/lib/age-groups'
 import { getAgeRules } from '@/lib/age-rules'
 import { clubTrialOptions } from '@/lib/trial-options'
 import { JoinForm } from '../JoinForm'
@@ -12,7 +12,7 @@ import { StickyCta } from '@/components/StickyCta'
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = {
   title: 'Join as a junior',
-  description: 'Register for Rowville Eagles junior trials — MiniRoos and juniors, ages 5–17. Choose a trial night or register your interest.',
+  description: 'Register for Rowville Eagles junior trials — MiniRoos and juniors, U6 to U18. Choose a trial night or register your interest.',
 }
 
 const steps = [
@@ -31,7 +31,7 @@ export default async function JoinPage() {
   const season = rules.season
   const trials = await clubTrialOptions(p)
   // Who plays where this season: MiniRoos and junior birth years, then seniors
-  const groups = Array.from({ length: 18 - rules.miniMin }, (_, i) => groupInfo(season - rules.miniMin - i, rules))
+  const groups = Array.from({ length: OLDEST_JUNIOR - rules.miniMin + 1 }, (_, i) => groupInfo(season - rules.miniMin - i, rules))
   const { docs: fees } = await p.find({ pagination: false, collection: 'programs', where: { type: { equals: 'registration' }, status: { not_equals: 'draft' } }, sort: 'title', limit: 20, depth: 0 })
   // The season fee up front, as the ads say it ("U5 – U11 · $950"), with what it costs to trial: nothing
   const feeLine = fees.filter((f) => f.price && !/senior|18\+/i.test(`${f.title} ${f.ageRange ?? ''}`)).map((f) => `${f.ageRange || f.title} ${formatAUD(f.price!)}`).join(' · ')
@@ -40,7 +40,7 @@ export default async function JoinPage() {
     <>
       <section className="pitch-lines bg-[#0f2a55] text-white">
         <div className="container-x py-16 md:py-20">
-          <p className="eyebrow">Juniors · Ages 5–17 · MiniRoos & junior teams</p>
+          <p className="eyebrow">Juniors · U6–U18 · MiniRoos & junior teams</p>
           <h1 className="mt-3 font-[family-name:var(--font-barlow)] text-5xl font-extrabold uppercase leading-none sm:text-7xl">
             Join us for <span className="text-accent">{season}</span>
           </h1>
@@ -70,9 +70,9 @@ export default async function JoinPage() {
             <thead><tr className="text-left text-muted"><th className="py-1.5 font-medium">Born in</th><th className="py-1.5 font-medium">Plays in</th><th className="py-1.5 font-medium">Group</th></tr></thead>
             <tbody className="divide-y divide-line">
               {groups.map((g) => (
-                <tr key={g.birthYear}><td className="py-1.5 font-medium">{g.birthYear}</td><td className="py-1.5">{g.hint}</td><td className="py-1.5 text-muted">{kindName[g.kind]}</td></tr>
+                <tr key={g.birthYear}><td className="py-1.5 font-medium">{g.birthYear}</td><td className="py-1.5">{g.hint}</td><td className="py-1.5 text-muted">{seniorsOptional(g) ? <>Juniors or <Link href="/join/seniors" className="font-semibold text-brand underline">seniors</Link></> : kindName[g.kind]}</td></tr>
               ))}
-              <tr><td className="py-1.5 font-medium">{season - 18} or earlier</td><td className="py-1.5" colSpan={2}><Link href="/join/seniors" className="font-semibold text-brand underline">Seniors & reserves (18+) — enquire here</Link></td></tr>
+              <tr><td className="py-1.5 font-medium">{season - OLDEST_JUNIOR - 1} or earlier</td><td className="py-1.5" colSpan={2}><Link href="/join/seniors" className="font-semibold text-brand underline">Seniors & reserves — enquire here</Link></td></tr>
             </tbody>
           </table>
         </section>
@@ -115,7 +115,7 @@ export default async function JoinPage() {
         <h2 className="mb-6 font-[family-name:var(--font-barlow)] text-3xl font-bold uppercase">Register for trials</h2>
         <JoinForm rules={rules} trials={trials} kids={await familyKids(p, me?.id)} prefill={contactPrefill(me)} />
       </div>
-      <StickyCta href="#register" label="Register for trials" note={`Free to trial · ages 5–17`} />
+      <StickyCta href="#register" label="Register for trials" note={`Free to trial · U6–U18`} />
     </>
   )
 }

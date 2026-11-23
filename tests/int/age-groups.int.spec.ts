@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { birthYearFromLegacy, birthYearOf, checkMove, groupFor, groupInfo, miniRoosBirthYears, placementLabel, DEFAULT_RULES } from '@/lib/age-groups'
+import { birthYearFromLegacy, birthYearOf, checkMove, groupFor, groupInfo, miniRoosBirthYears, placementLabel, seniorsOptional, DEFAULT_RULES } from '@/lib/age-groups'
 
 const r2026 = { season: 2026, ...DEFAULT_RULES }
 const r2027 = { season: 2027, ...DEFAULT_RULES }
@@ -53,7 +53,14 @@ describe('moving between age groups', () => {
 describe('2027 age groups (club rule: U = season − year of birth)', () => {
   const r = { season: 2027, miniMin: 6, miniMax: 11, maxDown: 2, warnDown: 2 }
   it('matches the join page table', () => {
-    const rows: [number, string, string][] = [[2021, 'U6', 'miniroos'], [2016, 'U11', 'miniroos'], [2015, 'U12', 'junior'], [2010, 'U17', 'junior'], [2009, 'Seniors', 'senior']]
+    const rows: [number, string, string][] = [[2021, 'U6', 'miniroos'], [2016, 'U11', 'miniroos'], [2015, 'U12', 'junior'], [2010, 'U17', 'junior'], [2009, 'U18', 'junior'], [2008, 'Seniors', 'senior']]
     for (const [by, hint, kind] of rows) expect(groupInfo(by, r)).toMatchObject({ hint, kind })
+  })
+})
+
+describe('U16–U18 can choose juniors or seniors', () => {
+  const r = { season: 2027, miniMin: 6, miniMax: 11, maxDown: 2, warnDown: 2 }
+  it('from U16 (born 2011) to U18 (born 2009)', () => {
+    expect([2012, 2011, 2010, 2009, 2008].map((y) => seniorsOptional(groupInfo(y, r)))).toEqual([false, true, true, true, false])
   })
 })
