@@ -4004,10 +4004,6 @@ export interface PayloadLockedDocument {
         value: number | PdrSubmission;
       } | null)
     | ({
-        relationTo: 'pdr-audit';
-        value: number | PdrAudit;
-      } | null)
-    | ({
         relationTo: 'pdr-awards';
         value: number | PdrAward;
       } | null)
@@ -4016,16 +4012,8 @@ export interface PayloadLockedDocument {
         value: number | FplusWaitlist;
       } | null)
     | ({
-        relationTo: 'fplus-events';
-        value: number | FplusEvent;
-      } | null)
-    | ({
         relationTo: 'fplus-trial-cards';
         value: number | FplusTrialCard;
-      } | null)
-    | ({
-        relationTo: 'form-throttle';
-        value: number | FormThrottle;
       } | null)
     | ({
         relationTo: 'academy-coaches';
@@ -4034,10 +4022,6 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'academy-availability';
         value: number | AcademyAvailability;
-      } | null)
-    | ({
-        relationTo: 'academy-reminder-log';
-        value: number | AcademyReminderLog;
       } | null)
     | ({
         relationTo: 'academy-credits';
@@ -4062,14 +4046,6 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'trial-invites';
         value: number | TrialInvite;
-      } | null)
-    | ({
-        relationTo: 'selection-audit';
-        value: number | SelectionAudit;
-      } | null)
-    | ({
-        relationTo: 'import-batches';
-        value: number | ImportBatch;
       } | null)
     | ({
         relationTo: 'trial-sessions';
@@ -4144,10 +4120,6 @@ export interface PayloadLockedDocument {
         value: number | ReflectionReport;
       } | null)
     | ({
-        relationTo: 'reflection-reminders';
-        value: number | ReflectionReminder;
-      } | null)
-    | ({
         relationTo: 'teams';
         value: number | Team;
       } | null)
@@ -4188,14 +4160,6 @@ export interface PayloadLockedDocument {
         value: number | User;
       } | null)
     | ({
-        relationTo: 'consent-records';
-        value: number | ConsentRecord;
-      } | null)
-    | ({
-        relationTo: 'message-log';
-        value: number | MessageLog;
-      } | null)
-    | ({
         relationTo: 'curriculum-standards';
         value: number | CurriculumStandard;
       } | null)
@@ -4208,20 +4172,8 @@ export interface PayloadLockedDocument {
         value: number | PlayerReport;
       } | null)
     | ({
-        relationTo: 'report-reminder-log';
-        value: number | ReportReminderLog;
-      } | null)
-    | ({
         relationTo: 'promotions';
         value: number | Promotion;
-      } | null)
-    | ({
-        relationTo: 'promotion-uses';
-        value: number | Promotionus;
-      } | null)
-    | ({
-        relationTo: 'seen-markers';
-        value: number | SeenMarker;
       } | null)
     | ({
         relationTo: 'conversations';
@@ -4232,16 +4184,8 @@ export interface PayloadLockedDocument {
         value: number | Message;
       } | null)
     | ({
-        relationTo: 'invite-tokens';
-        value: number | InviteToken;
-      } | null)
-    | ({
         relationTo: 'wwcc-files';
         value: number | WwccFile;
-      } | null)
-    | ({
-        relationTo: 'push-subscriptions';
-        value: number | PushSubscription;
       } | null)
     | ({
         relationTo: 'session-summaries';
@@ -4256,10 +4200,6 @@ export interface PayloadLockedDocument {
         value: number | PlayerNumber;
       } | null)
     | ({
-        relationTo: 'number-audit-log';
-        value: number | NumberAuditLog;
-      } | null)
-    | ({
         relationTo: 'kit-items';
         value: number | KitItem;
       } | null)
@@ -4270,14 +4210,6 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'fitout-entries';
         value: number | FitoutEntry;
-      } | null)
-    | ({
-        relationTo: 'activity-log';
-        value: number | ActivityLog;
-      } | null)
-    | ({
-        relationTo: 'staff-feed';
-        value: number | StaffFeed;
       } | null)
     | ({
         relationTo: 'coach-pay-rates';
@@ -4318,10 +4250,6 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'projection-scenarios';
         value: number | ProjectionScenario;
-      } | null)
-    | ({
-        relationTo: 'finance-audit-log';
-        value: number | FinanceAuditLog;
       } | null)
     | ({
         relationTo: 'media';
