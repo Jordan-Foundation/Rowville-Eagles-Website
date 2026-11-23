@@ -93,6 +93,7 @@ import * as migration_20261118_091706_booking_hours_app from './20261118_091706_
 import * as migration_20261118_124326_selections_v2 from './20261118_124326_selections_v2';
 import * as migration_20261123_050535_player_import_launch from './20261123_050535_player_import_launch';
 import * as migration_20261123_065017_site_pages_events from './20261123_065017_site_pages_events';
+import * as migration_20261123_081943_no_lock_system_collections from './20261123_081943_no_lock_system_collections';
 
 export const migrations = [
   {
@@ -568,6 +569,11 @@ export const migrations = [
   {
     up: migration_20261123_065017_site_pages_events.up,
     down: migration_20261123_065017_site_pages_events.down,
-    name: '20261123_065017_site_pages_events'
+    name: '20261123_065017_site_pages_events',
+  },
+  {
+    up: migration_20261123_081943_no_lock_system_collections.up,
+    down: migration_20261123_081943_no_lock_system_collections.down,
+    name: '20261123_081943_no_lock_system_collections'
   },
 ];
