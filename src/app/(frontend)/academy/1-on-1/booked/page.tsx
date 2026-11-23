@@ -1,4 +1,5 @@
 import { BookingNextSteps } from '@/components/BookingNextSteps'
+import { RefreshWhilePending } from '../../../checkout/success/RefreshWhilePending'
 import { TrackConversion } from '@/tracking/TrackConversion'
 import { conversionFor } from '@/tracking/config'
 import { programPlace } from '@/lib/place'
@@ -97,7 +98,10 @@ export default async function BookedPage({ searchParams }: { searchParams: Promi
             )}
             {confirmed && <BookingNextSteps reference={booking.reference} academy directions={termPlace ? programPlace(termPlace, null).directions : null} />}
             {!confirmed ? (
-              <p className="mt-6 text-sm text-muted">Your payment is being confirmed — this page will update shortly. Refresh in a minute.</p>
+              <p className="mt-6 text-sm text-muted" data-pending>
+                {booking.status === 'held' && <RefreshWhilePending />}
+                Your payment is being confirmed — this page will update by itself in a moment.
+              </p>
             ) : account?.activated ? (
               <div className="panel mt-6 border border-line p-5 text-sm">
                 <p>This booking is in your account, with all your sessions and payments.</p>

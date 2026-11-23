@@ -14,6 +14,8 @@ import { RfaLogo } from '@/components/Logos'
 import type { Metadata } from 'next'
 import { cache } from 'react'
 import { describe, jsonLd, mediaUrl, siteBase } from '@/lib/seo'
+import { StickyCta } from '@/components/StickyCta'
+import { cardPrice } from '@/lib/format'
 
 export const revalidate = 600
 export const generateStaticParams = () => [] as { slug: string }[]
@@ -64,6 +66,21 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
     ['Places', placesLabel],
   ].filter(([, v]) => v) as [string, string][]
 
+  // The one next step for someone arriving from an ad: shown in the header, and on phones in a bar at the bottom
+  const cta: { href: string; label: string } | null =
+    p.type === 'community' ? null
+    : p.type === 'registration' ? { href: '/join/juniors', label: 'Join us for trials' }
+    : p.type === 'tournament' ? (p.status === 'open' ? { href: `/programs/${p.slug}/interest`, label: 'Register interest' } : null)
+    : p.type === 'toddler' ? (p.status === 'open' ? { href: `/programs/${p.slug}/book`, label: 'Book the term' } : p.status === 'full' ? { href: `/programs/${p.slug}/trial`, label: 'Book a free trial' } : null)
+    : p.status === 'open' && placesLeft !== 0 ? { href: `/programs/${p.slug}/book`, label: 'Book now' } : null
+  const camp = campAll.length ? campPrices(p) : null
+  const price = cardPrice(p)
+  const priceNote = camp
+    ? `${formatAUD(camp.day)} a day · full camp ${formatAUD(camp.full)}`
+    : p.type === 'tournament' || p.type === 'registration' ? null
+    : price.amount ? `${price.from ? 'From ' : ''}${formatAUD(price.amount)}${price.unit ? ` ${price.unit}` : ''}` : null
+  const heroFacts = [campAll.length ? `${campAll.length} day${campAll.length === 1 ? '' : 's'} · ${[formatDate(p.startDate, { day: 'numeric', month: 'short' }), p.endDate && formatDate(p.endDate, { day: 'numeric', month: 'short' })].filter(Boolean).join(' – ')}` : null, p.ageRange, priceNote].filter(Boolean) as string[]
+
   return (
     <div data-brand={academy ? 'academy' : undefined} data-page-brand={academy ? 'academy' : undefined}>
       {p.startDate && (
@@ -90,13 +107,21 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
       )}
       <section className={academy ? 'relative overflow-hidden border-b border-line' : 'pitch-lines bg-[#0f2a55] text-white'}>
         {academy && <AcademyBackdrop size="md" />}
-        <div className="container-x relative py-16 md:py-24">
-          {academy && <RfaLogo className="mb-8 h-10 w-auto" ink="#fff" paper="#000" />}
+        <div className="container-x relative py-10 md:py-24">
+          {academy && <RfaLogo className="mb-6 h-10 w-auto md:mb-8" ink="#fff" paper="#000" />}
           <p className={academy ? 'text-xs font-medium uppercase tracking-[0.35em] text-muted' : 'eyebrow'}>{programTypes.find((t) => t.value === p.type)?.label}</p>
-          <h1 className={`mt-4 max-w-3xl text-5xl leading-none sm:text-6xl ${academy ? 'font-display font-semibold uppercase tracking-tight' : 'font-[family-name:var(--font-barlow)] font-extrabold uppercase'}`}>
+          <h1 className={`mt-4 max-w-3xl leading-none sm:text-6xl ${p.title.length > 32 ? 'text-4xl' : 'text-5xl'} ${academy ? 'font-display font-semibold uppercase tracking-tight' : 'font-[family-name:var(--font-barlow)] font-extrabold uppercase'}`}>
             {p.title}
           </h1>
           <p className={`mt-5 max-w-2xl text-lg ${academy ? 'text-muted' : 'text-white/75'}`}>{p.summary}</p>
+          {cta && (
+            <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3" data-hero-cta>
+              <Link href={cta.href} data-cta className={`inline-block bg-accent px-7 py-3.5 font-semibold text-accent-ink transition hover:brightness-110 ${academy ? 'text-sm uppercase tracking-[0.18em]' : 'rounded-full'}`}>
+                {cta.label} →
+              </Link>
+              {heroFacts.length > 0 && <p className={`text-sm font-medium ${academy ? 'text-ink' : 'text-white'}`}>{heroFacts.join(' · ')}</p>}
+            </div>
+          )}
         </div>
       </section>
       <div className="container-x grid gap-12 py-14 lg:grid-cols-[1fr_22rem]">
@@ -185,6 +210,7 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
           ) : p.status === 'open' ? (
             <Link
               href={`/programs/${p.slug}/book`}
+              data-cta
               className={`mt-7 block w-full bg-accent px-6 py-3 text-center font-semibold text-accent-ink transition hover:brightness-110 ${academy ? 'uppercase tracking-[0.18em]' : 'rounded-full'}`}
             >
               Book now
@@ -197,6 +223,7 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
 
         </aside>
       </div>
+      {cta && <StickyCta academy={academy} href={cta.href} label={cta.label} note={priceNote ?? p.ageRange ?? undefined} />}
     </div>
   )
 }

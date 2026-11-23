@@ -41,7 +41,7 @@ export function BookForm({ coach, slot, term, price, weekly, credit, loginHref, 
   const covered = Boolean(credit) && used > 0 && toPay <= 0
 
   return (
-    <form action={action} className="space-y-6">
+    <form action={action} data-track-begin="1on1" className="space-y-6">
       <input type="hidden" name="coach" value={coach} />
       <input type="hidden" name="term" value={term} />
       <input type="hidden" name="mode" value={slot.mode} />

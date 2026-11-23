@@ -12,6 +12,7 @@ import { confirmPayment } from '@/lib/payments'
 import { isPayee, paymentsMode, stripeAccounts, stripeFor } from '@/lib/stripe-accounts'
 import type { Program } from '@/payload-types'
 import { ClearCart } from './ClearCart'
+import { RefreshWhilePending } from './RefreshWhilePending'
 import { AcademyBackdrop } from '@/components/AcademyBackdrop'
 
 export const dynamic = 'force-dynamic'
@@ -109,7 +110,8 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
               dropOffPickUp={program.dropOffPickUp}
             />
           )}
-          {!paid && <p className="mt-6 text-sm text-muted">Your payment is still being confirmed. This page will update shortly — refresh in a minute.</p>}
+          {!paid && status === 'pending' && <RefreshWhilePending />}
+          {!paid && <p className="mt-6 text-sm text-muted" data-pending>Your payment is still being confirmed. This page will update by itself in a moment.</p>}
           {paid && program.type === 'registration' && (
             <div className="mt-8 rounded-2xl border-2 border-accent p-6 text-left">
               <p className="font-semibold">One more step: Football Victoria registration</p>
