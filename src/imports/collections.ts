@@ -57,7 +57,7 @@ export const userImportFields: Field[] = [
         { name: 'emailAt', label: 'Launch email sent', type: 'date', index: true },
         { name: 'emailStatus', type: 'select', options: ['sent', 'delivered', 'bounced', 'failed'] },
         { name: 'smsAt', label: 'Launch text sent', type: 'date' },
-        { name: 'smsStatus', type: 'select', options: ['sent', 'delivered', 'failed', 'skipped'] },
+        { name: 'smsStatus', type: 'select', options: ['sent', 'delivered', 'failed', 'skipped', { label: 'Shared mobile (texted once, to the other parent)', value: 'shared' }] },
         { name: 'smsSid', type: 'text', index: true, admin: { hidden: true } },
         { name: 'smsTries', type: 'number', admin: { hidden: true } },
       ] },

@@ -50,10 +50,10 @@ export async function importContext(p: Payload): Promise<ImportContext & { kitId
   }
 }
 
-export type PreviewRow = ImportRow & { status: 'ok' | 'warning' | 'error'; family: 'new' | 'existing'; player: ImportRow['player']; action: 'create' | 'update' | 'skip' }
+export type PreviewRow = ImportRow & { status: 'ok' | 'warning' | 'error'; family: 'new' | 'existing'; player: ImportRow['player']; action: 'create' | 'update' | 'unchanged' | 'skip' }
 export type Preview = {
   rows: PreviewRow[]
-  totals: { familiesNew: number; familiesMatched: number; playersCreate: number; playersUpdate: number; errors: number; warnings: number }
+  totals: { familiesNew: number; familiesMatched: number; playersCreate: number; playersUpdate: number; playersUnchanged: number; errors: number; warnings: number }
 }
 
 /** Find the family for a Parent 1 email (or, failing that, the same mobile). */
@@ -90,7 +90,8 @@ export async function previewImport(p: Payload, sheet: unknown[][]): Promise<Pre
     }
     const existing = fam?.accountId && r.player.dob ? await findPlayer(p, fam.accountId, r) : null
     const status = rowStatus(r)
-    out.push({ ...r, status, family: fam?.status ?? 'new', action: status === 'error' ? 'skip' : existing ? 'update' : 'create' })
+    const changes = existing && status !== 'error' ? (await playerPlan(p, { r, accountId: fam!.accountId!, batchId: null, ctx, existing })).changed : true
+    out.push({ ...r, status, family: fam?.status ?? 'new', action: status === 'error' ? 'skip' : !existing ? 'create' : changes ? 'update' : 'unchanged' })
   }
   const ok = out.filter((r) => r.status !== 'error')
   const fams = new Map(ok.map((r) => [r.parent1.email, r.family]))
@@ -101,6 +102,7 @@ export async function previewImport(p: Payload, sheet: unknown[][]): Promise<Pre
       familiesMatched: [...fams.values()].filter((f) => f === 'existing').length,
       playersCreate: ok.filter((r) => r.action === 'create').length,
       playersUpdate: ok.filter((r) => r.action === 'update').length,
+      playersUnchanged: ok.filter((r) => r.action === 'unchanged').length,
       errors: out.filter((r) => r.status === 'error').length,
       warnings: out.filter((r) => r.status === 'warning').length,
     },
@@ -208,9 +210,11 @@ export async function runImport(p: Payload, o: { sheet: unknown[][]; fileName: s
   return { batch: batch.id, counts }
 }
 
-async function importPlayer(p: Payload, o: { r: PreviewRow; account: User; batchId: number; ctx: Awaited<ReturnType<typeof importContext>>; log: Log; by: User }): Promise<'created' | 'updated' | 'unchanged'> {
-  const { r, account, batchId, ctx, log } = o
-  const existing = await findPlayer(p, account.id, r)
+/** The participant data a row would save (merged with what's there), and whether that changes anything. */
+async function playerPlan(p: Payload, o: { r: ImportRow; accountId: number; batchId: number | null; ctx: Awaited<ReturnType<typeof importContext>>; existing: Participant | null }) {
+  const { r, ctx, existing } = o
+  const account = { id: o.accountId }
+  const batchId = o.batchId
   const teamName = r.eagles ? ctx.teams.get(lc(r.team)) : null
   const team = teamName ? (await p.find({ collection: 'teams', where: { name: { equals: teamName }, type: { equals: 'rowville' } }, limit: 1, depth: 0, ...q })).docs[0] : null
   const program = r.eagles && r.registration !== 'na' ? await registrationFor(p, r.player.birthYear) : null
@@ -235,7 +239,7 @@ async function importPlayer(p: Payload, o: { r: PreviewRow; account: User; batch
     ...(r.eagles && r.registration !== 'na' && existing?.registrationOffer?.status !== 'paid' ? { registrationOffer: { program: program?.id ?? rel(existing?.registrationOffer?.program), status: r.registration === 'paid' ? ('paid' as const) : ('offered' as const) } } : {}),
     imported: {
       ...(existing?.imported ?? {}),
-      batch: rel(existing?.imported?.batch) ?? batchId,
+      batch: rel(existing?.imported?.batch) ?? batchId ?? undefined,
       registrationStatus: r.eagles ? (existing?.registrationOffer?.status === 'paid' ? 'paid' : r.registration) : (existing?.imported?.registrationStatus ?? 'na'),
       registrationSource: r.eagles && r.registration === 'paid' ? (existing?.imported?.registrationSource ?? 'imported_paid_offline') : existing?.imported?.registrationSource,
       mobile: setIf(r.player.mobile, existing?.imported?.mobile),
@@ -243,12 +247,30 @@ async function importPlayer(p: Payload, o: { r: PreviewRow; account: User; batch
       notes: setIf(r.notes, existing?.imported?.notes),
     },
   } as Partial<Participant>
+  const n = (v: unknown) => (v === undefined || v === '' ? null : v)
+  const pick = (k: Partial<Participant>) => JSON.stringify([n(k.gender), [...(k.memberships ?? [])].sort(), n(rel(k.team)), n(k.football?.position), n(k.medical?.conditions), n(k.medical?.emergencyContact), n(k.medical?.emergencyPhone), Boolean(k.photoConsent), n(rel(k.registrationOffer?.program)), n(k.registrationOffer?.status), n(k.imported?.registrationStatus), n(k.imported?.mobile), n(k.imported?.email), n(k.imported?.notes)])
+  let changed = existing ? pick(existing) !== pick({ ...existing, ...data }) : true
+  if (existing && !changed && team) {
+    const { totalDocs } = await p.count({ collection: 'team-members', where: { team: { equals: team.id }, participant: { equals: existing.id }, active: { equals: true } }, ...q })
+    if (!totalDocs) changed = true
+  }
+  if (existing && !changed && r.number && r.number !== 1 && r.player.birthYear) {
+    const { totalDocs } = await p.count({ collection: 'player-numbers', where: { participant: { equals: existing.id }, status: { equals: 'active' }, number: { equals: r.number }, birthYear: { equals: r.player.birthYear } }, ...q })
+    if (!totalDocs) changed = true
+  }
+  return { data, team, changed }
+}
+
+async function importPlayer(p: Payload, o: { r: PreviewRow; account: User; batchId: number; ctx: Awaited<ReturnType<typeof importContext>>; log: Log; by: User }): Promise<'created' | 'updated' | 'unchanged'> {
+  const { r, account, batchId, ctx, log } = o
+  const existing = await findPlayer(p, account.id, r)
+  const { data, team, changed: willChange } = await playerPlan(p, { r, accountId: account.id, batchId, ctx, existing })
   let kid: Participant
   let result: 'created' | 'updated' | 'unchanged'
   if (existing) {
     const n = (v: unknown) => (v === undefined || v === '' ? null : v)
     const pick = (k: Partial<Participant>) => JSON.stringify([n(k.gender), [...(k.memberships ?? [])].sort(), n(rel(k.team)), n(k.football?.position), n(k.medical?.conditions), n(k.medical?.emergencyContact), n(k.medical?.emergencyPhone), Boolean(k.photoConsent), n(rel(k.registrationOffer?.program)), n(k.registrationOffer?.status), n(k.imported?.registrationStatus), n(k.imported?.mobile), n(k.imported?.email), n(k.imported?.notes)])
-    const changed = pick(existing) !== pick({ ...existing, ...data })
+    const changed = willChange && pick(existing) !== pick({ ...existing, ...data })
     if (changed) {
       log.updated.push({ id: existing.id, before: { gender: existing.gender, memberships: existing.memberships, team: rel(existing.team), football: existing.football, medical: existing.medical, photoConsent: existing.photoConsent, registrationOffer: existing.registrationOffer ? { program: rel(existing.registrationOffer.program), status: existing.registrationOffer.status } : undefined, imported: existing.imported, numbers: existing.numbers } as Partial<Participant> })
       kid = await p.update({ collection: 'participants', id: existing.id, ...q, context: { skipNumberRelease: true }, data })
@@ -265,10 +287,11 @@ async function importPlayer(p: Payload, o: { r: PreviewRow; account: User; batch
     if (!docs[0]) {
       const m = await p.create({ collection: 'team-members', ...q, data: { team: team.id, participant: kid.id, account: account.id, source: 'admin', active: true } })
       log.members.push(m.id)
+      if (result === 'unchanged') result = 'updated'
     } else if (!docs[0].active) await p.update({ collection: 'team-members', id: docs[0].id, ...q, data: { active: true } })
   }
   // Their shirt number, locked to them (they're never asked to pick)
-  if (r.number && r.player.birthYear) {
+  if (r.number && r.number !== 1 && r.player.birthYear) {
     const { docs: current } = await p.find({ collection: 'player-numbers', where: { participant: { equals: kid.id }, status: { equals: 'active' } }, limit: 1, depth: 0, ...q })
     const cur = current[0]
     if (!cur || cur.number !== r.number || cur.birthYear !== r.player.birthYear) {
@@ -306,27 +329,31 @@ async function importPlayer(p: Payload, o: { r: PreviewRow; account: User; batch
 }
 
 /** Remove what a (part of a) batch created and put back what it changed. */
+const soft = (p: Payload) => (e: unknown) => { p.logger.error({ err: e, msg: 'Import undo step failed' }); return null }
+
 async function rollback(p: Payload, log: Log) {
-  for (const id of log.fitout) await p.delete({ collection: 'fitout-entries', id, ...q }).catch(() => null)
+  for (const id of log.fitout) await p.delete({ collection: 'fitout-entries', id, ...q }).catch(soft(p))
   for (const n of [...log.numbers].reverse()) {
-    await p.delete({ collection: 'player-numbers', id: n.id, ...q }).catch(() => null)
+    await p.delete({ collection: 'player-numbers', id: n.id, ...q }).catch(soft(p))
     if (n.previous) {
       const { docs } = await p.find({ collection: 'player-numbers', where: { participant: { equals: n.participant }, birthYear: { equals: n.previous.birthYear }, number: { equals: n.previous.number }, status: { equals: 'released' } }, sort: '-releasedAt', limit: 1, depth: 0, ...q })
-      if (docs[0]) await p.update({ collection: 'player-numbers', id: docs[0].id, ...q, data: { status: 'active', slot: slotKey(n.previous.birthYear, n.previous.number), releasedAt: null } }).catch(() => null)
+      if (docs[0]) await p.update({ collection: 'player-numbers', id: docs[0].id, ...q, data: { status: 'active', slot: slotKey(n.previous.birthYear, n.previous.number), releasedAt: null } }).catch(soft(p))
     }
   }
-  for (const id of log.members) await p.delete({ collection: 'team-members', id, ...q }).catch(() => null)
-  for (const u of log.updated) await p.update({ collection: 'participants', id: u.id, ...q, context: { skipNumberRelease: true }, data: u.before }).catch(() => null)
+  for (const id of log.members) await p.delete({ collection: 'team-members', id, ...q }).catch(soft(p))
+  for (const u of log.updated) await p.update({ collection: 'participants', id: u.id, ...q, context: { skipNumberRelease: true }, data: u.before }).catch(soft(p))
   for (const id of log.participants) {
-    await p.delete({ collection: 'player-numbers', where: { participant: { equals: id } }, ...q }).catch(() => null)
-    await p.delete({ collection: 'participants', id, ...q }).catch(() => null)
+    await p.delete({ collection: 'player-numbers', where: { participant: { equals: id } }, ...q }).catch(soft(p))
+    await p.delete({ collection: 'number-audit-log', where: { participant: { equals: id } }, ...q }).catch(soft(p))
+    await p.delete({ collection: 'fitout-entries', where: { participant: { equals: id } }, ...q }).catch(soft(p))
+    await p.delete({ collection: 'participants', id, ...q }).catch(soft(p))
   }
-  for (const u of log.usersUpdated) await p.update({ collection: 'users', id: u.id, ...q, context: { skipWelcome: true }, data: u.before }).catch(() => null)
+  for (const u of log.usersUpdated) await p.update({ collection: 'users', id: u.id, ...q, context: { skipWelcome: true }, data: u.before }).catch(soft(p))
   for (const id of [...log.users].reverse()) {
-    await p.delete({ collection: 'invite-tokens', where: { user: { equals: id } }, ...q }).catch(() => null)
-    await p.delete({ collection: 'users', id, ...q }).catch(() => null)
+    await p.delete({ collection: 'invite-tokens', where: { user: { equals: id } }, ...q }).catch(soft(p))
+    await p.delete({ collection: 'users', id, ...q }).catch(soft(p))
   }
-  if (log.fitoutSession) await p.delete({ collection: 'fitout-sessions', id: log.fitoutSession, ...q }).catch(() => null)
+  if (log.fitoutSession) await p.delete({ collection: 'fitout-sessions', id: log.fitoutSession, ...q }).catch(soft(p))
 }
 
 /** Undo is allowed only while nobody in the batch has set up their account or been sent anything. */
@@ -340,7 +367,14 @@ export async function undoBatch(p: Payload, batchId: number, by: User) {
   if (batch.status === 'undone') return { already: true }
   const blockers = await undoBlockers(p, batchId)
   if (blockers.length) throw new Error(`Can’t undo: ${blockers.length} famil${blockers.length === 1 ? 'y has' : 'ies have'} already been messaged or set up their account (${blockers.slice(0, 3).join(', ')}${blockers.length > 3 ? '…' : ''}).`)
-  await rollback(p, batch.log as Log)
+  const log = batch.log as Log
+  await rollback(p, log)
+  // Only call it undone when everything it created has really gone (otherwise it can be tried again)
+  const [u, k] = await Promise.all([
+    log.users.length ? p.count({ collection: 'users', where: { id: { in: log.users } }, ...q }) : { totalDocs: 0 },
+    log.participants.length ? p.count({ collection: 'participants', where: { id: { in: log.participants } }, ...q }) : { totalDocs: 0 },
+  ])
+  if (u.totalDocs || k.totalDocs) throw new Error(`Undo couldn’t remove everything (${u.totalDocs} accounts, ${k.totalDocs} players are still linked to other records). Nothing has been marked undone — check the server log, or remove them in the admin.`)
   await p.update({ collection: 'import-batches', id: batchId, ...q, data: { status: 'undone', undoneAt: new Date().toISOString(), undoneBy: by.id } })
   return { already: false }
 }

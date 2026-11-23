@@ -36,8 +36,8 @@ export function ImportForm() {
       </form>
       {t && (
         <>
-          <dl className="grid gap-3 text-sm sm:grid-cols-3 lg:grid-cols-6" data-totals>
-            {([['New families', t.familiesNew, 'families-new'], ['Matched families', t.familiesMatched, 'families-matched'], ['Players to create', t.playersCreate, 'players-create'], ['Players to update', t.playersUpdate, 'players-update'], ['Rows with errors', t.errors, 'errors'], ['Rows with warnings', t.warnings, 'warnings']] as const).map(([k, v, key]) => (
+          <dl className="grid gap-3 text-sm sm:grid-cols-4 lg:grid-cols-7" data-totals>
+            {([['New families', t.familiesNew, 'families-new'], ['Matched families', t.familiesMatched, 'families-matched'], ['Players to create', t.playersCreate, 'players-create'], ['Players to update', t.playersUpdate, 'players-update'], ['Unchanged', t.playersUnchanged, 'players-unchanged'], ['Rows with errors', t.errors, 'errors'], ['Rows with warnings', t.warnings, 'warnings']] as const).map(([k, v, key]) => (
               <div key={k} className="border border-line p-3" data-total={key} data-value={v}><dt className="text-xs text-muted">{k}</dt><dd className="font-display text-3xl font-semibold">{v}</dd></div>
             ))}
           </dl>
@@ -52,7 +52,7 @@ export function ImportForm() {
                 {shown.map((r) => (
                   <tr key={r.line} data-row={r.line} data-status={r.status} className="align-top">
                     <td className="px-3 py-2 text-muted">{r.line}</td>
-                    <td className="px-3 py-2">{r.player.first} {r.player.last}<span className="block text-xs text-muted">{r.action === 'update' ? 'Update existing player' : r.action === 'create' ? 'New player' : ''}</span></td>
+                    <td className="px-3 py-2">{r.player.first} {r.player.last}<span className="block text-xs text-muted">{r.action === 'update' ? 'Update existing player' : r.action === 'unchanged' ? 'Already in the portal — no changes' : r.action === 'create' ? 'New player' : ''}</span></td>
                     <td className="px-3 py-2">{r.player.dob ?? '—'}</td>
                     <td className="px-3 py-2">{r.parent1.first} {r.parent1.last}<span className="block text-xs text-muted">{r.parent1.email} · {r.family === 'existing' ? 'existing family' : 'new family'}</span></td>
                     <td className="px-3 py-2">{[r.eagles ? r.team || 'Eagles' : null, r.rfa ? 'RFA' : null].filter(Boolean).join(' · ') || '—'}</td>

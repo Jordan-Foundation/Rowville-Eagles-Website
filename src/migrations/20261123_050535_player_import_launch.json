@@ -37200,7 +37200,8 @@
         "sent",
         "delivered",
         "failed",
-        "skipped"
+        "skipped",
+        "shared"
       ]
     },
     "public.enum_users_launch_follow_up_status": {
@@ -37740,6 +37741,6 @@
     "tables": {},
     "columns": {}
   },
-  "id": "831c68f9-39a2-4223-86f3-a59469057fd5",
+  "id": "63bce878-3e27-4c7a-b2d3-d4270afbc23d",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }

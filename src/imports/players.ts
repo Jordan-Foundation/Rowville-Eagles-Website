@@ -268,14 +268,16 @@ export function checkRows(rows: ImportRow[], ctx: ImportContext) {
       if (!r.team) r.errors.push('Eagles player with no Eagles team')
       else if (!ctx.teams.has(r.team.trim().toLowerCase())) r.errors.push(`Eagles team “${r.team}” doesn’t exist in the portal`)
     }
-    if (r.player.birthYear && r.number) {
+    // #1 is the shared goalkeeper top, not anyone's own number — no clash check, nothing saved
+    if (r.number === 1 && r.goalkeeper) r.info.push('Goalkeeper — wears the #1 goalkeeper top')
+    if (r.player.birthYear && r.number && r.number !== 1) {
       const k = `${r.player.birthYear}-${r.number}`
       const dup = byNumber.get(k) ?? []
       if (dup.length > 1) r.errors.push(`#${r.number} is used by another ${r.player.birthYear} player in the file (lines ${dup.map((x) => x.line).join(', ')})`)
       const holder = ctx.numbers.get(k)
       if (holder && holder !== playerKey(r)) r.errors.push(`#${r.number} is already worn by another ${r.player.birthYear} player in the portal`)
       const range = ctx.range(r.player.birthYear)
-      if (range && r.number !== 1 && (r.number < range.start || r.number > range.end)) r.warnings.push(`Keeping existing number outside the ${r.player.birthYear} range (${range.start}–${range.end})`)
+      if (range && (r.number < range.start || r.number > range.end)) r.warnings.push(`Keeping existing number outside the ${r.player.birthYear} range (${range.start}–${range.end})`)
     }
     if (r.player.birthYear && ctx.oldestBirthYear && r.player.birthYear < ctx.oldestBirthYear) r.warnings.push('Player is older than the oldest current age group')
     const onFile = ctx.accounts.get(r.parent1.email)

@@ -5,7 +5,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
    CREATE TYPE "public"."enum_import_batches_status" AS ENUM('imported', 'undone');
   CREATE TYPE "public"."enum_participants_imported_registration_status" AS ENUM('paid', 'not_paid', 'na');
   CREATE TYPE "public"."enum_users_launch_email_status" AS ENUM('sent', 'delivered', 'bounced', 'failed');
-  CREATE TYPE "public"."enum_users_launch_sms_status" AS ENUM('sent', 'delivered', 'failed', 'skipped');
+  CREATE TYPE "public"."enum_users_launch_sms_status" AS ENUM('sent', 'delivered', 'failed', 'skipped', 'shared');
   CREATE TYPE "public"."enum_users_launch_follow_up_status" AS ENUM('sent', 'delivered', 'bounced', 'failed');
   CREATE TYPE "public"."enum_portal_launch_run_status" AS ENUM('idle', 'scheduled', 'sending', 'done');
   CREATE TABLE "import_batches" (

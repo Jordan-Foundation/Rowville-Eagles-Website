@@ -50,7 +50,7 @@ export async function familyKids(p: Payload, familyIds: number[]) {
   const nums = await numbersFor(p, kids.map((k) => k.id))
   for (const k of kids) {
     const team = typeof k.team === 'object' && k.team ? k.team : null
-    const row = { name: k.firstName, number: nums.get(k.id) ?? null, team: team?.name ?? null, teamId: team?.id ?? null, rfa: (k.memberships ?? []).includes('rfa') }
+    const row = { name: k.firstName, number: nums.get(k.id) ?? (k.football?.position === 'Goalkeeper' ? 1 : null), team: team?.name ?? null, teamId: team?.id ?? null, rfa: (k.memberships ?? []).includes('rfa') }
     const a = rel(k.account)!
     out.set(a, [...(out.get(a) ?? []), row])
   }
@@ -150,13 +150,16 @@ export async function sendTo(p: Payload, user: User, kind: Kind, o: { settings?:
     Object.assign(launch, { emailAt: now, emailStatus: ok ? 'sent' : 'failed', emailSubject: m.subject })
     // One text per unique mobile (siblings' parents sharing a phone get one)
     const phone = toE164(user.phone)
-    if (m.sms && o.withSms !== false && phone && !o.smsPhonesDone?.has(phone)) {
-      const already = (await p.count({ collection: 'users', where: { id: { not_equals: user.id }, phone: { in: [phone, `0${phone.slice(3)}`] }, 'launch.smsAt': { exists: true } }, ...q })).totalDocs > 0
+    if (m.sms && o.withSms !== false && phone) {
+      const already = o.smsPhonesDone?.has(phone) || (await p.count({ collection: 'users', where: { id: { not_equals: user.id }, or: [{ phoneE164: { equals: phone } }, { phone: { in: [phone, `0${phone.slice(3)}`] } }], 'launch.smsAt': { exists: true } }, ...q })).totalDocs > 0
       if (!already) {
         const r = await sendSms(p, { to: phone, body: m.sms, kind: 'service', optedOut: user.smsOptOut, userId: user.id, statusCallback: `${siteUrl()}/twilio/status` })
         result.sms = r.sent ? 'sent' : r.reason === 'opted_out' ? 'skipped' : 'failed'
         Object.assign(launch, { smsAt: now, smsStatus: result.sms, smsSid: r.sent ? r.sid : null, smsTries: (user.launch?.smsTries ?? 0) + 1 })
-      } else result.sms = 'skipped'
+      } else {
+        result.sms = 'skipped'
+        Object.assign(launch, { smsStatus: 'shared' })
+      }
       o.smsPhonesDone?.add(phone)
     }
   }

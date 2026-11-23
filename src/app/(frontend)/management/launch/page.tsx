@@ -107,7 +107,7 @@ export default async function LaunchPage({ searchParams }: { searchParams: Promi
                   <td className="px-3 py-2 text-xs">{kidsOf(u).map((k) => k.name).join(', ')}</td>
                   <td className="px-3 py-2 text-xs" data-activated={u.activated ? 'yes' : 'no'}>{u.activated ? 'Activated' : 'Not yet'}</td>
                   <td className="px-3 py-2 text-xs" data-email-status={u.launch?.emailStatus ?? ''}>{u.launch?.emailAt ? `${u.launch.emailStatus ?? 'sent'} · ${formatDate(u.launch.emailAt, { day: 'numeric', month: 'short' })}` : u.launch?.unsubscribedAt ? 'Unsubscribed' : '—'}</td>
-                  <td className="px-3 py-2 text-xs" data-sms-status={u.launch?.smsStatus ?? ''}>{u.launch?.smsStatus ?? '—'}</td>
+                  <td className="px-3 py-2 text-xs" data-sms-status={u.launch?.smsStatus ?? ''}>{u.launch?.smsStatus === 'shared' ? 'same mobile — texted once' : (u.launch?.smsStatus ?? '—')}</td>
                   <td className="px-3 py-2 text-xs">{u.launch?.reminderAt ? formatDate(u.launch.reminderAt, { day: 'numeric', month: 'short' }) : '—'}</td>
                   <td className="px-3 py-2 text-xs" data-followup={u.launch?.followUpAt ? 'yes' : 'no'}>{u.launch?.followUpAt ? `${u.launch.followUpStatus ?? 'sent'} · ${formatDate(u.launch.followUpAt, { day: 'numeric', month: 'short' })}` : '—'}</td>
                 </tr>

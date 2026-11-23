@@ -570,7 +570,7 @@ export interface User {
     emailAt?: string | null;
     emailStatus?: ('sent' | 'delivered' | 'bounced' | 'failed') | null;
     smsAt?: string | null;
-    smsStatus?: ('sent' | 'delivered' | 'failed' | 'skipped') | null;
+    smsStatus?: ('sent' | 'delivered' | 'failed' | 'skipped' | 'shared') | null;
     smsSid?: string | null;
     smsTries?: number | null;
     reminderAt?: string | null;
