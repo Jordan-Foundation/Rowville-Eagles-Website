@@ -82,3 +82,13 @@ describe('camp schedule from the camp days', () => {
     expect(programSchedule({ type: 'academy-term', scheduleNote: 'Tuesdays 5–6pm' })).toBe('Tuesdays 5–6pm')
   })
 })
+
+describe('follow-up links stay private', () => {
+  it('never sent to Meta/Google', async () => {
+    const { isTrackable } = await import('../../src/tracking/config')
+    expect(isTrackable('/trial-details/RFA-1.abc', null)).toBe(false)
+    expect(isTrackable('/follow-ups/stop/RFA-1.abc', null)).toBe(false)
+    expect(isTrackable('/programs/camp/book', new URLSearchParams('resume=RFA-1.abc'))).toBe(false)
+    expect(isTrackable('/programs/camp/book', new URLSearchParams(''))).toBe(true)
+  })
+})
