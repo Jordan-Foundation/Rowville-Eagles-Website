@@ -34,7 +34,7 @@ export default async function JoinPage() {
   const groups = Array.from({ length: 18 - rules.miniMin }, (_, i) => groupInfo(season - rules.miniMin - i, rules))
   const { docs: fees } = await p.find({ pagination: false, collection: 'programs', where: { type: { equals: 'registration' }, status: { not_equals: 'draft' } }, sort: 'title', limit: 20, depth: 0 })
   // The season fee up front, as the ads say it ("U5 – U11 · $950"), with what it costs to trial: nothing
-  const feeLine = fees.filter((f) => f.price).map((f) => `${f.ageRange || f.title} ${formatAUD(f.price!)}`).join(' · ')
+  const feeLine = fees.filter((f) => f.price && !/senior|18\+/i.test(`${f.title} ${f.ageRange ?? ''}`)).map((f) => `${f.ageRange || f.title} ${formatAUD(f.price!)}`).join(' · ')
 
   return (
     <>
