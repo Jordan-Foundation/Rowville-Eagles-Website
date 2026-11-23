@@ -50,6 +50,7 @@ export async function joinUs(_prev: JoinState, fd: FormData): Promise<JoinState>
   const season = rules.season
   const birthYear = birthYearOf(player.dateOfBirth)
   if (!birthYear || birthYear > season || birthYear < season - 80) return fail('Please check the date of birth.')
+  if (season - birthYear >= 18) return fail('Players 18 and over join our senior teams — please use the senior enquiry form at /join/seniors.')
 
   // Trial choice (required when trials are open for this age group)
   const sessions = await openTrialSessions(p, birthYear)

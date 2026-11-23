@@ -20,7 +20,7 @@ import { TermBookingForm, type TermSlotOption } from './TermBookingForm'
 import { nightRate, programSlots, slotTaken } from '@/academy/terms/service'
 import { slotLabel as termSlotLabel, spotsLeft, termQuote, yearsLabel } from '@/academy/terms/slots'
 import { programPriceLabel } from '@/lib/format'
-import { clubFeeNote, isPerTerm, slotCounts } from '@/academy/terms/pricing'
+import { isPerTerm, slotCounts } from '@/academy/terms/pricing'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Book', robots: { index: false } }
@@ -170,9 +170,9 @@ export default async function BookPage({
                 This program is fully booked. Please check back later or contact the club about the waitlist.
               </p>
             ) : yearOptionsView ? (
-              <FullYearForm slug={program.slug} options={yearOptionsView} payeeLabel={stripeAccounts[payee].label} feeNote={clubFeeNote(academySettings?.clubRegistrationFee)} prefill={contactPrefill(me)} kids={kids} />
+              <FullYearForm slug={program.slug} options={yearOptionsView} payeeLabel={stripeAccounts[payee].label} prefill={contactPrefill(me)} kids={kids} />
             ) : termSlots ? (
-              <TermBookingForm slug={program.slug} slots={termSlots} perTerm={isPerTerm(program) ? program.termPrice ?? 400 : null} feeNote={program.type === 'academy-term' ? clubFeeNote(academySettings?.clubRegistrationFee) : null} rates={{ one: program.pricePerSession ?? null, two: program.twoNightPricePerSession ?? null }} payeeLabel={stripeAccounts[payee].label} prefill={prefill} kids={kids} bounds={ageBounds(program)} />
+              <TermBookingForm slug={program.slug} slots={termSlots} perTerm={isPerTerm(program) ? program.termPrice ?? 400 : null} rates={{ one: program.pricePerSession ?? null, two: program.twoNightPricePerSession ?? null }} payeeLabel={stripeAccounts[payee].label} prefill={prefill} kids={kids} bounds={ageBounds(program)} />
             ) : (
               <BookingForm
                 slug={program.slug}

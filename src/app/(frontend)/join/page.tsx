@@ -1,109 +1,60 @@
+import Link from 'next/link'
 import type { Metadata } from 'next'
-import { payload, formatAUD } from '@/lib/payload'
-import { groupInfo } from '@/lib/age-groups'
+import { payload } from '@/lib/payload'
 import { getAgeRules } from '@/lib/age-rules'
-import { clubTrialOptions } from '@/lib/trial-options'
-import { JoinForm } from './JoinForm'
-import { contactPrefill, familyKids } from '@/lib/family-kids'
-import { currentUser } from '@/lib/auth'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 3600
 export const metadata: Metadata = {
   title: 'Join us',
-  description: 'Register for Rowville Eagles trials — MiniRoos, juniors and seniors. Choose a trial night or register your interest.',
+  description: 'Play for Rowville Eagles — juniors (ages 5–17: MiniRoos and junior teams) or seniors and reserves (18+: Senior Men, Reserves and Senior Women).',
 }
 
-const steps = [
-  { t: 'Register', d: 'Tell us about your player — it takes two minutes.' },
-  { t: 'Trial night', d: 'Pick a trial night, or we’ll email and text you when dates are set.' },
-  { t: 'Get your offer', d: 'Coaches place players in teams. You’ll get an email with your offer.' },
-  { t: 'Pay & play', d: 'Pay the club fee from your account, then finish the Football Victoria step in PlayFootball.' },
-]
+const cards = [
+  {
+    key: 'juniors',
+    href: '/join/juniors',
+    eyebrow: 'Ages 5–17',
+    title: 'Juniors',
+    text: 'MiniRoos and junior teams for boys and girls. Register for a trial night and we’ll place your player in a team.',
+    points: ['MiniRoos (ages 5–11) and juniors (U12–U17)', 'Pick a trial night, or register interest', 'Your offer arrives by email'],
+    cta: 'Register for junior trials',
+  },
+  {
+    key: 'seniors',
+    href: '/join/seniors',
+    eyebrow: 'Ages 18+',
+    title: 'Seniors & Reserves',
+    text: 'Senior Men, Reserves and Senior Women. Send us an enquiry and the club secretary will be in touch about training and trials.',
+    points: ['Senior Men and Reserves', 'Senior Women', 'Goes straight to the club secretary'],
+    cta: 'Send a senior enquiry',
+  },
+] as const
 
-const kindName = { miniroos: 'MiniRoos', junior: 'Juniors', senior: 'Seniors', 'too-young': '' } as const
-
+/** Join us: pick juniors (the trial registration) or seniors (an enquiry to the secretary). */
 export default async function JoinPage() {
-  const p = await payload()
-  const me = await currentUser()
-  const rules = await getAgeRules(p)
-  const season = rules.season
-  const trials = await clubTrialOptions(p)
-  // Who plays where this season: MiniRoos and junior birth years, then seniors
-  const groups = Array.from({ length: 18 - rules.miniMin }, (_, i) => groupInfo(season - rules.miniMin - i, rules))
-  const { docs: fees } = await p.find({ pagination: false, collection: 'programs', where: { type: { equals: 'registration' }, status: { not_equals: 'draft' } }, sort: 'title', limit: 20, depth: 0 })
-
+  const { season } = await getAgeRules(await payload())
   return (
-    <>
-      <section className="pitch-lines bg-[#0f2a55] text-white">
-        <div className="container-x py-16 md:py-20">
-          <p className="eyebrow">MiniRoos · Juniors · Seniors</p>
-          <h1 className="mt-3 font-[family-name:var(--font-barlow)] text-5xl font-extrabold uppercase leading-none sm:text-7xl">
-            Join us for <span className="text-accent">{season}</span>
-          </h1>
-          <p className="mt-5 max-w-xl text-lg text-white/75">Every Eagle starts with a trial. Register below and we’ll see you at the ground.</p>
-          <ol className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {steps.map((s, i) => (
-              <li key={s.t} className="rounded-2xl border border-white/10 bg-white/5 p-5">
-                <span className="font-[family-name:var(--font-barlow)] text-3xl font-bold text-accent">0{i + 1}</span>
-                <p className="mt-1 font-semibold">{s.t}</p>
-                <p className="text-sm text-white/60">{s.d}</p>
-              </li>
-            ))}
-          </ol>
-        </div>
-      </section>
-      <div className="container-x grid max-w-5xl gap-6 pt-14 md:grid-cols-2">
-        <section className="rounded-2xl border border-line p-6">
-          <h2 className="font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase">Age groups for {season}</h2>
-          <p className="mt-1 text-sm text-muted">Players are grouped by year of birth.</p>
-          <table className="mt-4 w-full text-sm">
-            <thead><tr className="text-left text-muted"><th className="py-1.5 font-medium">Born in</th><th className="py-1.5 font-medium">Plays in</th><th className="py-1.5 font-medium">Group</th></tr></thead>
-            <tbody className="divide-y divide-line">
-              {groups.map((g) => (
-                <tr key={g.birthYear}><td className="py-1.5 font-medium">{g.birthYear}</td><td className="py-1.5">{g.hint}</td><td className="py-1.5 text-muted">{kindName[g.kind]}</td></tr>
-              ))}
-              <tr><td className="py-1.5 font-medium">{season - 18} or earlier</td><td className="py-1.5">Seniors</td><td className="py-1.5 text-muted">Seniors</td></tr>
-            </tbody>
-          </table>
-        </section>
-        <div className="space-y-6">
-          <section className="rounded-2xl border border-line p-6">
-            <h2 className="font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase">Trial nights</h2>
-            {trials.length ? (
-              <ul className="mt-3 space-y-2 text-sm">
-                {trials.map((t) => (
-                  <li key={t.id}>
-                    <span className="font-medium">{t.label}</span>
-                    {t.birthYears.length > 0 && <span className="block text-muted">For players born {t.birthYears.slice().sort().join(', ')}</span>}
-                  </li>
-                ))}
+    <section className="pitch-lines bg-[#0f2a55] text-white">
+      <div className="container-x py-16 md:py-20">
+        <p className="eyebrow">Join the Eagles</p>
+        <h1 className="mt-3 font-[family-name:var(--font-barlow)] text-5xl font-extrabold uppercase leading-none sm:text-7xl">
+          Join us for <span className="text-accent">{season}</span>
+        </h1>
+        <p className="mt-5 max-w-xl text-lg text-white/75">Who’s playing? Choose juniors or seniors to get started.</p>
+        <div className="mt-10 grid gap-5 md:grid-cols-2">
+          {cards.map((c) => (
+            <Link key={c.key} href={c.href} data-join={c.key} className="group flex flex-col rounded-2xl border border-white/15 bg-white/5 p-7 transition hover:-translate-y-0.5 hover:border-accent hover:bg-white/10">
+              <span className="inline-flex w-fit rounded-full bg-accent px-3 py-1 text-sm font-bold text-accent-ink">{c.eyebrow}</span>
+              <h2 className="mt-4 font-[family-name:var(--font-barlow)] text-4xl font-extrabold uppercase">{c.title}</h2>
+              <p className="mt-3 text-white/75">{c.text}</p>
+              <ul className="mt-4 space-y-1.5 text-sm text-white/80">
+                {c.points.map((x) => <li key={x} className="flex gap-2"><span aria-hidden className="text-accent">✓</span>{x}</li>)}
               </ul>
-            ) : (
-              <p className="mt-3 text-sm text-muted">Trial dates aren’t set yet. Register your interest below — we’ll email and text you as soon as they are, and you confirm your spot with one tap.</p>
-            )}
-          </section>
-          <section className="rounded-2xl border border-line p-6">
-            <h2 className="font-[family-name:var(--font-barlow)] text-2xl font-bold uppercase">Club fees</h2>
-            {fees.length ? (
-              <ul className="mt-3 divide-y divide-line text-sm">
-                {fees.map((f) => (
-                  <li key={f.id} className="flex justify-between gap-4 py-2">
-                    <span>{f.title}{f.ageRange && <span className="block text-xs text-muted">{f.ageRange}</span>}</span>
-                    <span className="font-semibold">{f.price ? formatAUD(f.price) : "TBC"}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-3 text-sm text-muted">Fees for {season} will be shown in your offer.</p>
-            )}
-            <p className="mt-3 text-xs text-muted">Nothing to pay to trial. You only pay once you accept a place.</p>
-          </section>
+              <span className="mt-auto pt-6 font-semibold text-accent group-hover:underline">{c.cta} →</span>
+            </Link>
+          ))}
         </div>
       </div>
-      <div className="container-x max-w-3xl py-14">
-        <h2 className="mb-6 font-[family-name:var(--font-barlow)] text-3xl font-bold uppercase">Register for trials</h2>
-        <JoinForm rules={rules} trials={trials} kids={await familyKids(p, me?.id)} prefill={contactPrefill(me)} />
-      </div>
-    </>
+    </section>
   )
 }

@@ -14,7 +14,7 @@ export type YearOptionView = { key: string; slotIds: string; birthYear: number; 
 const aud = (n: number) => n.toLocaleString('en-AU', { style: 'currency', currency: 'AUD', minimumFractionDigits: n % 1 ? 2 : 0 })
 
 /** Full year: the player's year of birth picks the Term 1 training times; the price shows term by term. */
-export function FullYearForm(props: { slug: string; options: YearOptionView[]; payeeLabel: string; feeNote: string; prefill?: Record<string, string>; kids?: KidOption[] }) {
+export function FullYearForm(props: { slug: string; options: YearOptionView[]; payeeLabel: string; feeNote?: string; prefill?: Record<string, string>; kids?: KidOption[] }) {
   const [state, action] = useActionState<YearState, FormData>(bookFullYear, {})
   const v = { ...props.prefill, ...state.values }
   const kids = props.kids ?? []
@@ -61,7 +61,7 @@ export function FullYearForm(props: { slug: string; options: YearOptionView[]; p
         <input type="checkbox" name="terms" required className="mt-1" />
         <span>I agree to the <PolicyLink k="academyTerms">Foundation Academy terms</PolicyLink>, <PolicyLink k="codeOfConduct">Code of Conduct</PolicyLink> and <PolicyLink k="childSafe">Child Safe policy</PolicyLink>.</span>
       </label>
-      <p role="note" className="text-sm text-muted">{props.feeNote}</p>
+      {props.feeNote && <p role="note" className="text-sm text-muted">{props.feeNote}</p>}
       {state.error && <p role="alert" className="border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300">{state.error}</p>}
       <PayeeChip label={props.payeeLabel} />
       <Submit label={chosen ? `Continue to payment · ${aud(chosen.total)}` : 'Continue to payment'} />

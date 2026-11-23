@@ -52,6 +52,7 @@ export function JoinForm({ rules, trials, kids = [], prefill }: { rules: AgeRule
           {ageGroup && (
             <p className="w-full rounded-lg border border-line bg-surface px-4 py-2.5 text-sm" aria-live="polite">
               {season} age group: <strong>{ageGroup}</strong>
+              {group?.kind === 'senior' && <span className="mt-1 block text-xs" data-senior-note>18 or over? Senior players don’t trial through this form — <a href="/join/seniors" className="font-semibold underline">send a senior enquiry</a> instead.</span>}
               {group?.kind === 'too-young' && <span className="mt-1 block text-xs text-muted">Younger than our MiniRoos {rules.miniMin}s — register interest and the club will be in touch.</span>}
             </p>
           )}

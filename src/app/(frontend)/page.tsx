@@ -1,5 +1,6 @@
 import { isSchoolTerm } from '@/academy/timeframes'
 import Link from 'next/link'
+import { FoundationPlusLogo } from '@/components/FoundationPlusLogo'
 import { payload, formatDate } from '@/lib/payload'
 import { foundationSettings } from '@/academy/pdr/load'
 import { ProgramCard } from '@/components/ProgramCard'
@@ -126,13 +127,13 @@ export default async function Home() {
       <section className="border-b border-line bg-surface">
         <div className="container-x grid divide-y divide-line sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-4">
           {[
-            { href: '/join', t: `Join us for ${season}`, d: 'Book a trial or register interest' },
+            { href: '/join', t: `Join us for ${season}`, d: 'Juniors 5–17 or seniors 18+' },
             { href: '/programs?type=holiday-camp', t: 'Holiday camps', d: 'School holiday clinics' },
-            { href: '/foundation-plus', t: fplus.enabled ? 'Foundation+' : 'Foundation+ · Coming soon', d: fplus.enabled ? 'Online training — drills, badges, leaderboards' : 'Online training is on its way — join the waitlist' },
+            { href: '/foundation-plus', fplus: true, t: fplus.enabled ? 'Foundation+' : 'Foundation+ · Coming soon', d: fplus.enabled ? 'Online training — drills, badges, leaderboards' : 'Online training is on its way — join the waitlist' },
             { href: '/academy', t: 'Academy trials', d: 'Rowville Foundation Academy' },
           ].map((a) => (
             <Link key={a.t} href={a.href} className="group px-2 py-6 sm:px-6">
-              <div className="font-semibold group-hover:text-brand">{a.t} →</div>
+              <div className="flex items-center gap-2 font-semibold group-hover:text-brand">{'fplus' in a && <FoundationPlusLogo variant="mark" tone="black" height={18} alt="" />}{a.t} →</div>
               <div className="text-sm text-muted">{a.d}</div>
             </Link>
           ))}

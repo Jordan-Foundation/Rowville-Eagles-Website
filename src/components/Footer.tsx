@@ -42,7 +42,9 @@ export function Footer({ settings }: { settings: SiteSetting }) {
           <ul className="space-y-1">
             {links?.facebook && <li><a href={links.facebook} className="hover:text-white" rel="noopener" target="_blank">Facebook</a></li>}
             {links?.instagram && <li><a href={links.instagram} className="hover:text-white" rel="noopener" target="_blank">Instagram</a></li>}
-            <li className="pt-2"><Link href="/sponsors" className="hover:text-white">Our sponsors</Link></li>
+            <li className="pt-2"><Link href="/events" className="hover:text-white">Events</Link></li>
+            <li><Link href="/about/committee" className="hover:text-white">Committee</Link></li>
+            <li><Link href="/sponsors" className="hover:text-white">Our sponsors</Link></li>
           </ul>
         </div>
       </div>
