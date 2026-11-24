@@ -35,6 +35,7 @@ export default async function AttendancePage({ params, searchParams }: { params:
       <div>
         <h1 className="font-display text-3xl font-semibold uppercase tracking-tight">{session.title}</h1>
         <p className="mt-1 text-muted">{formatDate(session.start, { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' })} · {session.location || '208 Dandelion Drive, Rowville'}</p>
+        <a href={`/selections/sheet/${session.id}?back=${encodeURIComponent(href(`/management/selections/sessions/${session.id}`, { program: sp.program, round: sp.round }))}`} data-print-sheet className="mt-3 inline-block min-h-10 border border-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em]">Print selection sheet</a>
       </div>
       <AttendanceList rows={rows} />
     </div>

@@ -45,6 +45,7 @@ export default async function SessionsPage({ searchParams }: { searchParams: Pro
               <span className="flex items-center gap-4">
                 <span className="text-muted">{count(s.id)} invited · {count(s.id, true)} attended</span>
                 <Link href={href(`/management/selections/sessions/${s.id}`, { program, round: round?.id })} className="min-h-10 border border-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em]">{past ? 'Attendance' : 'Invited & attendance'}</Link>
+                <a href={`/selections/sheet/${s.id}?back=${encodeURIComponent(back)}`} data-print-sheet className="min-h-10 border border-line px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] hover:border-white">Print sheet</a>
               </span>
             </li>
           )
