@@ -32,7 +32,7 @@ export function trackingConfig(t: Stored): TrackingConfig | null {
 export const trackingAllowed = (env: Record<string, string | undefined>) => env.VERCEL_ENV === 'production' || env.TRACKING_ALWAYS === 'true'
 
 // Staff areas, and pages whose address is a private link (it would be sent to Meta/Google with the page view)
-const PRIVATE = [/^\/refer\//, /^\/reflect(\/|$)/, /^\/cover\//, /^\/management(\/|$)/, /^\/coach(\/|$)/, /^\/camp-coach(\/|$)/, /^\/staff(\/|$)/, /^\/admin(\/|$)/, /^\/invoice\//, /^\/academy\/group\//, /^\/account\/activate/, /^\/unsubscribe/, /^\/selections\/pay\//, /^\/login/, /^\/account\/forgot/, /^\/trial-details\//, /^\/follow-ups\//]
+const PRIVATE = [/^\/refer\//, /^\/reflect(\/|$)/, /^\/cover\//, /^\/management(\/|$)/, /^\/coach(\/|$)/, /^\/camp-coach(\/|$)/, /^\/staff(\/|$)/, /^\/admin(\/|$)/, /^\/invoice\//, /^\/academy\/group\//, /^\/account\/activate/, /^\/unsubscribe/, /^\/selections\/pay\//, /^\/login/, /^\/account\/forgot/, /^\/trial-details\//, /^\/follow-ups\//, /^\/selections\/sheet\//]
 const PRIVATE_PARAMS = ['t', 'token', 'link', 'invite', 'code', 'reset', 'resume']
 
 export function isTrackable(pathname: string, search: URLSearchParams | null) {
