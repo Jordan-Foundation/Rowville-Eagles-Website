@@ -5,7 +5,7 @@ import { requireManagement } from '@/lib/management'
 import { payload } from '@/lib/payload'
 import { formatDate } from '@/lib/format'
 import { getAgeRules } from '@/lib/age-rules'
-import { sheetGroups, BLANK_ROWS, type SheetEntry } from '@/selections/sheet'
+import { sheetGroups, sheetsFor, BLANK_ROWS, type SheetEntry } from '@/selections/sheet'
 import type { SelectionEntry } from '@/payload-types'
 import { PrintButton } from '@/app/(frontend)/account/reports/[id]/PrintButton'
 
@@ -22,10 +22,12 @@ const box = <span aria-hidden className="inline-block h-5 w-5 rounded-[3px] bord
  * Eagles selection trial sheet (A4 landscape, print or save as PDF), one page per age group: player, year of birth,
  * a 1 / 2 / 3 tick, room for notes, and the parent's name and mobile. Management only.
  */
-export default async function SelectionSheet({ params, searchParams }: { params: Promise<{ session: string }>; searchParams: Promise<{ back?: string }> }) {
+export default async function SelectionSheet({ params, searchParams }: { params: Promise<{ session: string }>; searchParams: Promise<{ back?: string; layout?: string }> }) {
   const { session: sid } = await params
   await requireManagement(`/selections/sheet/${sid}`)
-  const { back } = await searchParams
+  const { back, layout: layoutParam } = await searchParams
+  // One sheet for everyone (default), or a page per age group
+  const layout = layoutParam === 'groups' ? 'groups' : 'combined'
   const p = await payload()
   const session = await p.findByID({ collection: 'trial-sessions', id: Number(sid), depth: 0, overrideAccess: true, disableErrors: true })
   if (!session) notFound()
@@ -35,9 +37,9 @@ export default async function SelectionSheet({ params, searchParams }: { params:
     .map((i) => i.entry)
     .filter((e): e is SelectionEntry => !!e && typeof e === 'object')
     .map((e) => ({ firstName: e.player.firstName, lastName: e.player.lastName, dateOfBirth: e.player.dateOfBirth, birthYear: e.birthYear, playingBirthYear: e.playingBirthYear, parentFirst: e.contact.firstName, parentLast: e.contact.lastName, phone: e.contact.phone }))
-  const groups = sheetGroups(entries, rules)
-  // An empty trial still prints a blank sheet for each of its age groups
-  const toPrint = groups.length ? groups : (session.birthYears ?? []).map((y) => ({ ...sheetGroups([{ firstName: '', lastName: '', playingBirthYear: y }], rules)[0], rows: [] }))
+  const toPrint = sheetsFor(sheetGroups(entries, rules), layout, (session.birthYears ?? []) as number[], rules)
+  const combined = layout === 'combined'
+  const link = (l: string) => `/selections/sheet/${session.id}?layout=${l}${back ? `&back=${encodeURIComponent(back)}` : ''}`
   const when = formatDate(session.start, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: '2-digit' })
   const backHref = back?.startsWith('/management/') ? back : '/management/selections/sessions'
 
@@ -51,7 +53,10 @@ export default async function SelectionSheet({ params, searchParams }: { params:
       `}</style>
       <div className="no-print flex flex-wrap items-center justify-between gap-3 border-b border-black/10 bg-neutral-100 px-6 py-3 text-sm">
         <Link href={backHref} className="underline">← Back</Link>
-        <span className="text-muted">{toPrint.length} age group{toPrint.length === 1 ? '' : 's'} · each prints on its own page</span>
+        <nav aria-label="Layout" className="flex gap-2" data-layout={layout}>
+          <a href={link('combined')} aria-current={combined ? 'page' : undefined} className={`border px-3 py-1.5 ${combined ? 'border-black bg-black text-white' : 'border-black/30'}`}>Everyone on one sheet</a>
+          <a href={link('groups')} aria-current={!combined ? 'page' : undefined} className={`border px-3 py-1.5 ${!combined ? 'border-black bg-black text-white' : 'border-black/30'}`}>A page per age group</a>
+        </nav>
         <PrintButton />
       </div>
       <div className="mx-auto max-w-[277mm] px-4 py-6 print:max-w-none print:p-0">
@@ -77,6 +82,7 @@ export default async function SelectionSheet({ params, searchParams }: { params:
                   <th className={`${cell} w-8 text-center`}>#</th>
                   <th className={cell}>Player</th>
                   <th className={`${cell} w-16 text-center`}>Born</th>
+                  {combined && <th className={`${cell} w-14 text-center`}>Group</th>}
                   <th className={`${cell} w-10 text-center`}>1</th>
                   <th className={`${cell} w-10 text-center`}>2</th>
                   <th className={`${cell} w-10 text-center`}>3</th>
@@ -91,6 +97,7 @@ export default async function SelectionSheet({ params, searchParams }: { params:
                     <td className={`${cell} text-center text-[11px] text-[#0f2a55]/70`}>{i + 1}</td>
                     <td className={`${cell} font-semibold`}>{r?.name}</td>
                     <td className={`${cell} text-center`}>{r?.born ?? ''}</td>
+                    {combined && <td className={`${cell} text-center`}>{r?.group}</td>}
                     <td className={`${cell} text-center`}>{box}</td>
                     <td className={`${cell} text-center`}>{box}</td>
                     <td className={`${cell} text-center`}>{box}</td>
