@@ -2,6 +2,8 @@ import { randomBytes } from 'crypto'
 import type { Payload } from 'payload'
 import type { Participant, RfaTournament, TournamentInvite, TournamentSquad, User } from '@/payload-types'
 import { sendEmail } from '../lib/email'
+import { sendSms, toE164 } from '../lib/sms'
+import { timeWord } from '../lib/follow-up-rules'
 import { emailLayout } from '../lib/email-templates'
 import { siteUrl } from '../lib/payments'
 import { formatDate } from '../lib/format'
@@ -37,6 +39,22 @@ function detailRows(t: RfaTournament, s: TournamentSquad): [string, string][] {
   ]
 }
 
+/** Plain characters only, so the text stays in standard SMS encoding (curly quotes or dashes would make it cost ~3x as many parts). */
+const plain = (x: string) => x.replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"').replace(/[\u2013\u2014]/g, '-').replace(/[\u00A0\u202F]/g, ' ')
+
+/** The text message that goes with the invite email (and with the one reminder). */
+export function inviteSms(o: { kind: 'invite' | 'reminder'; first: string; squad: string; tournament: string; when: string; replyBy: string; url: string }) {
+  return plain(
+    o.kind === 'reminder'
+      ? `Foundation Academy reminder: we haven't had a reply about ${o.first} playing in ${o.squad} at ${o.tournament} (${o.when}). Please accept or decline by ${o.replyBy}: ${o.url}`
+      : `Foundation Academy: ${o.first} is invited to play for us in ${o.squad} at ${o.tournament} (${o.when}). Please accept or decline by ${o.replyBy}: ${o.url}`,
+  )
+}
+const smsWhen = (t: RfaTournament) => {
+  const d = (iso: string) => formatDate(iso, { weekday: 'short', day: 'numeric', month: 'short' })
+  return t.endDate && t.endDate.slice(0, 10) !== t.startDate.slice(0, 10) ? `${d(t.startDate)} - ${d(t.endDate)}` : d(t.startDate)
+}
+
 async function familyRecipients(p: Payload, accountId: number) {
   const parent = (await p.findByID({ collection: 'users', id: accountId, ...q })) as User
   const { docs: others } = await p.find({ ...q, collection: 'users', where: { familyAccount: { equals: accountId } }, limit: 5, pagination: false })
@@ -60,6 +78,15 @@ async function sendInvite(p: Payload, inv: TournamentInvite, t: RfaTournament, s
   ].filter(Boolean).join('<br><br>')
   for (const u of people) {
     await sendEmail(p, { to: u.email, subject: kind === 'reminder' ? `Reminder: ${t.name} — please reply for ${first}` : `${first} is invited to ${t.name}`, html: emailLayout('academy', [{ heading, intro, rows: detailRows(t, s), after }]), sender: 'academy', userId: u.id }).catch((e) => p.logger.error({ err: e, msg: `Tournament invite email ${inv.id} failed` }))
+  }
+  // A text too, so the invite isn't missed (one per mobile number; anyone who replied STOP is skipped)
+  const body = inviteSms({ kind, first, squad: s.name, tournament: t.name, when: smsWhen(t), replyBy: `${formatDate(t.rsvpDeadline, { weekday: 'short', day: 'numeric', month: 'short' })} ${timeWord(new Date(t.rsvpDeadline))}`, url })
+  const texted = new Set<string>()
+  for (const u of people) {
+    const to = toE164(u.phone)
+    if (!to || texted.has(to)) continue
+    texted.add(to)
+    await sendSms(p, { to, body, kind: kind === 'reminder' ? 'reminder' : 'service', optedOut: u.smsOptOut, userId: u.id }).catch((e) => p.logger.error({ err: e, msg: `Tournament invite text ${inv.id} failed` }))
   }
   const { notifyMany } = await import('../lib/app-install')
   await notifyMany(p, people.map((u) => u.id), 'teams', { title: kind === 'reminder' ? `Reply for ${first}: ${t.name}` : `${first} is invited to ${t.name}`, body: `${s.name} · ${dateRange(t)}. Tap to accept or decline.`, url: `/tournaments/invite/${inv.token}`, tag: `tournament-invite-${inv.id}` })
