@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { addMinutes, ageGroupOf, lengthFor, minutesBetween } from '@/academy/session-lengths'
 import { slotSessions } from '@/academy/terms/slots'
 import { dueReminder, reminderText, sessionKey, type TrialSession } from '@/academy/trial-list'
-import { openPlaces, squadCounts } from '@/tournaments/service'
+import { inviteSms, openPlaces, squadCounts } from '@/tournaments/service'
 
 describe('session length by age group', () => {
   const rules = [{ ageGroup: 'U7', minutes: 60 }]
@@ -61,5 +61,14 @@ describe('tournament squads', () => {
   it('never invites past the squad size; declined/expired places free up', () => {
     expect(openPlaces(3, [inv('invited'), inv('accepted'), inv('declined')])).toBe(1)
     expect(openPlaces(2, [inv('paid'), inv('invited'), inv('expired')])).toBe(0)
+  })
+  it('invite text: who, squad, tournament, date, reply-by and the link — short enough for 2 SMS parts', () => {
+    const o = { first: 'Ava', squad: 'U10 Blue', tournament: 'Easter Cup', when: 'Sat 3 Apr', replyBy: 'Thu, 25 Mar 5pm', url: 'https://www.rowvilleeagles.com.au/tournaments/invite/abcdefghijklmnopqrstuvwx' }
+    const invite = inviteSms({ kind: 'invite', ...o })
+    expect(invite).toBe('Foundation Academy: Ava is invited to play for us in U10 Blue at Easter Cup (Sat 3 Apr). Please accept or decline by Thu, 25 Mar 5pm: https://www.rowvilleeagles.com.au/tournaments/invite/abcdefghijklmnopqrstuvwx')
+    expect(invite.length).toBeLessThanOrEqual(306)
+    const reminder = inviteSms({ kind: 'reminder', ...o })
+    expect(inviteSms({ kind: 'invite', ...o, squad: 'Girls’ U12 – Gold', when: 'Sat\u00A03 Apr' })).toMatch(/^[\x20-\x7E]+$/)
+    expect(reminder).toMatch(/^Foundation Academy reminder: we haven't had a reply about Ava playing in U10 Blue at Easter Cup \(Sat 3 Apr\)\. Please accept or decline by Thu, 25 Mar 5pm: https:\/\/\S+invite\/abcdefghijklmnopqrstuvwx$/)
   })
 })
